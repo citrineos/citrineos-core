@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { SignedMeterValuesUtil } from '@services/index.js';
+import type { VariableAttributeDto } from '@citrineos/types';
 import {
   AbstractHandler,
   type AbstractHandlerDependencies,
@@ -31,13 +32,13 @@ import {
 import {
   ChargingSchedule,
   type IChargingProfileRepository,
-  type IDeviceModelRepository,
+  type IVariableAttributeRepository,
   type ITransactionEventRepository,
   OCPP2_0_1_Mapper,
   Transaction,
-  VariableAttribute,
 } from '@citrineos/dal';
 import type { CostCalculator } from '@modules/transactions/cost-calculator.js';
+import { deriveTimeSpentChargingSeconds } from '@modules/transactions/time-spent-charging.js';
 import type { CostNotifier } from '@modules/transactions/cost-notifier.js';
 import type { TransactionService } from '@modules/transactions/transaction-service.js';
 import { isForeignKeyConstraintError } from '@util/errors.js';
@@ -49,7 +50,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
   protected _chargingProfileRepository: IChargingProfileRepository;
   protected _costCalculator: CostCalculator;
   protected _costNotifier: CostNotifier;
-  protected _deviceModelRepository: IDeviceModelRepository;
+  protected _variableAttributeRepository: IVariableAttributeRepository;
   protected _signedMeterValuesUtil: SignedMeterValuesUtil;
   protected _transactionEventRepository: ITransactionEventRepository;
   protected _transactionService: TransactionService;
@@ -65,7 +66,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
     config,
     costCalculator,
     costNotifier,
-    deviceModelRepository,
+    variableAttributeRepository,
     signedMeterValuesUtil,
     transactionEventRepository,
     transactionService,
@@ -76,7 +77,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
     config: SystemConfig;
     costCalculator: CostCalculator;
     costNotifier: CostNotifier;
-    deviceModelRepository: IDeviceModelRepository;
+    variableAttributeRepository: IVariableAttributeRepository;
     signedMeterValuesUtil: SignedMeterValuesUtil;
     transactionEventRepository: ITransactionEventRepository;
     transactionService: TransactionService;
@@ -88,7 +89,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
     this._chargingProfileRepository = chargingProfileRepository;
     this._costCalculator = costCalculator;
     this._costNotifier = costNotifier;
-    this._deviceModelRepository = deviceModelRepository;
+    this._variableAttributeRepository = variableAttributeRepository;
     this._signedMeterValuesUtil = signedMeterValuesUtil;
     this._transactionEventRepository = transactionEventRepository;
     this._transactionService = transactionService;
@@ -176,6 +177,23 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
       }
       throw error;
     }
+
+    const timeSpentCharging = await this.resolveTimeSpentCharging(
+      tenantId,
+      ocppConnectionName,
+      transactionId,
+      transactionEvent,
+    );
+    if (timeSpentCharging != null && timeSpentCharging !== transaction.timeSpentCharging) {
+      transaction.timeSpentCharging = timeSpentCharging;
+      await this._transactionEventRepository.updateTransactionByStationIdAndTransactionId(
+        tenantId,
+        { timeSpentCharging },
+        transactionId,
+        ocppConnectionName,
+      );
+    }
+
     if (message.payload.reservationId) {
       await this._transactionService.deactivateReservation(
         tenantId,
@@ -318,8 +336,8 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
       // Fall back to PaymentCtrlr.AuthorizationAmount if no QR limits were found
       if (!ocpp21Response.transactionLimit) {
         try {
-          const authAmountAttributes: VariableAttribute[] =
-            await this._deviceModelRepository.readAllByQuerystring(tenantId, {
+          const authAmountAttributes: VariableAttributeDto[] =
+            await this._variableAttributeRepository.readAllByQuerystring(tenantId, {
               tenantId,
               ocppConnectionName,
               component_name: 'PaymentCtrlr',
@@ -398,8 +416,8 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
       }
 
       // I06 - Update Tariff Information During Transaction
-      const tariffAvailableAttributes: VariableAttribute[] =
-        await this._deviceModelRepository.readAllByQuerystring(tenantId, {
+      const tariffAvailableAttributes: VariableAttributeDto[] =
+        await this._variableAttributeRepository.readAllByQuerystring(tenantId, {
           tenantId,
           ocppConnectionName: ocppConnectionName,
           component_name: 'TariffCostCtrlr',
@@ -508,8 +526,8 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
         transactionEvent.triggerReason === OCPP2_1.TriggerReasonEnumType.EVConnectTimeout) &&
       (!transaction.totalKwh || transaction.totalKwh <= 0)
     ) {
-      const tariffEnabled: VariableAttribute[] =
-        await this._deviceModelRepository.readAllByQuerystring(tenantId, {
+      const tariffEnabled: VariableAttributeDto[] =
+        await this._variableAttributeRepository.readAllByQuerystring(tenantId, {
           tenantId,
           ocppConnectionName: message.context.ocppConnectionName,
           component_name: 'TariffCostCtrlr',
@@ -539,8 +557,8 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
     // C21.FR.05/FR.06: If SettlementByCSMS is true and transaction ended, CSMS should settle with PSP
     if (message.payload.eventType === TransactionEventEnum.Ended && transaction) {
       try {
-        const settlementByCSMSAttributes: VariableAttribute[] =
-          await this._deviceModelRepository.readAllByQuerystring(tenantId, {
+        const settlementByCSMSAttributes: VariableAttributeDto[] =
+          await this._variableAttributeRepository.readAllByQuerystring(tenantId, {
             tenantId,
             ocppConnectionName,
             component_name: 'PaymentCtrlr',
@@ -619,6 +637,32 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
         message.protocol,
       );
     }
+  }
+
+  /**
+   * Seconds energy has actually flowed in this transaction:
+   *  - what the station reported on this event,
+   *  - else its chargingState timeline,
+   *  - else the rise of its energy register.
+   *  Undefined when none can, which leaves any stored value untouched.
+   */
+  private async resolveTimeSpentCharging(
+    tenantId: number,
+    ocppConnectionName: string,
+    transactionId: string,
+    transactionEvent: OCPP2_request_types.TransactionEventRequest,
+  ): Promise<number | undefined> {
+    const reported = transactionEvent.transactionInfo.timeSpentCharging;
+    if (reported != null) {
+      return reported;
+    }
+
+    const events = await this._transactionEventRepository.readAllByStationIdAndTransactionId(
+      tenantId,
+      ocppConnectionName,
+      transactionId,
+    );
+    return deriveTimeSpentChargingSeconds(events);
   }
 
   protected async deactivateOtherActiveTransactionsAtEvse201(

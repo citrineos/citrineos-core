@@ -16,7 +16,7 @@ import {
   OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/types';
-import type { IDeviceModelRepository, ITransactionEventRepository } from '@citrineos/dal';
+import type { IVariableAttributeRepository, ITransactionEventRepository } from '@citrineos/dal';
 import { NotifySettlementRequestOcpp21Handler } from '@handlers/index.js';
 import { createTestContainer, makeMockOcppSender } from '@test/test-container.js';
 
@@ -62,7 +62,7 @@ function makeHandler(
     updateTransactionByStationIdAndTransactionId: vi.fn().mockResolvedValue({}),
   };
 
-  const deviceModelRepository = {
+  const variableAttributeRepository = {
     readAllByQuerystring: overrides.deviceModelError
       ? vi.fn().mockRejectedValue(overrides.deviceModelError)
       : vi.fn().mockResolvedValue(overrides.receiptByCSMSAttributes ?? []),
@@ -72,12 +72,13 @@ function makeHandler(
     logger,
     ocppSender,
     config: overrides.config ?? makeConfig('https://receipts.example.com'),
-    deviceModelRepository: deviceModelRepository as unknown as IDeviceModelRepository,
+    variableAttributeRepository:
+      variableAttributeRepository as unknown as IVariableAttributeRepository,
     transactionEventRepository:
       transactionEventRepository as unknown as ITransactionEventRepository,
   });
 
-  return { handler, ocppSender, logger, transactionEventRepository, deviceModelRepository };
+  return { handler, ocppSender, logger, transactionEventRepository, variableAttributeRepository };
 }
 
 function sentResponse(
@@ -110,7 +111,7 @@ const settledRequest: OCPP2_1.NotifySettlementRequest = {
 describe('NotifySettlementRequestOcpp21Handler', () => {
   describe('receipt generation (C21.FR.03)', () => {
     it('returns receiptUrl and receiptId when Settled and ReceiptByCSMS is true', async () => {
-      const { handler, ocppSender, deviceModelRepository } = makeHandler({
+      const { handler, ocppSender, variableAttributeRepository } = makeHandler({
         receiptByCSMSAttributes: [{ value: 'true' }],
       });
       const message = makeMessage(settledRequest);
@@ -119,19 +120,22 @@ describe('NotifySettlementRequestOcpp21Handler', () => {
 
       const response = sentResponse(ocppSender);
       expect(response).toEqual({
-        receiptId: 'station-001-txn-001-psp-123',
+        receiptId: '4Swy6Bf0ouOjsSjjcWgtb00X9UEcWWvYG3rPs93I5_8',
         receiptUrl: 'https://receipts.example.com/station-001-txn-001-psp-123',
       });
       expect(ocppSender.sendCallResultWithMessage.mock.calls[0][0]).toBe(message);
 
-      expect(deviceModelRepository.readAllByQuerystring).toHaveBeenCalledOnce();
-      expect(deviceModelRepository.readAllByQuerystring).toHaveBeenCalledWith(DEFAULT_TENANT_ID, {
-        tenantId: DEFAULT_TENANT_ID,
-        ocppConnectionName: 'station-001',
-        component_name: 'PaymentCtrlr',
-        variable_name: 'ReceiptByCSMS',
-        type: AttributeEnum.Actual,
-      });
+      expect(variableAttributeRepository.readAllByQuerystring).toHaveBeenCalledOnce();
+      expect(variableAttributeRepository.readAllByQuerystring).toHaveBeenCalledWith(
+        DEFAULT_TENANT_ID,
+        {
+          tenantId: DEFAULT_TENANT_ID,
+          ocppConnectionName: 'station-001',
+          component_name: 'PaymentCtrlr',
+          variable_name: 'ReceiptByCSMS',
+          type: AttributeEnum.Actual,
+        },
+      );
 
       // The generated URL is then pushed to the station display.
       const displayCall = sentDisplayCall(ocppSender);
@@ -148,7 +152,7 @@ describe('NotifySettlementRequestOcpp21Handler', () => {
       await handler.handle(makeMessage({ ...settledRequest, transactionId: undefined }));
 
       const response = sentResponse(ocppSender);
-      expect(response.receiptId).toBe('station-001-psp-123');
+      expect(response.receiptId).toBe('CykjsHKl98MfRCIi4xD7Dvtm_95qwO1FXVSrrKOuQ08');
       expect(response.receiptUrl).toBe('https://receipts.example.com/station-001-psp-123');
       expect(
         transactionEventRepository.readTransactionByStationIdAndTransactionId,
@@ -158,7 +162,7 @@ describe('NotifySettlementRequestOcpp21Handler', () => {
       ).not.toHaveBeenCalled();
     });
 
-    it('percent-encodes the receiptId in the receiptUrl', async () => {
+    it('percent-encodes the receipt reference in the receiptUrl', async () => {
       const { handler, ocppSender } = makeHandler({
         receiptByCSMSAttributes: [{ value: 'true' }],
       });
@@ -166,7 +170,7 @@ describe('NotifySettlementRequestOcpp21Handler', () => {
       await handler.handle(makeMessage({ ...settledRequest, pspRef: 'psp/123' }));
 
       const response = sentResponse(ocppSender);
-      expect(response.receiptId).toBe('station-001-txn-001-psp/123');
+      expect(response.receiptId).toBe('gyDgAMHg-sbdH2qzlRrsiC-1ycpH8FnTZFwqfaY2qPM');
       expect(response.receiptUrl).toBe(
         'https://receipts.example.com/station-001-txn-001-psp%2F123',
       );
@@ -259,8 +263,13 @@ describe('NotifySettlementRequestOcpp21Handler', () => {
     });
 
     it('stores a Rejected settlement without receipt fields and skips receipt generation (C22.FR.01)', async () => {
-      const { handler, ocppSender, logger, transactionEventRepository, deviceModelRepository } =
-        makeHandler({ receiptByCSMSAttributes: [{ value: 'true' }] });
+      const {
+        handler,
+        ocppSender,
+        logger,
+        transactionEventRepository,
+        variableAttributeRepository,
+      } = makeHandler({ receiptByCSMSAttributes: [{ value: 'true' }] });
 
       await handler.handle(
         makeMessage({
@@ -281,7 +290,7 @@ describe('NotifySettlementRequestOcpp21Handler', () => {
       expect(settlement).not.toHaveProperty('vatNumber');
 
       expect(sentResponse(ocppSender)).toEqual({});
-      expect(deviceModelRepository.readAllByQuerystring).not.toHaveBeenCalled();
+      expect(variableAttributeRepository.readAllByQuerystring).not.toHaveBeenCalled();
       expect(ocppSender.sendCall).not.toHaveBeenCalled();
       expect(logger.warn).toHaveBeenCalledOnce();
     });
@@ -318,7 +327,9 @@ describe('NotifySettlementRequestOcpp21Handler', () => {
       expect(logger.error.mock.calls[0][0]).toBe(
         'Failed to store settlement data for transaction txn-001',
       );
-      expect(sentResponse(ocppSender).receiptId).toBe('station-001-txn-001-psp-123');
+      expect(sentResponse(ocppSender).receiptId).toBe(
+        '4Swy6Bf0ouOjsSjjcWgtb00X9UEcWWvYG3rPs93I5_8',
+      );
     });
   });
 
@@ -358,7 +369,9 @@ describe('NotifySettlementRequestOcpp21Handler', () => {
 
       await handler.handle(makeMessage(settledRequest));
 
-      expect(sentResponse(ocppSender).receiptId).toBe('station-001-txn-001-psp-123');
+      expect(sentResponse(ocppSender).receiptId).toBe(
+        '4Swy6Bf0ouOjsSjjcWgtb00X9UEcWWvYG3rPs93I5_8',
+      );
       expect(logger.error).toHaveBeenCalledOnce();
       expect(logger.error.mock.calls[0][0]).toBe(
         'Failed to send SetDisplayMessageRequest to station station-001',

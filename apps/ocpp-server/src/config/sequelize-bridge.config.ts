@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { ConfigLoader } from '@citrineos/base';
-import 'ts-node/register';
 
 export default (async () => {
   try {

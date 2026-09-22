@@ -63,6 +63,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { type CallbackUrlNotifier } from './callback-url-notifier.js';
 import { buildConnectionEvent, buildFrameEvent, MessagesExchangeSink } from '@/transport/index.js';
 
+const OUTSTANDING_CALL_CACHE_KEY = 'outstanding-csms-call';
+
 /**
  * Implementation of the ocpp router
  */
@@ -418,7 +420,15 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
 
     const message = new Call(correlationId, action, payload);
     if (await this._sendCallIsAllowed(identifier, protocol, message)) {
-      if (!(await this._cache.existsAnyInNamespace(transactionNamespace))) {
+      if (
+        await this._cache.setIfNotExist(
+          OUTSTANDING_CALL_CACHE_KEY,
+          correlationId,
+          transactionNamespace,
+          this._config.timeouts.maxCallLengthSeconds,
+        )
+      ) {
+        await this._allowTriggeredActionWhilePending(identifier, action, payload);
         const cacheTimestamp = new Date();
         await this._cache.set(
           correlationId,
@@ -447,6 +457,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         } else {
           recordOcppCallSent(String(action), protocol, CallSentOutcome.SendFailed);
           const removed = await this._cache.remove(correlationId, transactionNamespace);
+          await this._releaseOutstandingCall(identifier);
           this._logger.warn(
             `Failed to send call, removed from cache: ${removed}`,
             identifier,
@@ -768,6 +779,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         { maxCallLengthSeconds: this._config.timeouts.maxCallLengthSeconds },
       );
     }
+    await this._releaseOutstandingCall(identifier);
 
     const [action, cachedTimestamp] = cachedActionTimestamp.split(/@(.*)/); // Returns all characters after first '@'
     recordOcppCallRoundtripDuration(
@@ -851,6 +863,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         { maxCallLengthSeconds: this._config.timeouts.maxCallLengthSeconds },
       );
     }
+    await this._releaseOutstandingCall(identifier);
 
     const [action, cachedTimestamp] = cachedActionTimestamp.split(/@(.*)/); // Returns all characters after first '@'
     recordOcppCallRoundtripDuration(
@@ -955,6 +968,14 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     return sentTimestamp;
   }
 
+  private async _releaseOutstandingCall(identifier: string): Promise<void> {
+    await this._cache
+      .remove(OUTSTANDING_CALL_CACHE_KEY, CacheNamespace.Transactions + identifier)
+      .catch((err) => {
+        this._logger.error('Failed to release the outstanding call', identifier, err);
+      });
+  }
+
   private async _sendCallIsAllowed(
     identifier: string,
     protocol: OCPPVersionType,
@@ -970,6 +991,40 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
           OCPP2_1.MessageTriggerEnumType.BootNotification
       )
     );
+  }
+
+  private async _allowTriggeredActionWhilePending(
+    identifier: string,
+    action: CallAction,
+    payload: OcppRequest,
+  ): Promise<void> {
+    const triggeredAction = this._actionTriggeredBy(action, payload);
+    if (!triggeredAction) {
+      return;
+    }
+    const status = await this._cache.get<string>(CacheNamespace.BootStatus, identifier);
+    if (status === OCPP2_1.RegistrationStatusEnumType.Pending) {
+      await this._cache.remove(triggeredAction, identifier);
+    }
+  }
+
+  private _actionTriggeredBy(action: CallAction, payload: OcppRequest): string | undefined {
+    if (action === OCPP_CallAction.GetBaseReport || action === OCPP_CallAction.GetReport) {
+      return OCPP_CallAction.NotifyReport;
+    }
+    if (action !== OCPP_CallAction.TriggerMessage) {
+      return undefined;
+    }
+    const requestedMessage = (payload as OCPP2_1.TriggerMessageRequest).requestedMessage;
+    switch (requestedMessage) {
+      case OCPP2_1.MessageTriggerEnumType.SignChargingStationCertificate:
+      case OCPP2_1.MessageTriggerEnumType.SignV2GCertificate:
+      case OCPP2_1.MessageTriggerEnumType.SignV2G20Certificate:
+      case OCPP2_1.MessageTriggerEnumType.SignCombinedCertificate:
+        return OCPP_CallAction.SignCertificate;
+      default:
+        return requestedMessage;
+    }
   }
 
   private async _routeCall(

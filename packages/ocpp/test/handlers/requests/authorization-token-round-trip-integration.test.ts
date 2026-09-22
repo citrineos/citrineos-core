@@ -153,7 +153,7 @@ describe('A depot vehicle token, enrolled once and presented by a charger', () =
       authorizationRepository,
       // Neither is reachable for a token carrying no certificate and no EVSE restrictions.
       certificateAuthorityService: {} as never,
-      deviceModelRepository: { readAllByQuerystring: async () => [] } as never,
+      variableAttributeRepository: { readAllByQuerystring: async () => [] } as never,
     });
 
     await handler.handle(anOcpp201Authorize(idToken, type) as never);

@@ -67,6 +67,22 @@ export class SequelizeLocalAuthListRepository
       }),
     );
     for (const authData of localAuthorizationList ?? []) {
+      if (updateType === OCPP2_0_1.UpdateEnumType.Differential && !authData.idTokenInfo) {
+        const tombstone = await this.localListAuthorization.create(
+          tenantId,
+          LocalListAuthorization.build({
+            idToken: authData.idToken.idToken,
+            idTokenType: AuthorizationMapper.fromIdTokenEnumType(authData.idToken.type),
+            status: 'Invalid',
+          }),
+        );
+        await SendLocalListAuthorization.create({
+          tenantId,
+          sendLocalListId: sendLocalList.id,
+          authorizationId: tombstone.id,
+        });
+        continue;
+      }
       const auth = await Authorization.findOne({
         where: {
           tenantId,
@@ -100,6 +116,7 @@ export class SequelizeLocalAuthListRepository
       const localListAuthorization = await this.localListAuthorization.create(
         tenantId,
         LocalListAuthorization.build({
+          tenantId,
           authorizationId: auth.id,
           idToken: auth.idToken,
           idTokenType: auth.idTokenType,
@@ -156,16 +173,35 @@ export class SequelizeLocalAuthListRepository
       }
 
       // For DIFFERENTIAL deletes the spec allows entries with no idTagInfo.
-      // These are recorded as tombstones (status Invalid) so the response handler
-      // can drop the matching authorization from LocalListVersion.
+      // These are recorded as pure tombstones (status Invalid, no linked
+      // Authorization) so the response handler drops the matching authorization
+      // from LocalListVersion instead of re-inserting it as Invalid.
       const isDelete =
         updateType === OCPP1_6.SendLocalListRequestUpdateType.Differential && !authData.idTagInfo;
+
+      if (isDelete) {
+        const tombstone = await this.localListAuthorization.create(
+          tenantId,
+          LocalListAuthorization.build({
+            tenantId,
+            idToken: authData.idTag,
+            idTokenType: null,
+            status: 'Invalid',
+          }),
+        );
+        await SendLocalListAuthorization.create({
+          tenantId,
+          sendLocalListId: sendLocalList.id,
+          authorizationId: tombstone.id,
+        });
+        continue;
+      }
 
       const auth = await Authorization.findOne({
         where: { tenantId, idToken: authData.idTag },
       });
 
-      if (!auth && !isDelete) {
+      if (!auth) {
         throw new Error(
           `Authorization not found for idTag '${authData.idTag}' (create the Authorization before adding it to a local auth list)`,
         );
@@ -184,30 +220,21 @@ export class SequelizeLocalAuthListRepository
         groupAuthorizationId = parent.id;
       }
 
-      const baseFields = auth
-        ? (() => {
-            const { id: _id, ...rest } = auth;
-            return rest;
-          })()
-        : {
-            idToken: authData.idTag,
-            idTokenType: null,
-          };
+      const { id: _id, ...baseFields } = auth;
 
       const localListAuthorization = await this.localListAuthorization.create(
         tenantId,
         LocalListAuthorization.build({
           ...baseFields,
+          tenantId,
           idToken: authData.idTag,
           idTokenType: null,
-          status: isDelete
-            ? 'Invalid'
-            : LocalAuthListMapper.fromIdTagStatus(
-                authData.idTagInfo?.status ?? OCPP1_6.SendLocalListRequestStatus.Accepted,
-              ),
+          status: LocalAuthListMapper.fromIdTagStatus(
+            authData.idTagInfo?.status ?? OCPP1_6.SendLocalListRequestStatus.Accepted,
+          ),
           cacheExpiryDateTime: authData.idTagInfo?.expiryDate ?? null,
           groupAuthorizationId: groupAuthorizationId ?? null,
-          authorizationId: auth?.id,
+          authorizationId: auth.id,
         }),
       );
 
@@ -387,7 +414,7 @@ export class SequelizeLocalAuthListRepository
       }
 
       for (const sendAuth of sendLocalList.localAuthorizationList) {
-        // 1.6 differential delete: tombstone rows have no linked Authorization and status 'Invalid'.
+        // Differential delete: tombstone rows have no linked Authorization and status 'Invalid'.
         // Drop existing entries on the version that match the tombstone's idToken and skip insertion.
         const isTombstone = !sendAuth.authorizationId && sendAuth.status === 'Invalid';
 

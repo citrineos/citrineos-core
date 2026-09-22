@@ -3,9 +3,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { ChargingStation, Connector, Location } from '@dal/db/sequelize/index.js';
+import {
+  ChargingStation,
+  Connector,
+  Evse,
+  Location,
+  StatusNotification,
+} from '@dal/db/sequelize/index.js';
 import { OCPPVersion, type StatusNotificationDto, type SystemConfig } from '@citrineos/types';
-import { Evse, SequelizeLocationRepository, StatusNotification } from '../../../index.js';
+import { SequelizeLocationRepository } from '../../../index.js';
 import { LatestStatusNotification } from '@dal/models/location/latest-status-notification.js';
 import { type PgHarness, resetDb, startPgHarness } from '../../utils/pg-harness.js';
 

@@ -18,6 +18,7 @@ describe(`POST ${URL}`, () => {
   const STATION_ID = 'CS-001';
   const EVSE_ID = 1;
   const SHARED_SECRET = '12345678901234567890';
+  const WEB_PAYMENTS_CTRLR = { SharedSecret: SHARED_SECRET, ValidityTime: '30', Length: '8' };
 
   const { container, logger } = createTestContainer();
 
@@ -38,7 +39,7 @@ describe(`POST ${URL}`, () => {
     const endpoint = getTestInstance(container, InitiateWebPaymentEndpoint, {
       ocppSender: { sendCall },
       cache: { set: cacheSet },
-      deviceModelRepository: { readAllByQuerystring },
+      variableAttributeRepository: { readAllByQuerystring },
       chargingStationRepository: { readChargingStationByOcppConnectionName },
     });
 
@@ -53,8 +54,16 @@ describe(`POST ${URL}`, () => {
 
   afterEach(async () => {
     vi.restoreAllMocks();
+    vi.useRealTimers();
     await server.close();
   });
+
+  function givenWebPaymentsCtrlr(values: Record<string, string>) {
+    readAllByQuerystring.mockImplementation(
+      async (_tenantId: number, query: { variable_name: string }) =>
+        values[query.variable_name] === undefined ? [] : [{ value: values[query.variable_name] }],
+    );
+  }
 
   describe('request schema validation', () => {
     it('returns 400 when identifier is missing', async () => {
@@ -149,11 +158,38 @@ describe(`POST ${URL}`, () => {
         type: AttributeEnum.Actual,
       });
     });
+
+    it.each(['ValidityTime', 'Length'])(
+      'returns 503 when WebPaymentsCtrlr.%s is not configured',
+      async (variableName) => {
+        givenWebPaymentsCtrlr(
+          Object.fromEntries(
+            Object.entries(WEB_PAYMENTS_CTRLR).filter(([name]) => name !== variableName),
+          ),
+        );
+
+        const res = await server.inject({
+          method: 'POST',
+          url: URL,
+          payload: { identifier: STATION_ID, evseId: EVSE_ID, totp: '123456' },
+        });
+
+        expect(res.statusCode).toBe(503);
+        expect(res.json()).toMatchObject({ error: 'Web payment not configured for this station.' });
+        expect(readAllByQuerystring).toHaveBeenCalledWith(DEFAULT_TENANT_ID, {
+          tenantId: DEFAULT_TENANT_ID,
+          ocppConnectionName: STATION_ID,
+          component_name: 'WebPaymentsCtrlr',
+          variable_name: variableName,
+          type: AttributeEnum.Actual,
+        });
+      },
+    );
   });
 
   describe('TOTP validation (C25.FR.07-09)', () => {
     beforeEach(() => {
-      readAllByQuerystring.mockResolvedValue([{ value: SHARED_SECRET }]);
+      givenWebPaymentsCtrlr(WEB_PAYMENTS_CTRLR);
     });
 
     it('returns 401 when TOTP is invalid', async () => {
@@ -184,7 +220,7 @@ describe(`POST ${URL}`, () => {
       expect(sendCall).not.toHaveBeenCalled();
     });
 
-    it('calls TotpUtil.validate with the shared secret and the provided totp', async () => {
+    it('calls TotpUtil.validate with the shared secret, the provided totp, ValidityTime and Length', async () => {
       vi.spyOn(TotpUtil, 'validate').mockReturnValue(false);
 
       await server.inject({
@@ -193,13 +229,27 @@ describe(`POST ${URL}`, () => {
         payload: { identifier: STATION_ID, evseId: EVSE_ID, totp: '654321' },
       });
 
-      expect(TotpUtil.validate).toHaveBeenCalledWith(SHARED_SECRET, '654321');
+      expect(TotpUtil.validate).toHaveBeenCalledWith(SHARED_SECRET, '654321', 30, 8);
+    });
+
+    it('accepts the TOTP v1 token of the current interval', async () => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(1_700_000_000_000);
+      givenWebPaymentsCtrlr({ SharedSecret: 'mysharedsecret', ValidityTime: '30', Length: '8' });
+
+      const res = await server.inject({
+        method: 'POST',
+        url: URL,
+        payload: { identifier: STATION_ID, evseId: EVSE_ID, totp: 'Mrc351Gu' },
+      });
+
+      expect(res.statusCode).toBe(200);
     });
   });
 
   describe('successful initiation', () => {
     beforeEach(() => {
-      readAllByQuerystring.mockResolvedValue([{ value: SHARED_SECRET }]);
+      givenWebPaymentsCtrlr(WEB_PAYMENTS_CTRLR);
       vi.spyOn(TotpUtil, 'validate').mockReturnValue(true);
     });
 

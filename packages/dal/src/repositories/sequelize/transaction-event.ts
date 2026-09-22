@@ -4,6 +4,7 @@
 import { CrudRepository, MeterValueUtils } from '@citrineos/base';
 import {
   type MeterValueDto,
+  type TransactionDto,
   ChargingStationSequenceTypeEnum,
   OCPP1_6,
   OCPP2_0_1,
@@ -49,6 +50,19 @@ function elapsedSecondsSinceStart(
   }
 
   return Math.max(0, Math.floor((latestMeterValueTimestamp - startTimestamp) / 1000));
+}
+
+/**
+ * Avoid to overwrite timeSpentCharging to null
+ */
+function transactionInfoForRow<T extends { timeSpentCharging?: number | null }>(
+  transactionInfo: T,
+): T | Omit<T, 'timeSpentCharging'> {
+  if (transactionInfo.timeSpentCharging != null) {
+    return transactionInfo;
+  }
+  const { timeSpentCharging: _unreported, ...rest } = transactionInfo;
+  return rest;
 }
 
 export class SequelizeTransactionEventRepository
@@ -131,7 +145,8 @@ export class SequelizeTransactionEventRepository
     ocppConnectionName: string,
   ): Promise<Transaction> {
     // In OCPP 2.1, transactionEventRequest contains tariffId
-    const infoTariffId = (value.transactionInfo as { tariffId?: string | null }).tariffId;
+    const { tariffId: infoTariffId, ...transactionInfo } =
+      value.transactionInfo as typeof value.transactionInfo & { tariffId?: string | null };
     const stationId = await resolveStationIdOrThrow(
       tenantId,
       ocppConnectionName,
@@ -221,7 +236,7 @@ export class SequelizeTransactionEventRepository
               value.eventType === OCPP2_0_1.TransactionEventEnumType.Ended
                 ? value.timestamp
                 : undefined,
-            ...value.transactionInfo,
+            ...transactionInfoForRow(transactionInfo),
             authorizationId,
             evseId,
             connectorId,
@@ -232,6 +247,12 @@ export class SequelizeTransactionEventRepository
           },
         );
       } else {
+        const infoTariff = infoTariffId
+          ? await Tariff.findOne({
+              where: { tariffId: infoTariffId, tenantId },
+              transaction: sequelizeTransaction,
+            })
+          : null;
         const newTransaction = Transaction.build({
           tenantId,
           stationId,
@@ -240,7 +261,8 @@ export class SequelizeTransactionEventRepository
             value.eventType === OCPP2_0_1.TransactionEventEnumType.Started
               ? value.timestamp
               : undefined,
-          ...value.transactionInfo,
+          ...transactionInfoForRow(transactionInfo),
+          tariffId: infoTariff?.id,
         });
 
         if (value.evse) {
@@ -268,15 +290,7 @@ export class SequelizeTransactionEventRepository
               include: [Tariff],
             });
             newTransaction.set('connectorId', connector.id);
-            if (infoTariffId) {
-              const tariff = await Tariff.findOne({
-                where: { tariffId: infoTariffId, tenantId },
-                transaction: sequelizeTransaction,
-              });
-              newTransaction.set('tariffId', tariff?.id ?? connector.tariff?.id);
-            } else {
-              newTransaction.set('tariffId', connector.tariff?.id);
-            }
+            newTransaction.set('tariffId', infoTariff?.id ?? connector.tariff?.id);
           }
         }
 
@@ -422,7 +436,7 @@ export class SequelizeTransactionEventRepository
     return await super
       .readAllByQuery(tenantId, {
         where: { ocppConnectionName: ocppConnectionName },
-        include: [{ model: Transaction, where: { transactionId } }, MeterValue, Evse],
+        include: [{ model: Transaction, where: { transactionId } }, MeterValue, EvseType],
       })
       .then((transactionEvents) => {
         transactionEvents?.forEach(
@@ -480,6 +494,42 @@ export class SequelizeTransactionEventRepository
     return await this.transaction.readAllByQuery(tenantId, {
       where: { isActive: true, authorizationId },
     });
+  }
+
+  async readActiveTransactionsWithTariffAndEvseByStationId(
+    tenantId: number,
+    ocppConnectionName: string,
+    evseTypeId?: number,
+  ): Promise<TransactionDto[]> {
+    const rows = await this.transaction.readAllByQuery(tenantId, {
+      where: {
+        stationId: await stationIdFilter(tenantId, ocppConnectionName),
+        isActive: true,
+        authorizationId: { [Op.ne]: null },
+      },
+      include: [
+        {
+          model: Authorization,
+          as: 'authorization',
+          required: true,
+          where: { tariffId: { [Op.ne]: null } },
+          include: [
+            {
+              model: Tariff,
+              as: 'tariff',
+              required: true,
+            },
+          ],
+        },
+        {
+          model: Evse,
+          as: 'evse',
+          required: true,
+          ...(evseTypeId !== undefined ? { where: { evseTypeId } } : {}),
+        },
+      ],
+    });
+    return rows as unknown as TransactionDto[];
   }
 
   async readAllMeterValuesByTransactionDataBaseId(

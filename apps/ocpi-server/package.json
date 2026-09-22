@@ -1,5 +1,5 @@
 {
-  "name": "@citrineos/ocpi-demo",
+  "name": "@citrineos/ocpi-server",
   "version": "3.0.0-beta4",
   "description": "CitrineOS OCPI server",
   "main": "dist/index.js",
@@ -49,6 +49,8 @@
     "cross-env": "catalog:",
     "fastify": "catalog:",
     "sequelize": "catalog:",
+    "sequelize-cli": "^6.6.2",
+    "sequelize-typescript": "catalog:",
     "sqlite3": "catalog:",
     "tslog": "catalog:",
     "uuid": "catalog:"

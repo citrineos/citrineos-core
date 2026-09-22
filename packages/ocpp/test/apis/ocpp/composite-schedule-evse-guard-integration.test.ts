@@ -6,7 +6,6 @@ import { GetCompositeScheduleEndpoint } from '@/apis/ocpp/2/smart-charging/get-c
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import {
   DefaultSequelizeInstance,
-  Evse,
   EvseType,
   SequelizeDeviceModelRepository,
   SequelizeLocationRepository,
@@ -87,11 +86,10 @@ async function aStationWithEvses(ocppConnectionName: string, evseNumbers: number
       where: { tenantId: DEFAULT_TENANT_ID, id: evseNumber, connectorId: null },
       defaults: { tenantId: DEFAULT_TENANT_ID, id: evseNumber, connectorId: null } as never,
     });
-    await Evse.create({
-      tenantId: DEFAULT_TENANT_ID,
+    await locationRepository.createOrUpdateEvse(DEFAULT_TENANT_ID, {
       stationId,
       evseTypeId: evseNumber,
-    } as never);
+    });
   }
 }
 

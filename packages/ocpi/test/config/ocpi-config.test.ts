@@ -278,9 +278,24 @@ describe('defineOcpiConfig', () => {
     expect(defineOcpiConfig(aFullConfig()).database.password).toBe('from-env');
   });
 
-  // Only an all-lowercase leaf key works here: the merge writes camelCase
-  // leaves (exposeData, logLevel, ...) under a lowercased name that the
-  // schema strips — see define-ocpi-config.ts:108.
+  it('overrides a camelCase leaf key', () => {
+    setEnv('CITRINEOS_OCPI_LOGLEVEL', '4');
+
+    expect(defineOcpiConfig(aFullConfig()).logLevel).toBe(4);
+  });
+
+  it('overrides a camelCase leaf nested under an object', () => {
+    setEnv('CITRINEOS_OCPI_SWAGGER_EXPOSEDATA', 'false');
+
+    const config = defineOcpiConfig({
+      ...aFullConfig(),
+      swagger: { path: '/docs', logoPath: '/logo.png', exposeData: true, exposeMessage: true },
+    });
+
+    expect(config.swagger!.exposeData).toBe(false);
+    expect(config.swagger!.exposeMessage).toBe(true);
+  });
+
   it('coerces "false" to a boolean', () => {
     setEnv('CITRINEOS_OCPI_CACHE_MEMORY', 'false');
 

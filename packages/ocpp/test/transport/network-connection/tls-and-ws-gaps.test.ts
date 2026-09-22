@@ -210,13 +210,38 @@ describe('CertificateUtil gaps', () => {
       expect(cert.getNotAfter()).toBe('270305060708Z');
       expect(cert.getExtBasicConstraints()).toEqual({
         extname: 'basicConstraints',
+        critical: true,
         cA: true,
         pathLen: 2,
       });
       // isCA branch: keyEncipherment must not be granted to a CA
       expect(cert.getExtKeyUsage().names).not.toContain('keyEncipherment');
+      expect(cert.getExtKeyUsage().names).toContain('cRLSign');
       expect(keyPem).toContain(pemMarker('PRIVATE KEY', 'BEGIN'));
       expect(isSignedBy(certPem, certPem)).toBe(true);
+    });
+
+    it('keeps pathLen 0 so the sub CA cannot issue further CAs', () => {
+      const input: CertificateGenerationInput = {
+        signatureAlgorithm: SignatureAlgorithmEnumType.ECDSA,
+        commonName: 'Test SubCA',
+        organizationName: 'S44',
+        countryName: 'US',
+        isCA: true,
+        pathLen: 0,
+        validBefore: '2027-03-05T06:07:08.000Z',
+      } as CertificateGenerationInput;
+
+      const [certPem] = generateCertificate(input, logger);
+
+      const cert = new X509();
+      cert.readCertPEM(certPem);
+      expect(cert.getExtBasicConstraints()).toEqual({
+        extname: 'basicConstraints',
+        critical: true,
+        cA: true,
+        pathLen: 0,
+      });
     });
 
     it('caps validity at the issuer notAfter and chains to the issuer', () => {
@@ -260,7 +285,7 @@ describe('CertificateUtil gaps', () => {
         extname: 'basicConstraints',
         critical: true,
       });
-      expect(cert.getExtKeyUsage().names).toContain('keyEncipherment');
+      expect(cert.getExtKeyUsage().names).toEqual(['digitalSignature', 'keyEncipherment']);
       expect(keyPem).toContain(pemMarker('PRIVATE KEY', 'BEGIN'));
     });
   });

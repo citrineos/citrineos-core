@@ -414,6 +414,10 @@ class OcpiClientImpl implements OcpiClient {
 
     const oldPresentToken = reg.tokenWePresent;
     const newOurToken = uuid();
+    // As on the POST path, Citrine re-reads our versions with the new token while it is still
+    // handling the PUT, so it has to be accepted before the call goes out.
+    const previousAcceptToken = reg.tokenWeAccept;
+    reg.tokenWeAccept = newOurToken;
     const putEx = await this.call({
       method: 'PUT',
       url: reg.cpoCredentialsUrl,
@@ -430,6 +434,7 @@ class OcpiClientImpl implements OcpiClient {
     const data = asData(putEx.response.body);
     const okStatus = putEx.response.httpStatus >= 200 && putEx.response.httpStatus <= 299;
     if (!okStatus || !putEx.validation.ok || !data?.token) {
+      reg.tokenWeAccept = previousAcceptToken;
       throw new Error(
         `credentials PUT did not return a valid credentials object (HTTP ${putEx.response.httpStatus})`,
       );
@@ -446,7 +451,6 @@ class OcpiClientImpl implements OcpiClient {
     }
     // Swap only now: the PUT is confirmed accepted + schema-valid.
     reg.tokenWePresent = String(data.token);
-    reg.tokenWeAccept = newOurToken;
     reg.registeredAt = new Date().toISOString();
 
     // Stale-token probe: the OLD outbound token must now be rejected. 401 is

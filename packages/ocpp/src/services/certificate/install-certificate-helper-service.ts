@@ -22,7 +22,7 @@ import {
 import type {
   ICertificateRepository,
   IDeleteCertificateAttemptRepository,
-  IDeviceModelRepository,
+  IVariableAttributeRepository,
   IInstallCertificateAttemptRepository,
   IInstalledCertificateRepository,
 } from '@citrineos/dal';
@@ -52,7 +52,7 @@ export class InstallCertificateHelperService {
   protected installedCertificateRepository: IInstalledCertificateRepository;
   protected installCertificateAttemptRepository: IInstallCertificateAttemptRepository;
   protected deleteCertificateAttemptRepository: IDeleteCertificateAttemptRepository;
-  protected deviceModelRepository: IDeviceModelRepository;
+  protected variableAttributeRepository: IVariableAttributeRepository;
   protected certificateAuthorityService: CertificateAuthorityService;
   protected fileStorage: IFileStorage;
   protected logger: Logger<ILogObj>;
@@ -62,7 +62,7 @@ export class InstallCertificateHelperService {
     installedCertificateRepository,
     installCertificateAttemptRepository,
     deleteCertificateAttemptRepository,
-    deviceModelRepository,
+    variableAttributeRepository,
     certificateAuthorityService,
     fileStorage,
     logger,
@@ -71,7 +71,7 @@ export class InstallCertificateHelperService {
     installedCertificateRepository: IInstalledCertificateRepository;
     installCertificateAttemptRepository: IInstallCertificateAttemptRepository;
     deleteCertificateAttemptRepository: IDeleteCertificateAttemptRepository;
-    deviceModelRepository: IDeviceModelRepository;
+    variableAttributeRepository: IVariableAttributeRepository;
     certificateAuthorityService: CertificateAuthorityService;
     fileStorage: IFileStorage;
     logger: Logger<ILogObj>;
@@ -80,7 +80,7 @@ export class InstallCertificateHelperService {
     this.installedCertificateRepository = installedCertificateRepository;
     this.installCertificateAttemptRepository = installCertificateAttemptRepository;
     this.deleteCertificateAttemptRepository = deleteCertificateAttemptRepository;
-    this.deviceModelRepository = deviceModelRepository;
+    this.variableAttributeRepository = variableAttributeRepository;
     this.certificateAuthorityService = certificateAuthorityService;
     this.fileStorage = fileStorage;
     this.logger = logger;
@@ -182,7 +182,7 @@ export class InstallCertificateHelperService {
     }
 
     const [additionalRootCertificateCheckAttribute] =
-      await this.deviceModelRepository.readAllByQuerystring(tenantId, {
+      await this.variableAttributeRepository.readAllByQuerystring(tenantId, {
         tenantId,
         ocppConnectionName,
         component_name: 'SecurityCtrlr',
@@ -230,14 +230,23 @@ export class InstallCertificateHelperService {
     status: InstallCertificateStatusEnumType,
     requestId?: number,
     certificateType?: CertificateUseEnumType,
+    certificate?: string,
   ) {
     const existingPendingInstallCertificateAttempt =
-      await this.installCertificateAttemptRepository.findPendingByStation(
-        tenantId,
-        ocppConnectionName,
-        requestId,
-        certificateType,
-      );
+      certificate && certificateType
+        ? await this.installCertificateAttemptRepository.findPendingByStationTypeAndCertHash(
+            tenantId,
+            ocppConnectionName,
+            certificateType,
+            this.getCertificateHash(certificate),
+            requestId,
+          )
+        : await this.installCertificateAttemptRepository.findPendingByStation(
+            tenantId,
+            ocppConnectionName,
+            requestId,
+            certificateType,
+          );
     // should always be true
     if (existingPendingInstallCertificateAttempt) {
       await this.installCertificateAttemptRepository.updateStatus(
@@ -302,7 +311,7 @@ export class InstallCertificateHelperService {
   ): Promise<CertificateDto> {
     const certificateHash = this.getCertificateHash(certificate);
     const certificateFileId = await this.fileStorage.saveFile(
-      `Existing_Cert_${serialNumber}.pem`,
+      `Existing_Cert_${certificateHash}.pem`,
       Buffer.from(certificate),
     );
     return await this.certificateRepository.createCertificate(tenantId, {

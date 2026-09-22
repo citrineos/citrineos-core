@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { type IAuthorizer, type IMessage, DEFAULT_TENANT_ID } from '@citrineos/base';
-import type { IAuthorizationRepository, IDeviceModelRepository } from '@citrineos/dal';
+import type { IAuthorizationRepository, IVariableAttributeRepository } from '@citrineos/dal';
 import {
   type OcppRequest,
   AuthorizationStatusEnum,
@@ -38,10 +38,13 @@ function makeMessage<T extends OcppRequest>(payload: T): IMessage<T> {
 
 /**
  * Contract certificate validation runs before the authorization is ever looked up, so a rejected
- * certificate returns without touching the repositories. They are stubbed only to satisfy the
- * constructor.
+ * certificate returns without touching the repositories. The authorization is only supplied for
+ * the cases where the chain is valid.
  */
-function makeHandler(certificateAuthorityService: Partial<CertificateAuthorityService>) {
+function makeHandler(
+  certificateAuthorityService: Partial<CertificateAuthorityService>,
+  authorization?: object,
+) {
   const { logger } = createTestContainer();
   const ocppSender = makeMockOcppSender();
 
@@ -51,11 +54,11 @@ function makeHandler(certificateAuthorityService: Partial<CertificateAuthoritySe
     certificateAuthorityService: certificateAuthorityService as CertificateAuthorityService,
     authorizers: [] as IAuthorizer[],
     authorizationRepository: {
-      readOnlyOneByQuerystring: vi.fn(),
+      readOnlyOneByQuerystring: vi.fn().mockResolvedValue(authorization),
     } as unknown as IAuthorizationRepository,
-    deviceModelRepository: {
+    variableAttributeRepository: {
       readAllByQuerystring: vi.fn().mockResolvedValue([]),
-    } as unknown as IDeviceModelRepository,
+    } as unknown as IVariableAttributeRepository,
   } as never);
 
   return { handler, ocppSender };
@@ -163,5 +166,88 @@ describe('AuthorizeRequestOcpp201Handler contract certificate validation', () =>
     await handler.handle(makeMessage({ ...request, iso15118CertificateHashData: [] } as never));
 
     expect(sentResponse(ocppSender).idTokenInfo.status).toBe(AuthorizationStatusEnum.Invalid);
+  });
+
+  it('reports the token expired when the contract certificate has expired', async () => {
+    const { handler, ocppSender } = makeHandler({
+      validateCertificateChainPem: vi
+        .fn()
+        .mockResolvedValue(OCPP2_0_1.AuthorizeCertificateStatusEnumType.CertificateExpired),
+    } as unknown as Partial<CertificateAuthorityService>);
+
+    await handler.handle(
+      makeMessage({ ...request, certificate: A_CONTRACT_CERTIFICATE_CHAIN } as never),
+    );
+
+    const response = sentResponse(ocppSender);
+    expect(response.certificateStatus).toBe(
+      OCPP2_0_1.AuthorizeCertificateStatusEnumType.CertificateExpired,
+    );
+    expect(response.idTokenInfo.status).toBe(AuthorizationStatusEnum.Expired);
+  });
+
+  describe('with a valid contract certificate', () => {
+    const validChain = {
+      validateCertificateChainPem: vi
+        .fn()
+        .mockResolvedValue(OCPP2_0_1.AuthorizeCertificateStatusEnumType.Accepted),
+    } as unknown as Partial<CertificateAuthorityService>;
+
+    async function authorize(authorization?: object) {
+      const { handler, ocppSender } = makeHandler(validChain, authorization);
+      await handler.handle(
+        makeMessage({ ...request, certificate: A_CONTRACT_CERTIFICATE_CHAIN } as never),
+      );
+      return sentResponse(ocppSender);
+    }
+
+    it('cancels the contract of an eMAID the CSMS does not know', async () => {
+      const response = await authorize(undefined);
+
+      expect(response.certificateStatus).toBe(
+        OCPP2_0_1.AuthorizeCertificateStatusEnumType.ContractCancelled,
+      );
+      expect(response.idTokenInfo.status).toBe(AuthorizationStatusEnum.Unknown);
+    });
+
+    it('cancels the contract of a blocked eMAID', async () => {
+      const response = await authorize({
+        idToken: 'TAG001',
+        idTokenType: 'Central',
+        status: AuthorizationStatusEnum.Blocked,
+      });
+
+      expect(response.certificateStatus).toBe(
+        OCPP2_0_1.AuthorizeCertificateStatusEnumType.ContractCancelled,
+      );
+      expect(response.idTokenInfo.status).toBe(AuthorizationStatusEnum.Blocked);
+    });
+
+    it('cancels the contract of an eMAID whose authorization has lapsed', async () => {
+      const response = await authorize({
+        idToken: 'TAG001',
+        idTokenType: 'Central',
+        status: AuthorizationStatusEnum.Accepted,
+        cacheExpiryDateTime: '2000-01-01T00:00:00Z',
+      });
+
+      expect(response.certificateStatus).toBe(
+        OCPP2_0_1.AuthorizeCertificateStatusEnumType.ContractCancelled,
+      );
+      expect(response.idTokenInfo.status).toBe(AuthorizationStatusEnum.Invalid);
+    });
+
+    it('accepts the contract of an accepted eMAID', async () => {
+      const response = await authorize({
+        idToken: 'TAG001',
+        idTokenType: 'Central',
+        status: AuthorizationStatusEnum.Accepted,
+      });
+
+      expect(response.certificateStatus).toBe(
+        OCPP2_0_1.AuthorizeCertificateStatusEnumType.Accepted,
+      );
+      expect(response.idTokenInfo.status).toBe(AuthorizationStatusEnum.Accepted);
+    });
   });
 });

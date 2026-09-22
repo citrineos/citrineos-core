@@ -295,9 +295,7 @@ describe('getConnectorById', () => {
 
     const document = documentFrom(request);
     expect(document).toContain('query GetConnectorById(');
-    expect(document).toContain(
-      'connectors: Connectors(where: { connectorId: { _eq: $connectorId } })',
-    );
+    expect(document).toContain('connectors: Connectors(where: { id: { _eq: $connectorId } })');
     expect(request.mock.calls[0][1]).toMatchObject({
       locationId: 7,
       stationId: 'cs-001',

@@ -145,10 +145,14 @@ describe('ConnectorMapper', () => {
     [ConnectorTypeEnum.DomesticA, ConnectorType.DOMESTIC_A],
     [ConnectorTypeEnum.DomesticB, ConnectorType.DOMESTIC_B],
     [ConnectorTypeEnum.DomesticC, ConnectorType.DOMESTIC_C],
+    [ConnectorTypeEnum.DomesticD, ConnectorType.DOMESTIC_D],
+    [ConnectorTypeEnum.DomesticE, ConnectorType.DOMESTIC_E],
     [ConnectorTypeEnum.DomesticF, ConnectorType.DOMESTIC_F],
     [ConnectorTypeEnum.DomesticG, ConnectorType.DOMESTIC_G],
+    [ConnectorTypeEnum.DomesticH, ConnectorType.DOMESTIC_H],
     [ConnectorTypeEnum.DomesticI, ConnectorType.DOMESTIC_I],
     [ConnectorTypeEnum.DomesticJ, ConnectorType.DOMESTIC_J],
+    [ConnectorTypeEnum.DomesticK, ConnectorType.DOMESTIC_K],
     [ConnectorTypeEnum.DomesticL, ConnectorType.DOMESTIC_L],
     [ConnectorTypeEnum.DomesticM, ConnectorType.DOMESTIC_M],
     [ConnectorTypeEnum.DomesticN, ConnectorType.DOMESTIC_N],
@@ -408,13 +412,12 @@ describe('EvseMapper', () => {
     expect(warn).not.toHaveBeenCalled();
   });
 
-  it('warns and maps an EVSE without connectors to an empty list and UNKNOWN', () => {
+  it('warns and drops an EVSE without connectors', () => {
     const { evseMapper, warn } = mappers();
 
     const dto = evseMapper.fromGraphql(aStation(), anEvse({ connectors: undefined }));
 
-    expect(dto!.connectors).toEqual([]);
-    expect(dto!.status).toBe(EvseStatus.UNKNOWN);
+    expect(dto).toBeUndefined();
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn).toHaveBeenCalledWith('EVSE has no valid connectors', {
       stationId: 'cs-001',
@@ -422,14 +425,13 @@ describe('EvseMapper', () => {
     });
   });
 
-  it('drops an invalid connector but still derives status from its raw OCPP status', () => {
+  it('drops an EVSE whose only connector is invalid', () => {
     const { evseMapper, warn } = mappers();
     const evse = anEvse({ connectors: [aConnector({ maximumVoltage: 0 })] });
 
     const dto = evseMapper.fromGraphql(aStation(), evse);
 
-    expect(dto!.connectors).toEqual([]);
-    expect(dto!.status).toBe(EvseStatus.AVAILABLE);
+    expect(dto).toBeUndefined();
     expect(warn).toHaveBeenCalledTimes(3);
     expect(warn.mock.calls[2][0]).toBe('EVSE has no valid connectors');
   });
@@ -459,10 +461,10 @@ describe('EvseMapper', () => {
       { evseId: 'GB*VLT*E9' } as unknown as Partial<EvseDto>,
     );
 
-    expect(dto.evse_id).toBe('GB*VLT*E9');
-    expect(dto.status).toBeUndefined();
-    expect(dto.connectors).toBeUndefined();
-    expect(dto.coordinates).toEqual({ longitude: '4.40000', latitude: '51.90000' });
+    expect(dto!.evse_id).toBe('GB*VLT*E9');
+    expect(dto!.status).toBeUndefined();
+    expect(dto!.connectors).toBeUndefined();
+    expect(dto!.coordinates).toEqual({ longitude: '4.40000', latitude: '51.90000' });
   });
 
   it('maps a partial EVSE with connectors including their status', () => {
@@ -475,9 +477,9 @@ describe('EvseMapper', () => {
       } as unknown as Partial<EvseDto>,
     );
 
-    expect(dto.status).toBe(EvseStatus.RESERVED);
-    expect(dto.connectors).toHaveLength(1);
-    expect(dto.connectors![0].id).toBe('3');
+    expect(dto!.status).toBe(EvseStatus.RESERVED);
+    expect(dto!.connectors).toHaveLength(1);
+    expect(dto!.connectors![0].id).toBe('3');
   });
 });
 

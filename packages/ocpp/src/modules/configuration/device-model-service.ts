@@ -2,15 +2,22 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { OCPP2_0_1 } from '@citrineos/types';
-import type { IDeviceModelRepository } from '@citrineos/dal';
-import { VariableAttribute } from '@citrineos/dal';
+import { OCPP2_0_1, type VariableAttributeDto } from '@citrineos/types';
+import type { IDeviceModelRepository, IVariableAttributeRepository } from '@citrineos/dal';
 
 export class DeviceModelService {
   protected _deviceModelRepository: IDeviceModelRepository;
+  protected _variableAttributeRepository: IVariableAttributeRepository;
 
-  constructor({ deviceModelRepository }: { deviceModelRepository: IDeviceModelRepository }) {
+  constructor({
+    deviceModelRepository,
+    variableAttributeRepository,
+  }: {
+    deviceModelRepository: IDeviceModelRepository;
+    variableAttributeRepository: IVariableAttributeRepository;
+  }) {
     this._deviceModelRepository = deviceModelRepository;
+    this._variableAttributeRepository = variableAttributeRepository;
   }
 
   /**
@@ -28,8 +35,8 @@ export class DeviceModelService {
     tenantId: number,
     ocppConnectionName: string,
   ): Promise<number | null> {
-    const itemsPerMessageSetVariablesAttributes: VariableAttribute[] =
-      await this._deviceModelRepository.readAllByQuerystring(tenantId, {
+    const itemsPerMessageSetVariablesAttributes: VariableAttributeDto[] =
+      await this._variableAttributeRepository.readAllByQuerystring(tenantId, {
         tenantId: tenantId,
         ocppConnectionName: ocppConnectionName,
         component_name: 'DeviceDataCtrlr',
@@ -62,8 +69,8 @@ export class DeviceModelService {
     tenantId: number,
     ocppConnectionName: string,
   ): Promise<number | null> {
-    const itemsPerMessageGetVariablesAttributes: VariableAttribute[] =
-      await this._deviceModelRepository.readAllByQuerystring(tenantId, {
+    const itemsPerMessageGetVariablesAttributes: VariableAttributeDto[] =
+      await this._variableAttributeRepository.readAllByQuerystring(tenantId, {
         tenantId: tenantId,
         ocppConnectionName: ocppConnectionName,
         component_name: 'DeviceDataCtrlr',

@@ -15,7 +15,7 @@ import {
   OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/types';
-import type { IAuthorizationRepository, IDeviceModelRepository } from '@citrineos/dal';
+import type { IAuthorizationRepository, IVariableAttributeRepository } from '@citrineos/dal';
 import { AuthorizeRequestOcpp201Handler } from '@handlers/index.js';
 import { createTestContainer, makeMockOcppSender } from '@test/test-container.js';
 import type { CertificateAuthorityService } from '@services/index.js';
@@ -60,7 +60,7 @@ function makeHandler(options: {
   };
 
   // The handler distinguishes the two device-model lookups by variable_name.
-  const deviceModelRepository = {
+  const variableAttributeRepository = {
     readAllByQuerystring: vi.fn().mockImplementation(async (_tenantId, query) => {
       if (query.variable_name === 'ConnectorType') return options.connectorTypes ?? [];
       if (query.variable_name === 'EvseId') return options.evseIds ?? [];
@@ -74,7 +74,8 @@ function makeHandler(options: {
     certificateAuthorityService: {} as unknown as CertificateAuthorityService,
     authorizers: [] as IAuthorizer[],
     authorizationRepository: authorizationRepository as unknown as IAuthorizationRepository,
-    deviceModelRepository: deviceModelRepository as unknown as IDeviceModelRepository,
+    variableAttributeRepository:
+      variableAttributeRepository as unknown as IVariableAttributeRepository,
   } as never);
 
   return { handler, ocppSender };

@@ -16,7 +16,9 @@ COMPOSE="${COMPOSE:-docker compose -f docker-compose.yml -f docker-compose.local
 HASURA_URL="${HASURA_URL:-http://localhost:8090/v1/graphql}"
 
 echo "seed-citrine: running db:seed in citrineos-ocpi"
-$COMPOSE exec -T -e OCPI_ENV=docker citrineos-ocpi pnpm run db:seed
+# The slim image ships no pnpm/corepack — call the locally installed
+# sequelize-cli directly, same as the image's entrypoint.sh does for migrate.
+$COMPOSE exec -T -e OCPI_ENV=docker citrineos-ocpi ./node_modules/.bin/sequelize-cli db:seed:all --debug
 
 # The seeders insert with explicit ids, which leaves the id sequences behind:
 # on a fresh DB Citrine's first own insert (e.g. the Authorization behind a

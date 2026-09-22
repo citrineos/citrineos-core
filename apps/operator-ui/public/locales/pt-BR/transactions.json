@@ -26,7 +26,8 @@
       "chargingState": "Estado de Recarga",
       "startTime": "Início",
       "endTime": "Término",
-      "tariff": "Tarifa"
+      "tariff": "Tarifa",
+      "timeSpentCharging": "Tempo Efetivo de Recarga"
     },
     "tabs": {
       "meterValueData": "Dados de Valores de Medição",

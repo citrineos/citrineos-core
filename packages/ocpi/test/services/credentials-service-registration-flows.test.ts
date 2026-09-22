@@ -398,7 +398,7 @@ describe('postCredentials', () => {
 });
 
 describe('putCredentials', () => {
-  it('rotates the server token and stores the new partner credentials without re-fetching versions', async () => {
+  it('rotates the server token, refreshes the partner endpoints and stores the new partner credentials', async () => {
     const partner = aTenantPartner(aRegisteredProfile());
     const h = aHarness(partner);
     const incoming = {
@@ -409,7 +409,9 @@ describe('putCredentials', () => {
 
     const result = await h.service.putCredentials(partner as never, incoming as never);
 
-    expect(h.versionsClientApi.getVersions).not.toHaveBeenCalled();
+    expect(h.versionsClientApi.getVersions).toHaveBeenCalledOnce();
+    expect(h.versionsClientApi.getVersions.mock.calls[0][5]).toBe(incoming.url);
+    expect(h.versionsClientApi.getVersionDetails).toHaveBeenCalledOnce();
     expect(h.request).toHaveBeenCalledOnce();
     const [update] = updateCalls(h.graphqlCalls);
     expect(update.variables.partnerId).toBe(42);
@@ -587,8 +589,10 @@ describe('regenerateCredentialsToken', () => {
         VersionNumber.TWO_DOT_TWO_DOT_ONE,
       ),
     ).rejects.toThrow(/Regenerate credentials token failed/);
-    // The first update ran before the partner call; the reply update never did.
-    expect(updateCalls(h.graphqlCalls)).toHaveLength(1);
+    // The first update ran before the partner call; the second restores the previous profile.
+    const updates = updateCalls(h.graphqlCalls);
+    expect(updates).toHaveLength(2);
+    expect(updates[1].variables.input.serverCredentials.token).toBe('initial-server-token');
   });
 });
 

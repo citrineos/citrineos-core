@@ -259,7 +259,7 @@ describe('evDriver message endpoints', () => {
       getTestInstance(container, RequestStartTransactionEndpoint, {
         ocppSender: { sendCall },
         cache: { set: cacheSet },
-        deviceModelRepository: { readAllByQuerystring },
+        variableAttributeRepository: { readAllByQuerystring },
         chargingProfileRepository: { createOrUpdateChargingProfile },
         transactionEventRepository: {},
       });
@@ -312,6 +312,34 @@ describe('evDriver message endpoints', () => {
         payload: 'The Purpose of the ChargingProfile SHALL always be TxProfile.',
       });
       expect(sendCall).not.toHaveBeenCalled();
+    });
+
+    it('refuses a charging profile that sets a transactionId', async () => {
+      const confirmations = await handle(
+        aRequest({
+          chargingProfile: {
+            id: 1,
+            stackLevel: 0,
+            chargingProfilePurpose: OCPP2_0_1.ChargingProfilePurposeEnumType.TxProfile,
+            chargingProfileKind: OCPP2_0_1.ChargingProfileKindEnumType.Absolute,
+            transactionId: 'tx-abc',
+            chargingSchedule: [
+              {
+                id: 1,
+                chargingRateUnit: OCPP2_0_1.ChargingRateUnitEnumType.W,
+                chargingSchedulePeriod: [{ startPeriod: 0, limit: 10 }],
+              },
+            ],
+          },
+        }),
+      );
+
+      expect(confirmations[0]).toEqual({
+        success: false,
+        payload: 'The transactionId in the ChargingProfile SHALL NOT be set.',
+      });
+      expect(sendCall).not.toHaveBeenCalled();
+      expect(createOrUpdateChargingProfile).not.toHaveBeenCalled();
     });
 
     it('caches a 2.1 transaction limit before sending', async () => {

@@ -3,24 +3,29 @@
 // SPDX-License-Identifier: Apache-2.0
 import type { ISmartCharging } from './smart-charging.js';
 import { ChargingProfilePurposeEnum, OCPP2_0_1 } from '@citrineos/types';
-import type { IChargingProfileRepository } from '@citrineos/dal';
+import type { IChargingProfileRepository, IVariableAttributeRepository } from '@citrineos/dal';
 import { ChargingProfile, ChargingSchedule } from '@citrineos/dal';
 import { Transaction } from '@citrineos/dal';
+import { generateChargingProfileId } from '@util/index.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 
 export class InternalSmartCharging implements ISmartCharging {
   protected _chargingProfileRepository: IChargingProfileRepository;
+  protected _variableAttributeRepository: IVariableAttributeRepository;
   protected readonly _logger: Logger<ILogObj>;
 
   constructor({
     chargingProfileRepository,
+    variableAttributeRepository,
     logger,
   }: {
     chargingProfileRepository: IChargingProfileRepository;
+    variableAttributeRepository: IVariableAttributeRepository;
     logger: Logger<ILogObj>;
   }) {
     this._chargingProfileRepository = chargingProfileRepository;
+    this._variableAttributeRepository = variableAttributeRepository;
     this._logger = logger.getSubLogger({ name: this.constructor.name });
   }
 
@@ -50,7 +55,9 @@ export class InternalSmartCharging implements ISmartCharging {
     const transferMode = chargingNeeds.requestedEnergyTransfer;
 
     // Default values
-    const profileId = await this._chargingProfileRepository.getNextChargingProfileId(
+    const profileId = await generateChargingProfileId(
+      this._chargingProfileRepository,
+      this._variableAttributeRepository,
       tenantId,
       ocppConnectionName,
     );

@@ -21,7 +21,7 @@ import {
 } from '@citrineos/types';
 import type {
   IChargingProfileRepository,
-  IDeviceModelRepository,
+  IVariableAttributeRepository,
   ITransactionEventRepository,
 } from '@citrineos/dal';
 import { OCPP2_0_1_Mapper } from '@citrineos/dal';
@@ -33,7 +33,7 @@ const TRANSACTION_LIMIT_CACHE_SECONDS = 300;
 interface Dependencies extends AbstractMessageEndpointDependencies {
   ocppSender: IOcppSender;
   cache: ICache;
-  deviceModelRepository: IDeviceModelRepository;
+  variableAttributeRepository: IVariableAttributeRepository;
   chargingProfileRepository: IChargingProfileRepository;
   transactionEventRepository: ITransactionEventRepository;
 }
@@ -48,7 +48,7 @@ export class RequestStartTransactionEndpoint extends AbstractMessageEndpoint {
 
   private readonly _ocppSender: IOcppSender;
   private readonly _cache: ICache;
-  private readonly _deviceModelRepository: IDeviceModelRepository;
+  private readonly _variableAttributeRepository: IVariableAttributeRepository;
   private readonly _chargingProfileRepository: IChargingProfileRepository;
   private readonly _transactionEventRepository: ITransactionEventRepository;
 
@@ -56,14 +56,14 @@ export class RequestStartTransactionEndpoint extends AbstractMessageEndpoint {
     logger,
     ocppSender,
     cache,
-    deviceModelRepository,
+    variableAttributeRepository,
     chargingProfileRepository,
     transactionEventRepository,
   }: Dependencies) {
     super(logger);
     this._ocppSender = ocppSender;
     this._cache = cache;
-    this._deviceModelRepository = deviceModelRepository;
+    this._variableAttributeRepository = variableAttributeRepository;
     this._chargingProfileRepository = chargingProfileRepository;
     this._transactionEventRepository = transactionEventRepository;
   }
@@ -102,10 +102,11 @@ export class RequestStartTransactionEndpoint extends AbstractMessageEndpoint {
         }
 
         if (chargingProfile.transactionId) {
-          chargingProfile.transactionId = undefined;
-          this._logger.warn(
-            `A transactionId cannot be provided in the ChargingProfile for station: ${ocppConnectionName}`,
-          );
+          results.push({
+            success: false,
+            payload: 'The transactionId in the ChargingProfile SHALL NOT be set.',
+          });
+          continue;
         }
 
         try {
@@ -113,14 +114,14 @@ export class RequestStartTransactionEndpoint extends AbstractMessageEndpoint {
             chargingProfile,
             tenantId,
             ocppConnectionName,
-            this._deviceModelRepository,
+            this._variableAttributeRepository,
             this._chargingProfileRepository,
             this._transactionEventRepository,
             this._logger,
             request.evseId,
           );
 
-          const smartChargingEnabled = await this._deviceModelRepository.readAllByQuerystring(
+          const smartChargingEnabled = await this._variableAttributeRepository.readAllByQuerystring(
             tenantId,
             {
               component_name: 'SmartChargingCtrlr',

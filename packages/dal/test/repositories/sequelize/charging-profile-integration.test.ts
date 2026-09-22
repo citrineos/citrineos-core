@@ -3,13 +3,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { ChargingStation } from '@dal/db/sequelize/index.js';
+import { ChargingStation, Evse } from '@dal/db/sequelize/index.js';
 import { OCPP2_0_1, type SystemConfig } from '@citrineos/types';
 import {
   ChargingNeeds,
   ChargingProfile,
   ChargingSchedule,
-  Evse,
   SequelizeChargingProfileRepository,
   Transaction,
 } from '../../../index.js';
@@ -342,6 +341,16 @@ describe('SequelizeChargingProfileRepository', () => {
 
       expect(await repo.getNextChargingProfileId(TENANT_A, STATION)).toBe(10);
       expect(await repo.getNextChargingProfileId(TENANT_A, OTHER_STATION)).toBe(1);
+    });
+
+    it('getNextChargingProfileId is scoped per tenant for a shared station name', async () => {
+      const repo = makeRepo();
+
+      await aProfileRow({ id: 42, tenantId: TENANT_A });
+      await aProfileRow({ id: 900, tenantId: TENANT_A });
+
+      expect(await repo.getNextChargingProfileId(TENANT_B, STATION)).toBe(1);
+      expect(await repo.getNextChargingProfileId(TENANT_A, STATION)).toBe(901);
     });
 
     it('getNextChargingScheduleId advances past the station schedule max', async () => {

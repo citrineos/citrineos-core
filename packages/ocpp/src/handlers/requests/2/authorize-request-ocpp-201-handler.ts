@@ -27,14 +27,14 @@ import {
   OCPPVersion,
   OCPP2_request_types,
   OCPP2_response_types,
+  type VariableAttributeDto,
 } from '@citrineos/types';
 import { CertificateAuthorityService } from '@services/index.js';
 import { validateIdToken } from '@util/index.js';
 import {
   type IAuthorizationRepository,
-  type IDeviceModelRepository,
+  type IVariableAttributeRepository,
   OCPP2_0_1_Mapper,
-  VariableAttribute,
 } from '@citrineos/dal';
 
 @AsRequestHandler([OCPPVersion.OCPP2_0_1], OCPP_CallAction.Authorize)
@@ -43,7 +43,7 @@ export class AuthorizeRequestOcpp201Handler extends AbstractHandler {
   protected _certificateAuthorityService: CertificateAuthorityService;
   protected _authorizers: IAuthorizer[];
   protected _authorizationRepository: IAuthorizationRepository;
-  protected _deviceModelRepository: IDeviceModelRepository;
+  protected _variableAttributeRepository: IVariableAttributeRepository;
 
   constructor({
     logger,
@@ -51,20 +51,20 @@ export class AuthorizeRequestOcpp201Handler extends AbstractHandler {
     certificateAuthorityService,
     authorizers,
     authorizationRepository,
-    deviceModelRepository,
+    variableAttributeRepository,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
     certificateAuthorityService: CertificateAuthorityService;
     authorizers: IAuthorizer[];
     authorizationRepository: IAuthorizationRepository;
-    deviceModelRepository: IDeviceModelRepository;
+    variableAttributeRepository: IVariableAttributeRepository;
   }) {
     super(logger);
     this._ocppSender = ocppSender;
     this._certificateAuthorityService = certificateAuthorityService;
     this._authorizers = authorizers;
     this._authorizationRepository = authorizationRepository;
-    this._deviceModelRepository = deviceModelRepository;
+    this._variableAttributeRepository = variableAttributeRepository;
   }
 
   async handle(
@@ -139,7 +139,10 @@ export class AuthorizeRequestOcpp201Handler extends AbstractHandler {
         response = {
           ...response,
           idTokenInfo: {
-            status: AuthorizationStatusEnum.Invalid,
+            status:
+              response.certificateStatus === AuthorizeCertificateStatusEnum.CertificateExpired
+                ? AuthorizationStatusEnum.Expired
+                : AuthorizationStatusEnum.Invalid,
           },
         } as OCPP2_response_types.AuthorizeResponse;
         const messageConfirmation = await this._sendAuthorizeResult(message, response);
@@ -168,6 +171,7 @@ export class AuthorizeRequestOcpp201Handler extends AbstractHandler {
           new Date() > new Date(idTokenInfo.cacheExpiryDateTime)
         ) {
           response = {
+            ...response,
             idTokenInfo: {
               status: AuthorizationStatusEnum.Invalid,
               groupIdToken: idTokenInfo.groupIdToken,
@@ -184,8 +188,8 @@ export class AuthorizeRequestOcpp201Handler extends AbstractHandler {
           const hasConnectorTypeRestriction = allowedConnectorTypes.length > 0;
           if (hasConnectorTypeRestriction) {
             evseIds = new Set();
-            const connectorTypes: VariableAttribute[] =
-              await this._deviceModelRepository.readAllByQuerystring(context.tenantId, {
+            const connectorTypes: VariableAttributeDto[] =
+              await this._variableAttributeRepository.readAllByQuerystring(context.tenantId, {
                 tenantId: context.tenantId,
                 ocppConnectionName: message.context.ocppConnectionName,
                 component_name: 'Connector',
@@ -200,6 +204,7 @@ export class AuthorizeRequestOcpp201Handler extends AbstractHandler {
           }
           if (evseIds && evseIds.size === 0) {
             response = {
+              ...response,
               idTokenInfo: {
                 status: AuthorizationStatusEnum.NotAllowedTypeEVSE,
                 groupIdToken: idTokenInfo.groupIdToken,
@@ -212,8 +217,8 @@ export class AuthorizeRequestOcpp201Handler extends AbstractHandler {
               authorization.disallowedEvseIdPrefixes.length > 0
             ) {
               evseIds = evseIds ? evseIds : new Set();
-              const evseIdAttributes: VariableAttribute[] =
-                await this._deviceModelRepository.readAllByQuerystring(context.tenantId, {
+              const evseIdAttributes: VariableAttributeDto[] =
+                await this._variableAttributeRepository.readAllByQuerystring(context.tenantId, {
                   tenantId: context.tenantId,
                   ocppConnectionName: message.context.ocppConnectionName,
                   component_name: 'EVSE',
@@ -234,6 +239,7 @@ export class AuthorizeRequestOcpp201Handler extends AbstractHandler {
             }
             if (evseIds && evseIds.size === 0) {
               response = {
+                ...response,
                 idTokenInfo: {
                   status: AuthorizationStatusEnum.NotAtThisLocation,
                   groupIdToken: idTokenInfo.groupIdToken,
@@ -268,6 +274,7 @@ export class AuthorizeRequestOcpp201Handler extends AbstractHandler {
       }
     } else {
       // Status is Unknown if no authorization found
+      this._cancelContractIfNotAuthorized(response);
       const messageConfirmation = await this._sendAuthorizeResult(message, response);
       this._logger.debug(
         this.createHandlerSentMessageLog('AuthorizeResponse'),
@@ -277,8 +284,8 @@ export class AuthorizeRequestOcpp201Handler extends AbstractHandler {
     }
 
     if (response.idTokenInfo.status === AuthorizationStatusEnum.Accepted) {
-      const tariffAvailable: VariableAttribute[] =
-        await this._deviceModelRepository.readAllByQuerystring(context.tenantId, {
+      const tariffAvailable: VariableAttributeDto[] =
+        await this._variableAttributeRepository.readAllByQuerystring(context.tenantId, {
           tenantId: context.tenantId,
           ocppConnectionName: message.context.ocppConnectionName,
           component_name: 'TariffCostCtrlr',
@@ -287,8 +294,8 @@ export class AuthorizeRequestOcpp201Handler extends AbstractHandler {
           type: AttributeEnum.Actual,
         });
 
-      const displayMessageAvailable: VariableAttribute[] =
-        await this._deviceModelRepository.readAllByQuerystring(context.tenantId, {
+      const displayMessageAvailable: VariableAttributeDto[] =
+        await this._variableAttributeRepository.readAllByQuerystring(context.tenantId, {
           tenantId: context.tenantId,
           ocppConnectionName: message.context.ocppConnectionName,
           component_name: 'DisplayMessageCtrlr',
@@ -307,8 +314,28 @@ export class AuthorizeRequestOcpp201Handler extends AbstractHandler {
       }
     }
 
+    this._cancelContractIfNotAuthorized(response);
     const messageConfirmation = await this._sendAuthorizeResult(message, response);
     this._logger.debug(this.createHandlerSentMessageLog('AuthorizeResponse'), messageConfirmation);
+  }
+
+  /**
+   * Per OCPP C07.FR.13, a contract certificate that was accepted is reported as ContractCancelled
+   * when the token itself is not authorized.
+   */
+  private _cancelContractIfNotAuthorized(response: OCPP2_response_types.AuthorizeResponse): void {
+    const contractCancelledStatuses: string[] = [
+      AuthorizationStatusEnum.Blocked,
+      AuthorizationStatusEnum.Expired,
+      AuthorizationStatusEnum.Invalid,
+      AuthorizationStatusEnum.Unknown,
+    ];
+    if (
+      response.certificateStatus === AuthorizeCertificateStatusEnum.Accepted &&
+      contractCancelledStatuses.includes(response.idTokenInfo.status)
+    ) {
+      response.certificateStatus = OCPP2_0_1.AuthorizeCertificateStatusEnumType.ContractCancelled;
+    }
   }
 
   /**

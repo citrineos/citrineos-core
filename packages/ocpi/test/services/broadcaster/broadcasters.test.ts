@@ -389,8 +389,14 @@ describe('SessionBroadcaster', () => {
       mapPartialTransactionToPartialSession: vi.fn(),
       getChargingPeriods: vi.fn(),
     };
+    const ocpiGraphqlClient = {
+      request: vi
+        .fn()
+        .mockResolvedValue({ Transactions: [{ authorization: { tenantPartner: { id: 5 } } }] }),
+    };
     const broadcaster = new SessionBroadcaster({
       logger,
+      ocpiGraphqlClient,
       sessionsClientApi,
       sessionMapper,
     } as never);
@@ -399,7 +405,7 @@ describe('SessionBroadcaster', () => {
 
   it('PUT maps the transaction and broadcasts under the session id path', async () => {
     const { broadcaster, sessionsClientApi, sessionMapper } = build();
-    const transactionDto = { transactionId: 'tx-1' };
+    const transactionDto = { id: 1, transactionId: 'tx-1' };
     const session = { id: 'sess-1', kwh: 2 };
     sessionMapper.mapTransactionToSession.mockResolvedValue(session);
 
@@ -414,11 +420,12 @@ describe('SessionBroadcaster', () => {
     expect(call.schema).toBe(OcpiEmptyResponseSchema);
     expect(call.body).toBe(session);
     expect(call.path).toBe('/US/CPO/sess-1');
+    expect(call.tenantPartnerId).toBe(5);
   });
 
   it('PATCH uses the partial mapper and the PATCH method', async () => {
     const { broadcaster, sessionsClientApi, sessionMapper } = build();
-    const partialDto = { totalKwh: 3 };
+    const partialDto = { id: 1, totalKwh: 3 };
     sessionMapper.mapPartialTransactionToPartialSession.mockResolvedValue({
       id: 'sess-1',
       kwh: 3,
@@ -436,7 +443,7 @@ describe('SessionBroadcaster', () => {
 
   it('charging period PATCH stringifies the tariff id and keys the path by transactionId', async () => {
     const { broadcaster, sessionsClientApi, sessionMapper } = build();
-    const meterValueDto = { transactionId: 'tx-9', tariffId: 7 };
+    const meterValueDto = { transactionDatabaseId: 1, transactionId: 'tx-9', tariffId: 7 };
     const periods = [{ start_date_time: new Date('2026-08-20T10:00:00Z') }];
     sessionMapper.getChargingPeriods.mockReturnValue(periods);
 
@@ -468,7 +475,7 @@ describe('SessionBroadcaster', () => {
     sessionsClientApi.broadcastToClients.mockRejectedValue(failure);
 
     await expect(
-      broadcaster.broadcastPutSession(TENANT, { transactionId: 'tx-1' } as never),
+      broadcaster.broadcastPutSession(TENANT, { id: 1, transactionId: 'tx-1' } as never),
     ).resolves.toBeUndefined();
 
     expect(logger.error).toHaveBeenCalledOnce();
@@ -490,7 +497,7 @@ describe('CdrBroadcaster', () => {
 
   it('POSTs the first mapped CDR, routed by the CDR party fields, with no path', async () => {
     const { broadcaster, cdrsClientApi, cdrMapper } = build();
-    const transactionDto = { transactionId: 'tx-1' };
+    const transactionDto = { transactionId: 'tx-1', authorization: { tenantPartner: { id: 5 } } };
     const cdrA = { id: 'cdr-1', country_code: 'US', party_id: 'CPO' };
     const cdrB = { id: 'cdr-2', country_code: 'US', party_id: 'CPO' };
     cdrMapper.mapTransactionsToCdrs.mockResolvedValue([cdrA, cdrB]);
@@ -509,13 +516,17 @@ describe('CdrBroadcaster', () => {
     // only the first CDR is broadcast
     expect(call.body).toBe(cdrA);
     expect(call.path).toBeUndefined();
+    expect(call.tenantPartnerId).toBe(5);
   });
 
   it('warns and skips the client when the mapper yields no CDRs', async () => {
     const { broadcaster, cdrsClientApi, cdrMapper, logger } = build();
     cdrMapper.mapTransactionsToCdrs.mockResolvedValue([]);
 
-    await broadcaster.broadcastPostCdr({ transactionId: 'tx-1' } as never);
+    await broadcaster.broadcastPostCdr({
+      transactionId: 'tx-1',
+      authorization: { tenantPartner: { id: 5 } },
+    } as never);
 
     expect(cdrsClientApi.broadcastToClients).not.toHaveBeenCalled();
     expect(logger.warn).toHaveBeenCalledOnce();
@@ -531,7 +542,10 @@ describe('CdrBroadcaster', () => {
     cdrsClientApi.broadcastToClients.mockRejectedValue(failure);
 
     await expect(
-      broadcaster.broadcastPostCdr({ transactionId: 'tx-1' } as never),
+      broadcaster.broadcastPostCdr({
+        transactionId: 'tx-1',
+        authorization: { tenantPartner: { id: 5 } },
+      } as never),
     ).resolves.toBeUndefined();
 
     expect(logger.error).toHaveBeenCalledOnce();

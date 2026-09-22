@@ -71,6 +71,7 @@ const ChargingStationCreateSchema = ChargingStationSchema.pick({
   [ChargingStationProps.ocppConnectionName]: true,
   [ChargingStationProps.locationId]: true,
   [ChargingStationProps.floorLevel]: true,
+  [ChargingStationProps.chargePointSerialNumber]: true,
   [ChargingStationProps.parkingRestrictions]: true,
   [ChargingStationProps.capabilities]: true,
   [ChargingStationProps.use16StatusNotification0]: true,
@@ -92,6 +93,7 @@ const defaultChargingStation = {
   [ChargingStationProps.ocppConnectionName]: '',
   [ChargingStationProps.locationId]: undefined,
   [ChargingStationProps.floorLevel]: '',
+  [ChargingStationProps.chargePointSerialNumber]: '',
   [ChargingStationProps.parkingRestrictions]: [],
   [ChargingStationProps.capabilities]: [],
   [ChargingStationProps.use16StatusNotification0]: true,
@@ -334,6 +336,13 @@ export const ChargingStationUpsert = ({
                 control={form.control}
                 label={translate('ChargingStations.columns.floorLevel')}
                 name={ChargingStationProps.floorLevel}
+              >
+                <Input />
+              </FormField>
+              <FormField
+                control={form.control}
+                label={translate('ChargingStations.columns.chargePointSerialNumber')}
+                name={ChargingStationProps.chargePointSerialNumber}
               >
                 <Input />
               </FormField>

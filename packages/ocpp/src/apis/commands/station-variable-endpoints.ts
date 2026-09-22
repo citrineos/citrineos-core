@@ -7,15 +7,15 @@ import {
   type IMessageConfirmation,
   AbstractEndpoint,
 } from '@citrineos/base';
+import type { VariableAttributeDto } from '@citrineos/types';
 import { HttpMethod } from '@citrineos/types';
 import type { VariableAttributeQuerystring } from '@citrineos/dal';
 import { VariableAttributeQuerySchema } from '@citrineos/dal';
-import type { IDeviceModelRepository } from '@citrineos/dal';
-import type { VariableAttribute } from '@citrineos/dal';
+import type { IVariableAttributeRepository } from '@citrineos/dal';
 import type { FastifyRequest } from 'fastify';
 
 interface StationVariableEndpointDependencies extends AbstractEndpointDependencies {
-  deviceModelRepository: IDeviceModelRepository;
+  variableAttributeRepository: IVariableAttributeRepository;
 }
 
 type StationVariableRoute = { Querystring: VariableAttributeQuerystring };
@@ -29,15 +29,18 @@ export class GetStationVariablesEndpoint extends AbstractEndpoint<StationVariabl
     querySchema: VariableAttributeQuerySchema,
   };
 
-  private readonly _deviceModelRepository: IDeviceModelRepository;
+  private readonly _variableAttributeRepository: IVariableAttributeRepository;
 
-  constructor({ logger, deviceModelRepository }: StationVariableEndpointDependencies) {
+  constructor({ logger, variableAttributeRepository }: StationVariableEndpointDependencies) {
     super(logger);
-    this._deviceModelRepository = deviceModelRepository;
+    this._variableAttributeRepository = variableAttributeRepository;
   }
 
-  async handle(request: FastifyRequest<StationVariableRoute>): Promise<VariableAttribute[]> {
-    return this._deviceModelRepository.readAllByQuerystring(request.query.tenantId, request.query);
+  async handle(request: FastifyRequest<StationVariableRoute>): Promise<VariableAttributeDto[]> {
+    return this._variableAttributeRepository.readAllByQuerystring(
+      request.query.tenantId,
+      request.query,
+    );
   }
 }
 
@@ -48,21 +51,21 @@ export class DeleteStationVariablesEndpoint extends AbstractEndpoint<StationVari
     querySchema: VariableAttributeQuerySchema,
   };
 
-  private readonly _deviceModelRepository: IDeviceModelRepository;
+  private readonly _variableAttributeRepository: IVariableAttributeRepository;
 
-  constructor({ logger, deviceModelRepository }: StationVariableEndpointDependencies) {
+  constructor({ logger, variableAttributeRepository }: StationVariableEndpointDependencies) {
     super(logger);
-    this._deviceModelRepository = deviceModelRepository;
+    this._variableAttributeRepository = variableAttributeRepository;
   }
 
   async handle(request: FastifyRequest<StationVariableRoute>): Promise<IMessageConfirmation> {
-    const deletedCount = await this._deviceModelRepository.deleteAllByQuerystring(
+    const deleted = await this._variableAttributeRepository.deleteAllByQuerystring(
       request.query.tenantId,
       request.query,
     );
     return {
       success: true,
-      payload: `${deletedCount} rows successfully deleted`,
+      payload: `${deleted.length} rows successfully deleted`,
     };
   }
 }

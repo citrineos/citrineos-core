@@ -110,6 +110,7 @@ import {
   Authenticator,
   BasicAuthenticationFilter,
   BrokerAwareMessageSender,
+  ClientCertificateFilter,
   ConnectedStationFilter,
   NetworkProfileFilter,
   RabbitMQChannelManager,
@@ -315,13 +316,16 @@ function registerRepositories(container: AwilixContainer): void {
     chargingStationRepository: asFunction(
       ({ locationRepository }) => locationRepository,
     ).singleton(),
-    variableCharacteristicsRepository: asFunction(
-      ({ deviceModelRepository }) => deviceModelRepository,
-    ).singleton(),
-    evseRepository: asFunction(({ locationRepository }) => locationRepository).singleton(),
     connectorRepository: asFunction(({ locationRepository }) => locationRepository).singleton(),
+    evseRepository: asFunction(({ locationRepository }) => locationRepository).singleton(),
     statusNotificationRepository: asFunction(
       ({ locationRepository }) => locationRepository,
+    ).singleton(),
+    variableAttributeRepository: asFunction(
+      ({ deviceModelRepository }) => deviceModelRepository,
+    ).singleton(),
+    variableCharacteristicsRepository: asFunction(
+      ({ deviceModelRepository }) => deviceModelRepository,
     ).singleton(),
   });
 
@@ -447,6 +451,7 @@ function registerNetwork(container: AwilixContainer): void {
     connectedStationFilter: asClass(ConnectedStationFilter).singleton(),
     networkProfileFilter: asClass(NetworkProfileFilter).singleton(),
     basicAuthenticationFilter: asClass(BasicAuthenticationFilter).singleton(),
+    clientCertificateFilter: asClass(ClientCertificateFilter).singleton(),
     authenticator: asClass(Authenticator).singleton(),
     router: asClass(MessageRouterImpl).singleton(),
     networkConnection: asClass(WebsocketNetworkConnection).singleton(),

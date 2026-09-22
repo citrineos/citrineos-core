@@ -103,8 +103,10 @@ function mergeOcpiConfigFromEnvVars<T extends Record<string, any>>(
 
       if (validMapping) {
         const finalPart = path[path.length - 1];
-        const finalKey = findCaseInsensitiveMatch(currentConfigKeyMap, finalPart);
-        if (finalKey) {
+        const matchedKey = findCaseInsensitiveMatch(currentConfigKeyMap, finalPart);
+        if (matchedKey) {
+          const mappedKey = currentConfigKeyMap[matchedKey];
+          const finalKey = typeof mappedKey === 'string' ? mappedKey : matchedKey;
           currentConfigPart[finalKey] = parseEnvValue(value);
         } else {
           errors.push(`Invalid environment variable key: ${fullEnvKey} (final part: ${finalPart})`);

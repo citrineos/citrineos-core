@@ -41,11 +41,19 @@ export class SetVariableMonitoringResponseOcpp2Handler extends AbstractHandler {
     );
 
     for (const setMonitoringResultType of message.payload.setMonitoringResult) {
-      await this._variableMonitoringRepository.updateResultByStationId(
-        message.context.tenantId,
-        setMonitoringResultType,
-        message.context.ocppConnectionName,
-      );
+      try {
+        await this._variableMonitoringRepository.updateResultByStationId(
+          message.context.tenantId,
+          setMonitoringResultType,
+          message.context.ocppConnectionName,
+        );
+      } catch (error) {
+        this._logger.error(
+          `Failed to apply SetMonitoringResult for ${message.context.ocppConnectionName}`,
+          setMonitoringResultType,
+          error,
+        );
+      }
     }
   }
 }
