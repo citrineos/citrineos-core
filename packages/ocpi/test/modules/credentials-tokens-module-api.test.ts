@@ -153,19 +153,24 @@ describe('CredentialsModuleApi', () => {
     await expect(api.deleteCredentials(VERSION, 'auth-token-c')).rejects.toThrow('not registered');
   });
 
-  it('registerCredentialsTokenA reorders params to country, party, url, body, version', async () => {
+  it('registerCredentialsTokenA maps the body DTO to country, party, url, body, version', async () => {
     const service = aCredentialsService();
     const serverCredentials = { token: 'token-b-new' } as never;
     service.registerCredentialsTokenA.mockResolvedValue(serverCredentials);
     const api = aCredentialsApi(service);
 
-    const result = await api.registerCredentialsTokenA(
-      VERSION,
-      'https://cpo.example.com/ocpi/versions',
-      'DE',
-      'CPO',
-      CREDENTIALS_DTO,
-    );
+    const request = {
+      url: 'https://cpo.example.com/ocpi/versions',
+      role: {
+        role: 'CPO',
+        party_id: 'CPO',
+        country_code: 'DE',
+        business_details: { name: 'CitrineOS' },
+      },
+      credentials: CREDENTIALS_DTO,
+    } as never;
+
+    const result = await api.registerCredentialsTokenA(VERSION, request);
 
     expect(service.registerCredentialsTokenA).toHaveBeenCalledTimes(1);
     expect(service.registerCredentialsTokenA).toHaveBeenCalledWith(

@@ -62,6 +62,11 @@ export {
   AdminCredentialsRequestDTOSchema,
   AdminCredentialsRequestDTOSchemaName,
 } from './src/types/dto/admin-credentials-request-dto.js';
+export type { RegisterCredentialsTokenARequestDTO } from './src/types/dto/register-credentials-token-a-request-dto.js';
+export {
+  RegisterCredentialsTokenARequestDTOSchema,
+  RegisterCredentialsTokenARequestDTOSchemaName,
+} from './src/types/dto/register-credentials-token-a-request-dto.js';
 export type { SingleTokenRequest, TokenDTO, TokenResponse } from './src/types/dto/token-dto.js';
 export {
   SingleTokenRequestSchema,
