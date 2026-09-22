@@ -15,7 +15,7 @@ COPY . .
 RUN pnpm install --frozen-lockfile
 RUN pnpm --filter "@citrineos/ocpi-server..." build
 
-RUN pnpm --filter "@citrineos/ocpi-demo" deploy --legacy --prod /deploy
+RUN pnpm --filter "@citrineos/ocpi-server" deploy --legacy --prod /deploy
 
 # The final stage, which copies built files and prepares the run environment
 # Using a slim image to reduce the final image size
