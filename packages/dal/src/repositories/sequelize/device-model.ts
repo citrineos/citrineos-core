@@ -510,20 +510,16 @@ export class SequelizeDeviceModelRepository
     tenantId: number,
     query: VariableAttributeQuerystring,
   ): Promise<VariableAttributeDto[]> {
-    const readQuery = await this.constructQuery(query);
+    const readQuery = await this.constructQuery(tenantId, query);
     readQuery.include.push(VariableStatus);
     return await super.readAllByQuery(tenantId, readQuery);
-  }
-
-  async existByQuerystring(tenantId: number, query: VariableAttributeQuerystring): Promise<number> {
-    return await super.existByQuery(tenantId, await this.constructQuery(query));
   }
 
   async deleteAllByQuerystring(
     tenantId: number,
     query: VariableAttributeQuerystring,
   ): Promise<VariableAttributeDto[]> {
-    return await super.deleteAllByQuery(tenantId, await this.constructQuery(query));
+    return await super.deleteAllByQuery(tenantId, await this.constructQuery(tenantId, query));
   }
 
   async findVariableAttributeByComponentAndVariable(
@@ -642,7 +638,10 @@ export class SequelizeDeviceModelRepository
     }
   }
 
-  private async constructQuery(queryParams: VariableAttributeQuerystring): Promise<any> {
+  private async constructQuery(
+    tenantId: number,
+    queryParams: VariableAttributeQuerystring,
+  ): Promise<any> {
     const evseInclude =
       (queryParams.component_evse_id ?? queryParams.component_evse_connectorId)
         ? {
@@ -657,7 +656,8 @@ export class SequelizeDeviceModelRepository
         : EvseType;
     const attributeType =
       queryParams.type && queryParams.type.toUpperCase() === 'NULL' ? null : queryParams.type;
-    return {
+
+    const query: any = {
       where: {
         ...(queryParams.ocppConnectionName
           ? {
@@ -669,9 +669,6 @@ export class SequelizeDeviceModelRepository
           : {}),
         ...(queryParams.type === undefined ? {} : { type: attributeType }),
         ...(queryParams.value ? { value: queryParams.value } : {}),
-        // TODO: Currently, the status param doesn't work since status of VariableAttribute are stored in
-        //  VariableStatuses table separately. The table stores status history. We need find a proper way to filter it.
-        ...(queryParams.status === undefined ? {} : { status: queryParams.status }),
       },
       include: [
         {
@@ -692,6 +689,22 @@ export class SequelizeDeviceModelRepository
         },
       ],
     };
+
+    if (queryParams.status !== undefined) {
+      const statusRows = await this.variableStatus.readAllByQuery(tenantId, {
+        where: { status: queryParams.status },
+      });
+      const attributeIds = [
+        ...new Set(
+          statusRows
+            .map((statusRow) => statusRow.variableAttributeId)
+            .filter((id): id is number => id != null),
+        ),
+      ];
+      query.where.id = { [Op.in]: attributeIds };
+    }
+
+    return query;
   }
 }
 

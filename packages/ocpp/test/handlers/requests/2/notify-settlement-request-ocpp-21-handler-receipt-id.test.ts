@@ -4,7 +4,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type IMessage, DEFAULT_TENANT_ID, OCPPValidator } from '@citrineos/base';
-import type { IDeviceModelRepository, ITransactionEventRepository } from '@citrineos/dal';
+import type { IVariableAttributeRepository, ITransactionEventRepository } from '@citrineos/dal';
 import {
   type OcppRequest,
   type SystemConfig,
@@ -61,9 +61,9 @@ describe('NotifySettlementRequestOcpp21Handler', () => {
       logger,
       ocppSender,
       config: { transactions: { receiptBaseUrl: RECEIPT_BASE_URL } } as unknown as SystemConfig,
-      deviceModelRepository: {
+      variableAttributeRepository: {
         readAllByQuerystring: vi.fn().mockResolvedValue([{ value: 'true' }]),
-      } as unknown as IDeviceModelRepository,
+      } as unknown as IVariableAttributeRepository,
       transactionEventRepository: {
         readTransactionByStationIdAndTransactionId: vi.fn().mockResolvedValue(undefined),
         updateTransactionByStationIdAndTransactionId: vi.fn().mockResolvedValue(undefined),

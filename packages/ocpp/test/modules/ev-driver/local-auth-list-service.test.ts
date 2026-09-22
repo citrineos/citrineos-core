@@ -53,7 +53,7 @@ describe('LocalAuthListService', () => {
 
     localAuthListService = getTestInstance(container, LocalAuthListService, {
       localAuthListRepository: mockLocalAuthListRepository,
-      deviceModelRepository: mockDeviceModelRepository,
+      variableAttributeRepository: mockDeviceModelRepository,
       changeConfigurationRepository: mockChangeConfigurationRepository,
     });
   });

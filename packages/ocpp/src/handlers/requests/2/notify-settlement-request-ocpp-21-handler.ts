@@ -3,11 +3,10 @@
 // SPDX-License-Identifier: Apache-2.0
 import { createHash } from 'node:crypto';
 import {
-  type IDeviceModelRepository,
+  type IVariableAttributeRepository,
   type ITransactionEventRepository,
   Transaction,
 } from '@citrineos/dal';
-import type { VariableAttributeDto } from '@citrineos/types';
 import {
   AbstractHandler,
   type AbstractHandlerDependencies,
@@ -25,6 +24,7 @@ import {
   OCPP_CallAction,
   OCPPVersion,
   type SystemConfig,
+  type VariableAttributeDto,
 } from '@citrineos/types';
 
 /**
@@ -44,26 +44,26 @@ import {
 export class NotifySettlementRequestOcpp21Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
   protected _config: SystemConfig;
-  protected _deviceModelRepository: IDeviceModelRepository;
+  protected _variableAttributeRepository: IVariableAttributeRepository;
   protected _transactionEventRepository: ITransactionEventRepository;
 
   constructor({
     logger,
     ocppSender,
     config,
-    deviceModelRepository,
+    variableAttributeRepository,
     transactionEventRepository,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
     config: SystemConfig;
-    deviceModelRepository: IDeviceModelRepository;
+    variableAttributeRepository: IVariableAttributeRepository;
     transactionEventRepository: ITransactionEventRepository;
   }) {
     super(logger);
 
     this._ocppSender = ocppSender;
     this._config = config;
-    this._deviceModelRepository = deviceModelRepository;
+    this._variableAttributeRepository = variableAttributeRepository;
     this._transactionEventRepository = transactionEventRepository;
   }
 
@@ -163,7 +163,7 @@ export class NotifySettlementRequestOcpp21Handler extends AbstractHandler {
     if (isSettled) {
       try {
         const receiptByCSMSAttributes: VariableAttributeDto[] =
-          await this._deviceModelRepository.readAllByQuerystring(tenantId, {
+          await this._variableAttributeRepository.readAllByQuerystring(tenantId, {
             tenantId,
             ocppConnectionName,
             component_name: 'PaymentCtrlr',

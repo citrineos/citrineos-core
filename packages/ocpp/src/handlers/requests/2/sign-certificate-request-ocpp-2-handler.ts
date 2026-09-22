@@ -25,7 +25,7 @@ import {
   OCPP2_request_types,
   OCPP2_response_types,
 } from '@citrineos/types';
-import type { IDeviceModelRepository } from '@citrineos/dal';
+import type { IVariableAttributeRepository } from '@citrineos/dal';
 import { CertificateAuthorityService, parseCSRForVerification } from '@services/index.js';
 import { validatePEMEncodedCSR } from '@util/index.js';
 import type { InstallCertificateHelperService } from '@services/certificate/install-certificate-helper-service.js';
@@ -43,26 +43,26 @@ export class SignCertificateRequestOcpp2Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
   protected _certificateAuthorityService: CertificateAuthorityService;
   protected _installCertificateHelperService: InstallCertificateHelperService;
-  protected _deviceModelRepository: IDeviceModelRepository;
+  protected _variableAttributeRepository: IVariableAttributeRepository;
 
   constructor({
     logger,
     ocppSender,
     certificateAuthorityService,
     installCertificateHelperService,
-    deviceModelRepository,
+    variableAttributeRepository,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
     certificateAuthorityService: CertificateAuthorityService;
     installCertificateHelperService: InstallCertificateHelperService;
-    deviceModelRepository: IDeviceModelRepository;
+    variableAttributeRepository: IVariableAttributeRepository;
   }) {
     super(logger);
 
     this._ocppSender = ocppSender;
     this._certificateAuthorityService = certificateAuthorityService;
     this._installCertificateHelperService = installCertificateHelperService;
-    this._deviceModelRepository = deviceModelRepository;
+    this._variableAttributeRepository = variableAttributeRepository;
   }
 
   async handle(
@@ -192,13 +192,16 @@ export class SignCertificateRequestOcpp2Handler extends AbstractHandler {
 
     if (certificateType === CertificateSigningUseEnum.ChargingStationCertificate) {
       // Verify organization name match the one stored in the device model
-      const organizationName = await this._deviceModelRepository.readAllByQuerystring(tenantId, {
-        tenantId: tenantId,
-        ocppConnectionName: ocppConnectionName,
-        component_name: 'SecurityCtrlr',
-        variable_name: 'OrganizationName',
-        type: AttributeEnum.Actual,
-      });
+      const organizationName = await this._variableAttributeRepository.readAllByQuerystring(
+        tenantId,
+        {
+          tenantId: tenantId,
+          ocppConnectionName: ocppConnectionName,
+          component_name: 'SecurityCtrlr',
+          variable_name: 'OrganizationName',
+          type: AttributeEnum.Actual,
+        },
+      );
       if (!organizationName || organizationName.length < 1) {
         throw new Error('Expected organizationName not found in DB');
       }
