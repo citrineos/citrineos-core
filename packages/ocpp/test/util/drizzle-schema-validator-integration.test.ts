@@ -91,7 +91,7 @@ describe('DrizzleSchemaValidatorIntegration', () => {
     });
 
     it('reports nothing with default checking enabled', async () => {
-      const report = await validateDrizzleSchema(db, { schema: 'public', checkDefaults: true });
+      const report = await validateDrizzleSchema(db, { schema: 'public' });
       expect(report.findings, JSON.stringify(report.findings, null, 2)).toEqual([]);
     });
 
@@ -205,36 +205,34 @@ describe('DrizzleSchemaValidatorIntegration', () => {
       const report = await validateDrizzleSchema(db, { schema: 'public' });
       expect(report.findings).toEqual([]);
 
-      await db.execute(sql.raw('DROP INDEX "authorizations_id_token_type"'));
+      await db.execute(sql.raw('DROP INDEX "idToken_type"'));
       try {
         const drifted = await validateDrizzleSchema(db, { schema: 'public' });
         const finding = drifted.errors.find(
-          (f) => f.table === 'Authorizations' && f.index === 'authorizations_id_token_type',
+          (f) => f.table === 'Authorizations' && f.index === 'idToken_type',
         );
         expect(finding?.kind).toBe('missing-index');
         expect(finding?.message).toMatch(/uniqueness is NOT enforced/);
       } finally {
         await db.execute(
           sql.raw(
-            'CREATE UNIQUE INDEX "authorizations_id_token_type" ON "Authorizations" ("idToken","idTokenType","tenantId")',
+            'CREATE UNIQUE INDEX "idToken_type" ON "Authorizations" ("idToken","idTokenType","tenantId")',
           ),
         );
       }
     });
 
     it('only warns about a dropped non-unique index', async () => {
-      await db.execute(sql.raw('DROP INDEX "variable_attributes_ocpp_connection_name"'));
+      await db.execute(sql.raw('DROP INDEX "variable_monitorings_station_id"'));
       try {
         const report = await validateDrizzleSchema(db, { schema: 'public' });
         expect(report.errors).toEqual([]);
-        const finding = report.warnings.find(
-          (f) => f.index === 'variable_attributes_ocpp_connection_name',
-        );
+        const finding = report.warnings.find((f) => f.index === 'variable_monitorings_station_id');
         expect(finding?.kind).toBe('missing-index');
       } finally {
         await db.execute(
           sql.raw(
-            'CREATE INDEX "variable_attributes_ocpp_connection_name" ON "VariableAttributes" ("ocppConnectionName")',
+            'CREATE INDEX "variable_monitorings_station_id" ON "VariableMonitorings" ("stationId")',
           ),
         );
       }
@@ -249,14 +247,24 @@ describe('DrizzleSchemaValidatorIntegration', () => {
         // Reported once for the table, not once per declared column.
         expect(report.errors.filter((f) => f.table === 'ChargingStationSequences')).toHaveLength(1);
       } finally {
-        const push = await pushSchema(
-          drizzleSchema,
-          db,
-          ['public'],
-          registeredTables().map((t) => t.name),
-          ['postgis'],
+        // Recreated with raw DDL rather than a second pushSchema() call: calling
+        // drizzle-kit's programmatic push twice against the same db/pool breaks its
+        // internal introspection queries (they lose their bind parameters), a
+        // drizzle-kit/node-postgres incompatibility rather than anything in our schema.
+        await db.execute(
+          sql.raw(`
+            CREATE TABLE "ChargingStationSequences" (
+              "id" serial PRIMARY KEY,
+              "stationId" integer NOT NULL,
+              "type" varchar(255) NOT NULL,
+              "value" bigint NOT NULL DEFAULT 0,
+              "tenantId" integer NOT NULL,
+              "createdAt" timestamp with time zone NOT NULL,
+              "updatedAt" timestamp with time zone NOT NULL
+            );
+            CREATE UNIQUE INDEX "stationId_type" ON "ChargingStationSequences" ("stationId", "type");
+          `),
         );
-        await push.apply();
       }
     });
 

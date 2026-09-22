@@ -596,6 +596,7 @@ describe('SequelizeLocationRepository', () => {
         connectorId: 1,
         status: 'Available',
         timestamp: TS,
+        evseId: 1,
       } as any);
 
       await makeRepo().updateAllConnectorsByStationId(TENANT_A, station.id, {

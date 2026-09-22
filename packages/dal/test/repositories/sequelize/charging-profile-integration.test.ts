@@ -477,6 +477,7 @@ describe('SequelizeChargingProfileRepository', () => {
         transactionDatabaseId: tx.id,
         requestedEnergyTransfer: 'AC_single_phase',
         createdAt: new Date('2025-01-01T00:00:00Z'),
+        transactionCreatedAt: new Date(),
       } as any);
       const newer = await ChargingNeeds.create({
         tenantId: TENANT_A,
@@ -484,6 +485,7 @@ describe('SequelizeChargingProfileRepository', () => {
         transactionDatabaseId: tx.id,
         requestedEnergyTransfer: 'DC',
         createdAt: new Date('2025-02-01T00:00:00Z'),
+        transactionCreatedAt: new Date(),
       } as any);
 
       const found = await makeRepo().findChargingNeedsByEvseDBIdAndTransactionDBId(
@@ -505,6 +507,7 @@ describe('SequelizeChargingProfileRepository', () => {
         evseId: evse.id,
         transactionDatabaseId: tx.id,
         requestedEnergyTransfer: 'DC',
+        transactionCreatedAt: new Date(),
       } as any);
       const repo = makeRepo();
 

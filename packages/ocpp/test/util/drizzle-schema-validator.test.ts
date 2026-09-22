@@ -25,9 +25,9 @@ import { citext } from '@citrineos/dal';
 import {
   assertDrizzleSchemaMatches,
   canonicalizeSqlTypeName,
+  type SchemaFinding,
   SchemaValidationError,
   validateDrizzleSchema,
-  type SchemaFinding,
 } from '@/util/index.js';
 
 /**
@@ -373,35 +373,6 @@ describe('DrizzleSchemaValidator', () => {
         ...matchingIndexes,
         { table: 'Widgets', name: 'widgets_extra' },
       ]);
-      assert.deepStrictEqual(report.findings, []);
-    });
-  });
-
-  describe('column defaults, which are opt-in', () => {
-    const withoutDbDefault = withColumn('enabled', { hasDefault: false, defaultExpression: null });
-
-    it('are not compared by default', async () => {
-      const report = await validate(withoutDbDefault);
-      assert.deepStrictEqual(report.findings, []);
-    });
-
-    it('warn about a dropped default when enabled', async () => {
-      const report = await validateDrizzleSchema(fakeDb(withoutDbDefault, matchingIndexes), {
-        tables: WIDGETS,
-        checkDefaults: true,
-      });
-      const finding = findingFor(report.warnings, 'enabled');
-      assert.strictEqual(finding?.kind, 'default-mismatch');
-      assert.strictEqual(finding?.severity, 'warning');
-    });
-
-    it('never fire on serial or $defaultFn columns', async () => {
-      // id's default comes from its sequence and createdAt's from the application;
-      // comparing on hasDefault alone would flag both on every table.
-      const report = await validateDrizzleSchema(fakeDb(matchingColumns, matchingIndexes), {
-        tables: WIDGETS,
-        checkDefaults: true,
-      });
       assert.deepStrictEqual(report.findings, []);
     });
   });

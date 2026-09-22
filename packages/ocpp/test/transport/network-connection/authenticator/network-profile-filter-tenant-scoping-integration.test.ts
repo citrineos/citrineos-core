@@ -8,11 +8,11 @@ import type { IDeviceModelRepository } from '@citrineos/dal';
 import {
   ChargingStationNetworkProfile,
   DefaultSequelizeInstance,
-  SequelizeLocationRepository,
-  SequelizeTenantRepository,
   type ITenantRepository,
+  SequelizeLocationRepository,
   SequelizeServerNetworkProfileRepository,
   SequelizeSetNetworkProfileRepository,
+  SequelizeTenantRepository,
 } from '@citrineos/dal';
 import { NetworkProfileFilter } from '@/transport/network-connection/authenticator/network-profile-filter.js';
 import type { IncomingMessage } from 'http';
@@ -148,6 +148,7 @@ describe('NetworkProfileFilter tenant scoping', () => {
         protocols: [OCPPVersion.OCPP2_0_1],
         securityProfile: 1,
         allowUnknownChargingStations: false,
+        dynamicTenantResolution: false,
         tenantId: TENANT_B,
       },
       30,
@@ -197,6 +198,7 @@ describe('NetworkProfileFilter tenant scoping', () => {
         securityProfile: 1,
         allowUnknownChargingStations: false,
         tenantId: TENANT_A,
+        dynamicTenantResolution: false,
       },
       30,
     );

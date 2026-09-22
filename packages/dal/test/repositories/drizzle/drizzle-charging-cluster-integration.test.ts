@@ -199,6 +199,7 @@ async function aNeeds(
   const row = await ChargingNeeds.create({
     requestedEnergyTransfer: 'AC_three_phase',
     tenantId,
+    transactionCreatedAt: new Date(),
     ...overrides,
   } as any);
   return row as unknown as { id: number };
