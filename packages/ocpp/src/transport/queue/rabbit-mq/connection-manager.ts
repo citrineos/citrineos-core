@@ -54,7 +54,9 @@ export class RabbitMQConnectionManager extends AbstractConnectionManager<amqp.Ch
 
       this.connection.on('error', (err) => {
         this._logger.error('RabbitMQ connection error:', err);
-        this.emit('error', err);
+        if (this.listenerCount('error') > 0) {
+          this.emit('error', err);
+        }
       });
 
       this.connection.on('close', () => {

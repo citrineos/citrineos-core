@@ -975,7 +975,7 @@ describe('MessageRouterImpl', () => {
 
     it('should throw RetryMessageError when call is already in progress', async () => {
       cache.get.mockResolvedValue(null); // not rejected
-      cache.existsAnyInNamespace.mockResolvedValue(true); // call in progress
+      cache.setIfNotExist.mockResolvedValue(false); // call in progress
 
       await expect(
         router.sendCall(STATION_ID, TENANT_ID, PROTOCOL, action, payload, CORRELATION_ID),
