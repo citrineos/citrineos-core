@@ -9,6 +9,7 @@ import { VersionNumber } from '../types/version-number.js';
 import type { VersionsClientApi } from '../transport/trigger/versions-client-api.js';
 import { AlreadyRegisteredException } from '../apis/exception/already-registered-exception.js';
 import { NotRegisteredException } from '../apis/exception/not-registered-exception.js';
+import { InvalidParamException } from '../apis/exception/invalid-param-exception.js';
 import type { CredentialsRoleDTO } from '../types/dto/credentials-role-dto.js';
 import type { CredentialsClientApi } from '../transport/trigger/credentials-client-api.js';
 import type {
@@ -377,9 +378,21 @@ export class CredentialsService {
         `Multiple endpoints found for version ${versionNumber}. Returning the first one. All entries: ${JSON.stringify(versionDetails.data.endpoints)}`,
       );
     }
-    tenantPartner.partnerProfileOCPI!.endpoints = versionDetails.data.endpoints.map(
-      (value: Endpoint) => RegistrationMapper.toEndpoint(value),
+    tenantPartner.partnerProfileOCPI!.endpoints = (versionDetails.data.endpoints ?? []).flatMap(
+      (value: Endpoint) => {
+        const endpoint = RegistrationMapper.toSupportedEndpoint(value);
+        if (!endpoint) {
+          this.logger.warn(`Skipping endpoint for unsupported OCPI module '${value.identifier}'`);
+          return [];
+        }
+        return [endpoint];
+      },
     );
+    if (tenantPartner.partnerProfileOCPI!.endpoints.length === 0) {
+      throw new InvalidParamException(
+        'Partner version details advertised no endpoints for any supported OCPI module',
+      );
+    }
     return tenantPartner;
   }
 

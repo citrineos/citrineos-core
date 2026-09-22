@@ -375,4 +375,50 @@ describe('RegistrationMapper endpoint mapping', () => {
       'Unknown endpoint identifier: hubclientinfo',
     );
   });
+
+  it('returns null for a real OCPI module we do not implement', () => {
+    for (const identifier of [ModuleId.Hubclientinfo, ModuleId.Versions]) {
+      expect(
+        RegistrationMapper.toEndpointIdentifierOrNull({
+          identifier,
+          role: InterfaceRole.SENDER,
+          url: URL,
+        }),
+      ).toBeNull();
+      expect(
+        RegistrationMapper.toSupportedEndpoint({
+          identifier,
+          role: InterfaceRole.SENDER,
+          url: URL,
+        }),
+      ).toBeNull();
+    }
+  });
+
+  it('maps a supported module through toSupportedEndpoint', () => {
+    expect(
+      RegistrationMapper.toSupportedEndpoint({
+        identifier: ModuleId.Cdrs,
+        role: InterfaceRole.SENDER,
+        url: URL,
+      }),
+    ).toEqual({ identifier: EndpointIdentifier.CDRS_SENDER, url: URL });
+  });
+
+  it('still throws for a known module with an unknown role, even via the nullable path', () => {
+    expect(() =>
+      RegistrationMapper.toEndpointIdentifierOrNull({
+        identifier: ModuleId.Cdrs,
+        role: 'OBSERVER' as InterfaceRole,
+        url: URL,
+      }),
+    ).toThrow('Unknown role for module cdrs: OBSERVER');
+    expect(() =>
+      RegistrationMapper.toSupportedEndpoint({
+        identifier: ModuleId.Cdrs,
+        role: 'OBSERVER' as InterfaceRole,
+        url: URL,
+      }),
+    ).toThrow('Unknown role for module cdrs: OBSERVER');
+  });
 });

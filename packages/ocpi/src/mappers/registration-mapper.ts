@@ -192,7 +192,20 @@ export class RegistrationMapper {
     };
   }
 
+  static toSupportedEndpoint(value: Endpoint): BaseEndpoint | null {
+    const identifier = RegistrationMapper.toEndpointIdentifierOrNull(value);
+    return identifier === null ? null : { identifier, url: value.url };
+  }
+
   static toEndpointIdentifier(value: Endpoint): EndpointIdentifier {
+    const identifier = RegistrationMapper.toEndpointIdentifierOrNull(value);
+    if (identifier === null) {
+      throw new Error(`Unknown module identifier: ${value.identifier}`);
+    }
+    return identifier;
+  }
+
+  static toEndpointIdentifierOrNull(value: Endpoint): EndpointIdentifier | null {
     switch (value.identifier) {
       case ModuleId.Credentials:
         return EndpointIdentifier.CREDENTIALS;
@@ -226,7 +239,7 @@ export class RegistrationMapper {
           return EndpointIdentifier.CHARGING_PROFILES_RECEIVER;
         break;
       default:
-        throw new Error(`Unknown module identifier: ${value.identifier}`);
+        return null;
     }
     throw new Error(`Unknown role for module ${value.identifier}: ${value.role}`);
   }
