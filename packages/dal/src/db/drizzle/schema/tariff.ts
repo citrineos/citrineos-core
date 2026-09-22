@@ -31,7 +31,7 @@ function tariffColumns() {
     authorizationAmount: numeric('authorizationAmount'),
     paymentFee: numeric('paymentFee'),
     taxRate: numeric('taxRate'),
-    tariffAltText: jsonb('tariffAltText').$type<object[]>(),
+    tariffAltText: jsonb('tariffAltText').$type<Record<string, any>>(),
     tariffId: varchar('tariffId', { length: 255 }),
     // mode: 'date' returns a JS Date — mapped to ISO string in the repository layer
     validFrom: timestamp('validFrom', { withTimezone: true, mode: 'date' }),

@@ -447,7 +447,7 @@ export type GetTariffByKeyQueryResult = {
     pricePerMin?: any | null;
     pricePerSession?: any | null;
     taxRate?: any | null;
-    tariffAltText?: string | null;
+    tariffAltText?: Record<string, any> | null;
     updatedAt: any;
     tenant: {
       countryCode: string;
@@ -473,7 +473,7 @@ export type GetTariffsQueryResult = {
     pricePerMin?: any | null;
     pricePerSession?: any | null;
     taxRate?: any | null;
-    tariffAltText?: string | null;
+    tariffAltText?: Record<string, any> | null;
     updatedAt: any;
     tenant: {
       countryCode: string;
