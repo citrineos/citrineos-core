@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { TariffDimensionType } from '../../src/types/tariff-dimension-type.js';
 import type { TariffElement } from '../../src/types/tariff-element.js';
 import { TariffType } from '../../src/types/tariff-type.js';
+import { DisplayTextSchema } from '../../src/types/display-text.js';
 import { TariffMapper } from '../../src/mappers/tariff-mapper.js';
 
 const UPDATED_AT = new Date('2026-08-20T11:00:00Z');
@@ -101,6 +102,54 @@ describe('TariffMapper.map', () => {
     expect(dto.elements[0].price_components.map((pc) => pc.type)).toEqual([
       TariffDimensionType.ENERGY,
     ]);
+  });
+});
+
+// tariffAltText is stored as a JSONB language-keyed record; OCPI defines
+// tariff_alt_text as DisplayText with * cardinality. The conversion lives only in the
+// mapper — see citrineos/citrineos#226.
+describe('TariffMapper.map — tariff_alt_text', () => {
+  it('maps a single-language record to one DisplayText entry', () => {
+    const dto = TariffMapper.map(aCoreTariff({ tariffAltText: { en: 'Standard Tariff' } }));
+
+    expect(dto.tariff_alt_text).toEqual([{ language: 'en', text: 'Standard Tariff' }]);
+  });
+
+  it('maps every language in the record, not just the first', () => {
+    const dto = TariffMapper.map(
+      aCoreTariff({ tariffAltText: { en: 'Standard Tariff', fr: 'Tarif Standard' } }),
+    );
+
+    // The previous (commented-out) implementation indexed [0] and would have dropped fr.
+    expect(dto.tariff_alt_text).toEqual([
+      { language: 'en', text: 'Standard Tariff' },
+      { language: 'fr', text: 'Tarif Standard' },
+    ]);
+  });
+
+  it('produces entries that satisfy the OCPI DisplayText schema', () => {
+    const dto = TariffMapper.map(
+      aCoreTariff({ tariffAltText: { en: 'Standard Tariff', de: 'Standardtarif' } }),
+    );
+
+    for (const entry of dto.tariff_alt_text ?? []) {
+      expect(() => DisplayTextSchema.parse(entry)).not.toThrow();
+    }
+  });
+
+  it.each([
+    ['absent', undefined],
+    ['null', null],
+    ['an empty record', {}],
+  ])('omits the field when tariffAltText is %s', (_label, tariffAltText) => {
+    const dto = TariffMapper.map(
+      aCoreTariff({ tariffAltText: tariffAltText as TariffDto['tariffAltText'] }),
+    );
+
+    // undefined rather than [], so the key is omitted from the OCPI payload like the
+    // other optional fields. An empty array would be a malformed multi-language field.
+    expect(dto.tariff_alt_text).toBeUndefined();
+    expect(dto.tariff_alt_text).not.toEqual([]);
   });
 });
 
