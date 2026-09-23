@@ -146,12 +146,12 @@ describe('chargingStation queries', () => {
     );
   });
 
-  it('BY_ID filters on ocppConnectionName, not the pk', () => {
+  it('BY_ID filters on ocppConnectionName, scoped to the tenant', () => {
     expect(GET_CHARGING_STATION_BY_ID_QUERY).toContain(
-      'query GetChargingStationById($id: String!)',
+      'query GetChargingStationById($id: String!, $tenantId: Int!)',
     );
     expect(GET_CHARGING_STATION_BY_ID_QUERY).toContain(
-      'ChargingStations(where: { ocppConnectionName: { _eq: $id } })',
+      'ChargingStations(where: { ocppConnectionName: { _eq: $id }, tenantId: { _eq: $tenantId } })',
     );
   });
 

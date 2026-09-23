@@ -424,6 +424,21 @@ describe('TokensService.realTimeAuthorization', () => {
     expect(postToken).not.toHaveBeenCalled();
   });
 
+  it('scopes the station lookup to the partner tenant', async () => {
+    const { service, request } = buildService((operation) => {
+      if (operation === 'GetTenantPartnerById') return { TenantPartners_by_pk: aTenantPartner() };
+      return { ChargingStations: [] };
+    });
+
+    await expect(service.realTimeAuthorization(anAuthRequest({ locationId: '3' }))).rejects.toThrow(
+      /Unknown charging station/,
+    );
+
+    const { document, variables } = callTo(request, 'GetChargingStationById');
+    expect(document).toContain('tenantId: { _eq: $tenantId }');
+    expect(variables).toStrictEqual({ id: 'cs-001', tenantId: 1 });
+  });
+
   it('posts the token to the eMSP addressed by the tenant partner', async () => {
     const partner = aTenantPartner();
     const { service, postToken } = buildService(
