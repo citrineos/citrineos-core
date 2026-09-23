@@ -185,24 +185,9 @@ export class RegistrationMapper {
     }
   }
 
-  static toEndpoint(value: Endpoint): BaseEndpoint {
-    return {
-      identifier: RegistrationMapper.toEndpointIdentifier(value),
-      url: value.url,
-    };
-  }
-
   static toSupportedEndpoint(value: Endpoint): BaseEndpoint | null {
     const identifier = RegistrationMapper.toEndpointIdentifierOrNull(value);
     return identifier === null ? null : { identifier, url: value.url };
-  }
-
-  static toEndpointIdentifier(value: Endpoint): EndpointIdentifier {
-    const identifier = RegistrationMapper.toEndpointIdentifierOrNull(value);
-    if (identifier === null) {
-      throw new Error(`Unknown module identifier: ${value.identifier}`);
-    }
-    return identifier;
   }
 
   static toEndpointIdentifierOrNull(value: Endpoint): EndpointIdentifier | null {
@@ -238,8 +223,13 @@ export class RegistrationMapper {
         if (value.role === InterfaceRole.RECEIVER)
           return EndpointIdentifier.CHARGING_PROFILES_RECEIVER;
         break;
-      default:
+      // Valid OCPI 2.2.1 modules CitrineOS does not expose as endpoints — skip them rather than failing the
+      // whole handshake. Any other unmapped module id is unexpected and still throws.
+      case ModuleId.Hubclientinfo:
+      case ModuleId.Versions:
         return null;
+      default:
+        throw new Error(`Unknown module identifier: ${value.identifier}`);
     }
     throw new Error(`Unknown role for module ${value.identifier}: ${value.role}`);
   }

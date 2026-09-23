@@ -311,27 +311,27 @@ describe('RegistrationMapper endpoint mapping', () => {
   ];
 
   it('serializes the identifier as module_ROLE', () => {
-    const result = RegistrationMapper.toEndpoint({
+    const result = RegistrationMapper.toSupportedEndpoint({
       identifier: ModuleId.Cdrs,
       role: InterfaceRole.SENDER,
       url: URL,
     });
-    expect(result.identifier).toBe('cdrs_SENDER');
-    expect(result.url).toBe(URL);
+    expect(result?.identifier).toBe('cdrs_SENDER');
+    expect(result?.url).toBe(URL);
   });
 
-  it('round-trips every module/role pair through toEndpoint and toModuleAndRole', () => {
+  it('round-trips every module/role pair through toSupportedEndpoint and toModuleAndRole', () => {
     for (const [identifier, role, wire] of wirePairs) {
-      const endpoint = RegistrationMapper.toEndpoint({ identifier, role, url: URL });
-      expect(endpoint.identifier).toBe(wire);
-      expect(RegistrationMapper.toModuleAndRole(endpoint)).toEqual({ identifier, role });
+      const endpoint = RegistrationMapper.toSupportedEndpoint({ identifier, role, url: URL });
+      expect(endpoint?.identifier).toBe(wire);
+      expect(RegistrationMapper.toModuleAndRole(endpoint!)).toEqual({ identifier, role });
     }
   });
 
   it('maps credentials without a role suffix regardless of interface role', () => {
     for (const role of [InterfaceRole.SENDER, InterfaceRole.RECEIVER]) {
       expect(
-        RegistrationMapper.toEndpointIdentifier({
+        RegistrationMapper.toEndpointIdentifierOrNull({
           identifier: ModuleId.Credentials,
           role,
           url: URL,
@@ -349,26 +349,6 @@ describe('RegistrationMapper endpoint mapping', () => {
     expect(result).toEqual({ identifier: ModuleId.Credentials, role: InterfaceRole.SENDER });
   });
 
-  it('rejects a module with no OCPI endpoint identifier', () => {
-    expect(() =>
-      RegistrationMapper.toEndpointIdentifier({
-        identifier: ModuleId.Hubclientinfo,
-        role: InterfaceRole.SENDER,
-        url: URL,
-      }),
-    ).toThrow('Unknown module identifier: hubclientinfo');
-  });
-
-  it('rejects a known module with an unknown role', () => {
-    expect(() =>
-      RegistrationMapper.toEndpointIdentifier({
-        identifier: ModuleId.Cdrs,
-        role: 'OBSERVER' as InterfaceRole,
-        url: URL,
-      }),
-    ).toThrow('Unknown role for module cdrs: OBSERVER');
-  });
-
   it('rejects an unknown endpoint identifier on the way back', () => {
     const endpoint: BaseEndpoint = { identifier: 'hubclientinfo', url: URL };
     expect(() => RegistrationMapper.toModuleAndRole(endpoint)).toThrow(
@@ -376,33 +356,37 @@ describe('RegistrationMapper endpoint mapping', () => {
     );
   });
 
-  it('returns null for a real OCPI module we do not implement', () => {
+  it('skips valid OCPI modules we do not expose as endpoints', () => {
     for (const identifier of [ModuleId.Hubclientinfo, ModuleId.Versions]) {
       expect(
         RegistrationMapper.toEndpointIdentifierOrNull({
           identifier,
-          role: InterfaceRole.SENDER,
+          role: InterfaceRole.RECEIVER,
           url: URL,
         }),
       ).toBeNull();
       expect(
         RegistrationMapper.toSupportedEndpoint({
           identifier,
-          role: InterfaceRole.SENDER,
+          role: InterfaceRole.RECEIVER,
           url: URL,
         }),
       ).toBeNull();
     }
   });
 
-  it('maps a supported module through toSupportedEndpoint', () => {
-    expect(
-      RegistrationMapper.toSupportedEndpoint({
-        identifier: ModuleId.Cdrs,
+  it('throws for any other unmapped module identifier', () => {
+    const identifier = 'made-up-module' as ModuleId;
+    expect(() =>
+      RegistrationMapper.toEndpointIdentifierOrNull({
+        identifier,
         role: InterfaceRole.SENDER,
         url: URL,
       }),
-    ).toEqual({ identifier: EndpointIdentifier.CDRS_SENDER, url: URL });
+    ).toThrow(`Unknown module identifier: ${identifier}`);
+    expect(() =>
+      RegistrationMapper.toSupportedEndpoint({ identifier, role: InterfaceRole.SENDER, url: URL }),
+    ).toThrow(`Unknown module identifier: ${identifier}`);
   });
 
   it('still throws for a known module with an unknown role, even via the nullable path', () => {

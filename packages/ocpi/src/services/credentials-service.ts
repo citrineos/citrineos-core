@@ -378,7 +378,7 @@ export class CredentialsService {
         `Multiple endpoints found for version ${versionNumber}. Returning the first one. All entries: ${JSON.stringify(versionDetails.data.endpoints)}`,
       );
     }
-    tenantPartner.partnerProfileOCPI!.endpoints = (versionDetails.data.endpoints ?? []).flatMap(
+    tenantPartner.partnerProfileOCPI!.endpoints = versionDetails.data.endpoints.flatMap(
       (value: Endpoint) => {
         const endpoint = RegistrationMapper.toSupportedEndpoint(value);
         if (!endpoint) {
