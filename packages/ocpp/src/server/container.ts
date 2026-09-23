@@ -391,6 +391,7 @@ function registerServices(container: AwilixContainer): void {
         return new OIDCAuthProvider(
           { ...rest, ...(cacheTimeSeconds && { cacheTime: cacheTimeSeconds * 1000 }) },
           logger,
+          (config as SystemConfig).rbac,
         );
       }
       if ((config as SystemConfig).auth.localBypass) {
