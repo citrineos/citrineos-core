@@ -223,8 +223,6 @@ export class RegistrationMapper {
         if (value.role === InterfaceRole.RECEIVER)
           return EndpointIdentifier.CHARGING_PROFILES_RECEIVER;
         break;
-      // Valid OCPI 2.2.1 modules CitrineOS does not expose as endpoints — skip them rather than failing the
-      // whole handshake. Any other unmapped module id is unexpected and still throws.
       case ModuleId.Hubclientinfo:
       case ModuleId.Versions:
         return null;
