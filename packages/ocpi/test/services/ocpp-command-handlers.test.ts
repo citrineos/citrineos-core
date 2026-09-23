@@ -7,7 +7,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { OCPP_VERSION_LIST } from '@citrineos/types';
 import { describe, expect, it } from 'vitest';
-import { ocpiConfigSchema } from '../../src/config/ocpi-types.js';
+import { ocpiConfigSchema } from '@ocpi/config/ocpi-types.js';
 
 // The handler classes cannot be imported here: they are typedi @Service classes
 // and vitest's transform does not emit decorator metadata, so importing one

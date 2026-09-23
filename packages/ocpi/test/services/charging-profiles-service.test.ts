@@ -5,10 +5,10 @@ import 'reflect-metadata';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { NotFoundError } from 'routing-controllers';
 
-import { ChargingProfilesService } from '../../src/services/charging-profiles-service.js';
-import { ChargingProfileResultType } from '../../src/types/charging-profile-response.js';
-import type { SetChargingProfile } from '../../src/types/set-charging-profile.js';
-import { ResponseGenerator } from '../../src/apis/response-generator.js';
+import { ChargingProfilesService } from '@ocpi/services/charging-profiles-service.js';
+import { ChargingProfileResultType } from '@ocpi/types/charging-profile-response.js';
+import type { SetChargingProfile } from '@ocpi/types/set-charging-profile.js';
+import { ResponseGenerator } from '@ocpi/apis/response-generator.js';
 
 const SESSION_ID = 'SESSION-1';
 const RESPONSE_URL = 'https://msp.example.com/charging_profiles/SESSION-1';

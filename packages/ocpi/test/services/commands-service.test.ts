@@ -5,10 +5,10 @@ import 'reflect-metadata';
 import { describe, expect, it, vi } from 'vitest';
 import { Logger } from 'tslog';
 
-import { CommandsService } from '../../src/services/commands-service.js';
-import { CommandType } from '../../src/types/command-type.js';
-import { CommandResponseType } from '../../src/types/command-response.js';
-import { ocpiConfigSchema } from '../../src/config/ocpi-types.js';
+import { CommandsService } from '@ocpi/services/commands-service.js';
+import { CommandType } from '@ocpi/types/command-type.js';
+import { CommandResponseType } from '@ocpi/types/command-response.js';
+import { ocpiConfigSchema } from '@ocpi/config/ocpi-types.js';
 
 const TIMEOUT = 42;
 const COUNTRY_CODE = 'GB';

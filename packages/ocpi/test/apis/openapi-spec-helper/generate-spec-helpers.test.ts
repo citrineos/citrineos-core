@@ -21,16 +21,16 @@ import {
   getStatusCode,
   getSummary,
   getTags,
-} from '../../../src/apis/openapi-spec-helper/generate-spec-helpers.js';
-import type { IRoute } from '../../../src/apis/openapi-spec-helper/parse-metadata.js';
-import { mergeDeep } from '../../../src/apis/openapi-spec-helper/merge-deep.js';
-import { smartcase } from '../../../src/apis/openapi-spec-helper/smart-case.js';
-import { capitalize } from '../../../src/apis/openapi-spec-helper/capitalize.js';
-import { SchemaStore } from '../../../src/apis/openapi-spec-helper/schema-store.js';
-import { ENUM_PARAM } from '../../../src/apis/decorators/enum-param.js';
-import { ENUM_QUERY_PARAM } from '../../../src/apis/decorators/enum-query-param.js';
-import { MULTIPLE_TYPES } from '../../../src/apis/decorators/multiple-types.js';
-import { BODY_PARAM } from '../../../src/apis/decorators/body-with-schema.js';
+} from '@ocpi/apis/openapi-spec-helper/generate-spec-helpers.js';
+import type { IRoute } from '@ocpi/apis/openapi-spec-helper/parse-metadata.js';
+import { mergeDeep } from '@ocpi/apis/openapi-spec-helper/merge-deep.js';
+import { smartcase } from '@ocpi/apis/openapi-spec-helper/smart-case.js';
+import { capitalize } from '@ocpi/apis/openapi-spec-helper/capitalize.js';
+import { SchemaStore } from '@ocpi/apis/openapi-spec-helper/schema-store.js';
+import { ENUM_PARAM } from '@ocpi/apis/decorators/enum-param.js';
+import { ENUM_QUERY_PARAM } from '@ocpi/apis/decorators/enum-query-param.js';
+import { MULTIPLE_TYPES } from '@ocpi/apis/decorators/multiple-types.js';
+import { BODY_PARAM } from '@ocpi/apis/decorators/body-with-schema.js';
 
 class TokensController {
   getTokenById(_tokenId: string) {}

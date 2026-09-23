@@ -4,8 +4,8 @@
 import 'reflect-metadata';
 import { describe, expect, it, vi } from 'vitest';
 
-import { SessionsService } from '../../src/services/sessions-service.js';
-import { GET_TRANSACTIONS_QUERY } from '../../src/transport/graphql/index.js';
+import { SessionsService } from '@ocpi/services/sessions-service.js';
+import { GET_TRANSACTIONS_QUERY } from '@ocpi/transport/graphql/index.js';
 
 const ROWS = [
   { id: 1, transactionId: 'tx-001', isActive: false },

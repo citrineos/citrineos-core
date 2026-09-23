@@ -37,8 +37,8 @@ import {
   getClientIdFromUrl,
   WebsocketNetworkConnection,
 } from '@/transport/network-connection/websocket-network-connection.js';
-import { readFile } from '../../utils/file-util.js';
-import { parseOcspRequestHex } from '../../utils/ocsp-request-parser.js';
+import { readFile } from '../../helpers/file-util.js';
+import { parseOcspRequestHex } from '../../helpers/ocsp-request-parser.js';
 import KJUR = jsrsasign.KJUR;
 import KEYUTIL = jsrsasign.KEYUTIL;
 import X509 = jsrsasign.X509;

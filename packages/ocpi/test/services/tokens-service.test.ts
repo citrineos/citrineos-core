@@ -8,14 +8,14 @@ import {
 } from '@citrineos/types';
 import { Logger } from 'tslog';
 import { describe, expect, it, vi } from 'vitest';
-import { TokensMapper } from '../../src/mappers/tokens-mapper.js';
-import { AuthorizationInfoAllowed } from '../../src/types/authorization-info-allowed.js';
-import type { TokenDTO } from '../../src/types/dto/token-dto.js';
-import { OcpiResponseStatusCode } from '../../src/types/ocpi-response.js';
-import { TokenType } from '../../src/types/token-type.js';
-import { WhitelistType } from '../../src/types/whitelist-type.js';
-import { TokensService } from '../../src/services/tokens-service.js';
-import type { TokensClientApi } from '../../src/transport/trigger/tokens-client-api.js';
+import { TokensMapper } from '@ocpi/mappers/tokens-mapper.js';
+import { AuthorizationInfoAllowed } from '@ocpi/types/authorization-info-allowed.js';
+import type { TokenDTO } from '@ocpi/types/dto/token-dto.js';
+import { OcpiResponseStatusCode } from '@ocpi/types/ocpi-response.js';
+import { TokenType } from '@ocpi/types/token-type.js';
+import { WhitelistType } from '@ocpi/types/whitelist-type.js';
+import { TokensService } from '@ocpi/services/tokens-service.js';
+import type { TokensClientApi } from '@ocpi/transport/trigger/tokens-client-api.js';
 
 const LAST_UPDATED = new Date('2026-08-12T10:00:00.000Z');
 const AUTH_TIMESTAMP = new Date('2026-08-19T12:00:00.000Z');

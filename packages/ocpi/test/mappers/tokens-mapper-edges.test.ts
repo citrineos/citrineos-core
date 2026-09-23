@@ -10,10 +10,10 @@ import {
 } from '@citrineos/types';
 import { type ILogObj, Logger } from 'tslog';
 import { describe, expect, it, vi } from 'vitest';
-import type { TokenDTO } from '../../src/types/dto/token-dto.js';
-import { TokenType } from '../../src/types/token-type.js';
-import { WhitelistType } from '../../src/types/whitelist-type.js';
-import { TokensMapper } from '../../src/mappers/tokens-mapper.js';
+import type { TokenDTO } from '@ocpi/types/dto/token-dto.js';
+import { TokenType } from '@ocpi/types/token-type.js';
+import { WhitelistType } from '@ocpi/types/whitelist-type.js';
+import { TokensMapper } from '@ocpi/mappers/tokens-mapper.js';
 
 const logger = new Logger<ILogObj>({ type: 'hidden' });
 const mapper = new TokensMapper({ logger });

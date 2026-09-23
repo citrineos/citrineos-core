@@ -4,7 +4,7 @@
 import type { BootDto } from '@citrineos/types';
 import { OCPP2_0_1 } from '@citrineos/types';
 import { faker } from '@faker-js/faker';
-import { applyUpdateFunction, type UpdateFunction } from '../utils/update-util.js';
+import { applyUpdateFunction, type UpdateFunction } from '@test/helpers/update-util.js';
 
 export const aValidSetVariableResult = (
   updateFunction?: UpdateFunction<OCPP2_0_1.SetVariableResultType>,
