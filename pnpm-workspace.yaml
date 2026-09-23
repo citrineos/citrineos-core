@@ -60,7 +60,7 @@ catalog:
   pg-hstore: 2.3.4
   drizzle-orm: 0.45.2
   drizzle-zod: 0.8.3
-  drizzle-kit: 0.31.10
+  drizzle-kit: 0.31.11
 
   # -- Crypto & auth --
   acme-client: 5.4.0
