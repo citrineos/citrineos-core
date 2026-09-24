@@ -25,9 +25,10 @@ out of the "hot path" and expand to process messages more flexibly without addin
     which is then routed to the "frame" queue.
 4. The MessagesModule consumes (with the help of MessagesEventConsumer) the message and runs all frame processors against
     the message (with the help of MessagesEventPipeline). 
-   - As of time of writing, two processors exist for OCPP Messages: One to dispatch the message via the
-     webhook-dispatcher (for any Charging Station message subscribers), and the other to store the OCPP message in the
-     OCPPMessaages database table.
+   - As of time of writing, three processors exist for OCPP Messages: one to store the OCPP message in the
+     OCPPMessaages database table, one to dispatch the message via the webhook-dispatcher (for any Charging Station
+     message subscribers), and one to stamp `ChargingStations.latestOcppMessageTimestamp` with the receipt time of
+     each inbound frame.
 
 ## Example: Websocket Connection
 
