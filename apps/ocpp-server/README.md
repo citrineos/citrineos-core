@@ -63,7 +63,7 @@ Make sure the workspace has been installed and built first (from the repository 
 ### With Docker (backend only)
 
 From the repository root, the `--solo` flag brings up the server plus its supporting services — RabbitMQ, PostgreSQL,
-MinIO, and Hasura — but **not** the operator UI:
+and Hasura — but **not** the operator UI:
 
 ```shell
 pnpm citrine --solo            # from published images
