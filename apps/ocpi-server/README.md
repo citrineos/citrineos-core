@@ -120,7 +120,7 @@ pnpm run build
 ### Running with Docker (Recommended)
 
 The OCPI Server runs as part of the unified stack. From the repository root, the `--ocpi` flag brings up CitrineOS Core
-(`citrine`, PostgreSQL, RabbitMQ, MinIO, Hasura), the operator UI, and the OCPI Server together:
+(`citrine`, PostgreSQL, RabbitMQ, Hasura), the operator UI, and the OCPI Server together:
 
 ```bash
 pnpm citrine --ocpi
