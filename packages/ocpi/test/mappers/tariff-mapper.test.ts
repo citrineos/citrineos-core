@@ -3,11 +3,11 @@
 // SPDX-License-Identifier: Apache-2.0
 import type { TariffDto } from '@citrineos/types';
 import { describe, expect, it } from 'vitest';
-import { TariffDimensionType } from '../../src/types/tariff-dimension-type.js';
-import type { TariffElement } from '../../src/types/tariff-element.js';
-import { TariffType } from '../../src/types/tariff-type.js';
-import { DisplayTextSchema } from '../../src/types/display-text.js';
-import { TariffMapper } from '../../src/mappers/tariff-mapper.js';
+import { TariffDimensionType } from '@ocpi/types/tariff-dimension-type.js';
+import type { TariffElement } from '@ocpi/types/tariff-element.js';
+import { TariffType } from '@ocpi/types/tariff-type.js';
+import { DisplayTextSchema } from '@ocpi/types/display-text.js';
+import { TariffMapper } from '@ocpi/mappers/tariff-mapper.js';
 
 const UPDATED_AT = new Date('2026-08-20T11:00:00Z');
 

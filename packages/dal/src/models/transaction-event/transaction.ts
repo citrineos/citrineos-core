@@ -56,7 +56,7 @@ export class Transaction extends Model implements TransactionDto {
   declare locationId?: number;
 
   @BelongsTo(() => Location, 'locationId')
-  location?: LocationDto;
+  declare location?: LocationDto;
 
   @ForeignKey(() => ChargingStation)
   @Column({
@@ -67,7 +67,7 @@ export class Transaction extends Model implements TransactionDto {
   declare stationId?: number;
 
   @BelongsTo(() => ChargingStation, 'stationId')
-  station!: ChargingStationDto;
+  declare station: ChargingStationDto;
 
   @ForeignKey(() => Evse)
   @Column(DataType.INTEGER)
@@ -88,14 +88,14 @@ export class Transaction extends Model implements TransactionDto {
   declare authorizationId?: number;
 
   @BelongsTo(() => Authorization, 'authorizationId')
-  authorization?: AuthorizationDto;
+  declare authorization?: AuthorizationDto;
 
   @Column(DataType.INTEGER)
   @ForeignKey(() => Tariff)
   declare tariffId?: number;
 
   @BelongsTo(() => Tariff, 'tariffId')
-  tariff?: TariffDto;
+  declare tariff?: TariffDto;
 
   @Column(DataType.STRING)
   declare transactionId: string;

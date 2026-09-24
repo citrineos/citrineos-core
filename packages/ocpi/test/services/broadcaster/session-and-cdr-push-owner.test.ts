@@ -6,12 +6,12 @@ import type { MeterValueDto, TenantDto, TransactionDto } from '@citrineos/types'
 import { describe, expect, it, vi } from 'vitest';
 import { type ILogObj, Logger } from 'tslog';
 
-import { CdrBroadcaster } from '../../../src/services/broadcaster/cdr-broadcaster.js';
-import { SessionBroadcaster } from '../../../src/services/broadcaster/session-broadcaster.js';
-import { LIST_TENANT_PARTNERS_BY_CPO } from '../../../src/transport/graphql/index.js';
-import type { BaseClientApi } from '../../../src/transport/trigger/base-client-api.js';
-import { CdrsClientApi } from '../../../src/transport/trigger/cdrs-client-api.js';
-import { SessionsClientApi } from '../../../src/transport/trigger/sessions-client-api.js';
+import { CdrBroadcaster } from '@ocpi/services/broadcaster/cdr-broadcaster.js';
+import { SessionBroadcaster } from '@ocpi/services/broadcaster/session-broadcaster.js';
+import { LIST_TENANT_PARTNERS_BY_CPO } from '@ocpi/transport/graphql/index.js';
+import type { BaseClientApi } from '@ocpi/transport/trigger/base-client-api.js';
+import { CdrsClientApi } from '@ocpi/transport/trigger/cdrs-client-api.js';
+import { SessionsClientApi } from '@ocpi/transport/trigger/sessions-client-api.js';
 
 const tenant = { countryCode: 'GB', partyId: 'CPO' } as TenantDto;
 const OWNER = { id: 11, countryCode: 'GB', partyId: 'AAA', partnerProfileOCPI: {} };

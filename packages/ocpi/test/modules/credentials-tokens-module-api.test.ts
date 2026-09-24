@@ -5,16 +5,16 @@ import 'reflect-metadata';
 import { Logger } from 'tslog';
 import { describe, expect, it, vi } from 'vitest';
 
-import { InvalidParamException } from '../../src/apis/exception/invalid-param-exception.js';
-import { UnknownTokenException } from '../../src/apis/exception/unknown-token-exception.js';
-import { WrongClientAccessException } from '../../src/apis/exception/wrong-client-access-exception.js';
-import { OcpiHeaders } from '../../src/types/ocpi-headers.js';
-import { OcpiResponseStatusCode } from '../../src/types/ocpi-response.js';
-import { TokenType } from '../../src/types/token-type.js';
-import { VersionNumber } from '../../src/types/version-number.js';
-import { WhitelistType } from '../../src/types/whitelist-type.js';
-import { CredentialsModuleApi } from '../../src/modules/credentials/module/credentials-module-api.js';
-import { TokensModuleApi } from '../../src/modules/tokens/module/tokens-module-api.js';
+import { InvalidParamException } from '@ocpi/apis/exception/invalid-param-exception.js';
+import { UnknownTokenException } from '@ocpi/apis/exception/unknown-token-exception.js';
+import { WrongClientAccessException } from '@ocpi/apis/exception/wrong-client-access-exception.js';
+import { OcpiHeaders } from '@ocpi/types/ocpi-headers.js';
+import { OcpiResponseStatusCode } from '@ocpi/types/ocpi-response.js';
+import { TokenType } from '@ocpi/types/token-type.js';
+import { VersionNumber } from '@ocpi/types/version-number.js';
+import { WhitelistType } from '@ocpi/types/whitelist-type.js';
+import { CredentialsModuleApi } from '@ocpi/modules/credentials/module/credentials-module-api.js';
+import { TokensModuleApi } from '@ocpi/modules/tokens/module/tokens-module-api.js';
 
 const VERSION = VersionNumber.TWO_DOT_TWO_DOT_ONE;
 const TENANT_PARTNER = { id: 7, tenant: { id: 3 } };

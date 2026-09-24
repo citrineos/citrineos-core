@@ -38,7 +38,7 @@ import type { Sequelize } from 'sequelize-typescript';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { Logger } from 'tslog';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { readFile } from '../../../utils/file-util.js';
+import { readFile } from '../../../helpers/file-util.js';
 
 const STATION = 'CP-ROOT-1';
 const CORRELATION_ID = 'corr-install';

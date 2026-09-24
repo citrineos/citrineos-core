@@ -41,7 +41,7 @@ export class ChargingStationSecurityInfo extends Model implements ChargingStatio
   declare chargingStation?: ChargingStationDto;
 
   @Column(DataType.STRING)
-  publicKeyFileId!: string;
+  declare publicKeyFileId: string;
 
   @ForeignKey(() => Tenant)
   @Column({

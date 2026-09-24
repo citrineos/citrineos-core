@@ -6,16 +6,16 @@ import { describe, expect, it, vi } from 'vitest';
 import { HttpMethod } from '@citrineos/types';
 import type { TenantDto } from '@citrineos/types';
 
-import { LocationsBroadcaster } from '../../../src/services/broadcaster/locations-broadcaster.js';
-import { TariffsBroadcaster } from '../../../src/services/broadcaster/tariffs-broadcaster.js';
-import { SessionBroadcaster } from '../../../src/services/broadcaster/session-broadcaster.js';
-import { CdrBroadcaster } from '../../../src/services/broadcaster/cdr-broadcaster.js';
-import { ModuleId } from '../../../src/types/module-id.js';
-import { InterfaceRole } from '../../../src/types/interface-role.js';
-import { OcpiEmptyResponseSchema } from '../../../src/types/ocpi-empty-response.js';
-import { TariffType } from '../../../src/types/tariff-type.js';
-import { TariffDimensionType } from '../../../src/types/tariff-dimension-type.js';
-import { GET_TARIFF_BY_KEY_QUERY } from '../../../src/transport/graphql/index.js';
+import { LocationsBroadcaster } from '@ocpi/services/broadcaster/locations-broadcaster.js';
+import { TariffsBroadcaster } from '@ocpi/services/broadcaster/tariffs-broadcaster.js';
+import { SessionBroadcaster } from '@ocpi/services/broadcaster/session-broadcaster.js';
+import { CdrBroadcaster } from '@ocpi/services/broadcaster/cdr-broadcaster.js';
+import { ModuleId } from '@ocpi/types/module-id.js';
+import { InterfaceRole } from '@ocpi/types/interface-role.js';
+import { OcpiEmptyResponseSchema } from '@ocpi/types/ocpi-empty-response.js';
+import { TariffType } from '@ocpi/types/tariff-type.js';
+import { TariffDimensionType } from '@ocpi/types/tariff-dimension-type.js';
+import { GET_TARIFF_BY_KEY_QUERY } from '@ocpi/transport/graphql/index.js';
 
 // Partner lookup and per-partner iteration live in BaseClientApi.broadcastToClients;
 // the broadcasters only assemble the call, so tests stop at that boundary.
