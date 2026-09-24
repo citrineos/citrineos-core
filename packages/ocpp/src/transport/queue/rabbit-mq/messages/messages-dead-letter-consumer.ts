@@ -7,6 +7,10 @@ import { childLogger } from '@citrineos/base';
 import type * as amqplib from 'amqplib';
 import type { ILogObj, Logger } from 'tslog';
 import type { RabbitMQChannelManager } from '@/transport/index.js';
+import {
+  recordMessagesDeadLetterReceived,
+  UNKNOWN_DEAD_LETTER_REASON,
+} from './messages-metrics.js';
 
 /**
  * One entry of RabbitMQ's `x-death` header: why a message died, which queue it died on, and how
@@ -142,7 +146,9 @@ export class MessagesDeadLetterConsumer {
     if (!message) return;
 
     try {
-      this._report(this._describe(dlq, message));
+      const report = this._describe(dlq, message);
+      recordMessagesDeadLetterReceived(dlq, report.reason ?? UNKNOWN_DEAD_LETTER_REASON);
+      this._report(report);
     } catch (error) {
       // Reporting must never be the reason a dead-lettered event sticks around unacked.
       this._logger.error(`Failed to report a dead-lettered event on ${dlq}:`, error);

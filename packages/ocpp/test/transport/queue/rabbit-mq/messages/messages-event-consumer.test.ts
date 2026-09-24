@@ -14,6 +14,20 @@ import {
 } from '@test/providers/messages-event-provider.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  recordMessagesEventLag,
+  recordMessagesEventProcessed,
+  recordMessagesEventsInFlightDelta,
+} from '@/transport/queue/rabbit-mq/messages/messages-metrics.js';
+
+vi.mock('@/transport/queue/rabbit-mq/messages/messages-metrics.js', async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import('@/transport/queue/rabbit-mq/messages/messages-metrics.js')
+  >()),
+  recordMessagesEventProcessed: vi.fn(),
+  recordMessagesEventLag: vi.fn(),
+  recordMessagesEventsInFlightDelta: vi.fn(),
+}));
 
 const OCPP_QUEUE = 'messages.ocpp';
 const CONNECTIONS_QUEUE = 'messages.connections';
@@ -228,6 +242,98 @@ describe('MessagesEventConsumer', () => {
       await deliver(OCPP_QUEUE, aMessagesDelivery(aFrameEvent()));
 
       expect(channelFor(OCPP_QUEUE).ack).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('metrics', () => {
+    beforeEach(async () => {
+      await consumer.start(handler);
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('should count an acked event under its kind', async () => {
+      await deliver(OCPP_QUEUE, aMessagesDelivery(aFrameEvent()));
+
+      expect(recordMessagesEventProcessed).toHaveBeenCalledExactlyOnceWith('frame', 'ack');
+    });
+
+    it('should count poison under the queue kind, since the body never parsed', async () => {
+      await deliver(
+        CONNECTIONS_QUEUE,
+        aMessagesDelivery('}}not json{{', { routingKey: 'connection.connected' }),
+      );
+
+      expect(recordMessagesEventProcessed).toHaveBeenCalledExactlyOnceWith('connection', 'poison');
+    });
+
+    it('should count a schema-rejected envelope as poison', async () => {
+      await deliver(OCPP_QUEUE, aMessagesDelivery(JSON.stringify({ kind: 'telemetry' })));
+
+      expect(recordMessagesEventProcessed).toHaveBeenCalledExactlyOnceWith('frame', 'poison');
+    });
+
+    it('should count a first failure as requeue and a second as dead_letter', async () => {
+      handler.mockRejectedValue(new Error('database down'));
+
+      await deliver(OCPP_QUEUE, aMessagesDelivery(aFrameEvent(), { redelivered: false }));
+      await deliver(OCPP_QUEUE, aMessagesDelivery(aFrameEvent(), { redelivered: true }));
+
+      expect(vi.mocked(recordMessagesEventProcessed).mock.calls).toEqual([
+        ['frame', 'requeue'],
+        ['frame', 'dead_letter'],
+      ]);
+    });
+
+    it('should record lag from the event timestamp to consumption', async () => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date('2026-01-01T00:00:02.500Z'));
+
+      await deliver(OCPP_QUEUE, aMessagesDelivery(aFrameEvent()));
+
+      expect(recordMessagesEventLag).toHaveBeenCalledExactlyOnceWith(2.5, 'frame');
+    });
+
+    it('should record zero lag rather than a negative one when the producer clock runs ahead', async () => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date('2025-12-31T23:59:59.000Z'));
+
+      await deliver(OCPP_QUEUE, aMessagesDelivery(aFrameEvent()));
+
+      expect(recordMessagesEventLag).toHaveBeenCalledExactlyOnceWith(0, 'frame');
+    });
+
+    it('should not record lag for an unparseable timestamp', async () => {
+      await deliver(OCPP_QUEUE, aMessagesDelivery(aFrameEvent({ timestamp: 'not a date' })));
+
+      expect(recordMessagesEventLag).not.toHaveBeenCalled();
+    });
+
+    it('should hold the in-flight gauge up while the handler runs, and release it after', async () => {
+      let release!: () => void;
+      handler.mockImplementation(() => new Promise<void>((resolve) => (release = resolve)));
+
+      const delivery = deliver(OCPP_QUEUE, aMessagesDelivery(aFrameEvent()));
+      await vi.waitFor(() => expect(handler).toHaveBeenCalled());
+      expect(vi.mocked(recordMessagesEventsInFlightDelta).mock.calls).toEqual([[1]]);
+
+      release();
+      await delivery;
+      expect(vi.mocked(recordMessagesEventsInFlightDelta).mock.calls).toEqual([[1], [-1]]);
+    });
+
+    it('should release the in-flight gauge for poison too', async () => {
+      await deliver(OCPP_QUEUE, aMessagesDelivery('}}not json{{'));
+
+      expect(vi.mocked(recordMessagesEventsInFlightDelta).mock.calls).toEqual([[1], [-1]]);
+    });
+
+    it('should not touch the in-flight gauge for a null delivery', async () => {
+      await deliver(OCPP_QUEUE, null);
+
+      expect(recordMessagesEventsInFlightDelta).not.toHaveBeenCalled();
     });
   });
 

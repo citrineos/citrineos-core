@@ -13,6 +13,14 @@ import {
 } from '@test/providers/messages-event-provider.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { recordMessagesDeadLetterReceived } from '@/transport/queue/rabbit-mq/messages/messages-metrics.js';
+
+vi.mock('@/transport/queue/rabbit-mq/messages/messages-metrics.js', async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import('@/transport/queue/rabbit-mq/messages/messages-metrics.js')
+  >()),
+  recordMessagesDeadLetterReceived: vi.fn(),
+}));
 
 const OCPP_DLQ = 'messages.ocpp.dlq';
 const CONNECTIONS_DLQ = 'messages.connections.dlq';
@@ -289,6 +297,27 @@ describe('MessagesDeadLetterConsumer', () => {
   });
 
   // ─── acking ────────────────────────────────────────────────────────────────
+
+  describe('metrics', () => {
+    beforeEach(async () => {
+      await consumer.start();
+    });
+
+    it('should count an arrival by queue and x-death reason', async () => {
+      await deliver(OCPP_DLQ, aDeadLetter(aFrameEvent(), { reason: 'expired' }));
+
+      expect(recordMessagesDeadLetterReceived).toHaveBeenCalledExactlyOnceWith(OCPP_DLQ, 'expired');
+    });
+
+    it('should count an arrival without an x-death header as unknown', async () => {
+      await deliver(CONNECTIONS_DLQ, aDeadLetter(aConnectionEvent(), { noDeathHeader: true }));
+
+      expect(recordMessagesDeadLetterReceived).toHaveBeenCalledExactlyOnceWith(
+        CONNECTIONS_DLQ,
+        'unknown',
+      );
+    });
+  });
 
   describe('acking', () => {
     beforeEach(async () => {
