@@ -10,6 +10,12 @@ describe('GET_TRANSACTION_BY_ID_QUERY', () => {
     expect(GET_TRANSACTION_BY_ID_QUERY).not.toMatch(/Transactions_by_pk/);
   });
 
+  it('selects the station the session EVSE uid is built from', () => {
+    expect(GET_TRANSACTION_BY_ID_QUERY).toMatch(
+      /station:\s*ChargingStation\s*\{[^}]*\bocppConnectionName\b/,
+    );
+  });
+
   it('selects at most one transaction by id', () => {
     expect(GET_TRANSACTION_BY_ID_QUERY).toMatch(
       /Transactions\s*\(\s*where:\s*\{\s*id:\s*\{\s*_eq:\s*\$id\s*\}\s*\}\s*,\s*limit:\s*1\s*\)/,
