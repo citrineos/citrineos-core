@@ -62,8 +62,8 @@ export const GET_CHARGING_STATION_BY_PK_QUERY = gql`
 `;
 
 export const GET_CHARGING_STATION_BY_ID_QUERY = gql`
-  query GetChargingStationById($id: String!) {
-    ChargingStations(where: { ocppConnectionName: { _eq: $id } }) {
+  query GetChargingStationById($id: String!, $tenantId: Int!) {
+    ChargingStations(where: { ocppConnectionName: { _eq: $id }, tenantId: { _eq: $tenantId } }) {
       id
       ocppConnectionName
       tenantId

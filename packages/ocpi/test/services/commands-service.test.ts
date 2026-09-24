@@ -46,7 +46,7 @@ const CONFIG = ocpiConfigSchema.parse({
   maxPageLimit: 1000,
 });
 
-const PARTNER = { id: 11, countryCode: COUNTRY_CODE, partyId: PARTY_ID } as never;
+const PARTNER = { id: 11, tenantId: 1, countryCode: COUNTRY_CODE, partyId: PARTY_ID } as never;
 
 function aCapturingGraphqlClient(result: unknown) {
   const request = vi.fn().mockResolvedValue(result);
@@ -215,7 +215,22 @@ describe('CommandsService.postCommand', () => {
       expect(request).toHaveBeenCalledOnce();
       const [document, variables] = request.mock.calls[0];
       expect(String(document)).toContain('ocppConnectionName: { _eq: $id }');
-      expect(variables).toEqual({ id: 'cs-001' });
+      expect(String(document)).toContain('tenantId: { _eq: $tenantId }');
+      expect(variables).toStrictEqual({ id: 'cs-001', tenantId: 1 });
+      expect(response.status_code).toBe(2001);
+      expect(response.status_message).toBe('Unknown charging station');
+    });
+
+    it('rejects a partner with no tenant without looking the station up', async () => {
+      const { client, request } = aCapturingGraphqlClient({ ChargingStations: [] });
+
+      const response = await aService(client).postCommand(
+        CommandType.START_SESSION,
+        aStartSession(),
+        { id: 11, countryCode: COUNTRY_CODE, partyId: PARTY_ID } as never,
+      );
+
+      expect(request).not.toHaveBeenCalled();
       expect(response.status_code).toBe(2001);
       expect(response.status_message).toBe('Unknown charging station');
     });
@@ -431,7 +446,7 @@ describe('CommandsService.postCommand', () => {
       );
 
       expect(request).toHaveBeenCalledOnce();
-      expect(request.mock.calls[0][1]).toEqual({ id: 'cs-001' });
+      expect(request.mock.calls[0][1]).toStrictEqual({ id: 'cs-001', tenantId: 1 });
       expect(response.status_code).toBe(2001);
       expect(response.status_message).toBe('Unknown charging station');
       expect(response.data).toEqual({ result: CommandResponseType.REJECTED, timeout: TIMEOUT });

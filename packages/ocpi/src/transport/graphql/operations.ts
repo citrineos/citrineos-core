@@ -89,6 +89,7 @@ export type GetChargingStationByPkQueryResult = GetChargingStationByIdQueryResul
 
 export type GetChargingStationByIdQueryVariables = Exact<{
   id: Scalars['String']['input'];
+  tenantId: Scalars['Int']['input'];
 }>;
 
 export type GetChargingStationByIdQueryResult = {

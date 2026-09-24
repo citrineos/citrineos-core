@@ -124,11 +124,24 @@ export class CommandsService {
         'Token information does not match credentials',
       );
     }
+    if (!tenantPartner.tenantId) {
+      this.logger.error('Missing tenant for calling partner', {
+        tenantPartnerId: tenantPartner.id,
+      });
+      return ResponseGenerator.buildInvalidOrMissingParametersResponse(
+        {
+          result: CommandResponseType.REJECTED,
+          timeout: this.config.commands.timeout,
+        },
+        'Unknown charging station',
+      );
+    }
     const chargingStationResponse = await this.ocpiGraphqlClient.request<
       GetChargingStationByIdQueryResult,
       GetChargingStationByIdQueryVariables
     >(GET_CHARGING_STATION_BY_ID_QUERY, {
       id: EXTRACT_STATION_ID(startSession.evse_uid!),
+      tenantId: tenantPartner.tenantId,
     });
     if (
       !chargingStationResponse.ChargingStations[0] ||
@@ -269,11 +282,24 @@ export class CommandsService {
     unlockConnector: UnlockConnector,
     tenantPartner: TenantPartnerDto,
   ): Promise<OcpiCommandResponse> {
+    if (!tenantPartner.tenantId) {
+      this.logger.error('Missing tenant for calling partner', {
+        tenantPartnerId: tenantPartner.id,
+      });
+      return ResponseGenerator.buildInvalidOrMissingParametersResponse(
+        {
+          result: CommandResponseType.REJECTED,
+          timeout: this.config.commands.timeout,
+        },
+        'Unknown charging station',
+      );
+    }
     const chargingStationResponse = await this.ocpiGraphqlClient.request<
       GetChargingStationByIdQueryResult,
       GetChargingStationByIdQueryVariables
     >(GET_CHARGING_STATION_BY_ID_QUERY, {
       id: EXTRACT_STATION_ID(unlockConnector.evse_uid!),
+      tenantId: tenantPartner.tenantId,
     });
     if (
       !chargingStationResponse.ChargingStations[0] ||
