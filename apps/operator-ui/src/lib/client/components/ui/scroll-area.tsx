@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
 'use client';
 
 import * as React from 'react';
