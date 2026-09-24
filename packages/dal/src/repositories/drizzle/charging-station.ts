@@ -4,7 +4,7 @@
 
 import type { IChargingStationRepository } from '@dal/repositories/repositories.js';
 import type { ChargingStationDto, OCPPVersion } from '@citrineos/types';
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, isNull, lt, or } from 'drizzle-orm';
 import {
   type ChargingStationEntity,
   chargingStationTable,
@@ -262,11 +262,16 @@ export class DrizzleChargingStationRepository
     timestamp: string,
   ): Promise<void> {
     const table = this.getTable(tenantId);
+    const when = new Date(timestamp);
     await this.db
       .update(table)
-      .set({ latestOcppMessageTimestamp: new Date(timestamp) })
+      .set({ latestOcppMessageTimestamp: when })
       .where(
-        and(eq(table.ocppConnectionName, ocppConnectionName), this.tenantFilter(table, tenantId)),
+        and(
+          eq(table.ocppConnectionName, ocppConnectionName),
+          this.tenantFilter(table, tenantId),
+          or(isNull(table.latestOcppMessageTimestamp), lt(table.latestOcppMessageTimestamp, when)),
+        ),
       );
   }
 }

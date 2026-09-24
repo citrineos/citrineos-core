@@ -451,7 +451,15 @@ export class SequelizeLocationRepository
     await this.chargingStation.updateAllByQuery(
       tenantId,
       { latestOcppMessageTimestamp: timestamp },
-      { where: { ocppConnectionName: ocppConnectionName } },
+      {
+        where: {
+          ocppConnectionName: ocppConnectionName,
+          [Op.or]: [
+            { latestOcppMessageTimestamp: null },
+            { latestOcppMessageTimestamp: { [Op.lt]: timestamp } },
+          ],
+        },
+      },
     );
   }
 

@@ -146,7 +146,11 @@ export const CHARGING_STATIONS_GET_QUERY = gql`
       ${CHARGING_STATION_DETAIL_FIELDS}
       coordinates
       use16StatusNotification0
+      latestOcppMessageTimestamp
       connectedWebsocketServerConfigId
+      ocppMessages: OCPPMessages(limit: 1) {
+        id
+      }
       ConnectedServerNetworkProfile {
         ${SERVER_NETWORK_PROFILE_BASIC_FIELDS.omit('pingInterval', 'messageTimeout')}
       }
