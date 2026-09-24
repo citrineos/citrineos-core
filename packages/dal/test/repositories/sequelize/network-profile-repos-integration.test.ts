@@ -383,9 +383,6 @@ describe('SequelizeChargingStationSecurityInfoRepository', () => {
     return new SequelizeChargingStationSecurityInfoRepository(deps());
   }
 
-  // publicKeyFileId is a public class field on the model, which shadows Sequelize's
-  // attribute getter under ES2022 define semantics: instance property reads come back
-  // undefined even though the column persists. Row values are asserted through get().
   // The repository resolves the connection name to a station FK, so every test seeds
   // the station first.
   it('readOrCreateChargingStationInfo creates the row with the fileId default', async () => {
@@ -395,7 +392,7 @@ describe('SequelizeChargingStationSecurityInfoRepository', () => {
     const rows = await ChargingStationSecurityInfo.findAll();
     expect(rows).toHaveLength(1);
     expect(rows[0].stationId).toBe(station.id);
-    expect(rows[0].get('publicKeyFileId')).toBe('file-1');
+    expect(rows[0].publicKeyFileId).toBe('file-1');
     expect(rows[0].tenantId).toBe(TENANT_A);
   });
 
@@ -407,7 +404,15 @@ describe('SequelizeChargingStationSecurityInfoRepository', () => {
 
     const rows = await ChargingStationSecurityInfo.findAll();
     expect(rows).toHaveLength(1);
-    expect(rows[0].get('publicKeyFileId')).toBe('file-1');
+    expect(rows[0].publicKeyFileId).toBe('file-1');
+  });
+
+  it('readChargingStationPublicKeyFileId returns the stored fileId', async () => {
+    await aStation(TENANT_A);
+    const repo = makeRepo();
+    await repo.readOrCreateChargingStationInfo(TENANT_A, STATION, 'file-1');
+
+    expect(await repo.readChargingStationPublicKeyFileId(TENANT_A, STATION)).toBe('file-1');
   });
 
   it("readChargingStationPublicKeyFileId returns '' when the tenant has no row", async () => {
@@ -429,8 +434,8 @@ describe('SequelizeChargingStationSecurityInfoRepository', () => {
     expect(await ChargingStationSecurityInfo.count()).toBe(2);
     const rowA = await ChargingStationSecurityInfo.findOne({ where: { tenantId: TENANT_A } });
     const rowB = await ChargingStationSecurityInfo.findOne({ where: { tenantId: TENANT_B } });
-    expect(rowA!.get('publicKeyFileId')).toBe('file-a');
-    expect(rowB!.get('publicKeyFileId')).toBe('file-b');
+    expect(rowA!.publicKeyFileId).toBe('file-a');
+    expect(rowB!.publicKeyFileId).toBe('file-b');
     expect(rowA!.stationId).toBe(stationA.id);
     expect(rowB!.stationId).toBe(stationB.id);
   });

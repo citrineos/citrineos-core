@@ -866,9 +866,7 @@ describe('DrizzleChargingStationSecurityInfoRepository (base insert)', () => {
       where: { stationId },
     })) as any;
     expect(row.tenantId).toBe(TENANT);
-    // The model declares publicKeyFileId as a plain class field (not `declare`),
-    // which shadows the sequelize getter — read through get() instead.
-    expect(row.get('publicKeyFileId')).toBe('file-1');
+    expect(row.publicKeyFileId).toBe('file-1');
 
     expect((await repo.findById(TENANT, dto.id!))!.publicKeyFileId).toBe('file-1');
     expect(await repo.findById(OTHER_TENANT, dto.id!)).toBeUndefined();
