@@ -12,6 +12,18 @@ import { MessagesEventPipeline } from '@/transport/index.js';
 import { aConnectionEvent, aFrameEvent } from '@test/providers/messages-event-provider.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  recordMessagesProcessorDuration,
+  recordMessagesProcessorFailure,
+} from '@/transport/queue/rabbit-mq/messages/messages-metrics.js';
+
+vi.mock('@/transport/queue/rabbit-mq/messages/messages-metrics.js', async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import('@/transport/queue/rabbit-mq/messages/messages-metrics.js')
+  >()),
+  recordMessagesProcessorFailure: vi.fn(),
+  recordMessagesProcessorDuration: vi.fn(),
+}));
 
 type SpyProcessor = {
   name: string;
@@ -200,6 +212,52 @@ describe('MessagesEventPipeline', () => {
   });
 
   // ─── introspection ─────────────────────────────────────────────────────────
+
+  describe('metrics', () => {
+    it('should record the duration of every processor that ran, failed or not', async () => {
+      frameEventProcessors = [
+        aProcessor('frame-a'),
+        aProcessor('frame-b', false, () => Promise.reject(new Error('webhook 500'))),
+      ];
+
+      await buildPipeline().run(aFrameEvent());
+
+      expect(vi.mocked(recordMessagesProcessorDuration).mock.calls).toEqual([
+        [expect.any(Number), 'frame-a'],
+        [expect.any(Number), 'frame-b'],
+      ]);
+    });
+
+    it('should count a best-effort failure, which is otherwise only logged', async () => {
+      frameEventProcessors = [
+        aProcessor('webhook', false, () => Promise.reject(new Error('webhook 500'))),
+      ];
+
+      await buildPipeline().run(aFrameEvent());
+
+      expect(recordMessagesProcessorFailure).toHaveBeenCalledExactlyOnceWith('webhook', false);
+    });
+
+    it('should count a critical failure before rethrowing it', async () => {
+      frameEventProcessors = [
+        aProcessor('persist', true, () => Promise.reject(new Error('db down'))),
+      ];
+
+      await expect(buildPipeline().run(aFrameEvent())).rejects.toThrow('db down');
+
+      expect(recordMessagesProcessorFailure).toHaveBeenCalledExactlyOnceWith('persist', true);
+      expect(recordMessagesProcessorDuration).toHaveBeenCalledExactlyOnceWith(
+        expect.any(Number),
+        'persist',
+      );
+    });
+
+    it('should not count a failure when every processor succeeds', async () => {
+      await buildPipeline().run(aFrameEvent());
+
+      expect(recordMessagesProcessorFailure).not.toHaveBeenCalled();
+    });
+  });
 
   describe('processorNames', () => {
     it('should report which processors serve which kind, in order', () => {
