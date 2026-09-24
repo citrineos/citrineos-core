@@ -35,6 +35,7 @@ import { ModalComponentType } from '@lib/client/components/modals/modal-types';
 import { getPlainToInstanceOptions } from '@lib/utils/tables';
 import { clickableLinkStyle } from '@lib/client/styles/page';
 import { Skeleton } from '@lib/client/components/ui/skeleton';
+import { ScrollArea } from '@lib/client/components/ui/scroll-area';
 import { chargingStationPath } from '@lib/utils/resource-paths';
 import { useChargingStationId } from '@lib/client/hooks/use-charging-station-id';
 
@@ -141,7 +142,7 @@ export const StationPreviewPanel: React.FC<StationPreviewPanelProps> = ({
         </Button>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <ScrollArea className="min-h-0 flex-1">
         {isLoading || !station ? (
           <div className="flex flex-col gap-3 p-4">
             <Skeleton className="h-5 w-3/4" />
@@ -292,7 +293,7 @@ export const StationPreviewPanel: React.FC<StationPreviewPanelProps> = ({
             </CanAccess>
           </div>
         )}
-      </div>
+      </ScrollArea>
     </div>
   );
 };
