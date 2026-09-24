@@ -8,32 +8,32 @@ import {
   buildOcpiResponse,
   OcpiResponseSchema,
   OcpiResponseStatusCode,
-} from '../../src/types/ocpi-response.js';
+} from '@ocpi/types/ocpi-response.js';
 import {
   buildOcpiPaginatedResponse,
   DEFAULT_LIMIT,
   DEFAULT_OFFSET,
   PaginatedResponseSchema,
-} from '../../src/types/paginated-response.js';
-import { OcpiHeaders } from '../../src/types/ocpi-headers.js';
-import { LocationDTOSchema } from '../../src/types/dto/location-dto.js';
-import { EvseDTOSchema } from '../../src/types/dto/evse-dto.js';
-import { TokenDTOSchema } from '../../src/types/dto/token-dto.js';
-import { ConnectorDTOSchema } from '../../src/types/dto/connector-dto.js';
-import { ImageDTOSchema } from '../../src/types/dto/image-dto.js';
-import { AdminCredentialsRequestDTOSchema } from '../../src/types/dto/admin-credentials-request-dto.js';
-import { CredentialsRoleDTOSchema } from '../../src/types/dto/credentials-role-dto.js';
-import { OcpiLocationDTOSchema } from '../../src/types/dto/ocpi-location-dto.js';
-import { EvseStatus } from '../../src/types/evse-status.js';
-import { TokenType } from '../../src/types/token-type.js';
-import { WhitelistType } from '../../src/types/whitelist-type.js';
-import { ConnectorType } from '../../src/types/connector-type.js';
-import { ConnectorFormat } from '../../src/types/connector-format.js';
-import { PowerType } from '../../src/types/power-type.js';
-import { Role } from '../../src/types/role.js';
-import { ImageCategory } from '../../src/types/image-category.js';
-import { ImageType } from '../../src/types/image-type.js';
-import { CountryCode } from '../../src/util/util.js';
+} from '@ocpi/types/paginated-response.js';
+import { OcpiHeaders } from '@ocpi/types/ocpi-headers.js';
+import { LocationDTOSchema } from '@ocpi/types/dto/location-dto.js';
+import { EvseDTOSchema } from '@ocpi/types/dto/evse-dto.js';
+import { TokenDTOSchema } from '@ocpi/types/dto/token-dto.js';
+import { ConnectorDTOSchema } from '@ocpi/types/dto/connector-dto.js';
+import { ImageDTOSchema } from '@ocpi/types/dto/image-dto.js';
+import { AdminCredentialsRequestDTOSchema } from '@ocpi/types/dto/admin-credentials-request-dto.js';
+import { CredentialsRoleDTOSchema } from '@ocpi/types/dto/credentials-role-dto.js';
+import { OcpiLocationDTOSchema } from '@ocpi/types/dto/ocpi-location-dto.js';
+import { EvseStatus } from '@ocpi/types/evse-status.js';
+import { TokenType } from '@ocpi/types/token-type.js';
+import { WhitelistType } from '@ocpi/types/whitelist-type.js';
+import { ConnectorType } from '@ocpi/types/connector-type.js';
+import { ConnectorFormat } from '@ocpi/types/connector-format.js';
+import { PowerType } from '@ocpi/types/power-type.js';
+import { Role } from '@ocpi/types/role.js';
+import { ImageCategory } from '@ocpi/types/image-category.js';
+import { ImageType } from '@ocpi/types/image-type.js';
+import { CountryCode } from '@ocpi/util/util.js';
 
 const FROZEN_NOW = new Date('2026-01-15T12:00:00.000Z');
 const LAST_UPDATED = '2026-08-12T10:00:00.000Z';

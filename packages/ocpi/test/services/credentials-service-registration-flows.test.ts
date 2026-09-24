@@ -9,8 +9,8 @@ import { Logger } from 'tslog';
 // can be asserted by exact value.
 vi.mock('uuid', () => ({ v4: vi.fn(() => 'rotated-server-token') }));
 
-import { CredentialsService } from '../../src/services/credentials-service.js';
-import { VersionNumber } from '../../src/types/version-number.js';
+import { CredentialsService } from '@ocpi/services/credentials-service.js';
+import { VersionNumber } from '@ocpi/types/version-number.js';
 
 const CPO_VERSIONS_URL = 'https://cpo.example.com/ocpi/versions';
 const MSP_VERSIONS_URL = 'https://msp.example.com/ocpi/versions';

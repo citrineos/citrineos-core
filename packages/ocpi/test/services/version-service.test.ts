@@ -5,11 +5,11 @@ import 'reflect-metadata';
 import { describe, expect, it, vi } from 'vitest';
 import { NotFoundError } from 'routing-controllers';
 
-import { VersionService } from '../../src/services/version-service.js';
-import { VersionNumber } from '../../src/types/version-number.js';
-import { ModuleId } from '../../src/types/module-id.js';
-import { InterfaceRole } from '../../src/types/interface-role.js';
-import { GET_TENANT_BY_ID } from '../../src/transport/graphql/index.js';
+import { VersionService } from '@ocpi/services/version-service.js';
+import { VersionNumber } from '@ocpi/types/version-number.js';
+import { ModuleId } from '@ocpi/types/module-id.js';
+import { InterfaceRole } from '@ocpi/types/interface-role.js';
+import { GET_TENANT_BY_ID } from '@ocpi/transport/graphql/index.js';
 
 const TENANT_ID = 42;
 const DETAILS_URL = 'https://cpo.example.com/ocpi/versions/2.2.1';

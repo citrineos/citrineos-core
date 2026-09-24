@@ -19,37 +19,37 @@ vi.mock('graphql-request', async (importOriginal) => {
 });
 
 import { GraphQLClient } from 'graphql-request';
-import { OcpiGraphqlClient } from '../../../src/transport/graphql/ocpi-graphql-client.js';
+import { OcpiGraphqlClient } from '@ocpi/transport/graphql/ocpi-graphql-client.js';
 import {
   GET_CHARGING_STATION_BY_ID_QUERY,
   GET_CHARGING_STATION_BY_PK_QUERY,
-} from '../../../src/transport/graphql/queries/charging-station-queries.js';
+} from '@ocpi/transport/graphql/queries/charging-station-queries.js';
 import {
   GET_SEQUENCE,
   UPSERT_SEQUENCE,
-} from '../../../src/transport/graphql/queries/charging-station-sequence-queries.js';
+} from '@ocpi/transport/graphql/queries/charging-station-sequence-queries.js';
 import {
   GET_CONNECTOR_BY_ID_QUERY,
   GET_EVSE_BY_ID_QUERY,
   GET_LOCATION_BY_ID_QUERY,
   GET_LOCATIONS_QUERY,
-} from '../../../src/transport/graphql/queries/location-queries.js';
+} from '@ocpi/transport/graphql/queries/location-queries.js';
 import {
   GET_TARIFF_BY_KEY_QUERY,
   GET_TARIFFS_QUERY,
-} from '../../../src/transport/graphql/queries/tariff-queries.js';
+} from '@ocpi/transport/graphql/queries/tariff-queries.js';
 import {
   DELETE_TENANT_PARTNER_BY_ID,
   UPDATE_TENANT_PARTNER_PROFILE,
-} from '../../../src/transport/graphql/queries/tenant-mutations.js';
+} from '@ocpi/transport/graphql/queries/tenant-mutations.js';
 import {
   DELETE_TENANT_PARTNER_BY_SERVER_TOKEN,
   GET_TENANT_PARTNER_BY_CPO_AND_AND_CLIENT,
   GET_TENANT_PARTNER_BY_ID,
   GET_TENANT_PARTNER_BY_SERVER_TOKEN,
   LIST_TENANT_PARTNERS_BY_CPO,
-} from '../../../src/transport/graphql/queries/tenant-partner-queries.js';
-import { GET_TENANT_BY_ID } from '../../../src/transport/graphql/queries/tenant-version-endpoints-queries.js';
+} from '@ocpi/transport/graphql/queries/tenant-partner-queries.js';
+import { GET_TENANT_BY_ID } from '@ocpi/transport/graphql/queries/tenant-version-endpoints-queries.js';
 import {
   CREATE_AUTHORIZATION_MUTATION,
   GET_AUTHORIZATION_BY_ID,
@@ -57,12 +57,12 @@ import {
   GET_GROUP_AUTHORIZATION,
   READ_AUTHORIZATION,
   UPDATE_TOKEN_MUTATION,
-} from '../../../src/transport/graphql/queries/token-queries.js';
+} from '@ocpi/transport/graphql/queries/token-queries.js';
 import {
   GET_ACTIVE_TRANSACTION_FOR_STOP_SESSION_QUERY,
   GET_TRANSACTION_BY_ID_QUERY,
   GET_TRANSACTIONS_QUERY,
-} from '../../../src/transport/graphql/queries/transaction-queries.js';
+} from '@ocpi/transport/graphql/queries/transaction-queries.js';
 
 const PARTY_SCOPE = 'Tenant: { countryCode: { _eq: $countryCode }, partyId: { _eq: $partyId } }';
 

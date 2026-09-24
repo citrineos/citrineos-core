@@ -6,10 +6,10 @@ import type { TenantPartnerDto } from '@citrineos/types';
 import { describe, expect, it, vi } from 'vitest';
 import { Logger } from 'tslog';
 
-import { CredentialsService } from '../../src/services/credentials-service.js';
-import type { AdminCredentialsRequestDTO } from '../../src/types/dto/admin-credentials-request-dto.js';
-import { Role } from '../../src/types/role.js';
-import { VersionNumber } from '../../src/types/version-number.js';
+import { CredentialsService } from '@ocpi/services/credentials-service.js';
+import type { AdminCredentialsRequestDTO } from '@ocpi/types/dto/admin-credentials-request-dto.js';
+import { Role } from '@ocpi/types/role.js';
+import { VersionNumber } from '@ocpi/types/version-number.js';
 
 const PREVIOUS_SERVER_CREDENTIALS = {
   versionsUrl: 'https://cpo.test/ocpi/versions',

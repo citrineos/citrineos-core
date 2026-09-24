@@ -6,15 +6,15 @@ import { OCPPVersion } from '@citrineos/types';
 import { Logger } from 'tslog';
 import { describe, expect, it, vi } from 'vitest';
 
-import { ocpiConfigSchema } from '../../src/config/ocpi-types.js';
-import { GET_TENANT_PARTNER_BY_ID } from '../../src/transport/graphql/index.js';
-import { CommandResultType } from '../../src/types/command-result.js';
-import { CommandType } from '../../src/types/command-type.js';
-import { CommandExecutor } from '../../src/services/command-executor.js';
+import { ocpiConfigSchema } from '@ocpi/config/ocpi-types.js';
+import { GET_TENANT_PARTNER_BY_ID } from '@ocpi/transport/graphql/index.js';
+import { CommandResultType } from '@ocpi/types/command-result.js';
+import { CommandType } from '@ocpi/types/command-type.js';
+import { CommandExecutor } from '@ocpi/services/command-executor.js';
 import {
   COMMAND_RESPONSE_URL_CACHE_NAMESPACE,
   COMMAND_RESPONSE_URL_CACHE_RESOLVED,
-} from '../../src/util/consts.js';
+} from '@ocpi/util/consts.js';
 
 const TIMEOUT = 42;
 const RESPONSE_URL = 'https://emsp.test/commands/START_SESSION/1';

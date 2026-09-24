@@ -10,15 +10,15 @@ import type {
   TenantPartnerDto,
 } from '@citrineos/types';
 import { describe, expect, it } from 'vitest';
-import { RegistrationMapper } from '../../src/mappers/registration-mapper.js';
-import type { ImageDTO } from '../../src/types/dto/image-dto.js';
-import { EndpointIdentifier } from '../../src/types/endpoint-identifier.js';
-import { ImageCategory } from '../../src/types/image-category.js';
-import { ImageType } from '../../src/types/image-type.js';
-import { InterfaceRole } from '../../src/types/interface-role.js';
-import { ModuleId } from '../../src/types/module-id.js';
-import { Role } from '../../src/types/role.js';
-import { VersionNumber } from '../../src/types/version-number.js';
+import { RegistrationMapper } from '@ocpi/mappers/registration-mapper.js';
+import type { ImageDTO } from '@ocpi/types/dto/image-dto.js';
+import { EndpointIdentifier } from '@ocpi/types/endpoint-identifier.js';
+import { ImageCategory } from '@ocpi/types/image-category.js';
+import { ImageType } from '@ocpi/types/image-type.js';
+import { InterfaceRole } from '@ocpi/types/interface-role.js';
+import { ModuleId } from '@ocpi/types/module-id.js';
+import { Role } from '@ocpi/types/role.js';
+import { VersionNumber } from '@ocpi/types/version-number.js';
 
 const URL = 'https://cpo.example.com/ocpi/emsp/2.2.1/cdrs';
 

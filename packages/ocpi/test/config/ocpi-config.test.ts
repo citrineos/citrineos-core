@@ -5,12 +5,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ZodError } from 'zod';
 
-import { ocpiConfigInputSchema, ocpiConfigSchema } from '../../src/config/ocpi-types.js';
+import { ocpiConfigInputSchema, ocpiConfigSchema } from '@ocpi/config/ocpi-types.js';
 import {
   OCPI_ENV_VAR_PREFIX,
   defineOcpiConfig,
   loadOcpiConfig,
-} from '../../src/config/define-ocpi-config.js';
+} from '@ocpi/config/define-ocpi-config.js';
 
 const OCPP1_6_URLS = {
   remoteStartTransactionRequestUrl: 'http://core/ocpp16/remoteStart',

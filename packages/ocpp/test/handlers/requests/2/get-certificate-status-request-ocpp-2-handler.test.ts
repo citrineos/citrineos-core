@@ -16,7 +16,7 @@ import {
 } from '@citrineos/types';
 import { GetCertificateStatusRequestOcpp2Handler } from '@handlers/index.js';
 import { createTestContainer, makeMockOcppSender } from '@test/test-container.js';
-import { parseOcspRequestHex } from '../../../utils/ocsp-request-parser.js';
+import { parseOcspRequestHex } from '../../../helpers/ocsp-request-parser.js';
 import { aSystemConfig } from '../../../providers/system-config.js';
 
 const fetchMock = vi.fn();
