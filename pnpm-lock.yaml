@@ -256,7 +256,7 @@ importers:
         version: 6.6.5
       sequelize-typescript:
         specifier: 'catalog:'
-        version: 2.1.6(@types/node@25.9.8)(@types/validator@13.15.10)(reflect-metadata@0.2.2)(sequelize@6.37.8)
+        version: 2.1.6(@types/node@25.9.8)(@types/validator@13.15.10)(reflect-metadata@0.2.2)(sequelize@6.37.8(sqlite3@5.1.7))
       tsconfig-paths:
         specifier: ^4.2.0
         version: 4.2.0
@@ -390,7 +390,7 @@ importers:
         version: 6.6.5
       sequelize-typescript:
         specifier: 'catalog:'
-        version: 2.1.6(@types/node@25.9.8)(@types/validator@13.15.10)(reflect-metadata@0.2.2)(sequelize@6.37.8)
+        version: 2.1.6(@types/node@25.9.8)(@types/validator@13.15.10)(reflect-metadata@0.2.2)(sequelize@6.37.8(sqlite3@5.1.7))
       sqlite3:
         specifier: 'catalog:'
         version: 5.1.7
@@ -470,7 +470,7 @@ importers:
         version: 6.6.5
       sequelize-typescript:
         specifier: 'catalog:'
-        version: 2.1.6(@types/node@25.9.8)(@types/validator@13.15.10)(reflect-metadata@0.2.2)(sequelize@6.37.8)
+        version: 2.1.6(@types/node@25.9.8)(@types/validator@13.15.10)(reflect-metadata@0.2.2)(sequelize@6.37.8(sqlite3@5.1.7))
       sqlite3:
         specifier: 'catalog:'
         version: 5.1.7
@@ -521,6 +521,9 @@ importers:
       '@aws-sdk/s3-request-presigner':
         specifier: 3.1137.0
         version: 3.1137.0
+      '@base-ui/react':
+        specifier: ^1.8.0
+        version: 1.8.0(@date-fns/tz@1.5.0)(@types/react@19.3.0)(date-fns@4.1.0)(react-dom@19.1.4(react@19.1.4))(react@19.1.4)
       '@citrineos/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -936,7 +939,7 @@ importers:
         version: 6.37.8(pg-hstore@2.3.4)(pg@8.11.3)(sqlite3@5.1.7)
       sequelize-typescript:
         specifier: 'catalog:'
-        version: 2.1.6(@types/node@25.9.8)(@types/validator@13.15.10)(reflect-metadata@0.2.2)(sequelize@6.37.8)
+        version: 2.1.6(@types/node@25.9.8)(@types/validator@13.15.10)(reflect-metadata@0.2.2)(sequelize@6.37.8(sqlite3@5.1.7))
       tslog:
         specifier: 'catalog:'
         version: 5.1.0
@@ -1244,7 +1247,7 @@ importers:
         version: 6.37.8(pg-hstore@2.3.4)(pg@8.11.3)(sqlite3@5.1.7)
       sequelize-typescript:
         specifier: 'catalog:'
-        version: 2.1.6(@types/node@25.9.8)(@types/validator@13.15.10)(reflect-metadata@0.2.2)(sequelize@6.37.8)
+        version: 2.1.6(@types/node@25.9.8)(@types/validator@13.15.10)(reflect-metadata@0.2.2)(sequelize@6.37.8(sqlite3@5.1.7))
       ssh2-sftp-client:
         specifier: ^10.0.3
         version: 10.0.3
@@ -1628,6 +1631,33 @@ packages:
 
   '@balena/dockerignore@1.0.2':
     resolution: {integrity: sha512-wMue2Sy4GAVTk6Ic4tJVcnfdau+gx2EnG7S+uAEe+TWJFqE4YoWN4/H8MSLj4eYJKxGg26lZwboEniNiNwZQ6Q==}
+
+  '@base-ui/react@1.8.0':
+    resolution: {integrity: sha512-P0/1sxo6SBVZOklKMIedvTWqw2s2IQzi9x5bIVsXu980cuSOD4NeuRSs+/L7LZQfDkZP/uRZyGPyfFl/B1oH+Q==}
+    engines: {node: '>=14.0.0'}
+    peerDependencies:
+      '@date-fns/tz': ^1.2.0
+      '@types/react': ^17 || ^18 || ^19
+      date-fns: ^4.0.0
+      react: ^17 || ^18 || ^19
+      react-dom: ^17 || ^18 || ^19
+    peerDependenciesMeta:
+      '@date-fns/tz':
+        optional: true
+      '@types/react':
+        optional: true
+      date-fns:
+        optional: true
+
+  '@base-ui/utils@0.4.0':
+    resolution: {integrity: sha512-bO9fz25kKtPf+aZVyfQrC0PDmJdmVni31W2hCS5/Owb+inwdIL3XU26pCPRPlt4LSxZrBgLwubXQXQlKaFEZzw==}
+    peerDependencies:
+      '@types/react': ^17 || ^18 || ^19
+      react: ^17 || ^18 || ^19
+      react-dom: ^17 || ^18 || ^19
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
 
   '@bcherny/json-schema-ref-parser@10.0.5-fork':
     resolution: {integrity: sha512-E/jKbPoca1tfUPj3iSbitDZTGnq6FUFjkH6L8U2oDwSuwK1WhnnVtCG7oFOTg/DDnyoXbQYUiUiGOibHqaGVnw==}
@@ -10882,6 +10912,31 @@ snapshots:
 
   '@balena/dockerignore@1.0.2': {}
 
+  '@base-ui/react@1.8.0(@date-fns/tz@1.5.0)(@types/react@19.3.0)(date-fns@4.1.0)(react-dom@19.1.4(react@19.1.4))(react@19.1.4)':
+    dependencies:
+      '@babel/runtime': 7.29.7
+      '@base-ui/utils': 0.4.0(@types/react@19.3.0)(react-dom@19.1.4(react@19.1.4))(react@19.1.4)
+      '@floating-ui/react-dom': 2.1.9(react-dom@19.1.4(react@19.1.4))(react@19.1.4)
+      '@floating-ui/utils': 0.2.12
+      react: 19.1.4
+      react-dom: 19.1.4(react@19.1.4)
+      use-sync-external-store: 1.7.0(react@19.1.4)
+    optionalDependencies:
+      '@date-fns/tz': 1.5.0
+      '@types/react': 19.3.0
+      date-fns: 4.1.0
+
+  '@base-ui/utils@0.4.0(@types/react@19.3.0)(react-dom@19.1.4(react@19.1.4))(react@19.1.4)':
+    dependencies:
+      '@babel/runtime': 7.29.7
+      '@floating-ui/utils': 0.2.12
+      react: 19.1.4
+      react-dom: 19.1.4(react@19.1.4)
+      reselect: 5.3.0
+      use-sync-external-store: 1.7.0(react@19.1.4)
+    optionalDependencies:
+      '@types/react': 19.3.0
+
   '@bcherny/json-schema-ref-parser@10.0.5-fork':
     dependencies:
       '@jsdevtools/ono': 7.1.3
@@ -15539,7 +15594,7 @@ snapshots:
       eslint: 9.16.0(jiti@2.7.0)
       eslint-import-resolver-node: 0.3.10
       eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0)(eslint@9.16.0(jiti@2.7.0))
-      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.70.1(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3))(eslint-import-resolver-typescript@3.10.1)(eslint@9.16.0(jiti@2.7.0))
+      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.17.0(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3))(eslint@9.16.0(jiti@2.7.0))
       eslint-plugin-jsx-a11y: 6.10.2(eslint@9.16.0(jiti@2.7.0))
       eslint-plugin-react: 7.37.5(eslint@9.16.0(jiti@2.7.0))
       eslint-plugin-react-hooks: 5.2.0(eslint@9.16.0(jiti@2.7.0))
@@ -15573,22 +15628,21 @@ snapshots:
       tinyglobby: 0.2.17
       unrs-resolver: 1.12.2
     optionalDependencies:
-      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.70.1(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3))(eslint-import-resolver-typescript@3.10.1)(eslint@9.16.0(jiti@2.7.0))
+      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.17.0(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3))(eslint@9.16.0(jiti@2.7.0))
     transitivePeerDependencies:
       - supports-color
 
-  eslint-module-utils@2.14.0(@typescript-eslint/parser@8.70.1(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3))(eslint-import-resolver-node@0.3.10)(eslint-import-resolver-typescript@3.10.1)(eslint@9.16.0(jiti@2.7.0)):
+  eslint-module-utils@2.14.0(@typescript-eslint/parser@8.17.0(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3))(eslint-import-resolver-node@0.3.10)(eslint@9.16.0(jiti@2.7.0)):
     dependencies:
       debug: 3.2.7
     optionalDependencies:
-      '@typescript-eslint/parser': 8.70.1(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3)
+      '@typescript-eslint/parser': 8.17.0(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3)
       eslint: 9.16.0(jiti@2.7.0)
       eslint-import-resolver-node: 0.3.10
-      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0)(eslint@9.16.0(jiti@2.7.0))
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.70.1(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3))(eslint-import-resolver-typescript@3.10.1)(eslint@9.16.0(jiti@2.7.0)):
+  eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.17.0(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3))(eslint@9.16.0(jiti@2.7.0)):
     dependencies:
       '@rtsao/scc': 1.1.0
       array-includes: 3.2.0
@@ -15599,7 +15653,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 9.16.0(jiti@2.7.0)
       eslint-import-resolver-node: 0.3.10
-      eslint-module-utils: 2.14.0(@typescript-eslint/parser@8.70.1(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3))(eslint-import-resolver-node@0.3.10)(eslint-import-resolver-typescript@3.10.1)(eslint@9.16.0(jiti@2.7.0))
+      eslint-module-utils: 2.14.0(@typescript-eslint/parser@8.17.0(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3))(eslint-import-resolver-node@0.3.10)(eslint@9.16.0(jiti@2.7.0))
       hasown: 2.0.4
       is-core-module: 2.17.0
       is-glob: 4.0.3
@@ -15611,7 +15665,7 @@ snapshots:
       string.prototype.trimend: 1.0.10
       tsconfig-paths: 3.15.0
     optionalDependencies:
-      '@typescript-eslint/parser': 8.70.1(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3)
+      '@typescript-eslint/parser': 8.17.0(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3)
     transitivePeerDependencies:
       - eslint-import-resolver-typescript
       - eslint-import-resolver-webpack
@@ -19054,7 +19108,7 @@ snapshots:
 
   sequelize-pool@7.1.0: {}
 
-  sequelize-typescript@2.1.6(@types/node@25.9.8)(@types/validator@13.15.10)(reflect-metadata@0.2.2)(sequelize@6.37.8):
+  sequelize-typescript@2.1.6(@types/node@25.9.8)(@types/validator@13.15.10)(reflect-metadata@0.2.2)(sequelize@6.37.8(sqlite3@5.1.7)):
     dependencies:
       '@types/node': 25.9.8
       '@types/validator': 13.15.10
