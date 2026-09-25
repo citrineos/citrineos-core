@@ -8,17 +8,17 @@ import { Logger } from 'tslog';
 // The mapper barrel reaches BaseClientApi, whose parameterless @Inject() needs design:type
 // metadata the test transform does not emit. These tests never map a row, so a stub is enough.
 // citrineos/citrineos-core#913 removes the need for this.
-vi.mock('../../src/mappers/index.js', () => ({
+vi.mock('@ocpi/mappers/index.js', () => ({
   ConnectorMapper: class {},
   EvseMapper: class {},
   LocationMapper: class {},
   TariffMapper: class {},
 }));
 
-import { LocationsService } from '../../src/services/locations-service.js';
-import { TariffsService } from '../../src/services/tariffs-service.js';
-import { OcpiHeaders } from '../../src/types/ocpi-headers.js';
-import { PaginatedParams } from '../../src/apis/controllers/param/paginated-params.js';
+import { LocationsService } from '@ocpi/services/locations-service.js';
+import { TariffsService } from '@ocpi/services/tariffs-service.js';
+import { OcpiHeaders } from '@ocpi/types/ocpi-headers.js';
+import { PaginatedParams } from '@ocpi/apis/controllers/param/paginated-params.js';
 
 const DATE_FROM = new Date('2026-08-01T00:00:00.000Z');
 const DATE_TO = new Date('2026-08-19T00:00:00.000Z');

@@ -17,8 +17,8 @@ import {
   aValidCertificateItemArray,
   aValidSignedCertificateWithOCSPInfo,
 } from '../../providers/certificate-authority.js';
-import { readFile } from '../../utils/file-util.js';
-import { parseOcspRequestHex } from '../../utils/ocsp-request-parser.js';
+import { readFile } from '../../helpers/file-util.js';
+import { parseOcspRequestHex } from '../../helpers/ocsp-request-parser.js';
 
 vi.mock('@services/certificate/certificate-util.js');
 vi.spyOn(KJUR.asn1.ocsp.OCSPUtil, 'getOCSPResponseInfo').mockImplementation(() => {

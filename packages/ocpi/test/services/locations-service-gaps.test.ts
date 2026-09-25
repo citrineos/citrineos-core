@@ -12,12 +12,12 @@ import {
   ConnectorTypeEnum,
 } from '@citrineos/types';
 
-import { LocationsService } from '../../src/services/locations-service.js';
-import { ConnectorMapper, EvseMapper, LocationMapper } from '../../src/mappers/location-mapper.js';
-import { OcpiHeaders } from '../../src/types/ocpi-headers.js';
-import { PaginatedParams } from '../../src/apis/controllers/param/paginated-params.js';
-import { ConnectorType } from '../../src/types/connector-type.js';
-import { EvseStatus } from '../../src/types/evse-status.js';
+import { LocationsService } from '@ocpi/services/locations-service.js';
+import { ConnectorMapper, EvseMapper, LocationMapper } from '@ocpi/mappers/location-mapper.js';
+import { OcpiHeaders } from '@ocpi/types/ocpi-headers.js';
+import { PaginatedParams } from '@ocpi/apis/controllers/param/paginated-params.js';
+import { ConnectorType } from '@ocpi/types/connector-type.js';
+import { EvseStatus } from '@ocpi/types/evse-status.js';
 
 const UPDATED_AT = new Date('2026-08-20T11:00:00Z');
 

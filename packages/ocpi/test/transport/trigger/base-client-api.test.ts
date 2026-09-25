@@ -34,14 +34,14 @@ vi.mock('uuid', () => ({ v4: () => 'fixed-uuid' }));
 import {
   BaseClientApi,
   MissingRequiredParamException,
-} from '../../../src/transport/trigger/base-client-api.js';
-import { UnsuccessfulRequestException } from '../../../src/apis/exception/unsuccessful-request-exception.js';
-import { ModuleId } from '../../../src/types/module-id.js';
-import { InterfaceRole } from '../../../src/types/interface-role.js';
+} from '@ocpi/transport/trigger/base-client-api.js';
+import { UnsuccessfulRequestException } from '@ocpi/apis/exception/unsuccessful-request-exception.js';
+import { ModuleId } from '@ocpi/types/module-id.js';
+import { InterfaceRole } from '@ocpi/types/interface-role.js';
 import {
   GET_TENANT_PARTNER_BY_CPO_AND_AND_CLIENT,
   LIST_TENANT_PARTNERS_BY_CPO,
-} from '../../../src/transport/graphql/index.js';
+} from '@ocpi/transport/graphql/index.js';
 
 const BASE_URL = 'https://msp.example.com/ocpi/emsp/2.2.1/cdrs';
 const TOKEN = 'client-token';

@@ -7,6 +7,7 @@ import {
   EventGroup,
   MessageOrigin,
   MessageState,
+  OCPP2_1,
   OCPP_CallAction,
   type OcppResponse,
   OCPPVersion,
@@ -21,7 +22,10 @@ import {
   type ITenantRepository,
 } from '@citrineos/dal';
 import { CompositeSchedule } from '@dal/db/sequelize/index.js';
-import { GetCompositeScheduleResponseOcpp201Handler } from '@handlers/index.js';
+import {
+  GetCompositeScheduleResponseOcpp201Handler,
+  GetCompositeScheduleResponseOcpp21Handler,
+} from '@handlers/index.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
 import type { Sequelize } from 'sequelize-typescript';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
@@ -217,5 +221,81 @@ describe('A composite schedule reported for a station EVSE number', () => {
     const stored = await CompositeSchedule.findAll();
     expect(stored).toHaveLength(1);
     expect(stored[0].evseId).toBeNull();
+  });
+});
+
+describe('A composite schedule reported by an OCPP 2.1 station', () => {
+  const { container } = createTestContainer();
+
+  const PERIOD: OCPP2_1.ChargingSchedulePeriodType = {
+    startPeriod: 0,
+    limit_L2: 3700,
+    dischargeLimit: -11000,
+    setpoint: 5000,
+    setpointReactive_L3: 60,
+    preconditioningRequest: true,
+    operationMode: OCPP2_1.OperationModeEnumType.CentralSetpoint,
+    v2xSignalWattCurve: [
+      { signal: 0, power: 0 },
+      { signal: 100, power: 11000 },
+    ],
+  };
+
+  beforeEach(async () => {
+    await sequelizeInstance.truncate({ cascade: true, restartIdentity: true });
+    await tenantRepository.createTenant({ name: 'A', isUserTenant: false });
+    nextEvseNumber = 1;
+
+    await aStation(STATION);
+    await anEvseOn(STATION, 1);
+  });
+
+  function aResponse(): IMessage<OCPP2_1.GetCompositeScheduleResponse> {
+    return {
+      context: {
+        tenantId: DEFAULT_TENANT_ID,
+        ocppConnectionName: STATION,
+        correlationId: 'corr-21',
+        timestamp: new Date().toISOString(),
+      },
+      payload: {
+        status: OCPP2_1.GenericStatusEnumType.Accepted,
+        schedule: {
+          evseId: 1,
+          duration: 3600,
+          scheduleStart: new Date().toISOString(),
+          chargingRateUnit: OCPP2_1.ChargingRateUnitEnumType.W,
+          chargingSchedulePeriod: [PERIOD],
+        },
+      },
+      origin: MessageOrigin.ChargingStation,
+      eventGroup: EventGroup.SmartCharging,
+      action: OCPP_CallAction.GetCompositeSchedule,
+      state: MessageState.Response,
+      protocol: OCPPVersion.OCPP2_1,
+    };
+  }
+
+  it('stores the schedule with its 2.1 period fields against the named EVSE', async () => {
+    const ownEvse = await locationRepository.readEvseByStationIdAndOcpp201EvseId(
+      DEFAULT_TENANT_ID,
+      STATION,
+      1,
+    );
+    const handler = getTestInstance(container, GetCompositeScheduleResponseOcpp21Handler, {
+      chargingProfileRepository: new SequelizeChargingProfileRepository({
+        config,
+        logger: undefined,
+        sequelizeInstance,
+      } as never),
+    });
+
+    await handler.handle(aResponse());
+
+    const stored = await CompositeSchedule.findAll();
+    expect(stored).toHaveLength(1);
+    expect(stored[0].evseId).toBe(ownEvse!.id);
+    expect(stored[0].chargingRateUnit).toBe('W');
+    expect(stored[0].chargingSchedulePeriod).toEqual([PERIOD]);
   });
 });

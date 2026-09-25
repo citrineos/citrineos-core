@@ -9,12 +9,12 @@ import { type ILogObj, Logger } from 'tslog';
 
 // LocationsService is a typedi-decorated service sitting on an import cycle with these mappers.
 // Every transaction below carries its own location, so it is never reached.
-vi.mock('../../src/services/locations-service.js', () => ({ LocationsService: class {} }));
+vi.mock('@ocpi/services/locations-service.js', () => ({ LocationsService: class {} }));
 
-import { CdrMapper } from '../../src/mappers/cdr-mapper.js';
-import { ConnectorMapper, EvseMapper, LocationMapper } from '../../src/mappers/location-mapper.js';
-import { TokensMapper } from '../../src/mappers/tokens-mapper.js';
-import { SessionMapper } from '../../src/mappers/session-mapper.js';
+import { CdrMapper } from '@ocpi/mappers/cdr-mapper.js';
+import { ConnectorMapper, EvseMapper, LocationMapper } from '@ocpi/mappers/location-mapper.js';
+import { TokensMapper } from '@ocpi/mappers/tokens-mapper.js';
+import { SessionMapper } from '@ocpi/mappers/session-mapper.js';
 
 const UPDATED_AT = new Date('2026-08-20T11:00:00Z');
 

@@ -26,15 +26,15 @@ import {
   EvseMapper,
   LocationMapper,
   formatCoordinate,
-} from '../../src/mappers/location-mapper.js';
-import { ConnectorType } from '../../src/types/connector-type.js';
-import { ConnectorFormat } from '../../src/types/connector-format.js';
-import { PowerType } from '../../src/types/power-type.js';
-import { EvseStatus } from '../../src/types/evse-status.js';
-import { Capability } from '../../src/types/capability.js';
-import { ParkingRestriction } from '../../src/types/parking-restriction.js';
-import { ParkingType } from '../../src/types/parking-type.js';
-import { Facilities } from '../../src/types/facilities.js';
+} from '@ocpi/mappers/location-mapper.js';
+import { ConnectorType } from '@ocpi/types/connector-type.js';
+import { ConnectorFormat } from '@ocpi/types/connector-format.js';
+import { PowerType } from '@ocpi/types/power-type.js';
+import { EvseStatus } from '@ocpi/types/evse-status.js';
+import { Capability } from '@ocpi/types/capability.js';
+import { ParkingRestriction } from '@ocpi/types/parking-restriction.js';
+import { ParkingType } from '@ocpi/types/parking-type.js';
+import { Facilities } from '@ocpi/types/facilities.js';
 
 const UPDATED_AT = new Date('2026-08-20T11:00:00Z');
 

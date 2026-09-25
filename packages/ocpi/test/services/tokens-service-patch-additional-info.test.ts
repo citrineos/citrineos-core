@@ -6,9 +6,9 @@ import { AuthorizationStatusEnum, IdTokenEnum, OCPP2_0_1 } from '@citrineos/type
 import { describe, expect, it, vi } from 'vitest';
 import { type ILogObj, Logger } from 'tslog';
 
-import { TokensService } from '../../src/services/tokens-service.js';
-import { TokensMapper } from '../../src/mappers/tokens-mapper.js';
-import { TokenType } from '../../src/types/token-type.js';
+import { TokensService } from '@ocpi/services/tokens-service.js';
+import { TokensMapper } from '@ocpi/mappers/tokens-mapper.js';
+import { TokenType } from '@ocpi/types/token-type.js';
 
 const EMAID = { additionalIdToken: 'GBVLTC00000001', type: OCPP2_0_1.IdTokenEnumType.eMAID };
 const ISSUER = { additionalIdToken: 'Volt Mobility', type: 'issuer' };

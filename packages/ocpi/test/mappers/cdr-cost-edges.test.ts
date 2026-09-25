@@ -4,7 +4,7 @@
 import type { TariffDto } from '@citrineos/types';
 import { describe, expect, it } from 'vitest';
 
-import type { PricedSession } from '../../src/mappers/cdr-cost.js';
+import type { PricedSession } from '@ocpi/mappers/cdr-cost.js';
 import {
   calculateEnergyCost,
   calculateFixedCost,
@@ -12,9 +12,9 @@ import {
   calculateTotalCdrCost,
   calculateTotalParkingTimeHours,
   calculateTotalTimeHours,
-} from '../../src/mappers/cdr-cost.js';
-import type { ChargingPeriod } from '../../src/types/charging-period.js';
-import { CdrDimensionType } from '../../src/types/cdr-dimension-type.js';
+} from '@ocpi/mappers/cdr-cost.js';
+import type { ChargingPeriod } from '@ocpi/types/charging-period.js';
+import { CdrDimensionType } from '@ocpi/types/cdr-dimension-type.js';
 
 /** 45 minutes, 10.5 kWh. */
 function aSession(overrides: Partial<PricedSession> = {}): PricedSession {

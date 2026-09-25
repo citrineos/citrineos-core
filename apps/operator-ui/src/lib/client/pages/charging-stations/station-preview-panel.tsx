@@ -4,11 +4,9 @@
 'use client';
 
 import React from 'react';
-import { CanAccess, Link, useList, useOne, useTranslate } from '@refinedev/core';
+import { CanAccess, Link, useOne, useTranslate } from '@refinedev/core';
 import { useDispatch } from 'react-redux';
 import { instanceToPlain } from 'class-transformer';
-import type { OCPPMessageDto } from '@citrineos/types';
-import { OCPPMessageProps } from '@citrineos/types';
 import { ChevronDown, MoreHorizontal, X } from 'lucide-react';
 import { Button } from '@lib/client/components/ui/button';
 import {
@@ -24,7 +22,6 @@ import {
   ChargingStationClass,
   type ChargingStationDetailsDto,
 } from '@lib/cls/charging-station-dto';
-import { OCPPMessageClass } from '@lib/cls/ocpp-message-dto';
 import { CHARGING_STATIONS_GET_QUERY } from '@lib/queries/charging-stations';
 import { ActionType, ResourceType } from '@lib/utils/access-types';
 import { DETAIL_TAB_STATE, NOT_APPLICABLE } from '@lib/utils/consts';
@@ -35,6 +32,7 @@ import { ModalComponentType } from '@lib/client/components/modals/modal-types';
 import { getPlainToInstanceOptions } from '@lib/utils/tables';
 import { clickableLinkStyle } from '@lib/client/styles/page';
 import { Skeleton } from '@lib/client/components/ui/skeleton';
+import { ScrollArea } from '@lib/client/components/ui/scroll-area';
 import { chargingStationPath } from '@lib/utils/resource-paths';
 import { useChargingStationId } from '@lib/client/hooks/use-charging-station-id';
 
@@ -72,29 +70,9 @@ export const StationPreviewPanel: React.FC<StationPreviewPanelProps> = ({
   });
   const station = data?.data;
 
-  // Latest OCPP message for the station (mirrors the detail card).
-  const {
-    query: { data: latestLogsData },
-  } = useList<OCPPMessageDto>({
-    resource: ResourceType.OCPP_MESSAGES,
-    meta: { fields: [OCPPMessageProps.id, OCPPMessageProps.timestamp] },
-    sorters: [{ field: OCPPMessageProps.timestamp, order: 'desc' }],
-    filters: [
-      {
-        field: OCPPMessageProps.stationId,
-        operator: 'eq',
-        value: station?.id,
-      },
-    ],
-    pagination: { pageSize: 1, currentPage: 1 },
-    liveMode: 'off',
-    queryOptions: {
-      ...getPlainToInstanceOptions(OCPPMessageClass),
-      enabled: !!station?.ocppConnectionName,
-    },
-  });
-  const latestLog = latestLogsData?.data?.[0] || undefined;
-  const lastMessageAt = latestLog ? formatDate(latestLog.timestamp) : NOT_APPLICABLE;
+  const lastMessageAt = station?.latestOcppMessageTimestamp
+    ? formatDate(station.latestOcppMessageTimestamp)
+    : NOT_APPLICABLE;
 
   // Security profile of the network profile pushed for the connected server (falls back to the
   // connected ServerNetworkProfile's security profile) — same derivation as the detail card.
@@ -141,7 +119,7 @@ export const StationPreviewPanel: React.FC<StationPreviewPanelProps> = ({
         </Button>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <ScrollArea className="min-h-0 flex-1">
         {isLoading || !station ? (
           <div className="flex flex-col gap-3 p-4">
             <Skeleton className="h-5 w-3/4" />
@@ -292,7 +270,7 @@ export const StationPreviewPanel: React.FC<StationPreviewPanelProps> = ({
             </CanAccess>
           </div>
         )}
-      </div>
+      </ScrollArea>
     </div>
   );
 };

@@ -3,15 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { TableName } from '@dal/models/table-name.js';
-import {
-  integer,
-  pgSchema,
-  pgTable,
-  serial,
-  timestamp,
-  uniqueIndex,
-  varchar,
-} from 'drizzle-orm/pg-core';
+import { integer, pgSchema, pgTable, timestamp, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { type z } from 'zod';
 
@@ -19,11 +11,9 @@ import { type z } from 'zod';
 // which is required when the same schema is used across multiple pgSchema() calls.
 function chargingStationNetworkProfileColumns() {
   return {
-    // Implicit auto-increment PK (the sequelize model declares no @PrimaryKey).
-    id: serial('id').primaryKey(),
     stationId: integer('stationId').notNull(),
     configurationSlot: integer('configurationSlot'),
-    setNetworkProfileId: integer('setNetworkProfileId'),
+    setNetworkProfileId: integer('setNetworkProfileId').notNull(),
     websocketServerConfigId: varchar('websocketServerConfigId', { length: 255 }),
     tenantId: integer('tenantId').notNull(),
     createdAt: timestamp('createdAt', { withTimezone: true, mode: 'date' })
@@ -39,12 +29,7 @@ function chargingStationNetworkProfileColumns() {
 export const chargingStationNetworkProfileTable = pgTable(
   TableName.ChargingStationNetworkProfiles,
   chargingStationNetworkProfileColumns(),
-  (t) => [
-    uniqueIndex('charging_station_network_profiles_station_id_configuration_slot').on(
-      t.stationId,
-      t.configurationSlot,
-    ),
-  ],
+  (t) => [uniqueIndex('stationId_configurationSlot').on(t.stationId, t.configurationSlot)],
 );
 
 // Schema-per-tenant (future approach): one Postgres schema per tenant, no tenantId filter needed

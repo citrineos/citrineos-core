@@ -9,8 +9,8 @@ import { Logger } from 'tslog';
 // can be asserted by exact value.
 vi.mock('uuid', () => ({ v4: vi.fn(() => 'rotated-server-token') }));
 
-import { CredentialsService } from '../../src/services/credentials-service.js';
-import { VersionNumber } from '../../src/types/version-number.js';
+import { CredentialsService } from '@ocpi/services/credentials-service.js';
+import { VersionNumber } from '@ocpi/types/version-number.js';
 
 const CPO_VERSIONS_URL = 'https://cpo.example.com/ocpi/versions';
 const MSP_VERSIONS_URL = 'https://msp.example.com/ocpi/versions';
@@ -327,6 +327,45 @@ describe('registerCredentialsTokenA', () => {
     await expect(register(h)).rejects.toThrow('Token C not found in credentials response');
     expect(updateCalls(h.graphqlCalls)).toHaveLength(1);
   });
+
+  it('skips endpoints for modules it does not implement and registers the rest', async () => {
+    const h = aHarness(aTenantPartner(anUnregisteredProfile()));
+    h.versionsClientApi.getVersionDetails.mockResolvedValue({
+      data: {
+        version: '2.2.1',
+        endpoints: [
+          { identifier: 'credentials', role: 'RECEIVER', url: MSP_CREDENTIALS_URL },
+          { identifier: 'hubclientinfo', role: 'RECEIVER', url: 'https://msp.example.com/hci' },
+          { identifier: 'locations', role: 'RECEIVER', url: 'https://msp.example.com/locations' },
+        ],
+      },
+    } as never);
+
+    await register(h);
+
+    const [first] = updateCalls(h.graphqlCalls);
+    expect(first.variables.input.endpoints).toEqual([
+      { identifier: 'credentials', url: MSP_CREDENTIALS_URL },
+      { identifier: 'locations_RECEIVER', url: 'https://msp.example.com/locations' },
+    ]);
+  });
+
+  it('fails without a write when no advertised module is supported', async () => {
+    const h = aHarness(aTenantPartner(anUnregisteredProfile()));
+    h.versionsClientApi.getVersionDetails.mockResolvedValue({
+      data: {
+        version: '2.2.1',
+        endpoints: [
+          { identifier: 'hubclientinfo', role: 'RECEIVER', url: 'https://msp.example.com/hci' },
+        ],
+      },
+    } as never);
+
+    await expect(register(h)).rejects.toThrow(
+      'Partner version details advertised no endpoints for any supported OCPI module',
+    );
+    expect(updateCalls(h.graphqlCalls)).toHaveLength(0);
+  });
 });
 
 describe('postCredentials', () => {
@@ -394,6 +433,55 @@ describe('postCredentials', () => {
     ).rejects.toThrow('TenantPartner expects 2.2.1, received 2.2');
     expect(h.versionsClientApi.getVersions).not.toHaveBeenCalled();
     expect(h.request).not.toHaveBeenCalled();
+  });
+
+  it('skips unsupported modules and stores only the supported endpoints', async () => {
+    const partner = aTenantPartner(anUnregisteredProfile());
+    const h = aHarness(partner);
+    h.versionsClientApi.getVersionDetails.mockResolvedValue({
+      data: {
+        version: '2.2.1',
+        endpoints: [
+          { identifier: 'hubclientinfo', role: 'RECEIVER', url: 'https://msp.example.com/hci' },
+          { identifier: 'credentials', role: 'RECEIVER', url: MSP_CREDENTIALS_URL },
+        ],
+      },
+    } as never);
+
+    await h.service.postCredentials(
+      partner as never,
+      incoming() as never,
+      VersionNumber.TWO_DOT_TWO_DOT_ONE,
+    );
+
+    const [update] = updateCalls(h.graphqlCalls);
+    expect(update.variables.input.endpoints).toEqual([
+      { identifier: 'credentials', url: MSP_CREDENTIALS_URL },
+    ]);
+  });
+
+  it('fails without a write when the partner advertises no supported module', async () => {
+    const partner = aTenantPartner(anUnregisteredProfile());
+    const h = aHarness(partner);
+    h.versionsClientApi.getVersionDetails.mockResolvedValue({
+      data: {
+        version: '2.2.1',
+        endpoints: [
+          { identifier: 'hubclientinfo', role: 'RECEIVER', url: 'https://msp.example.com/hci' },
+        ],
+      },
+    } as never);
+
+    await expect(
+      h.service.postCredentials(
+        partner as never,
+        incoming() as never,
+        VersionNumber.TWO_DOT_TWO_DOT_ONE,
+      ),
+    ).rejects.toThrow(
+      'Partner version details advertised no endpoints for any supported OCPI module',
+    );
+    expect(updateCalls(h.graphqlCalls)).toHaveLength(0);
   });
 });
 

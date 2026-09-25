@@ -6,8 +6,8 @@ import { describe, expect, it } from 'vitest';
 import {
   GET_CHARGING_STATION_BY_ID_QUERY,
   GET_CHARGING_STATION_BY_PK_QUERY,
-} from '../../../src/transport/graphql/queries/charging-station-queries.js';
-import { GET_ACTIVE_TRANSACTION_FOR_STOP_SESSION_QUERY } from '../../../src/transport/graphql/queries/transaction-queries.js';
+} from '@ocpi/transport/graphql/queries/charging-station-queries.js';
+import { GET_ACTIVE_TRANSACTION_FOR_STOP_SESSION_QUERY } from '@ocpi/transport/graphql/queries/transaction-queries.js';
 
 /** Pulls the body of a `<alias>: ChargingStation { ... }` selection out of a query. */
 function stationSelection(query: string): string | null {

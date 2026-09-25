@@ -24,6 +24,8 @@
       "@util/*": ["./packages/ocpp/src/util/*"],
       "@services": ["./packages/ocpp/src/services"],
       "@services/*": ["./packages/ocpp/src/services/*"],
+      "@ocpi": ["./packages/ocpi/src"],
+      "@ocpi/*": ["./packages/ocpi/src/*"],
       "@ocpp": ["./packages/base/src/ocpp"],
       "@ocpp/*": ["./packages/base/src/ocpp/*"],
       "@config": ["./packages/base/src/config"],

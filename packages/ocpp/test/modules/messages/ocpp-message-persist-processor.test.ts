@@ -15,6 +15,14 @@ import { OcppMessagePersistProcessor } from '@modules/messages/processors/ocpp-m
 import { aFrameEvent } from '@test/providers/messages-event-provider.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { recordMessagesPersistActionUnresolved } from '@/transport/queue/rabbit-mq/messages/messages-metrics.js';
+
+vi.mock('@/transport/queue/rabbit-mq/messages/messages-metrics.js', async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import('@/transport/queue/rabbit-mq/messages/messages-metrics.js')
+  >()),
+  recordMessagesPersistActionUnresolved: vi.fn(),
+}));
 
 describe('OcppMessagePersistProcessor', () => {
   const { container } = createTestContainer();
@@ -44,6 +52,40 @@ describe('OcppMessagePersistProcessor', () => {
     it('should be critical, because losing an audit row must fail the event', () => {
       expect(processor.critical).toBe(true);
       expect(processor.name).toBe('ocpp-message-persist');
+    });
+  });
+
+  // ─── metrics ───────────────────────────────────────────────────────────────
+
+  describe('unresolved action metric', () => {
+    beforeEach(() => {
+      vi.mocked(recordMessagesPersistActionUnresolved).mockClear();
+    });
+
+    it.each([MessageTypeId.CallResult, MessageTypeId.CallError])(
+      'should count a %s row the trigger resolved no action for',
+      async (type) => {
+        ocppMessageRepository.createOCPPMessage.mockResolvedValue({ id: 7, action: undefined });
+
+        await processor.process(aFrameEvent({ type, action: undefined }), {});
+
+        expect(recordMessagesPersistActionUnresolved).toHaveBeenCalledOnce();
+      },
+    );
+
+    it('should not count a response whose action the trigger resolved', async () => {
+      await processor.process(aFrameEvent({ type: MessageTypeId.CallResult }), {});
+
+      expect(recordMessagesPersistActionUnresolved).not.toHaveBeenCalled();
+    });
+
+    it('should not count a Call or an unparsed frame, which the trigger never resolves', async () => {
+      ocppMessageRepository.createOCPPMessage.mockResolvedValue({ id: 7, action: undefined });
+
+      await processor.process(aFrameEvent({ type: MessageTypeId.Call, action: undefined }), {});
+      await processor.process(aFrameEvent({ type: undefined, parsed: false }), {});
+
+      expect(recordMessagesPersistActionUnresolved).not.toHaveBeenCalled();
     });
   });
 

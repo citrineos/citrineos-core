@@ -36,28 +36,52 @@ export class ServerNetworkProfile
   @Column(DataType.STRING)
   declare id: string;
 
-  @Column(DataType.STRING)
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+  })
   declare host: string;
 
-  @Column(DataType.INTEGER)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+  })
   declare port: number;
 
-  @Column(DataType.INTEGER)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+  })
   declare pingInterval: number;
 
-  @Column(DataType.ARRAY(DataType.STRING))
+  @Column({
+    type: DataType.ARRAY(DataType.STRING),
+    allowNull: false,
+  })
   declare protocols: OCPPVersionType[];
 
-  @Column(DataType.INTEGER)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+  })
   declare messageTimeout: number;
 
-  @Column(DataType.INTEGER)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+  })
   declare securityProfile: number;
 
-  @Column(DataType.BOOLEAN)
+  @Column({
+    type: DataType.BOOLEAN,
+    allowNull: false,
+  })
   declare allowUnknownChargingStations: boolean;
 
-  @Column(DataType.BOOLEAN)
+  @Column({
+    type: DataType.BOOLEAN,
+    allowNull: false,
+  })
   declare dynamicTenantResolution: boolean;
 
   @Column(DataType.STRING)

@@ -31,7 +31,7 @@ describe('CaliforniaPricingService', () => {
   let changeConfigurationRepository: Mocked<IChangeConfigurationRepository>;
   let tariffRepository: Mocked<ITariffRepository>;
   let transactionEventRepository: Mocked<ITransactionEventRepository>;
-  let locationRepository: Mocked<IConnectorRepository>;
+  let connectorRepository: Mocked<IConnectorRepository>;
   let costCalculator: Mocked<CostCalculator>;
   let ocppSender: ReturnType<typeof makeMockOcppSender>;
   let service: CaliforniaPricingService;
@@ -51,7 +51,7 @@ describe('CaliforniaPricingService', () => {
       readTransactionByStationIdAndTransactionId: vi.fn().mockResolvedValue(undefined),
     } as unknown as Mocked<ITransactionEventRepository>;
 
-    locationRepository = {
+    connectorRepository = {
       readConnectorsByStationId: vi.fn().mockResolvedValue([]),
     } as unknown as Mocked<IConnectorRepository>;
 
@@ -65,7 +65,7 @@ describe('CaliforniaPricingService', () => {
       changeConfigurationRepository,
       tariffRepository,
       transactionEventRepository,
-      locationRepository,
+      connectorRepository,
       costCalculator,
       ocppSender,
     });
@@ -378,7 +378,7 @@ describe('CaliforniaPricingService', () => {
   }
 
   function givenConnectors(connectors: { id: number; tariffId: number | null }[]) {
-    locationRepository.readConnectorsByStationId.mockResolvedValue(
+    connectorRepository.readConnectorsByStationId.mockResolvedValue(
       connectors as unknown as ConnectorDto[],
     );
   }

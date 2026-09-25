@@ -20,6 +20,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "catalog:",
     "@aws-sdk/s3-request-presigner": "3.1137.0",
+    "@base-ui/react": "1.8.0",
     "@citrineos/types": "workspace:*",
     "@ferdiunal/refine-shadcn": "1.6.1",
     "@google-cloud/storage": "catalog:",

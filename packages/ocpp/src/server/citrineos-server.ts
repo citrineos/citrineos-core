@@ -11,6 +11,7 @@ import type {
   WebsocketNetworkConnection,
 } from '@/transport/index.js';
 import {
+  assertDrizzleSchemaMatches,
   assertSequelizeSchemaMatches,
   keyCodeRedactionRule,
   type SchemaValidationReport,
@@ -127,6 +128,7 @@ export class CitrineOSServer {
   protected _healthCheckService?: HealthCheckService;
   protected _isShuttingDown = false;
   protected _schemaValidationReport: SchemaValidationReport | null = null;
+  protected _drizzleSchemaValidationReport: SchemaValidationReport | null = null;
 
   // Single source of truth mapping each module's EventGroup to the container token
   // needed to initialize it. initAllModules() and initModule() both read from this
@@ -613,6 +615,12 @@ export class CitrineOSServer {
 
     if (process.env.CITRINEOS_USE_DRIZZLE === 'true') {
       await DefaultDrizzleInstance.initialize();
+
+      this._drizzleSchemaValidationReport = await assertDrizzleSchemaMatches(
+        DefaultDrizzleInstance.getInstance(this._config, this._logger),
+        this._config,
+        this._logger,
+      );
     }
   }
 
@@ -629,6 +637,7 @@ export class CitrineOSServer {
       this._logger,
     );
     this._healthCheckService.setSchemaValidationReport(this._schemaValidationReport);
+    this._healthCheckService.setDrizzleSchemaValidationReport(this._drizzleSchemaValidationReport);
   }
 
   protected registerShutdownHandlers(): void {

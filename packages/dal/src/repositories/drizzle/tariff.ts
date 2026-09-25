@@ -33,7 +33,7 @@ export function toTariffDto(entity: TariffEntity): TariffDto {
     authorizationAmount: toNumberOrNull(entity.authorizationAmount),
     paymentFee: toNumberOrNull(entity.paymentFee),
     taxRate: toNumberOrNull(entity.taxRate),
-    tariffAltText: (entity.tariffAltText as Record<string, any> | null) ?? null,
+    tariffAltText: entity.tariffAltText ?? null,
     tariffId: entity.tariffId ?? null,
     // Drizzle returns timestamp as JS Date (mode: 'date'); DTO contract is ISO string.
     validFrom: entity.validFrom ? entity.validFrom.toISOString() : null,

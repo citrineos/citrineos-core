@@ -35,6 +35,7 @@ export class SecurityEvent extends Model implements SecurityEventDto {
     get() {
       return this.getDataValue('timestamp').toISOString();
     },
+    allowNull: false,
   })
   declare timestamp: string;
 

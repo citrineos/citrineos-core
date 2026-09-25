@@ -12,6 +12,11 @@ import {
 } from '@citrineos/types';
 import { childLogger } from '@citrineos/base';
 import type { ILogObj, Logger } from 'tslog';
+import {
+  initMessagesProcessorMetrics,
+  recordMessagesProcessorDuration,
+  recordMessagesProcessorFailure,
+} from './messages-metrics.js';
 
 export class MessagesEventPipeline {
   private readonly _frameProcessors: IFrameEventProcessor[];
@@ -30,6 +35,7 @@ export class MessagesEventPipeline {
     this._frameProcessors = frameEventProcessors;
     this._connectionProcessors = connectionEventProcessors;
     this._logger = childLogger(logger, this.constructor.name);
+    initMessagesProcessorMetrics([...frameEventProcessors, ...connectionEventProcessors]);
   }
 
   /** For startup logging: which processors serve which kind. */
@@ -62,9 +68,11 @@ export class MessagesEventPipeline {
     context: MessagesEventContext,
   ): Promise<void> {
     for (const processor of processors) {
+      const startedAt = performance.now();
       try {
         await processor.process(event, context);
       } catch (error) {
+        recordMessagesProcessorFailure(processor.name, processor.critical);
         if (processor.critical) {
           this._logger.error(
             `Critical processor ${processor.name} failed for ${event.ocppConnectionName}:`,
@@ -76,6 +84,8 @@ export class MessagesEventPipeline {
           `Processor ${processor.name} failed for ${event.ocppConnectionName} (continuing):`,
           error,
         );
+      } finally {
+        recordMessagesProcessorDuration((performance.now() - startedAt) / 1000, processor.name);
       }
     }
   }

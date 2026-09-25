@@ -89,6 +89,7 @@ export type GetChargingStationByPkQueryResult = GetChargingStationByIdQueryResul
 
 export type GetChargingStationByIdQueryVariables = Exact<{
   id: Scalars['String']['input'];
+  tenantId: Scalars['Int']['input'];
 }>;
 
 export type GetChargingStationByIdQueryResult = {
@@ -447,7 +448,7 @@ export type GetTariffByKeyQueryResult = {
     pricePerMin?: any | null;
     pricePerSession?: any | null;
     taxRate?: any | null;
-    tariffAltText?: string | null;
+    tariffAltText?: Record<string, any> | null;
     updatedAt: any;
     tenant: {
       countryCode: string;
@@ -473,7 +474,7 @@ export type GetTariffsQueryResult = {
     pricePerMin?: any | null;
     pricePerSession?: any | null;
     taxRate?: any | null;
-    tariffAltText?: string | null;
+    tariffAltText?: Record<string, any> | null;
     updatedAt: any;
     tenant: {
       countryCode: string;
