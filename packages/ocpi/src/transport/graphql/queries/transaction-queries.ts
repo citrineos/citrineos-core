@@ -92,6 +92,9 @@ export const GET_TRANSACTION_BY_ID_QUERY = gql`
       authorizationId
       tariffId
       authorization: Authorization {
+        id
+        idToken
+        idTokenType
         tenantPartner: TenantPartner {
           id
           countryCode
@@ -103,6 +106,14 @@ export const GET_TRANSACTION_BY_ID_QUERY = gql`
             partyId
           }
         }
+        groupAuthorization: GroupAuthorization {
+          idToken
+        }
+        additionalInfo
+        status
+        realTimeAuth
+        language1
+        updatedAt
       }
       station: ChargingStation {
         id
