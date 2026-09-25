@@ -16,6 +16,7 @@ import type {
   ChargingProfileInput,
   CompositeScheduleInput,
 } from '../../mappers/2.0.1/charging-profile-mapper.js';
+import type { CompositeScheduleInput as CompositeScheduleInput21 } from '../../mappers/2.1/charging-profile-mapper.js';
 import { ChargingNeeds } from '../../models/charging-profile/charging-needs.js';
 import { ChargingProfile } from '../../models/charging-profile/charging-profile.js';
 import { ChargingSchedule } from '../../models/charging-profile/charging-schedule.js';
@@ -226,7 +227,7 @@ export class SequelizeChargingProfileRepository
 
   async createCompositeSchedule(
     tenantId: number,
-    compositeSchedule: CompositeScheduleInput,
+    compositeSchedule: CompositeScheduleInput | CompositeScheduleInput21,
     ocppConnectionName: string,
   ): Promise<CompositeSchedule> {
     const evseId = await this.resolveCompositeScheduleEvse(

@@ -69,9 +69,6 @@ export class SmartChargingModule extends AbstractModule {
   get chargingProfileRepository(): IChargingProfileRepository {
     return this._chargingProfileRepository;
   }
-
-  //TODO: 2.1 GetCompositeSchedule
-  // We need to add a specific handler for 2.1 or we need to change how we do our mapping / create a mapper for 2.1
 }
 
 export default SmartChargingModule;
