@@ -24,6 +24,7 @@ export function aSystemConfigWithAmqp(override?: {
   noAmqp?: boolean;
   maxCallLengthSeconds?: number;
   staleCallMaxAgeSeconds?: number;
+  prefetch?: { router?: number; module?: number };
 }): SystemConfig {
   const timeouts = {
     maxCallLengthSeconds: override?.maxCallLengthSeconds ?? 20,
@@ -40,6 +41,10 @@ export function aSystemConfigWithAmqp(override?: {
       amqp: {
         url: 'amqp://localhost',
         exchange: override?.exchange ?? 'test-exchange',
+        prefetch: {
+          router: override?.prefetch?.router ?? 100,
+          module: override?.prefetch?.module ?? 10,
+        },
         ...(override?.instanceIdentifier !== undefined && {
           instanceIdentifier: override.instanceIdentifier,
         }),
@@ -66,6 +71,7 @@ export function aMockAmqpChannel(): amqplib.Channel {
         Promise.resolve({ consumerTag: `consumer-tag-${++consumerCount}` }),
       ),
     cancel: vi.fn().mockResolvedValue({}),
+    prefetch: vi.fn().mockResolvedValue({}),
     ack: vi.fn(),
     nack: vi.fn(),
     sendToQueue: vi.fn().mockReturnValue(true),
