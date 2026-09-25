@@ -74,12 +74,33 @@ export class NotifyEVChargingNeedsRequestOcpp2Handler extends AbstractHandler {
       `Found active transaction on station ${ocppConnectionName} evse ${request.evseId}: ${JSON.stringify(activeTransaction)}`,
     );
 
+    // A 2.1 EV describes a bidirectional need in `v2xChargingParameters` or
+    // `derChargingParameters`, and neither is an AC or DC parameter set. An
+    // ISO 15118-20 car asking for AC_BPT therefore carried none of the two
+    // fields checked below, was answered Rejected, and ended its transaction
+    // with `ReqEnergyTransferRejected` (Q01.FR.06) -- the charger doing
+    // exactly what it is told. Bidirectional charging could not start at all.
+    // `ChargingNeedsType` is the union of the 2.0.1 and 2.1 shapes, so the
+    // 2.1-only fields are reached through a narrowing check rather than a
+    // cast: a payload that has neither is simply not a 2.1 need.
+    const has21ChargingParameters =
+      ('v2xChargingParameters' in givenNeeds && givenNeeds.v2xChargingParameters != null) ||
+      ('derChargingParameters' in givenNeeds && givenNeeds.derChargingParameters != null);
+
     // OCPP 2.0.1 Part 2 K17.FR.06
+    //
+    // `!= null` rather than `!== null`: an absent field is `undefined`, and
+    // `undefined !== null` answered true for a payload that carried no
+    // parameters at all -- so this check passed on exactly the messages it
+    // exists to catch, and the match below was left to do its work alone.
     const hasAcOrDcChargingParameters =
-      givenNeeds.dcChargingParameters !== null || givenNeeds.acChargingParameters !== null;
-    this._logger.info(`Has AC or DC charging parameters: ${hasAcOrDcChargingParameters}`);
+      givenNeeds.dcChargingParameters != null || givenNeeds.acChargingParameters != null;
+    this._logger.info(
+      `Has AC, DC or 2.1 charging parameters: ${hasAcOrDcChargingParameters || has21ChargingParameters}`,
+    );
 
     const matchedChargingType =
+      has21ChargingParameters ||
       ((givenNeeds.dcChargingParameters ?? false) &&
         givenNeeds.requestedEnergyTransfer === EnergyTransferModeEnum.DC) ||
       ((givenNeeds.acChargingParameters ?? false) &&
@@ -88,7 +109,11 @@ export class NotifyEVChargingNeedsRequestOcpp2Handler extends AbstractHandler {
       `Matched chargingParameters and requestedEnergyTransfer type: ${matchedChargingType}`,
     );
 
-    if (!activeTransaction || !hasAcOrDcChargingParameters || !matchedChargingType) {
+    if (
+      !activeTransaction ||
+      !(hasAcOrDcChargingParameters || has21ChargingParameters) ||
+      !matchedChargingType
+    ) {
       await this._ocppSender.sendCallResultWithMessage(message, {
         status: NotifyEVChargingNeedsStatusEnum.Rejected,
       } as OCPP2_response_types.NotifyEVChargingNeedsResponse);
