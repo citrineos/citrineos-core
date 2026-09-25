@@ -4,7 +4,7 @@
 
 import type { StatusInfo } from '@citrineos/types';
 import { TableName } from '@dal/models/table-name.js';
-import { integer, jsonb, pgSchema, pgTable, serial, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { integer, json, pgSchema, pgTable, serial, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { type z } from 'zod';
 
@@ -15,7 +15,7 @@ function variableMonitoringStatusColumns() {
     // No @PrimaryKey in the model → Sequelize adds an auto-increment integer id.
     id: serial('id').primaryKey(),
     status: varchar('status', { length: 255 }),
-    statusInfo: jsonb('statusInfo').$type<StatusInfo>(),
+    statusInfo: json('statusInfo').$type<StatusInfo>(),
     variableMonitoringId: integer('variableMonitoringId'),
     tenantId: integer('tenantId').notNull(),
     createdAt: timestamp('createdAt', { withTimezone: true, mode: 'date' })

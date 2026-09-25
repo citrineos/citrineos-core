@@ -4,7 +4,6 @@
 
 import { TableName } from '@dal/models/table-name.js';
 import {
-  index,
   integer,
   pgSchema,
   pgTable,
@@ -51,8 +50,7 @@ export const setNetworkProfileTable = pgTable(
   TableName.SetNetworkProfiles,
   setNetworkProfileColumns(),
   (t) => [
-    index('set_network_profiles_correlation_id').on(t.correlationId),
-    uniqueIndex('set_network_profiles_station_id_correlation_id').on(t.stationId, t.correlationId),
+    uniqueIndex('set_network_profiles_stationPkId_correlationId').on(t.stationId, t.correlationId),
   ],
 );
 

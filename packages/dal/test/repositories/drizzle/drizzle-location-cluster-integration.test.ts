@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { preMigrationRow } from '../../utils/pre-migration-row.js';
 import {
   ChargingStation,
   Connector,
@@ -648,30 +649,33 @@ describe('location cluster row-to-DTO mappers', () => {
   });
 
   it('toChargingStationDto keeps null coordinates and converts the timestamp', () => {
-    const dto = toChargingStationDto({
-      id: 3,
-      ocppConnectionName: null,
-      isOnline: null,
-      protocol: 'ocpp1.6',
-      latestOcppMessageTimestamp: new Date(TS),
-      chargePointVendor: 'ACME',
-      chargePointModel: null,
-      chargePointSerialNumber: null,
-      chargeBoxSerialNumber: null,
-      firmwareVersion: null,
-      iccid: null,
-      imsi: null,
-      meterType: null,
-      meterSerialNumber: null,
-      coordinates: null,
-      floorLevel: null,
-      parkingRestrictions: null,
-      capabilities: null,
-      use16StatusNotification0: null,
-      locationId: null,
-      tenantId: TENANT,
-      ...timestamps,
-    } as ChargingStationEntity);
+    const dto = toChargingStationDto(
+      preMigrationRow<ChargingStationEntity>({
+        id: 3,
+        ocppConnectionName: null,
+        isOnline: null,
+        protocol: 'ocpp1.6',
+        latestOcppMessageTimestamp: new Date(TS),
+        chargePointVendor: 'ACME',
+        chargePointModel: null,
+        chargePointSerialNumber: null,
+        chargeBoxSerialNumber: null,
+        firmwareVersion: null,
+        iccid: null,
+        imsi: null,
+        meterType: null,
+        meterSerialNumber: null,
+        coordinates: null,
+        floorLevel: null,
+        parkingRestrictions: null,
+        capabilities: null,
+        use16StatusNotification0: null,
+        connectedWebsocketServerConfigId: null,
+        locationId: null,
+        tenantId: TENANT,
+        ...timestamps,
+      }),
+    );
 
     expect(dto.ocppConnectionName).toBe('');
     expect(dto.isOnline).toBe(false);

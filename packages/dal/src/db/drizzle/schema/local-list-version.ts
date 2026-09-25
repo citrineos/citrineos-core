@@ -39,7 +39,7 @@ export const localListVersionTable = pgTable(
   localListVersionColumns(),
   (t) => [
     // Sequelize unique: 'stationName_tenantId' spans ocppConnectionName and tenantId.
-    uniqueIndex('local_list_versions_station_name_tenant_id').on(t.ocppConnectionName, t.tenantId),
+    uniqueIndex('LocalListVersions_stationId_tenantId').on(t.ocppConnectionName, t.tenantId),
   ],
 );
 
