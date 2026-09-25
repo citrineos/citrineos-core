@@ -24,7 +24,12 @@ export function aSystemConfigWithAmqp(override?: {
   noAmqp?: boolean;
   maxCallLengthSeconds?: number;
   staleCallMaxAgeSeconds?: number;
-  prefetch?: { router?: number; module?: number };
+  prefetch?: {
+    router?: number;
+    module?: number;
+    messages?: number;
+    messagesDeadLetter?: number;
+  };
 }): SystemConfig {
   const timeouts = {
     maxCallLengthSeconds: override?.maxCallLengthSeconds ?? 20,
@@ -44,6 +49,8 @@ export function aSystemConfigWithAmqp(override?: {
         prefetch: {
           router: override?.prefetch?.router ?? 100,
           module: override?.prefetch?.module ?? 10,
+          messages: override?.prefetch?.messages ?? 50,
+          messagesDeadLetter: override?.prefetch?.messagesDeadLetter ?? 10,
         },
         ...(override?.instanceIdentifier !== undefined && {
           instanceIdentifier: override.instanceIdentifier,

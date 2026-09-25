@@ -2,7 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { MESSAGES_DLX, MESSAGES_QUEUES, type MessagesQueueSpec } from '@citrineos/types';
+import {
+  MESSAGES_DLX,
+  MESSAGES_QUEUES,
+  type MessagesQueueSpec,
+  type SystemConfig,
+} from '@citrineos/types';
 import { childLogger } from '@citrineos/base';
 import type * as amqplib from 'amqplib';
 import type { ILogObj, Logger } from 'tslog';
@@ -58,20 +63,24 @@ export class MessagesDeadLetterConsumer {
 
   private readonly _channelManager: RabbitMQChannelManager;
   private readonly _logger: Logger<ILogObj>;
+  private readonly _prefetch: number;
 
   /** dlq name -> consumerTag, for queues currently being consumed on this connection. */
   private _consumerTags = new Map<string, string>();
   private _started = false;
 
   constructor({
+    config,
     channelManager,
     logger,
   }: {
+    config: SystemConfig;
     channelManager: RabbitMQChannelManager;
     logger?: Logger<ILogObj>;
   }) {
     this._channelManager = channelManager;
     this._logger = childLogger(logger, this.constructor.name);
+    this._prefetch = config.messageBroker.amqp.prefetch.messagesDeadLetter;
 
     this._channelManager.getConnectionManager().on('connected', () => {
       if (!this._started) return;
@@ -132,6 +141,8 @@ export class MessagesDeadLetterConsumer {
     await channel.assertQueue(spec.dlq, { durable: true, autoDelete: false });
     await channel.bindQueue(spec.dlq, MESSAGES_DLX, spec.binding);
 
+    // basic.qos only applies to consumers started after it, so it is set ahead of each consume.
+    await channel.prefetch(this._prefetch);
     const { consumerTag } = await channel.consume(spec.dlq, (message) =>
       this._onDelivery(spec.dlq, message, channel),
     );

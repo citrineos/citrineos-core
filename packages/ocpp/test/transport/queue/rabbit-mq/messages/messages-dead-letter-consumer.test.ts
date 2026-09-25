@@ -5,7 +5,7 @@
 import { MESSAGES_DLX, MESSAGES_QUEUES } from '@citrineos/types';
 import type * as amqplib from 'amqplib';
 import { MessagesDeadLetterConsumer } from '@/transport/index.js';
-import { aMockAmqpChannel } from '@test/providers/rabbit-mq-provider.js';
+import { aMockAmqpChannel, aSystemConfigWithAmqp } from '@test/providers/rabbit-mq-provider.js';
 import {
   aChannelManagerPerChannelId,
   aConnectionEvent,
@@ -86,6 +86,7 @@ describe('MessagesDeadLetterConsumer', () => {
   beforeEach(() => {
     harness = aChannelManagerPerChannelId(aMockAmqpChannel);
     consumer = getTestInstance(container, MessagesDeadLetterConsumer, {
+      config: aSystemConfigWithAmqp(),
       channelManager: harness.channelManager,
     });
   });
@@ -101,6 +102,23 @@ describe('MessagesDeadLetterConsumer', () => {
       await consumer.start();
 
       expect(consumer.consumedQueues).toEqual([OCPP_DLQ, CONNECTIONS_DLQ]);
+    });
+
+    it('should set the configured dead-letter prefetch on each queue before consuming', async () => {
+      const configured = getTestInstance(container, MessagesDeadLetterConsumer, {
+        config: aSystemConfigWithAmqp({ prefetch: { messagesDeadLetter: 3 } }),
+        channelManager: harness.channelManager,
+      });
+
+      await configured.start();
+
+      for (const dlq of [OCPP_DLQ, CONNECTIONS_DLQ]) {
+        const channel = channelFor(dlq);
+        expect(channel.prefetch).toHaveBeenCalledWith(3);
+        expect(vi.mocked(channel.prefetch).mock.invocationCallOrder[0]).toBeLessThan(
+          vi.mocked(channel.consume).mock.invocationCallOrder[0],
+        );
+      }
     });
 
     it('should never consume the work queues', async () => {

@@ -217,6 +217,8 @@ export const configSchema = z.object({
             .object({
               router: z.number().int().min(0).default(100),
               module: z.number().int().min(0).default(10),
+              messages: z.number().int().min(0).default(50),
+              messagesDeadLetter: z.number().int().min(0).default(10),
             })
             .prefault({}),
         })

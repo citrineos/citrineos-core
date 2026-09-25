@@ -9,6 +9,7 @@ import {
   type MessagesEvent,
   MessagesEventSchema,
   type MessagesQueueSpec,
+  type SystemConfig,
 } from '@citrineos/types';
 import { childLogger } from '@citrineos/base';
 import type * as amqplib from 'amqplib';
@@ -29,6 +30,7 @@ export class MessagesEventConsumer {
 
   private readonly _channelManager: RabbitMQChannelManager;
   private readonly _logger: Logger<ILogObj>;
+  private readonly _prefetch: number;
 
   private _handler?: MessagesEventHandler;
   /** queue name -> consumerTag, for queues currently being consumed on this connection. */
@@ -36,14 +38,17 @@ export class MessagesEventConsumer {
   private _started = false;
 
   constructor({
+    config,
     channelManager,
     logger,
   }: {
+    config: SystemConfig;
     channelManager: RabbitMQChannelManager;
     logger?: Logger<ILogObj>;
   }) {
     this._channelManager = channelManager;
     this._logger = childLogger(logger, this.constructor.name);
+    this._prefetch = config.messageBroker.amqp.prefetch.messages;
     initMessagesMetrics();
 
     // ChannelManager recreates channels after a reconnect but not consumers — the tags it held
@@ -118,6 +123,8 @@ export class MessagesEventConsumer {
     });
     await channel.bindQueue(spec.queue, MESSAGES_EXCHANGE, spec.binding);
 
+    // basic.qos only applies to consumers started after it, so it is set ahead of each consume.
+    await channel.prefetch(this._prefetch);
     const { consumerTag } = await channel.consume(spec.queue, (message) =>
       this._onMessage(spec, message, channel),
     );
