@@ -384,13 +384,6 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     }
     recordOcppMessageReceived(messageTypeId, protocol);
 
-    // Update latestOcppMessageTimestamp for any incoming OCPP message (non-blocking, single query)
-    this._chargingStationRepository
-      .updateChargingStationTimestamp(tenantId, ocppConnectionName, timestamp.toISOString())
-      .catch((error: any) => {
-        this._logger.error(`Failed to update latestOcppMessageTimestamp for ${identifier}:`, error);
-      });
-
     return success;
   }
 

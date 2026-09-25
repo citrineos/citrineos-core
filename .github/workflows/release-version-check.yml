@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
+#
+# SPDX-License-Identifier: Apache-2.0
+name: Release Version Check
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, edited, synchronize, reopened]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  release-version:
+    name: Release Version Check
+    if: github.head_ref == 'next'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Require the pull request title to match the package.json version
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          title="$(printf '%s' "$PR_TITLE" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's/^v//')"
+          if [ "$title" != "$version" ]; then
+            echo "::error file=package.json::Pull request title '$PR_TITLE' does not match the root package.json version '$version'. Bump the version in package.json on next, or rename this pull request to '$version'."
+            exit 1
+          fi
+          echo "Pull request title matches package.json version $version."

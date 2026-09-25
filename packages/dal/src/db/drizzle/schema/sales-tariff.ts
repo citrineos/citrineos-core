@@ -44,7 +44,7 @@ export const salesTariffTable = pgTable(
   salesTariffColumns(),
   // Sequelize composite unique 'id_chargingScheduleDatabaseId'.
   (t) => [
-    uniqueIndex('sales_tariffs_id_charging_schedule_database_id').on(
+    uniqueIndex('SalesTariffs_id_chargingScheduleDatabaseId_key').on(
       t.id,
       t.chargingScheduleDatabaseId,
     ),

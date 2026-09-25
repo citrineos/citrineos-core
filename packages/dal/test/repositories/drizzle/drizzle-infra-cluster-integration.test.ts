@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { preMigrationRow } from '../../utils/pre-migration-row.js';
 import {
   AsyncJobStatus,
   ChargingStation,
@@ -199,14 +200,16 @@ describe('drizzle row-to-DTO mappers', () => {
   });
 
   it('toTenantPartnerDto keeps the OCPI profile and leaves the relation empty', () => {
-    const dto = toTenantPartnerDto({
-      id: 3,
-      partyId: null,
-      countryCode: 'DE',
-      partnerProfileOCPI: PARTNER_PROFILE,
-      tenantId: TENANT,
-      ...timestamps,
-    } as TenantPartnerEntity);
+    const dto = toTenantPartnerDto(
+      preMigrationRow<TenantPartnerEntity>({
+        id: 3,
+        partyId: null,
+        countryCode: 'DE',
+        partnerProfileOCPI: PARTNER_PROFILE,
+        tenantId: TENANT,
+        ...timestamps,
+      }),
+    );
 
     expect(dto.id).toBe(3);
     expect(dto.partyId).toBeNull();
@@ -265,19 +268,21 @@ describe('drizzle row-to-DTO mappers', () => {
   });
 
   it('toAsyncJobStatusDto renames id to jobId and defaults the flag columns', () => {
-    const dto = toAsyncJobStatusDto({
-      id: 'job-1',
-      jobName: 'FETCH_OCPI_TOKENS',
-      tenantPartnerId: 9,
-      finishedAt: null,
-      stoppedAt: null,
-      stopScheduled: null,
-      isFailed: null,
-      paginationParams: null,
-      totalObjects: null,
-      tenantId: TENANT,
-      ...timestamps,
-    } as AsyncJobStatusEntity);
+    const dto = toAsyncJobStatusDto(
+      preMigrationRow<AsyncJobStatusEntity>({
+        id: 'job-1',
+        jobName: 'FETCH_OCPI_TOKENS',
+        tenantPartnerId: 9,
+        finishedAt: null,
+        stoppedAt: null,
+        stopScheduled: null,
+        isFailed: null,
+        paginationParams: null,
+        totalObjects: null,
+        tenantId: TENANT,
+        ...timestamps,
+      }),
+    );
 
     expect(dto.jobId).toBe('job-1');
     expect(dto.jobName).toBe('FETCH_OCPI_TOKENS');
@@ -347,15 +352,16 @@ describe('drizzle row-to-DTO mappers', () => {
   });
 
   it('toChargingStationNetworkProfileDto zero-fills the slot and FK columns', () => {
-    const dto = toChargingStationNetworkProfileDto({
-      id: 5,
-      stationId: 12,
-      configurationSlot: null,
-      setNetworkProfileId: null,
-      websocketServerConfigId: null,
-      tenantId: OTHER_TENANT,
-      ...timestamps,
-    } as ChargingStationNetworkProfileEntity);
+    const dto = toChargingStationNetworkProfileDto(
+      preMigrationRow<ChargingStationNetworkProfileEntity>({
+        stationId: 12,
+        configurationSlot: null,
+        setNetworkProfileId: null,
+        websocketServerConfigId: null,
+        tenantId: OTHER_TENANT,
+        ...timestamps,
+      }),
+    );
 
     expect(dto.stationId).toBe(12);
     expect(dto.configurationSlot).toBe(0);

@@ -12,6 +12,7 @@ import {
 import { MessagesModule } from './messages.js';
 import { ConnectionWebhookProcessor } from '@modules/messages/processors/connection-webhook-processor.js';
 import { FrameWebhookProcessor } from '@modules/messages/processors/frame-webhook-processor.js';
+import { LatestOcppMessageTimestampProcessor } from '@modules/messages/processors/latest-ocpp-message-timestamp-processor.js';
 import { OcppMessagePersistProcessor } from '@modules/messages/processors/ocpp-message-persist-processor.js';
 import { WebhookDispatcher } from './webhook-dispatcher.js';
 
@@ -19,6 +20,7 @@ import { WebhookDispatcher } from './webhook-dispatcher.js';
 interface MessagesCradle {
   ocppMessagePersistProcessor: OcppMessagePersistProcessor;
   frameWebhookProcessor: FrameWebhookProcessor;
+  latestOcppMessageTimestampProcessor: LatestOcppMessageTimestampProcessor;
   connectionWebhookProcessor: ConnectionWebhookProcessor;
 }
 
@@ -31,6 +33,7 @@ export function registerMessagesServices(container: AwilixContainer): void {
     frameEventProcessors: asFunction((cradle: MessagesCradle): IFrameEventProcessor[] => [
       cradle.ocppMessagePersistProcessor,
       cradle.frameWebhookProcessor,
+      cradle.latestOcppMessageTimestampProcessor,
     ]).singleton(),
 
     connectionEventProcessors: asFunction((cradle: MessagesCradle): IConnectionEventProcessor[] => [
@@ -39,6 +42,7 @@ export function registerMessagesServices(container: AwilixContainer): void {
 
     ocppMessagePersistProcessor: asClass(OcppMessagePersistProcessor).singleton(),
     frameWebhookProcessor: asClass(FrameWebhookProcessor).singleton(),
+    latestOcppMessageTimestampProcessor: asClass(LatestOcppMessageTimestampProcessor).singleton(),
     connectionWebhookProcessor: asClass(ConnectionWebhookProcessor).singleton(),
     webhookDispatcher: asClass(WebhookDispatcher).singleton(),
 

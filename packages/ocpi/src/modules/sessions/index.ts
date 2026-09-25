@@ -75,7 +75,19 @@ export class SessionsModule extends AbstractDtoModule implements OcpiModule {
       );
       return;
     }
-    await this.sessionBroadcaster.broadcastPutSession(tenant, transactionDto);
+    if (transactionDto.id === undefined || transactionDto.id === null) {
+      this._logger.error(
+        `Transaction id missing in ${event._context.eventType} notification for ${event._context.objectType} ${transactionDto.transactionId}, cannot broadcast.`,
+      );
+      return;
+    }
+    // The notification carries only the Transactions row; the session also needs its station
+    // and authorization.
+    const fullTransactionDto = await this.fetchTransactionById(transactionDto.id);
+    if (!fullTransactionDto) {
+      return;
+    }
+    await this.sessionBroadcaster.broadcastPutSession(tenant, fullTransactionDto);
   }
 
   @AsDtoEventHandler(DtoEventType.UPDATE, DtoEventObjectType.Transaction, 'TransactionNotification')
@@ -100,21 +112,10 @@ export class SessionsModule extends AbstractDtoModule implements OcpiModule {
         return;
       }
 
-      const fullTransactionDtoResponse = await this.ocpiGraphqlClient.request<
-        GetTransactionByIdQueryResult,
-        GetTransactionByIdQueryVariables
-      >(GET_TRANSACTION_BY_ID_QUERY, {
-        id: transactionDto.id,
-      });
-
-      if (!fullTransactionDtoResponse.Transactions[0]) {
-        this._logger.error(
-          `Full Transaction DTO not found for id ${transactionDto.id}, cannot broadcast.`,
-        );
+      const fullTransactionDto = await this.fetchTransactionById(transactionDto.id);
+      if (!fullTransactionDto) {
         return;
       }
-
-      const fullTransactionDto = fullTransactionDtoResponse.Transactions[0] as TransactionDto;
       await this.cdrBroadcaster.broadcastPostCdr(fullTransactionDto);
     }
   }
@@ -143,5 +144,19 @@ export class SessionsModule extends AbstractDtoModule implements OcpiModule {
 
       await this.sessionBroadcaster.broadcastPatchSessionChargingPeriod(tenant, meterValueDto);
     }
+  }
+
+  private async fetchTransactionById(id: number): Promise<TransactionDto | undefined> {
+    const fullTransactionDtoResponse = await this.ocpiGraphqlClient.request<
+      GetTransactionByIdQueryResult,
+      GetTransactionByIdQueryVariables
+    >(GET_TRANSACTION_BY_ID_QUERY, { id });
+
+    if (!fullTransactionDtoResponse.Transactions[0]) {
+      this._logger.error(`Full Transaction DTO not found for id ${id}, cannot broadcast.`);
+      return undefined;
+    }
+
+    return fullTransactionDtoResponse.Transactions[0] as TransactionDto;
   }
 }

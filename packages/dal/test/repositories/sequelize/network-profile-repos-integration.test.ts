@@ -94,6 +94,7 @@ function wsConfig(overrides: Record<string, unknown> = {}) {
     securityProfile: 2,
     allowUnknownChargingStations: true,
     tenantId: TENANT_A,
+    dynamicTenantResolution: false,
     ...overrides,
   } as any;
 }
@@ -116,6 +117,7 @@ describe('SequelizeServerNetworkProfileRepository', () => {
     expect(row!.messageTimeout).toBe(45);
     expect(row!.securityProfile).toBe(2);
     expect(row!.allowUnknownChargingStations).toBe(true);
+    expect(row!.dynamicTenantResolution).toBe(false);
     expect(row!.tenantId).toBe(TENANT_A);
   });
 
@@ -185,10 +187,7 @@ describe('SequelizeSetNetworkProfileRepository', () => {
   });
 
   it('createPending with no matching station leaves stationId empty', async () => {
-    const created = await makeRepo().createPending(
-      setNetworkProfileValues({ ocppConnectionName: 'CP-UNKNOWN' }),
-    );
-
+    await makeRepo().createPending(setNetworkProfileValues({ ocppConnectionName: 'CP-UNKNOWN' }));
     expect(await SetNetworkProfile.count()).toBe(1);
 
     const [row] = await makeRepo().readAllByQuery(TENANT_A, {

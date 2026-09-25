@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { preMigrationRow } from '../../utils/pre-migration-row.js';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
 import type { SubscriptionDto } from '@citrineos/types';
@@ -730,24 +731,27 @@ describe('drizzle row-to-DTO mappers', () => {
   });
 
   it('toLocalListAuthorizationDto converts the expiry Date and remaps nullables', () => {
-    const dto = toLocalListAuthorizationDto({
-      id: 3,
-      allowedConnectorTypes: null,
-      disallowedEvseIdPrefixes: ['DE*'],
-      idToken: null,
-      idTokenType: 'ISO14443',
-      additionalInfo: null,
-      status: null,
-      cacheExpiryDateTime: new Date('2027-01-01T00:00:00.000Z'),
-      chargingPriority: null,
-      language1: null,
-      language2: null,
-      personalMessage: null,
-      groupAuthorizationId: 77,
-      authorizationId: null,
-      tenantId: TENANT,
-      ...timestamps,
-    } as LocalListAuthorizationEntity);
+    const dto = toLocalListAuthorizationDto(
+      preMigrationRow<LocalListAuthorizationEntity>({
+        id: 3,
+        allowedConnectorTypes: null,
+        disallowedEvseIdPrefixes: ['DE*'],
+        idToken: null,
+        idTokenType: 'ISO14443',
+        additionalInfo: null,
+        status: null,
+        cacheExpiryDateTime: new Date('2027-01-01T00:00:00.000Z'),
+        chargingPriority: null,
+        language1: null,
+        language2: null,
+        personalMessage: null,
+        customData: null,
+        groupAuthorizationId: 77,
+        authorizationId: null,
+        tenantId: TENANT,
+        ...timestamps,
+      }),
+    );
 
     expect(dto.allowedConnectorTypes).toBeUndefined();
     expect(dto.disallowedEvseIdPrefixes).toEqual(['DE*']);
