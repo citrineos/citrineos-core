@@ -15,7 +15,7 @@ import { setUserLocale } from '@lib/server/hooks/get-user-locale';
 import { resources } from '@lib/utils/resources';
 import type { I18nProvider } from '@refinedev/core';
 import { Refine } from '@refinedev/core';
-import routerProvider from '@refinedev/nextjs-router';
+import { routerProvider } from '@lib/providers/router-provider';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SessionProvider } from 'next-auth/react';
 import { useLocale, useTranslations } from 'next-intl';
