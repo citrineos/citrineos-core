@@ -20,13 +20,13 @@ out of the "hot path" and expand to process messages more flexibly without addin
 
 1. The Charging Station sends an OCPP Message.
 2. OcppRouter receives the message and, in addition to propagating the message to the appropriate module/handler, sends
-    the frame event to the MessagesExchangeSink.
+   the frame event to the MessagesExchangeSink.
 3. The MessagesExchangeSink publishes (with the help of MessagesEventPublisher) the message to the "messages" RabbitMQ exchange,
-    which is then routed to the "frame" queue.
+   which is then routed to the "frame" queue.
 4. The MessagesModule consumes (with the help of MessagesEventConsumer) the message and runs all frame processors against
-    the message (with the help of MessagesEventPipeline). 
+   the message (with the help of MessagesEventPipeline).
    - As of time of writing, three processors exist for OCPP Messages: one to store the OCPP message in the
-     OCPPMessaages database table, one to dispatch the message via the webhook-dispatcher (for any Charging Station
+     OCPPMessages database table, one to dispatch the message via the webhook-dispatcher (for any Charging Station
      message subscribers), and one to stamp `ChargingStations.latestOcppMessageTimestamp` with the receipt time of
      each inbound frame.
 
@@ -39,8 +39,8 @@ out of the "hot path" and expand to process messages more flexibly without addin
    which is then routed to the "connections" queue.
 4. The MessagesModule consumes (with the help of MessagesEventConsumer) the message and runs all connection processors against
    the message (with the help of MessagesEventPipeline).
-    - As of time of writing, one process exists for connections: it registers the websocket connection using the webhook-dispatcher.
-   
+   - As of time of writing, one process exists for connections: it registers the websocket connection using the webhook-dispatcher.
+
 ## Diagram
 
     ┌───────────────────────────────────────────────────────────────────────┐
