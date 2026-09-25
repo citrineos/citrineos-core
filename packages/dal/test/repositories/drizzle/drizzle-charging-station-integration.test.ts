@@ -317,5 +317,33 @@ describe('DrizzleChargingStationRepository', () => {
       );
       expect(found!.latestOcppMessageTimestamp).toBe(when);
     });
+
+    it('never moves the timestamp backwards when an older one lands late', async () => {
+      const newer = '2026-03-04T05:06:07.000Z';
+      const older = '2026-03-04T05:06:06.000Z';
+
+      await aRepository().updateChargingStationTimestamp(DEFAULT_TENANT_ID, STATION, newer);
+      await aRepository().updateChargingStationTimestamp(DEFAULT_TENANT_ID, STATION, older);
+
+      const found = await aRepository().readChargingStationByOcppConnectionName(
+        DEFAULT_TENANT_ID,
+        STATION,
+      );
+      expect(found!.latestOcppMessageTimestamp).toBe(newer);
+    });
+
+    it('advances the timestamp when a newer one arrives', async () => {
+      const older = '2026-03-04T05:06:06.000Z';
+      const newer = '2026-03-04T05:06:07.000Z';
+
+      await aRepository().updateChargingStationTimestamp(DEFAULT_TENANT_ID, STATION, older);
+      await aRepository().updateChargingStationTimestamp(DEFAULT_TENANT_ID, STATION, newer);
+
+      const found = await aRepository().readChargingStationByOcppConnectionName(
+        DEFAULT_TENANT_ID,
+        STATION,
+      );
+      expect(found!.latestOcppMessageTimestamp).toBe(newer);
+    });
   });
 });

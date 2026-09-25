@@ -59,7 +59,7 @@ describe('MessagesModule', () => {
     pipeline = {
       run: vi.fn().mockResolvedValue({}),
       processorNames: {
-        frame: ['ocpp-message-persist', 'frame-webhook'],
+        frame: ['ocpp-message-persist', 'frame-webhook', 'latest-ocpp-message-timestamp'],
         connection: ['connection-webhook'],
       },
     };
