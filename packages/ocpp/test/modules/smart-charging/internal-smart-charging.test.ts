@@ -75,6 +75,46 @@ describe('InternalSmartCharging.calculateChargingProfile', () => {
     return { unit: schedule.chargingRateUnit, limit: schedule.chargingSchedulePeriod[0].limit };
   }
 
+  it('plans an AC_BPT session as its base AC mode rather than refusing it', async () => {
+    // What an ISO 15118-20 car asking to discharge sends: a 2.1 mode, and its
+    // parameters in v2xChargingParameters rather than acChargingParameters.
+    const request = {
+      evseId: 1,
+      chargingNeeds: {
+        requestedEnergyTransfer: 'AC_BPT',
+        acChargingParameters: {
+          energyAmount: 10_000,
+          evMinCurrent: 6,
+          evMaxCurrent: 16,
+          evMaxVoltage: 230,
+        },
+      },
+    } as unknown as OCPP2_0_1.NotifyEVChargingNeedsRequest;
+
+    const { unit, limit } = await periodFor(request);
+
+    expect(unit).toBe(OCPP2_0_1.ChargingRateUnitEnumType.A);
+    expect(limit).toBe(16);
+  });
+
+  it('plans a DC_BPT session as its base DC mode', async () => {
+    const request = {
+      evseId: 1,
+      chargingNeeds: {
+        requestedEnergyTransfer: 'DC_BPT',
+        dcChargingParameters: {
+          evMaxCurrent: EV_MAX_CURRENT_A,
+          evMaxVoltage: EV_MAX_VOLTAGE_V,
+          evMaxPower: EV_MAX_POWER_W,
+        },
+      },
+    } as unknown as OCPP2_0_1.NotifyEVChargingNeedsRequest;
+
+    const { unit } = await periodFor(request);
+
+    expect(unit).toBe(OCPP2_0_1.ChargingRateUnitEnumType.W);
+  });
+
   it('limits a DC session to the EV max power in W when power is the binding constraint', async () => {
     const { unit, limit } = await periodFor(
       aRequest({
