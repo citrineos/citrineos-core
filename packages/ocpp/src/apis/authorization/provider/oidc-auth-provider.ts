@@ -17,6 +17,8 @@ import {
   type UserInfo,
 } from '@citrineos/base';
 import { createPublicKey } from 'crypto';
+import path from 'path';
+import type { SystemConfig } from '@citrineos/types';
 import { RbacRulesLoader } from '../rbac/rbac-rules-loader.js';
 
 export interface OIDCConfig {
@@ -36,6 +38,13 @@ export interface OIDCConfig {
   rateLimit?: boolean;
 }
 
+const DEFAULT_RBAC_RULES_FILE_NAME = 'rbac-rules.json';
+
+function rbacRulesFilePath(rbac: SystemConfig['rbac']): string {
+  const fileName = rbac?.rulesFileName ?? DEFAULT_RBAC_RULES_FILE_NAME;
+  return rbac?.rulesDir ? path.join(rbac.rulesDir, fileName) : fileName;
+}
+
 /**
  * OIDC authentication provider implementation
  */
@@ -52,7 +61,7 @@ export class OIDCAuthProvider implements IApiAuthProvider {
    * @param config OIDC configuration
    * @param logger Optional logger instance
    */
-  constructor(config: OIDCConfig, logger?: Logger<ILogObj>) {
+  constructor(config: OIDCConfig, logger?: Logger<ILogObj>, rbac?: SystemConfig['rbac']) {
     this._config = {
       cacheTime: 60 * 60 * 1000, // Default 1 hour cache
       rateLimit: true,
@@ -71,7 +80,7 @@ export class OIDCAuthProvider implements IApiAuthProvider {
       jwksRequestsPerMinute: 5, // Limit requests to JWKS endpoint
     });
 
-    this._rulesLoader = new RbacRulesLoader('rbac-rules.json', this._logger);
+    this._rulesLoader = new RbacRulesLoader(rbacRulesFilePath(rbac), this._logger);
 
     this._logger.info(`OIDC auth provider setup with jwksUri: ${this._config.jwksUri}`);
   }
