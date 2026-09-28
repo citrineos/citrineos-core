@@ -648,6 +648,80 @@ describe('WebhookDispatcher', () => {
     });
   });
 
+  describe('OCPP message logs', () => {
+    const stationId = 'station-1';
+    const timestamp = 'Any timestamp';
+    const protocol = 'ocpp2.0.1';
+
+    function loggedOcppMessages(): unknown[] {
+      return vi
+        .mocked(webhookDispatcher['_logger'].info)
+        .mock.calls.map(([line]) => String(line))
+        .filter((line) => line.startsWith('Logs OCPP: '))
+        .map((line) => JSON.parse(line.slice('Logs OCPP: '.length)));
+    }
+
+    beforeEach(() => {
+      vi.spyOn(webhookDispatcher['_logger'], 'info').mockReturnValue(undefined);
+    });
+
+    it('should log the persisted message received', async () => {
+      const rpcMessage = [2, '123', 'BootNotification', { reason: 'PowerUp' }];
+
+      await webhookDispatcher.dispatchMessageReceived(
+        DEFAULT_TENANT_ID,
+        stationId,
+        timestamp,
+        protocol,
+        'BootNotification',
+        MessageState.Request,
+        rpcMessage,
+      );
+
+      expect(loggedOcppMessages()).toEqual([createOCPPMessage.mock.calls[0][1]]);
+      expect(loggedOcppMessages()[0]).toMatchObject({
+        stationId,
+        origin: MessageOrigin.ChargingStation,
+        message: rpcMessage,
+      });
+    });
+
+    it('should log the persisted message sent', async () => {
+      const rpcMessage = [2, '456', 'Reset', { type: 'Immediate' }];
+
+      await webhookDispatcher.dispatchMessageSent(
+        createIdentifier(DEFAULT_TENANT_ID, stationId),
+        'Reset',
+        MessageState.Request,
+        timestamp,
+        protocol,
+        rpcMessage,
+      );
+
+      expect(loggedOcppMessages()).toEqual([createOCPPMessage.mock.calls[0][1]]);
+      expect(loggedOcppMessages()[0]).toMatchObject({
+        stationId,
+        origin: MessageOrigin.ChargingStationManagementSystem,
+        message: rpcMessage,
+      });
+    });
+
+    it('should log the persisted unparsed message received', async () => {
+      await webhookDispatcher.dispatchMessageReceivedUnparsed(
+        DEFAULT_TENANT_ID,
+        stationId,
+        'Any raw message',
+        timestamp,
+        protocol,
+        'BootNotification',
+        MessageState.Request,
+      );
+
+      expect(loggedOcppMessages()).toEqual([createOCPPMessage.mock.calls[0][1]]);
+      expect(loggedOcppMessages()[0]).toMatchObject({ message: 'Any raw message' });
+    });
+  });
+
   describe('scheduled job', () => {
     it('should periodically pick up new subscriptions for registered stations', async () => {
       const subscription = aSubscription({
