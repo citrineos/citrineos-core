@@ -94,7 +94,11 @@ async function aTariff(tariffId: string, tenantId = TENANT_A) {
   return Tariff.create({ currency: 'EUR', pricePerKwh: 0.3, tariffId, tenantId } as any);
 }
 
-async function anEvse(evseTypeId: number, ocppConnectionName = STATION, tenantId = TENANT_A) {
+async function anEvse(
+  evseTypeId: number | null,
+  ocppConnectionName = STATION,
+  tenantId = TENANT_A,
+) {
   const stationId = await stationIdOf(ocppConnectionName, tenantId);
   return Evse.create({ tenantId, stationId, evseTypeId } as any);
 }
@@ -739,7 +743,7 @@ describe('SequelizeTransactionEventRepository', () => {
       const shortCircuit = await repo.deactivateActiveTransactionsByStationIdAndEvseId(
         TENANT_A,
         STATION,
-        1,
+        evse.id,
         '0',
       );
       expect(shortCircuit).toEqual([]);
@@ -747,7 +751,7 @@ describe('SequelizeTransactionEventRepository', () => {
       const deactivated = await repo.deactivateActiveTransactionsByStationIdAndEvseId(
         TENANT_A,
         STATION,
-        1,
+        evse.id,
         'KEEP',
       );
 
@@ -756,6 +760,25 @@ describe('SequelizeTransactionEventRepository', () => {
       expect(deactivated[0].isActive).toBe(false);
       expect((await Transaction.findByPk(kept.id))!.isActive).toBe(true);
       expect((await Transaction.findByPk(elsewhere.id))!.isActive).toBe(true);
+    });
+
+    it('deactivateActiveTransactionsByStationIdAndEvseId leaves other evses with a null evseTypeId untouched', async () => {
+      await aStation();
+      const connector1Evse = await anEvse(null);
+      const connector2Evse = await anEvse(null);
+      const live = await aTransactionRow({ transactionId: '1', evseId: connector1Evse.id });
+      await aTransactionRow({ transactionId: '2', evseId: connector2Evse.id });
+      const repo = makeRepo();
+
+      const deactivated = await repo.deactivateActiveTransactionsByStationIdAndEvseId(
+        TENANT_A,
+        STATION,
+        connector2Evse.id,
+        '2',
+      );
+
+      expect(deactivated).toEqual([]);
+      expect((await Transaction.findByPk(live.id))!.isActive).toBe(true);
     });
   });
 });
