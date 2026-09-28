@@ -87,5 +87,4 @@ the only remaining record of it. A proper dead-letter queue process will be impl
 # Future features
 
 1. Dead-letter queue processing (that isn't just logging the failed message)
-2. Adding prefetch (if needed)
-3. Additional message kinds
+2. Additional message kinds
