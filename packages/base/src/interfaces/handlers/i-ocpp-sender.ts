@@ -32,6 +32,8 @@ export interface SendCallArgs extends BaseOcppSenderArgs {
   payload: OcppRequest;
   callbackUrl?: string;
   correlationId?: string;
+  /** Drop the Call if it has not reached the station this many seconds after it was sent. */
+  staleAfterSeconds?: number;
 }
 
 export interface SendCallResultArgs extends BaseOcppSenderArgs {

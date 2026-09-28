@@ -5,7 +5,7 @@
 import type { ErrorObject } from 'ajv';
 import type { ILogObj } from 'tslog';
 import type { Logger } from 'tslog';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   type CallAction,
   type OcppRequest,
@@ -161,6 +161,12 @@ const AN_AJV_ERROR: ErrorObject = {
 };
 
 describe('AbstractMessageRouter', () => {
+  // Messages the CSMS sends expire, so the clock starts at the fixtures' timestamp.
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(A_TIMESTAMP));
+  });
+
   afterEach(() => {
     vi.useRealTimers();
   });
@@ -272,9 +278,8 @@ describe('AbstractMessageRouter', () => {
     });
   });
 
-  describe('handle: stale Call guard', () => {
+  describe('handle: stale message guard', () => {
     it('drops a request older than staleCallMaxAgeSeconds and logs it', async () => {
-      vi.useFakeTimers();
       vi.setSystemTime(new Date('2026-09-01T12:01:01.000Z')); // 61 s after A_TIMESTAMP
       const { router, subLogger } = aRouter({ timeouts: { staleCallMaxAgeSeconds: 60 } });
 
@@ -283,13 +288,11 @@ describe('AbstractMessageRouter', () => {
       expect(router.sendCall).not.toHaveBeenCalled();
       expect(subLogger.error).toHaveBeenCalledTimes(1);
       expect(subLogger.error).toHaveBeenCalledWith(
-        'Dropping stale Reset Call for cp001: queued 61000 ms ago, ' +
-          'exceeds staleCallMaxAgeSeconds (60000 ms). correlationId=corr-1',
+        'Dropping stale Reset Request for cp001: queued 61000 ms ago. correlationId=corr-1',
       );
     });
 
     it('delivers a request exactly at the age limit', async () => {
-      vi.useFakeTimers();
       vi.setSystemTime(new Date('2026-09-01T12:01:00.000Z')); // exactly 60 s
       const { router, subLogger } = aRouter({ timeouts: { staleCallMaxAgeSeconds: 60 } });
 
@@ -299,14 +302,66 @@ describe('AbstractMessageRouter', () => {
       expect(subLogger.error).not.toHaveBeenCalled();
     });
 
-    it('delivers an old request when staleCallMaxAgeSeconds is not configured', async () => {
-      vi.useFakeTimers();
-      vi.setSystemTime(new Date('2026-09-01T13:00:00.000Z')); // 1 h after A_TIMESTAMP
+    it('drops a request older than the 40 s default', async () => {
+      vi.setSystemTime(new Date('2026-09-01T12:00:41.000Z'));
       const { router } = aRouter();
 
       await router.handle(aMessage());
 
+      expect(router.sendCall).not.toHaveBeenCalled();
+    });
+
+    it('never drops a request when staleCallMaxAgeSeconds is 0', async () => {
+      vi.setSystemTime(new Date('2026-09-01T13:00:00.000Z')); // 1 h after A_TIMESTAMP
+      const { router } = aRouter({ timeouts: { staleCallMaxAgeSeconds: 0 } });
+
+      await router.handle(aMessage());
+
       expect(router.sendCall).toHaveBeenCalledTimes(1);
+    });
+
+    it("lets a message's staleAfterSeconds extend the configured age", async () => {
+      vi.setSystemTime(new Date('2026-09-01T12:01:01.000Z'));
+      const { router } = aRouter({ timeouts: { staleCallMaxAgeSeconds: 60 } });
+
+      await router.handle(aMessage({ context: { staleAfterSeconds: 120 } }));
+
+      expect(router.sendCall).toHaveBeenCalledTimes(1);
+    });
+
+    it("applies a message's staleAfterSeconds when staleCallMaxAgeSeconds is 0", async () => {
+      vi.setSystemTime(new Date('2026-09-01T12:00:11.000Z'));
+      const { router } = aRouter({ timeouts: { staleCallMaxAgeSeconds: 0 } });
+
+      await router.handle(aMessage({ context: { staleAfterSeconds: 10 } }));
+
+      expect(router.sendCall).not.toHaveBeenCalled();
+    });
+
+    it('never drops a request whose staleAfterSeconds is 0, whatever the configured age', async () => {
+      vi.setSystemTime(new Date('2026-09-01T13:00:00.000Z'));
+      const { router } = aRouter({ timeouts: { staleCallMaxAgeSeconds: 60 } });
+
+      await router.handle(aMessage({ context: { staleAfterSeconds: 0 } }));
+
+      expect(router.sendCall).toHaveBeenCalledTimes(1);
+    });
+
+    it('drops a response older than maxCallLengthSeconds even when stale Calls are never dropped', async () => {
+      vi.setSystemTime(new Date('2026-09-01T12:00:21.000Z'));
+      const { router } = aRouter({
+        timeouts: { staleCallMaxAgeSeconds: 0, maxCallLengthSeconds: 20 },
+      });
+
+      await router.handle(
+        aMessage({
+          state: MessageState.Response,
+          action: OCPP_CallAction.Heartbeat,
+          payload: { currentTime: A_TIMESTAMP } as OcppResponse,
+        }),
+      );
+
+      expect(router.sendCallResult).not.toHaveBeenCalled();
     });
   });
 

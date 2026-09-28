@@ -338,3 +338,81 @@ export function recordOcppCallResponse(
 export function recordOcppCallRoundtripDuration(seconds: number, action: string): void {
   ocppCallRoundtripDuration.record(seconds, { action });
 }
+
+// --- Broker queues -----------------------------------------------------------
+
+/**
+ * `reason` on {@link recordOcppMessageDeadLettered} and {@link recordOcppDeadLetterReceived}: why
+ * CitrineOS stopped trying to deliver a message. `expired` is the broker's own `x-death` reason for
+ * a message whose TTL ran out on a queue; the rest are decided by CitrineOS.
+ */
+export const DeadLetterReason = {
+  Stale: 'stale',
+  Expired: 'expired',
+  Poison: 'poison',
+  HandlerError: 'handler_error',
+  Unroutable: 'unroutable',
+  Overflow: 'overflow',
+  Shutdown: 'shutdown',
+} as const;
+export type DeadLetterReason = (typeof DeadLetterReason)[keyof typeof DeadLetterReason];
+
+/** `source` label: which component gave up on the message. */
+export const DeadLetterSource = {
+  Router: 'router',
+  Module: 'module',
+  Sender: 'sender',
+} as const;
+export type DeadLetterSource = (typeof DeadLetterSource)[keyof typeof DeadLetterSource];
+
+/** `outcome` on {@link recordOcppMessageReemitted}. */
+export const ReemitOutcome = {
+  Published: 'published',
+  Returned: 'returned',
+} as const;
+export type ReemitOutcome = (typeof ReemitOutcome)[keyof typeof ReemitOutcome];
+
+/**
+ * Messages this pod gave up on and published to the dead-letter exchange, by `reason` and
+ * `source`. Counted where the decision is made, so the failure is credited to the pod that made it.
+ */
+const ocppMessageDeadLetteredTotal = meter.createCounter('ocpp_message_dead_lettered_total', {
+  description: 'Messages published to the dead-letter exchange by this pod, by reason and source',
+});
+
+/**
+ * Dead letters drained from the dead-letter queue, by `reason` and `action`. For alerting: every
+ * dead letter lands here exactly once, whichever pod produced it.
+ */
+const ocppDeadLetterReceivedTotal = meter.createCounter('ocpp_dead_letter_received_total', {
+  description: 'Messages drained from the dead-letter queue, by reason and action',
+});
+
+/** Router re-publishes of a message for a station connected elsewhere, or nowhere yet. */
+const ocppMessageReemittedTotal = meter.createCounter('ocpp_message_reemitted_total', {
+  description: 'Messages the router re-published for a station it no longer holds, by outcome',
+});
+
+/** Station Calls a module moved to its catch-up queue because they arrived too late to answer. */
+const ocppMessageDivertedStaleTotal = meter.createCounter('ocpp_message_diverted_stale_total', {
+  description: 'Station Calls moved to a catch-up queue after outliving maxCallLengthSeconds',
+});
+
+export function recordOcppMessageDeadLettered(
+  reason: DeadLetterReason,
+  source: DeadLetterSource,
+): void {
+  ocppMessageDeadLetteredTotal.add(1, { reason, source });
+}
+
+export function recordOcppDeadLetterReceived(reason: string, action: string): void {
+  ocppDeadLetterReceivedTotal.add(1, { reason, action });
+}
+
+export function recordOcppMessageReemitted(outcome: ReemitOutcome): void {
+  ocppMessageReemittedTotal.add(1, { outcome });
+}
+
+export function recordOcppMessageDivertedStale(action: string): void {
+  ocppMessageDivertedStaleTotal.add(1, { action });
+}

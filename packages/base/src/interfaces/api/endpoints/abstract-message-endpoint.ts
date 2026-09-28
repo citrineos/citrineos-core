@@ -9,6 +9,13 @@ export interface AbstractMessageEndpointDependencies {
   logger: Logger<ILogObj>;
 }
 
+/** How the Calls a message endpoint sends are delivered, from the request's query string. */
+export interface MessageDelivery {
+  callbackUrl?: string;
+  /** See {@link IMessageContext.staleAfterSeconds}. */
+  staleAfterSeconds?: number;
+}
+
 export interface IMessageEndpointMetadata {
   action: CallAction;
   protocols: OCPPVersion[];
@@ -27,7 +34,7 @@ export abstract class AbstractMessageEndpoint {
   public abstract handle(
     identifiers: string[],
     request: unknown,
-    callbackUrl: string | undefined,
+    delivery: MessageDelivery,
     tenantId: number | undefined,
     version: OCPPVersion,
     extraQueries?: Record<string, unknown>,

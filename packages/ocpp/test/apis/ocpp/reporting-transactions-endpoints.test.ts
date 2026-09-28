@@ -43,7 +43,7 @@ describe('reporting and transactions message endpoints', () => {
       });
 
     const handle = (request: OCPP2_0_1.GetReportRequest, identifiers = [STATION]) =>
-      build().handle(identifiers, request, undefined, DEFAULT_TENANT_ID, OCPPVersion.OCPP2_0_1);
+      build().handle(identifiers, request, {}, DEFAULT_TENANT_ID, OCPPVersion.OCPP2_0_1);
 
     it('sends a single call when no component variables are requested', async () => {
       const confirmations = await handle({ requestId: 1 });
@@ -110,7 +110,7 @@ describe('reporting and transactions message endpoints', () => {
       });
 
     const handle = (request: OCPP2_0_1.GetMonitoringReportRequest, identifiers = [STATION]) =>
-      build().handle(identifiers, request, undefined, DEFAULT_TENANT_ID, OCPPVersion.OCPP2_0_1);
+      build().handle(identifiers, request, {}, DEFAULT_TENANT_ID, OCPPVersion.OCPP2_0_1);
 
     it('sends one call per station when no component variables are requested', async () => {
       const confirmations = await handle({ requestId: 1 }, [STATION, OTHER_STATION]);
@@ -201,7 +201,7 @@ describe('reporting and transactions message endpoints', () => {
       const confirmations = await build().handle(
         [STATION],
         aTariff(),
-        undefined,
+        {},
         DEFAULT_TENANT_ID,
         OCPPVersion.OCPP2_1,
       );
@@ -214,7 +214,7 @@ describe('reporting and transactions message endpoints', () => {
     });
 
     it('falls back to the default tenant when none is supplied', async () => {
-      await build().handle([STATION], aTariff(), undefined, undefined, OCPPVersion.OCPP2_1);
+      await build().handle([STATION], aTariff(), {}, undefined, OCPPVersion.OCPP2_1);
 
       expect(sendCall.mock.calls[0][0].tenantId).toBe(DEFAULT_TENANT_ID);
     });
@@ -223,7 +223,7 @@ describe('reporting and transactions message endpoints', () => {
       await build().handle(
         [STATION, OTHER_STATION],
         aTariff(),
-        undefined,
+        {},
         DEFAULT_TENANT_ID,
         OCPPVersion.OCPP2_1,
       );
@@ -240,7 +240,7 @@ describe('reporting and transactions message endpoints', () => {
         aTariff({
           energy: { prices: [{ priceKwh: 1, conditions: { startTimeOfDay: 'not-a-time' } }] },
         }),
-        undefined,
+        {},
         DEFAULT_TENANT_ID,
         OCPPVersion.OCPP2_1,
       );
@@ -257,7 +257,7 @@ describe('reporting and transactions message endpoints', () => {
         aTariff({
           energy: { prices: [{ priceKwh: 1, conditions: { endTimeOfDay: '25:00' } }] },
         }),
-        undefined,
+        {},
         DEFAULT_TENANT_ID,
         OCPPVersion.OCPP2_1,
       );
@@ -277,7 +277,7 @@ describe('reporting and transactions message endpoints', () => {
             ],
           },
         }),
-        undefined,
+        {},
         DEFAULT_TENANT_ID,
         OCPPVersion.OCPP2_1,
       );

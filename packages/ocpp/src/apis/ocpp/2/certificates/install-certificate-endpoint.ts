@@ -8,6 +8,7 @@ import {
   type IOcppSender,
   AbstractMessageEndpoint,
   DEFAULT_TENANT_ID,
+  type MessageDelivery,
 } from '@citrineos/base';
 import {
   EventGroup,
@@ -43,7 +44,7 @@ export class InstallCertificateEndpoint extends AbstractMessageEndpoint {
   async handle(
     identifiers: string[],
     request: OCPP2_request_types.InstallCertificateRequest,
-    callbackUrl: string | undefined,
+    delivery: MessageDelivery,
     tenantId: number | undefined,
     version: OCPPVersion,
   ): Promise<IMessageConfirmation[]> {
@@ -64,7 +65,7 @@ export class InstallCertificateEndpoint extends AbstractMessageEndpoint {
           action: OCPP_CallAction.InstallCertificate,
           eventGroup: EventGroup.Certificates,
           payload: request,
-          callbackUrl,
+          ...delivery,
         });
       }),
     );

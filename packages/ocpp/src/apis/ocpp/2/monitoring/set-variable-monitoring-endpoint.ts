@@ -8,6 +8,7 @@ import {
   type IOcppSender,
   AbstractMessageEndpoint,
   DEFAULT_TENANT_ID,
+  type MessageDelivery,
 } from '@citrineos/base';
 import {
   DataEnum,
@@ -61,7 +62,7 @@ export class SetVariableMonitoringEndpoint extends AbstractMessageEndpoint {
   async handle(
     identifiers: string[],
     request: OCPP2_request_types.SetVariableMonitoringRequest,
-    callbackUrl: string | undefined,
+    delivery: MessageDelivery,
     tenantId: number = DEFAULT_TENANT_ID,
     version: OCPPVersion,
   ): Promise<IMessageConfirmation[]> {
@@ -106,7 +107,7 @@ export class SetVariableMonitoringEndpoint extends AbstractMessageEndpoint {
             items: setMonitoringData,
             itemsPerMessage,
             buildPayload: (batch) => ({ ...request, setMonitoringData: batch }),
-            callbackUrl,
+            delivery,
           })),
         );
       } catch (error) {

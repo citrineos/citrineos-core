@@ -2,6 +2,30 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import {
+  buildConnectionEvent,
+  buildFrameEvent,
+  ConnectionNotFoundError,
+  MessagesExchangeSink,
+  RabbitMqDeadLetterPublisher,
+  RabbitMqReemitter,
+} from '@/transport/index.js';
+import {
+  CallHandledOutcome,
+  CallResponseOutcome,
+  CallResultSentOutcome,
+  CallSentOutcome,
+  DeadLetterReason,
+  DeadLetterSource,
+  recordOcppCallHandled,
+  recordOcppCallResponse,
+  recordOcppCallResultSent,
+  recordOcppCallRoundtripDuration,
+  recordOcppCallSent,
+  recordOcppMessageReceived,
+  recordOcppMessageRouted,
+  UNKNOWN_ACTION,
+} from '@/transport/metrics.js';
+import {
   AbstractMessageRouter,
   CacheNamespace,
   Call,
@@ -24,6 +48,7 @@ import {
   type RpcMessage,
   UNREADABLE_MESSAGE_ID,
 } from '@citrineos/base';
+import type { IChargingStationRepository } from '@citrineos/dal';
 import {
   type CallAction,
   ConnectionEventState,
@@ -42,26 +67,12 @@ import {
   RetryMessageError,
   type SystemConfig,
 } from '@citrineos/types';
-import type { IChargingStationRepository } from '@citrineos/dal';
-import {
-  CallHandledOutcome,
-  CallResponseOutcome,
-  CallResultSentOutcome,
-  CallSentOutcome,
-  recordOcppCallHandled,
-  recordOcppCallResponse,
-  recordOcppCallResultSent,
-  recordOcppCallRoundtripDuration,
-  recordOcppCallSent,
-  recordOcppMessageReceived,
-  recordOcppMessageRouted,
-  UNKNOWN_ACTION,
-} from '@/transport/metrics.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { v4 as uuidv4 } from 'uuid';
 import { type CallbackUrlNotifier } from './callback-url-notifier.js';
-import { buildConnectionEvent, buildFrameEvent, MessagesExchangeSink } from '@/transport/index.js';
+
+type RoutedMessage = IMessage<OcppRequest | OcppResponse | OcppError>;
 
 const OUTSTANDING_CALL_CACHE_KEY = 'outstanding-csms-call';
 
@@ -80,6 +91,23 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   protected _handler: IMessageHandler;
   protected _networkHook: (identifier: string, message: string) => Promise<void>;
   protected _chargingStationRepository: IChargingStationRepository;
+  protected _reemitter: RabbitMqReemitter;
+  protected _deadLetterPublisher: RabbitMqDeadLetterPublisher;
+
+  /**
+   * Stations being deregistered, with the messages that arrived meanwhile. Until the station's
+   * bindings are gone a re-emit could route straight back here, so these wait for the unbind.
+   */
+  protected _deregistering = new Map<string, RoutedMessage[]>();
+  /**
+   * CSMS Calls waiting, in order, for the station's outstanding Call to finish: OCPP allows one
+   * at a time. Held here rather than requeued, so they occupy no prefetch slots.
+   */
+  protected _pendingCalls = new Map<
+    string,
+    { messages: RoutedMessage[]; timer?: ReturnType<typeof setTimeout> }
+  >();
+  private _draining = new Set<string>();
 
   /**
    * Constructor for the class.
@@ -104,6 +132,8 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     logger,
     ocppValidator,
     chargingStationRepository,
+    reemitter,
+    deadLetterPublisher,
   }: {
     config: SystemConfig;
     cache: ICache;
@@ -115,6 +145,8 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     logger: Logger<ILogObj>;
     ocppValidator: OCPPValidator;
     chargingStationRepository: IChargingStationRepository;
+    reemitter: RabbitMqReemitter;
+    deadLetterPublisher: RabbitMqDeadLetterPublisher;
   }) {
     super(config, cache, routerHandler, routerSender, networkHook, logger, ocppValidator);
 
@@ -125,6 +157,8 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     this._callbackUrlNotifier = callbackUrlNotifier;
     this._networkHook = networkHook;
     this._chargingStationRepository = chargingStationRepository;
+    this._reemitter = reemitter;
+    this._deadLetterPublisher = deadLetterPublisher;
   }
 
   async doesChargingStationExistByOcppConnectionName(
@@ -186,6 +220,20 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   }
 
   async deregisterConnection(tenantId: number, ocppConnectionName: string): Promise<boolean> {
+    const connectionIdentifier = createIdentifier(tenantId, ocppConnectionName);
+    this._deregistering.set(connectionIdentifier, []);
+    try {
+      return await this._deregisterConnection(tenantId, ocppConnectionName, connectionIdentifier);
+    } finally {
+      await this._reemitPending(connectionIdentifier);
+    }
+  }
+
+  private async _deregisterConnection(
+    tenantId: number,
+    ocppConnectionName: string,
+    connectionIdentifier: string,
+  ): Promise<boolean> {
     this._messagesExchangeSink
       .record(
         buildConnectionEvent({
@@ -223,7 +271,6 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       null, // clear the connected server on disconnect
     );
 
-    const connectionIdentifier = createIdentifier(tenantId, ocppConnectionName);
     // TODO: ensure that all queue implementations in ocpp/util only unsubscribe 1 queue per call
     // ...which will require refactoring this method to unsubscribe request and response queues separately
     return await this._handler.unsubscribe(connectionIdentifier);
@@ -430,14 +477,23 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
           this._config.timeouts.maxCallLengthSeconds,
         );
         const rawMessage = JSON.stringify(message);
-        const successTimestamp = await this._sendMessage(
-          identifier,
-          protocol,
-          MessageState.Request,
-          rawMessage,
-          message,
-          action,
-        );
+        let successTimestamp: Date | undefined;
+        try {
+          successTimestamp = await this._sendRoutedMessage(
+            identifier,
+            protocol,
+            MessageState.Request,
+            rawMessage,
+            message,
+            action,
+          );
+        } catch (error) {
+          // Not released through _releaseOutstandingCall: the Calls waiting behind this one are
+          // re-emitted with it, not sent here.
+          await this._cache.remove(correlationId, transactionNamespace);
+          await this._cache.remove(OUTSTANDING_CALL_CACHE_KEY, transactionNamespace);
+          throw error;
+        }
         if (successTimestamp != undefined) {
           recordOcppCallSent(String(action), protocol, CallSentOutcome.Sent);
           this._logger.debug(
@@ -513,18 +569,20 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     const [cachedAction, cachedTimestamp] = cachedActionTimestamp?.split(/@(.*)/) ?? []; // Returns all characters after first '@'
     if (cachedAction === action) {
       const rawMessage = JSON.stringify(message);
-      const success = await Promise.all([
-        this._sendMessage(
-          identifier,
-          protocol,
-          MessageState.Response,
-          rawMessage,
-          message,
-          cachedAction,
-          cachedTimestamp,
-        ),
-        this._cache.remove(correlationId, CacheNamespace.Transactions + identifier),
-      ]).then((successes) => successes.every(Boolean));
+      const sent = await this._sendRoutedMessage(
+        identifier,
+        protocol,
+        MessageState.Response,
+        rawMessage,
+        message,
+        cachedAction,
+        cachedTimestamp,
+      );
+      const removed = await this._cache.remove<string>(
+        correlationId,
+        CacheNamespace.Transactions + identifier,
+      );
+      const success = !!sent && !!removed;
       recordOcppCallResultSent(
         String(action),
         protocol,
@@ -579,18 +637,22 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     const [cachedAction, cachedTimestamp] = cachedActionTimestamp?.split(/@(.*)/) ?? []; // Returns all characters after first '@'
     if (cachedAction === action) {
       const rawMessage = JSON.stringify(message);
-      const success = await Promise.all([
-        this._sendMessage(
-          identifier,
-          protocol,
-          MessageState.Response,
-          rawMessage,
-          message,
-          cachedAction,
-          cachedTimestamp,
-        ),
-        this._cache.remove(correlationId, CacheNamespace.Transactions + identifier),
-      ]).then((successes) => successes.every(Boolean));
+      // Sent before the Call is forgotten: if the station is on another instance, that instance
+      // answers it through the re-emit and still needs the entry.
+      const sent = await this._sendRoutedMessage(
+        identifier,
+        protocol,
+        MessageState.Response,
+        rawMessage,
+        message,
+        cachedAction,
+        cachedTimestamp,
+      );
+      const removed = await this._cache.remove<string>(
+        correlationId,
+        CacheNamespace.Transactions + identifier,
+      );
+      const success = !!sent && !!removed;
       return { success };
     } else {
       this._logger.error(
@@ -604,9 +666,65 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     }
   }
 
+  /**
+   * Delivers a message from the broker to the station. A message for a station whose websocket
+   * is not here, because it is connected elsewhere or nowhere yet, is re-emitted for whichever
+   * router the station connects to.
+   */
+  async handle(message: RoutedMessage): Promise<void> {
+    const identifier = createIdentifier(
+      message.context.tenantId,
+      message.context.ocppConnectionName,
+    );
+
+    const heldForUnbind = this._deregistering.get(identifier);
+    if (heldForUnbind) {
+      heldForUnbind.push(message);
+      return;
+    }
+    if (message.state === MessageState.Request && this._pendingCalls.has(identifier)) {
+      await this._enqueueCall(identifier, message);
+      return;
+    }
+
+    try {
+      await super.handle(message);
+    } catch (error) {
+      if (error instanceof ConnectionNotFoundError) {
+        await this._reemit(message);
+        return;
+      }
+      if (error instanceof RetryMessageError && message.state === MessageState.Request) {
+        await this._enqueueCall(identifier, message);
+        return;
+      }
+      throw error;
+    }
+  }
+
   async shutdown(): Promise<void> {
+    for (const [identifier, pending] of this._pendingCalls) {
+      clearTimeout(pending.timer);
+      for (const message of pending.messages) {
+        await this._deadLetterPublisher.publishMessage(
+          message,
+          DeadLetterReason.Shutdown,
+          DeadLetterSource.Router,
+        );
+      }
+      this._pendingCalls.delete(identifier);
+    }
+    await this._reemitter.shutdown();
     await this._sender.shutdown();
     await this._handler.shutdown();
+  }
+
+  protected async _onStaleMessage(message: RoutedMessage): Promise<void> {
+    await this._deadLetterPublisher.publishMessage(
+      message,
+      DeadLetterReason.Stale,
+      DeadLetterSource.Router,
+    );
   }
 
   /**
@@ -915,6 +1033,35 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   private async _sendMessage(
     identifier: string,
     protocol: OCPPVersionType,
+    state: MessageState,
+    rawMessage: string,
+    rpcMessage: RpcMessage,
+    action?: string,
+    receivedIsoTimestamp?: string,
+  ): Promise<Date | undefined> {
+    try {
+      return await this._sendRoutedMessage(
+        identifier,
+        protocol,
+        state,
+        rawMessage,
+        rpcMessage,
+        action,
+        receivedIsoTimestamp,
+      );
+    } catch (error) {
+      this._logger.error('Failed to send message:', identifier, rawMessage, error);
+      return undefined;
+    }
+  }
+
+  /**
+   * {@link _sendMessage}, except that a station whose websocket is not on this instance throws
+   * {@link ConnectionNotFoundError}, so a message routed here can be re-emitted instead.
+   */
+  private async _sendRoutedMessage(
+    identifier: string,
+    protocol: OCPPVersionType,
     _state: MessageState,
     rawMessage: string,
     rpcMessage: RpcMessage,
@@ -924,6 +1071,9 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     try {
       await this._networkHook(identifier, rawMessage); // Throws an error if the message is not sent, or returns void
     } catch (error) {
+      if (error instanceof ConnectionNotFoundError) {
+        throw error;
+      }
       this._logger.error('Failed to send message:', identifier, rawMessage, error);
       // Don't dispatch if the message was not sent
       return undefined;
@@ -967,6 +1117,135 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       .catch((err) => {
         this._logger.error('Failed to release the outstanding call', identifier, err);
       });
+    this._drainPendingCalls(identifier).catch((err) => {
+      this._logger.error('Failed to send the next pending call', identifier, err);
+    });
+  }
+
+  private async _enqueueCall(identifier: string, message: RoutedMessage): Promise<void> {
+    const correlationId = message.context.correlationId;
+    const outstanding = await this._cache.get<string>(
+      OUTSTANDING_CALL_CACHE_KEY,
+      CacheNamespace.Transactions + identifier,
+    );
+    const pending = this._pendingCalls.get(identifier) ?? { messages: [] };
+    // Delivered twice, e.g. once through each router while the station moved between them.
+    if (
+      outstanding === correlationId ||
+      pending.messages.some((m) => m.context.correlationId === correlationId)
+    ) {
+      this._logger.warn(`Dropping duplicate ${message.action} for ${identifier}`, correlationId);
+      return;
+    }
+    const maxPending = this._config.ocpp.maxPendingCallsPerStation;
+    if (pending.messages.length >= maxPending) {
+      this._logger.info(
+        `Dead-lettering ${message.action} for ${identifier}: ${maxPending} Calls already wait ` +
+          `behind the outstanding one. correlationId=${correlationId}`,
+      );
+      await this._deadLetterPublisher.publishMessage(
+        message,
+        DeadLetterReason.Overflow,
+        DeadLetterSource.Router,
+      );
+      return;
+    }
+    pending.messages.push(message);
+    this._pendingCalls.set(identifier, pending);
+    this._armPendingCallTimer(identifier);
+    this._logger.info(
+      `Call in progress for ${identifier}; ${message.action} waits behind it ` +
+        `(${pending.messages.length} pending). correlationId=${correlationId}`,
+    );
+  }
+
+  /**
+   * The outstanding Call is released when the station answers it. When it never does, its cache
+   * entry lapses after maxCallLengthSeconds without an event, so this timer tries again then.
+   */
+  private _armPendingCallTimer(identifier: string): void {
+    const pending = this._pendingCalls.get(identifier);
+    if (!pending || pending.timer) {
+      return;
+    }
+    pending.timer = setTimeout(() => {
+      pending.timer = undefined;
+      this._drainPendingCalls(identifier).catch((err) => {
+        this._logger.error('Failed to send the next pending call', identifier, err);
+      });
+    }, this._config.timeouts.maxCallLengthSeconds * 1000);
+  }
+
+  /**
+   * Sends pending Calls in order until one has to wait for the station again. Stale ones are
+   * dead-lettered on the way, by the check in {@link handle}.
+   */
+  private async _drainPendingCalls(identifier: string): Promise<void> {
+    const pending = this._pendingCalls.get(identifier);
+    if (!pending || this._draining.has(identifier)) {
+      return;
+    }
+    clearTimeout(pending.timer);
+    pending.timer = undefined;
+    this._draining.add(identifier);
+    try {
+      while (pending.messages.length > 0) {
+        const next = pending.messages[0];
+        try {
+          await super.handle(next);
+        } catch (error) {
+          if (error instanceof RetryMessageError) {
+            this._armPendingCallTimer(identifier);
+            return;
+          }
+          if (error instanceof ConnectionNotFoundError) {
+            // The station left; deregistering it re-emits what is still waiting.
+            await this._reemit(next);
+            pending.messages.shift();
+            return;
+          }
+          this._logger.error('Error while sending a pending call:', identifier, error);
+          await this._deadLetterPublisher.publishMessage(
+            next,
+            DeadLetterReason.HandlerError,
+            DeadLetterSource.Router,
+            { error },
+          );
+        }
+        pending.messages.shift();
+      }
+      if (pending.messages.length === 0) {
+        this._pendingCalls.delete(identifier);
+      }
+    } finally {
+      this._draining.delete(identifier);
+    }
+  }
+
+  /**
+   * Re-emits what this router still holds for a station it no longer serves: its pending Calls,
+   * oldest first, then whatever arrived while its bindings were being removed.
+   */
+  private async _reemitPending(identifier: string): Promise<void> {
+    const pending = this._pendingCalls.get(identifier);
+    this._pendingCalls.delete(identifier);
+    clearTimeout(pending?.timer);
+    // Emptied in place, so a drain still iterating this list stops rather than sending them too.
+    const waiting = pending?.messages.splice(0) ?? [];
+    const held = this._deregistering.get(identifier) ?? [];
+    this._deregistering.delete(identifier);
+
+    for (const message of [...waiting, ...held]) {
+      await this._reemit(message);
+    }
+  }
+
+  private async _reemit(message: RoutedMessage): Promise<void> {
+    this._logger.info(
+      `Re-emitting ${message.action} for ${message.context.ocppConnectionName}: its websocket ` +
+        `is not on this instance. correlationId=${message.context.correlationId}`,
+    );
+    await this._reemitter.reemit(message);
   }
 
   private async _sendCallIsAllowed(
