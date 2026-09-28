@@ -212,6 +212,15 @@ export const configSchema = z.object({
           exchange: z.string().default('citrineos'),
           instanceIdentifier: z.string().optional(),
           maxReconnectDelaySeconds: z.number().int().min(1).default(30),
+          // Unacked deliveries per consumer. 0 removes the limit.
+          prefetch: z
+            .object({
+              router: z.number().int().min(0).default(100),
+              module: z.number().int().min(0).default(10),
+              messages: z.number().int().min(0).default(50),
+              messagesDeadLetter: z.number().int().min(0).default(10),
+            })
+            .prefault({}),
         })
         .prefault({}),
     })

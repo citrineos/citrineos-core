@@ -115,7 +115,8 @@ import {
   NetworkProfileFilter,
   RabbitMQChannelManager,
   RabbitMQConnectionManager,
-  RabbitMqReceiver,
+  RabbitMqModuleReceiver,
+  RabbitMqRouterReceiver,
   RabbitMqSender,
   UnknownStationFilter,
   WebsocketNetworkConnection,
@@ -245,7 +246,7 @@ function registerMessaging(container: AwilixContainer): void {
 
     handler: asFunction(
       ({ config, channelManager, logger }) =>
-        new RabbitMqReceiver({ config, channelManager, logger }),
+        new RabbitMqModuleReceiver({ config, channelManager, logger }),
     ).scoped(),
   });
 
@@ -262,7 +263,7 @@ function registerMessaging(container: AwilixContainer): void {
     ).singleton(),
     routerHandler: asFunction(
       ({ config, channelManager, logger }) =>
-        new RabbitMqReceiver({ config, channelManager, logger }),
+        new RabbitMqRouterReceiver({ config, channelManager, logger }),
     ).singleton(),
   });
 }

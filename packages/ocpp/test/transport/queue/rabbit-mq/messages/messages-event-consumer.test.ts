@@ -5,7 +5,7 @@
 import { MESSAGES_DLX, MESSAGES_EXCHANGE, MESSAGES_QUEUES } from '@citrineos/types';
 import type * as amqplib from 'amqplib';
 import { MessagesEventConsumer, type MessagesEventHandler } from '@/transport/index.js';
-import { aMockAmqpChannel } from '@test/providers/rabbit-mq-provider.js';
+import { aMockAmqpChannel, aSystemConfigWithAmqp } from '@test/providers/rabbit-mq-provider.js';
 import {
   aChannelManagerPerChannelId,
   aConnectionEvent,
@@ -52,6 +52,7 @@ describe('MessagesEventConsumer', () => {
     harness = aChannelManagerPerChannelId(aMockAmqpChannel);
     handler = vi.fn().mockResolvedValue(undefined) as any;
     consumer = getTestInstance(container, MessagesEventConsumer, {
+      config: aSystemConfigWithAmqp(),
       channelManager: harness.channelManager,
     });
   });
@@ -67,6 +68,23 @@ describe('MessagesEventConsumer', () => {
       await consumer.start(handler);
 
       expect(consumer.consumedQueues).toEqual([OCPP_QUEUE, CONNECTIONS_QUEUE]);
+    });
+
+    it('should set the configured messages prefetch on each queue before consuming', async () => {
+      const configured = getTestInstance(container, MessagesEventConsumer, {
+        config: aSystemConfigWithAmqp({ prefetch: { messages: 7 } }),
+        channelManager: harness.channelManager,
+      });
+
+      await configured.start(handler);
+
+      for (const queue of [OCPP_QUEUE, CONNECTIONS_QUEUE]) {
+        const channel = channelFor(queue);
+        expect(channel.prefetch).toHaveBeenCalledWith(7);
+        expect(vi.mocked(channel.prefetch).mock.invocationCallOrder[0]).toBeLessThan(
+          vi.mocked(channel.consume).mock.invocationCallOrder[0],
+        );
+      }
     });
 
     it('should give each queue its own channel, so one slow queue cannot block the other', async () => {
