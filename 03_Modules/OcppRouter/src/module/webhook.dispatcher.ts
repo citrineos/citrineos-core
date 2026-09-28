@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { OCPPVersion, OCPPVersionType } from '@citrineos/base';
+import type { OCPPMessageDto, OCPPVersion, OCPPVersionType } from '@citrineos/base';
 import {
   createIdentifier,
   getStationIdFromIdentifier,
@@ -98,7 +98,7 @@ export class WebhookDispatcher {
         ['action', action],
       ]);
 
-      const messagePromise = this._ocppMessageRepository.createOCPPMessage(tenantId, {
+      const ocppMessage: OCPPMessageDto = {
         tenantId: tenantId,
         stationId: stationId,
         correlationId: messageId,
@@ -108,7 +108,9 @@ export class WebhookDispatcher {
         action: action,
         message: message,
         timestamp: timestamp,
-      });
+      };
+      this._logOcppMessage(ocppMessage);
+      const messagePromise = this._ocppMessageRepository.createOCPPMessage(tenantId, ocppMessage);
       const promises: Promise<any>[] =
         this._onMessageCallbacks.get(identifier)?.map((callback) => callback(message, info)) ?? [];
       promises.push(messagePromise);
@@ -131,7 +133,7 @@ export class WebhookDispatcher {
     const messageId = rpcMessage[1];
     const origin = MessageOrigin.ChargingStation;
 
-    const messageRecord = await this._ocppMessageRepository.createOCPPMessage(tenantId, {
+    const ocppMessage: OCPPMessageDto = {
       tenantId: tenantId,
       stationId: stationId,
       correlationId: messageId,
@@ -141,7 +143,12 @@ export class WebhookDispatcher {
       protocol: protocol as OCPPVersion,
       message: rpcMessage,
       timestamp: timestamp,
-    });
+    };
+    this._logOcppMessage(ocppMessage);
+    const messageRecord = await this._ocppMessageRepository.createOCPPMessage(
+      tenantId,
+      ocppMessage,
+    );
 
     if (action === undefined) {
       this._logger.debug(
@@ -189,7 +196,7 @@ export class WebhookDispatcher {
     const messageId = rpcMessage[1];
     const origin = MessageOrigin.ChargingStationManagementSystem;
 
-    const messageRecordPromise = this._ocppMessageRepository.createOCPPMessage(tenantId, {
+    const ocppMessage: OCPPMessageDto = {
       tenantId: tenantId,
       stationId: stationId,
       correlationId: messageId,
@@ -199,7 +206,12 @@ export class WebhookDispatcher {
       protocol: protocol as OCPPVersion,
       message: rpcMessage,
       timestamp: timestamp,
-    });
+    };
+    this._logOcppMessage(ocppMessage);
+    const messageRecordPromise = this._ocppMessageRepository.createOCPPMessage(
+      tenantId,
+      ocppMessage,
+    );
 
     try {
       const info = new Map<string, string>([
@@ -224,6 +236,11 @@ export class WebhookDispatcher {
     } catch (err) {
       this._logger.error(`Failed to dispatch message sent for ${identifier} : ${err}`);
     }
+  }
+
+  // Mirrors each OCPPMessages row into the logs so old rows can be purged from the DB.
+  protected _logOcppMessage(ocppMessage: OCPPMessageDto) {
+    this._logger.info(`Logs OCPP: ${JSON.stringify(ocppMessage)}`);
   }
 
   protected async _refreshSubscriptions() {
