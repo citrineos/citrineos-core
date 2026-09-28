@@ -57,9 +57,7 @@ function makeDefaultLogger(): MockLogger {
 
 export type MockOcppSender = {
   sendCall: Mock;
-  sendCallResult: Mock;
   sendCallResultWithMessage: Mock;
-  sendCallError: Mock;
   sendCallErrorWithMessage: Mock;
 };
 
@@ -71,9 +69,7 @@ export type MockOcppSender = {
 export function makeMockOcppSender(): MockOcppSender {
   return {
     sendCall: vi.fn().mockResolvedValue({ success: true }),
-    sendCallResult: vi.fn().mockResolvedValue({ success: true }),
     sendCallResultWithMessage: vi.fn().mockResolvedValue({ success: true }),
-    sendCallError: vi.fn().mockResolvedValue({ success: true }),
     sendCallErrorWithMessage: vi.fn().mockResolvedValue({ success: true }),
   };
 }
