@@ -33,7 +33,7 @@
       "utf-8-validate"
     ],
     "overrides": {
-      "@tanstack/react-query": "5.101.4",
+      "@tanstack/react-query": "5.104.0",
       "zod": "catalog:",
       "graphql": "15.6.1",
       "reflect-metadata": "catalog:"
