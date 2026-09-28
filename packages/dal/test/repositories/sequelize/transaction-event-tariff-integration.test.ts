@@ -134,7 +134,11 @@ describe('An active transaction read with its associations eager loaded', () => 
   beforeEach(async () => {
     await sequelizeInstance.truncate({ cascade: true, restartIdentity: true });
     await Tenant.create({ id: DEFAULT_TENANT_ID, name: 'A' } as never);
-    const location = await Location.create({ name: 'L', tenantId: DEFAULT_TENANT_ID } as never);
+    const location = await Location.create({
+      name: 'L',
+      tenantId: DEFAULT_TENANT_ID,
+      coordinates: { type: 'Point', coordinates: [0, 0] },
+    });
     const station = await ChargingStation.create({
       ocppConnectionName: STATION_NAME,
       isOnline: true,
