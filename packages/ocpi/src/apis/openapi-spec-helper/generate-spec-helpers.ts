@@ -419,10 +419,15 @@ export function getOperation(
   route: IRoute,
   schemas: { [p: string]: oa.SchemaObject },
 ): oa.OperationObject {
+  const headerParams = getHeaderParams(route);
+  const requiresAuthorization = headerParams.some(
+    (param) => param.name === HttpHeader.Authorization,
+  );
+
   const operation: oa.OperationObject = {
     operationId: getOperationId(route),
     parameters: [
-      ...getHeaderParams(route),
+      ...headerParams.filter((param) => param.name !== HttpHeader.Authorization),
       ...getPathParams(route),
       ...getQueryParams(route, schemas),
     ],
@@ -432,13 +437,8 @@ export function getOperation(
     tags: getTags(route),
   };
 
-  if (operation.parameters?.find((param) => (param as any).name === HttpHeader.Authorization)) {
-    if (!operation.security) {
-      operation.security = [];
-    }
-    operation.security.push({
-      authorization: [],
-    });
+  if (requiresAuthorization) {
+    operation.security = [{ authorization: [] }];
   }
 
   const cleanedOperation = Object.entries(operation)

@@ -487,9 +487,10 @@ export class CitrineOSServer {
       return respond(reply, await this._healthCheckService.checkReadiness());
     };
 
-    this._server.get('/health', liveness);
-    this._server.get('/health/live', liveness);
-    this._server.get('/health/ready', readiness);
+    const unauthenticated = { schema: { security: [] } };
+    this._server.get('/health', unauthenticated, liveness);
+    this._server.get('/health/live', unauthenticated, liveness);
+    this._server.get('/health/ready', unauthenticated, readiness);
   }
 
   protected initSequelizeInstance() {
