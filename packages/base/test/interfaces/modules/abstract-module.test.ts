@@ -105,9 +105,7 @@ function aModule(options: ModuleOptions = {}) {
   };
   const ocppSender = {
     sendCall: vi.fn(async () => A_CONFIRMATION),
-    sendCallResult: vi.fn(async () => A_CONFIRMATION),
     sendCallResultWithMessage: vi.fn(async () => A_CONFIRMATION),
-    sendCallError: vi.fn(async () => A_CONFIRMATION),
     sendCallErrorWithMessage: vi.fn(async () => A_CONFIRMATION),
   };
   const config = aSystemConfig();
@@ -552,34 +550,6 @@ describe('AbstractModule', () => {
       });
     });
 
-    it('delegates sendCallResult and keeps an explicit origin', async () => {
-      const { module, ocppSender } = aModule();
-      const payload = { currentTime: A_TIMESTAMP } as OcppResponse;
-
-      const result = await module.sendCallResult(
-        'corr-9',
-        'cp001',
-        7,
-        OCPPVersion.OCPP1_6,
-        OCPP_CallAction.Heartbeat,
-        payload,
-        MessageOrigin.ChargingStation,
-      );
-
-      expect(result).toBe(A_CONFIRMATION);
-      expect(ocppSender.sendCallResult).toHaveBeenCalledTimes(1);
-      expect(ocppSender.sendCallResult).toHaveBeenCalledWith({
-        correlationId: 'corr-9',
-        ocppConnectionName: 'cp001',
-        tenantId: 7,
-        protocol: OCPPVersion.OCPP1_6,
-        action: OCPP_CallAction.Heartbeat,
-        eventGroup: EventGroup.Certificates,
-        payload,
-        origin: MessageOrigin.ChargingStation,
-      });
-    });
-
     it('delegates sendCallResultWithMessage unchanged', async () => {
       const { module, ocppSender } = aModule();
       const message = aMessage() as IMessage<OcppRequest>;
@@ -590,33 +560,6 @@ describe('AbstractModule', () => {
       expect(result).toBe(A_CONFIRMATION);
       expect(ocppSender.sendCallResultWithMessage).toHaveBeenCalledTimes(1);
       expect(ocppSender.sendCallResultWithMessage).toHaveBeenCalledWith(message, payload);
-    });
-
-    it('delegates sendCallError with its event group and the default origin', async () => {
-      const { module, ocppSender } = aModule();
-      const payload = new OcppError('corr-9', ErrorCode.InternalError, 'boom');
-
-      const result = await module.sendCallError(
-        'corr-9',
-        'cp001',
-        7,
-        OCPPVersion.OCPP2_0_1,
-        OCPP_CallAction.BootNotification,
-        payload,
-      );
-
-      expect(result).toBe(A_CONFIRMATION);
-      expect(ocppSender.sendCallError).toHaveBeenCalledTimes(1);
-      expect(ocppSender.sendCallError).toHaveBeenCalledWith({
-        correlationId: 'corr-9',
-        ocppConnectionName: 'cp001',
-        tenantId: 7,
-        protocol: OCPPVersion.OCPP2_0_1,
-        action: OCPP_CallAction.BootNotification,
-        eventGroup: EventGroup.Certificates,
-        payload,
-        origin: MessageOrigin.ChargingStationManagementSystem,
-      });
     });
 
     it('delegates sendCallErrorWithMessage unchanged', async () => {

@@ -14,12 +14,7 @@ import {
 } from '@citrineos/types';
 import type { ICache } from '@interfaces/cache/cache.js';
 import { CacheNamespace, type IWebsocketConnection } from '@interfaces/cache/types.js';
-import type {
-  IOcppSender,
-  SendCallArgs,
-  SendCallErrorArgs,
-  SendCallResultArgs,
-} from '@interfaces/handlers/i-ocpp-sender.js';
+import type { IOcppSender, SendCallArgs } from '@interfaces/handlers/i-ocpp-sender.js';
 import {
   type IMessage,
   type IMessageConfirmation,
@@ -158,48 +153,6 @@ export class OcppSender implements IOcppSender {
   }
 
   /**
-   * Sends the call result message and returns a Promise that resolves with the confirmation message.
-   *
-   * @return {Promise<IMessageConfirmation>} A Promise that resolves with the confirmation message.
-   */
-  public sendCallResult({
-    correlationId,
-    ocppConnectionName,
-    tenantId,
-    protocol,
-    action,
-    eventGroup,
-    payload,
-    origin = MessageOrigin.ChargingStationManagementSystem,
-  }: SendCallResultArgs): Promise<IMessageConfirmation> {
-    payload = this._ocppValidator.sanitizeOCPPPayload(payload);
-    const { isValid, errors } = this._ocppValidator.validateOCPPResponse(
-      action,
-      payload,
-      protocol as OCPPVersion,
-    );
-
-    if (!isValid || errors) {
-      throw new OcppError(correlationId, ErrorCode.FormatViolation, 'Invalid message format', {
-        errors: errors,
-      });
-    }
-
-    return this._sender.sendResponse(
-      RequestBuilder.buildCallResult(
-        ocppConnectionName,
-        correlationId,
-        tenantId,
-        action,
-        payload,
-        eventGroup,
-        origin,
-        protocol,
-      ),
-    );
-  }
-
-  /**
    * Sends the call result using the request message's fields.
    * Payload will overwrite message.payload.
    *
@@ -229,38 +182,15 @@ export class OcppSender implements IOcppSender {
       );
     }
 
+    if (this._stationStoppedWaiting(message)) {
+      return Promise.resolve({
+        success: false,
+        payload: 'The station stopped waiting for this response',
+      });
+    }
     message.origin = MessageOrigin.ChargingStationManagementSystem;
     message.context = { ...message.context, timestamp: new Date().toISOString() };
     return this._sender.sendResponse(message, payload);
-  }
-
-  /**
-   * Sends the call error message and returns a Promise that resolves with the confirmation message.
-   *
-   * @return {Promise<IMessageConfirmation>} A Promise that resolves with the confirmation message.
-   */
-  public sendCallError({
-    correlationId,
-    ocppConnectionName,
-    tenantId,
-    protocol,
-    action,
-    eventGroup,
-    payload,
-    origin = MessageOrigin.ChargingStationManagementSystem,
-  }: SendCallErrorArgs): Promise<IMessageConfirmation> {
-    return this._sender.sendResponse(
-      RequestBuilder.buildCallError(
-        ocppConnectionName,
-        correlationId,
-        tenantId,
-        action,
-        payload,
-        eventGroup,
-        origin,
-        protocol,
-      ),
-    );
   }
 
   /**
@@ -275,9 +205,32 @@ export class OcppSender implements IOcppSender {
     message: IMessage<OcppRequest>,
     payload: OcppError,
   ): Promise<IMessageConfirmation> {
+    if (this._stationStoppedWaiting(message)) {
+      return Promise.resolve({
+        success: false,
+        payload: 'The station stopped waiting for this response',
+      });
+    }
     message.origin = MessageOrigin.ChargingStationManagementSystem;
     message.context = { ...message.context, timestamp: new Date().toISOString() };
     return this._sender.sendResponse(message, payload);
+  }
+
+  /**
+   * True once `request`, a station's Call, is older than maxCallLengthSeconds: the station has
+   * timed it out, and the router would reject a response to it. The Call itself is still
+   * processed; only the response is not sent.
+   */
+  private _stationStoppedWaiting(request: IMessage<OcppRequest>): boolean {
+    const ageMs = Date.now() - new Date(request.context.timestamp).getTime();
+    if (ageMs <= this._config.timeouts.maxCallLengthSeconds * 1000) {
+      return false;
+    }
+    this._logger.info(
+      `Not responding to ${request.action} from ${request.context.ocppConnectionName}: the Call ` +
+        `arrived ${ageMs} ms ago, past maxCallLengthSeconds. correlationId=${request.context.correlationId}`,
+    );
+    return true;
   }
 
   /**

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { ILogObj, Logger } from 'tslog';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   type OcppRequest,
   type OcppResponse,
@@ -26,7 +26,7 @@ import type {
 } from '@interfaces/messages/index.js';
 import { OCPPValidator } from '@interfaces/modules/ocpp-validator.js';
 import { OcppSender } from '@interfaces/handlers/ocpp-sender.js';
-import type { SendCallArgs, SendCallResultArgs } from '@interfaces/handlers/i-ocpp-sender.js';
+import type { SendCallArgs } from '@interfaces/handlers/i-ocpp-sender.js';
 import { aSystemConfig } from '../../providers/system-config.js';
 
 const A_CONFIRMATION: IMessageConfirmation = { success: true };
@@ -87,19 +87,6 @@ function aSendCallArgs(overrides: Partial<SendCallArgs> = {}): SendCallArgs {
   };
 }
 
-function aSendCallResultArgs(overrides: Partial<SendCallResultArgs> = {}): SendCallResultArgs {
-  return {
-    ocppConnectionName: 'cp001',
-    tenantId: 7,
-    protocol: OCPPVersion.OCPP2_0_1,
-    action: OCPP_CallAction.Reset,
-    eventGroup: EventGroup.EVDriver,
-    payload: { status: 'Accepted' } as OcppResponse,
-    correlationId: 'corr-1',
-    ...overrides,
-  };
-}
-
 function aMessage(overrides: Partial<IMessage<OcppRequest>> = {}): IMessage<OcppRequest> {
   const context: IMessageContext = {
     correlationId: 'corr-1',
@@ -120,6 +107,16 @@ function aMessage(overrides: Partial<IMessage<OcppRequest>> = {}): IMessage<Ocpp
 }
 
 describe('OcppSender', () => {
+  // The *WithMessage responders skip Calls the station has timed out, judged from their timestamp.
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(A_TIMESTAMP));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   describe('constructor', () => {
     it('names the sub logger after the class', () => {
       const { logger } = anOcppSender();
@@ -354,51 +351,6 @@ describe('OcppSender', () => {
     });
   });
 
-  describe('sendCallResult', () => {
-    it('validates the sanitized response and sends the call result', async () => {
-      const { ocppSender, validator, sender } = anOcppSender();
-      const sanitized = { status: 'Accepted' } as OcppResponse;
-      validator.sanitizeOCPPPayload.mockReturnValue(sanitized);
-
-      const result = await ocppSender.sendCallResult(aSendCallResultArgs());
-
-      expect(validator.validateOCPPResponse).toHaveBeenCalledTimes(1);
-      expect(validator.validateOCPPResponse).toHaveBeenCalledWith(
-        OCPP_CallAction.Reset,
-        sanitized,
-        OCPPVersion.OCPP2_0_1,
-      );
-      expect(sender.sendResponse).toHaveBeenCalledTimes(1);
-      const message = sender.sendResponse.mock.calls[0][0] as IMessage<OcppResponse>;
-      expect(message).toMatchObject({
-        action: OCPP_CallAction.Reset,
-        state: MessageState.Response,
-        origin: MessageOrigin.ChargingStationManagementSystem,
-        context: { ocppConnectionName: 'cp001', correlationId: 'corr-1', tenantId: 7 },
-      });
-      expect(message.payload).toBe(sanitized);
-      expect(result).toBe(A_CONFIRMATION);
-    });
-
-    it('throws a FormatViolation OcppError for an invalid response', async () => {
-      const { ocppSender, validator, sender } = anOcppSender();
-      validator.validateOCPPResponse.mockReturnValue({ isValid: false, errors: [AN_AJV_ERROR] });
-
-      // throws synchronously, before a promise is returned
-      let error: OcppError | undefined;
-      try {
-        await ocppSender.sendCallResult(aSendCallResultArgs());
-      } catch (thrown) {
-        error = thrown as OcppError;
-      }
-
-      expect(error).toBeInstanceOf(OcppError);
-      expect(error!.messageId).toBe('corr-1');
-      expect(error!.errorCode).toBe(ErrorCode.FormatViolation);
-      expect(sender.sendResponse).not.toHaveBeenCalled();
-    });
-  });
-
   describe('sendCallResultWithMessage', () => {
     it('overwrites the origin and responds on the incoming message', async () => {
       const { ocppSender, validator, sender } = anOcppSender();
@@ -438,37 +390,6 @@ describe('OcppSender', () => {
     });
   });
 
-  describe('sendCallError', () => {
-    it('sends the call error without validating or sanitizing', async () => {
-      const { ocppSender, validator, sender } = anOcppSender();
-      const payload = new OcppError('corr-1', ErrorCode.InternalError, 'boom');
-
-      const result = await ocppSender.sendCallError({
-        correlationId: 'corr-1',
-        ocppConnectionName: 'cp001',
-        tenantId: 7,
-        protocol: OCPPVersion.OCPP2_0_1,
-        action: OCPP_CallAction.Reset,
-        eventGroup: EventGroup.EVDriver,
-        payload,
-      });
-
-      expect(validator.sanitizeOCPPPayload).not.toHaveBeenCalled();
-      expect(validator.validateOCPPRequest).not.toHaveBeenCalled();
-      expect(validator.validateOCPPResponse).not.toHaveBeenCalled();
-      expect(sender.sendResponse).toHaveBeenCalledTimes(1);
-      const message = sender.sendResponse.mock.calls[0][0] as IMessage<OcppError>;
-      expect(message).toMatchObject({
-        action: OCPP_CallAction.Reset,
-        state: MessageState.Response,
-        origin: MessageOrigin.ChargingStationManagementSystem,
-        context: { ocppConnectionName: 'cp001', correlationId: 'corr-1', tenantId: 7 },
-      });
-      expect(message.payload).toBe(payload);
-      expect(result).toBe(A_CONFIRMATION);
-    });
-  });
-
   describe('sendCallErrorWithMessage', () => {
     it('overwrites the origin and forwards the payload untouched', async () => {
       const { ocppSender, validator, sender } = anOcppSender();
@@ -482,6 +403,65 @@ describe('OcppSender', () => {
       expect(sender.sendResponse).toHaveBeenCalledTimes(1);
       expect(sender.sendResponse).toHaveBeenCalledWith(message, payload);
       expect(result).toBe(A_CONFIRMATION);
+    });
+  });
+
+  describe('responding to a Call the station has timed out', () => {
+    const PAST_MAX_CALL_LENGTH = new Date('2026-09-01T12:00:21.000Z');
+
+    it('does not send a CallResult once maxCallLengthSeconds has passed', async () => {
+      const { ocppSender, sender, subLogger } = anOcppSender({
+        timeouts: { maxCallLengthSeconds: 20 },
+      });
+      vi.setSystemTime(PAST_MAX_CALL_LENGTH);
+
+      const result = await ocppSender.sendCallResultWithMessage(aMessage(), {
+        status: 'Accepted',
+      } as OcppResponse);
+
+      expect(sender.sendResponse).not.toHaveBeenCalled();
+      expect(result).toEqual({
+        success: false,
+        payload: 'The station stopped waiting for this response',
+      });
+      expect(subLogger.info).toHaveBeenCalledWith(
+        'Not responding to Reset from cp001: the Call arrived 21000 ms ago, past ' +
+          'maxCallLengthSeconds. correlationId=corr-1',
+      );
+    });
+
+    it('does not send a CallError once maxCallLengthSeconds has passed', async () => {
+      const { ocppSender, sender } = anOcppSender({ timeouts: { maxCallLengthSeconds: 20 } });
+      vi.setSystemTime(PAST_MAX_CALL_LENGTH);
+
+      const result = await ocppSender.sendCallErrorWithMessage(
+        aMessage(),
+        new OcppError('corr-1', ErrorCode.InternalError, 'boom'),
+      );
+
+      expect(sender.sendResponse).not.toHaveBeenCalled();
+      expect(result.success).toBe(false);
+    });
+
+    it('still responds exactly at maxCallLengthSeconds', async () => {
+      const { ocppSender, sender } = anOcppSender({ timeouts: { maxCallLengthSeconds: 20 } });
+      vi.setSystemTime(new Date('2026-09-01T12:00:20.000Z'));
+
+      await ocppSender.sendCallResultWithMessage(aMessage(), {
+        status: 'Accepted',
+      } as OcppResponse);
+
+      expect(sender.sendResponse).toHaveBeenCalledTimes(1);
+    });
+
+    it('still rejects an invalid CallResult for a Call that has timed out', async () => {
+      const { ocppSender, validator } = anOcppSender({ timeouts: { maxCallLengthSeconds: 20 } });
+      validator.validateOCPPResponse.mockReturnValue({ isValid: false, errors: [AN_AJV_ERROR] });
+      vi.setSystemTime(PAST_MAX_CALL_LENGTH);
+
+      expect(() => ocppSender.sendCallResultWithMessage(aMessage(), {} as OcppResponse)).toThrow(
+        OcppError,
+      );
     });
   });
 });

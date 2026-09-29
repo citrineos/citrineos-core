@@ -11,7 +11,6 @@ import {
   type CallAction,
   type OCPPVersionType,
 } from '@citrineos/types';
-import { OcppError } from '@ocpp/rpc/message.js';
 import type { ICache } from '@interfaces/cache/cache.js';
 import type { IMessage } from '@interfaces/messages/message.js';
 import type { IMessageConfirmation } from '@interfaces/messages/message-confirmation.js';
@@ -37,24 +36,6 @@ export interface IModule {
     payload: OcppRequest,
     callbackUrl?: string,
     correlationId?: string,
-    origin?: MessageOrigin,
-  ): Promise<IMessageConfirmation>;
-  sendCallResult(
-    correlationId: string,
-    ocppConnectionName: string,
-    tenantId: number,
-    protocol: OCPPVersionType,
-    action: CallAction,
-    payload: OcppResponse,
-    origin?: MessageOrigin,
-  ): Promise<IMessageConfirmation>;
-  sendCallError(
-    correlationId: string,
-    ocppConnectionName: string,
-    tenantId: number,
-    protocol: OCPPVersionType,
-    action: CallAction,
-    error: OcppError,
     origin?: MessageOrigin,
   ): Promise<IMessageConfirmation>;
 

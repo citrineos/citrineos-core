@@ -325,7 +325,7 @@ describe('UpdateFirmwareResponseOcpp2Handler', () => {
     );
     expect(logger.error).not.toHaveBeenCalled();
     expect(ocppSender.sendCall).not.toHaveBeenCalled();
-    expect(ocppSender.sendCallResult).not.toHaveBeenCalled();
+    expect(ocppSender.sendCallResultWithMessage).not.toHaveBeenCalled();
     expect(ocppMessageRepository.readOnlyOneByQuery).not.toHaveBeenCalled();
   });
 });
@@ -348,7 +348,7 @@ describe('UnpublishFirmwareResponseOcpp2Handler', () => {
     );
     expect(logger.error).not.toHaveBeenCalled();
     expect(ocppSender.sendCall).not.toHaveBeenCalled();
-    expect(ocppSender.sendCallResult).not.toHaveBeenCalled();
+    expect(ocppSender.sendCallResultWithMessage).not.toHaveBeenCalled();
     expect(ocppMessageRepository.readOnlyOneByQuery).not.toHaveBeenCalled();
   });
 });
@@ -371,7 +371,7 @@ describe('PublishFirmwareResponseOcpp2Handler', () => {
     );
     expect(logger.error).not.toHaveBeenCalled();
     expect(ocppSender.sendCall).not.toHaveBeenCalled();
-    expect(ocppSender.sendCallResult).not.toHaveBeenCalled();
+    expect(ocppSender.sendCallResultWithMessage).not.toHaveBeenCalled();
     expect(ocppMessageRepository.readOnlyOneByQuery).not.toHaveBeenCalled();
   });
 });
@@ -395,7 +395,7 @@ describe('GetLogResponseOcpp2Handler', () => {
     );
     expect(logger.error).not.toHaveBeenCalled();
     expect(ocppSender.sendCall).not.toHaveBeenCalled();
-    expect(ocppSender.sendCallResult).not.toHaveBeenCalled();
+    expect(ocppSender.sendCallResultWithMessage).not.toHaveBeenCalled();
     expect(ocppMessageRepository.readOnlyOneByQuery).not.toHaveBeenCalled();
   });
 });
@@ -418,7 +418,7 @@ describe('GetBaseReportResponseOcpp2Handler', () => {
     );
     expect(logger.error).not.toHaveBeenCalled();
     expect(ocppSender.sendCall).not.toHaveBeenCalled();
-    expect(ocppSender.sendCallResult).not.toHaveBeenCalled();
+    expect(ocppSender.sendCallResultWithMessage).not.toHaveBeenCalled();
     expect(ocppMessageRepository.readOnlyOneByQuery).not.toHaveBeenCalled();
   });
 });
