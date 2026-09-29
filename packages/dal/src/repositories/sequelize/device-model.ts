@@ -257,16 +257,9 @@ export class SequelizeDeviceModelRepository
         tenantId,
         name: componentType.name,
         instance: componentType.instance ? componentType.instance : null,
+        evseDatabaseId: evse?.databaseId ?? null,
       },
     });
-    // Note: this permits changing the evse related to the component
-    if (component.evseDatabaseId !== evse?.databaseId && evse) {
-      await this.component.updateByKey(
-        tenantId,
-        { evseDatabaseId: evse.databaseId },
-        component.get('id'),
-      );
-    }
 
     if (componentCreated && ocppConnectionName) {
       const defaultComponentVariableNames = ['Present', 'Available', 'Enabled'];
