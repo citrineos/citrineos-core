@@ -5,18 +5,18 @@ import {
   CacheNamespace,
   childLogger,
   createIdentifier,
-  CrudRepository,
   type ICache,
   type IWebsocketConnection,
 } from '@citrineos/base';
 import type {
   IChargingStationRepository,
+  IComponentRepository,
   IConnectorRepository,
   IDeviceModelRepository,
   IEvseRepository,
   IStatusNotificationRepository,
 } from '@citrineos/dal';
-import { Component, EvseType, OCPP1_6_Mapper, OCPP2_0_1_Mapper, Variable } from '@citrineos/dal';
+import { OCPP1_6_Mapper, OCPP2_0_1_Mapper } from '@citrineos/dal';
 import {
   OCPP1_6,
   OCPP2_0_1,
@@ -26,7 +26,7 @@ import {
 import type { ILogObj, Logger } from 'tslog';
 
 export class StatusNotificationService {
-  protected _componentRepository: CrudRepository<Component>;
+  protected _componentRepository: IComponentRepository;
   protected _deviceModelRepository: IDeviceModelRepository;
   protected _chargingStationRepository: IChargingStationRepository;
   protected _evseRepository: IEvseRepository;
@@ -45,7 +45,7 @@ export class StatusNotificationService {
     cache,
     logger,
   }: {
-    componentRepository: CrudRepository<Component>;
+    componentRepository: IComponentRepository;
     deviceModelRepository: IDeviceModelRepository;
     chargingStationRepository: IChargingStationRepository;
     evseRepository: IEvseRepository;
@@ -146,29 +146,10 @@ export class StatusNotificationService {
       statusNotification,
     );
 
-    let components = await this._componentRepository.readAllByQuery(tenantId, {
-      where: {
-        tenantId,
-        name: 'Connector',
-      },
-      include: [
-        {
-          model: EvseType,
-          where: {
-            id: statusNotificationRequest.evseId,
-            connectorId: statusNotificationRequest.connectorId,
-          },
-        },
-        {
-          model: Variable,
-          where: {
-            name: 'AvailabilityState',
-          },
-        },
-      ],
-    });
-    components = components.filter(
-      (component) => component.variables?.length && component.variables.length > 0,
+    const components = await this._componentRepository.findConnectorComponentsForAvailabilityState(
+      tenantId,
+      statusNotificationRequest.evseId,
+      statusNotificationRequest.connectorId,
     );
     if (components.length === 0) {
       this._logger.warn(

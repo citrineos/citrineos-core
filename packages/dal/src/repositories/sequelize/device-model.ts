@@ -4,6 +4,7 @@
 import { CrudRepository } from '@citrineos/base';
 import {
   type AttributeEnumType,
+  type ComponentDto,
   OCPP2_0_1,
   type OCPP2_common_types,
   type VariableAttributeDto,
@@ -555,6 +556,21 @@ export class SequelizeDeviceModelRepository
       ],
     });
     return variableAttribute ?? undefined;
+  }
+
+  async findConnectorComponentsForAvailabilityState(
+    tenantId: number,
+    evseId: number,
+    connectorId: number,
+  ): Promise<ComponentDto[]> {
+    const components = await this.component.readAllByQuery(tenantId, {
+      where: { tenantId, name: 'Connector' },
+      include: [
+        { model: EvseType, where: { id: evseId, connectorId } },
+        { model: Variable, where: { name: 'AvailabilityState' } },
+      ],
+    });
+    return components.filter((component) => (component.variables?.length ?? 0) > 0);
   }
 
   async findComponentAndVariable(

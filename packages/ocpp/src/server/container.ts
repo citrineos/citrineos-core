@@ -28,6 +28,7 @@ import {
   DrizzleCertificateRepository,
   DrizzleChangeConfigurationRepository,
   DrizzleChargingStationRepository,
+  DrizzleComponentRepository,
   DrizzleConnectorRepository,
   DrizzleLocationRepository,
   DrizzleStatusNotificationRepository,
@@ -54,7 +55,6 @@ import {
   SequelizeChargingStationNetworkProfileRepository,
   SequelizeChargingStationSecurityInfoRepository,
   SequelizeChargingStationSequenceRepository,
-  SequelizeComponentRepository,
   SequelizeDeleteCertificateAttemptRepository,
   SequelizeDeviceModelRepository,
   SequelizeInstallCertificateAttemptRepository,
@@ -312,10 +312,12 @@ function registerRepositories(container: AwilixContainer): void {
     tenantRepository: asClass(SequelizeTenantRepository).singleton(),
     transactionEventRepository: asClass(SequelizeTransactionEventRepository).singleton(),
     variableMonitoringRepository: asClass(SequelizeVariableMonitoringRepository).singleton(),
-    componentRepository: asClass(SequelizeComponentRepository).singleton(),
     // use asFunction to return an already existing instance
     chargingStationRepository: asFunction(
       ({ locationRepository }) => locationRepository,
+    ).singleton(),
+    componentRepository: asFunction(
+      ({ deviceModelRepository }) => deviceModelRepository,
     ).singleton(),
     connectorRepository: asFunction(({ locationRepository }) => locationRepository).singleton(),
     evseRepository: asFunction(({ locationRepository }) => locationRepository).singleton(),
@@ -362,6 +364,7 @@ function registerRepositories(container: AwilixContainer): void {
       serverNetworkProfileRepository: asClass(DrizzleServerNetworkProfileRepository).singleton(),
       tariffRepository: asClass(DrizzleTariffRepository).singleton(),
       tenantRepository: asClass(DrizzleTenantRepository).singleton(),
+      componentRepository: asClass(DrizzleComponentRepository).singleton(),
       variableAttributeRepository: asClass(DrizzleVariableAttributeRepository).singleton(),
       variableCharacteristicsRepository: asClass(
         DrizzleVariableCharacteristicsRepository,
