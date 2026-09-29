@@ -419,6 +419,15 @@ export class SequelizeDeviceModelRepository
     isoTimestamp: string,
     acceptedValue?: string,
   ): Promise<VariableAttributeDto | undefined> {
+    const evse = result.component.evse
+      ? await this.evse.readOnlyOneByQuery(tenantId, {
+          where: {
+            id: result.component.evse.id,
+            connectorId: result.component.evse.connectorId ?? null,
+          },
+        })
+      : undefined;
+
     const existingVariableAttribute = await super.readOnlyOneByQuery(tenantId, {
       where: {
         stationId: await stationIdFilter(tenantId, ocppConnectionName),
@@ -430,6 +439,7 @@ export class SequelizeDeviceModelRepository
           where: {
             name: result.component.name,
             instance: result.component.instance ? result.component.instance : null,
+            ...(evse ? { evseDatabaseId: evse.databaseId } : {}),
           },
         },
         {
