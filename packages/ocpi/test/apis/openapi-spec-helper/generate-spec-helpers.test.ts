@@ -476,7 +476,7 @@ describe('getOperation', () => {
     });
   });
 
-  it('adds a security requirement when an Authorization header param exists', () => {
+  it('moves an Authorization header param into a security requirement', () => {
     const host = paramHost([String]);
     const route = aRoute({
       action: { target: TokensController, method: 'getTokenById', route: '', type: 'get' },
@@ -493,9 +493,55 @@ describe('getOperation', () => {
     });
     const operation = getOperation(route, {});
     expect(operation.security).toEqual([{ authorization: [] }]);
+    expect(operation.parameters).toBeUndefined();
+  });
+
+  it('keeps the other header params when removing Authorization', () => {
+    const host = paramHost([String, String]);
+    const route = aRoute({
+      action: { target: TokensController, method: 'getTokenById', route: '', type: 'get' },
+      params: [
+        {
+          type: 'header',
+          name: 'Authorization',
+          object: host,
+          method: 'getTokenById',
+          index: 0,
+          required: true,
+        },
+        {
+          type: 'header',
+          name: 'X-Request-ID',
+          object: host,
+          method: 'getTokenById',
+          index: 1,
+          required: true,
+        },
+      ],
+    });
+    const operation = getOperation(route, {});
+    expect(operation.security).toEqual([{ authorization: [] }]);
     expect(operation.parameters).toEqual([
-      { in: 'header', name: 'Authorization', required: true, schema: { type: 'string' } },
+      { in: 'header', name: 'X-Request-ID', required: true, schema: { type: 'string' } },
     ]);
+  });
+
+  it('adds no security requirement without an Authorization header param', () => {
+    const host = paramHost([String]);
+    const route = aRoute({
+      action: { target: TokensController, method: 'getTokenById', route: '', type: 'get' },
+      params: [
+        {
+          type: 'header',
+          name: 'X-Request-ID',
+          object: host,
+          method: 'getTokenById',
+          index: 0,
+          required: true,
+        },
+      ],
+    });
+    expect(getOperation(route, {}).security).toBeUndefined();
   });
 });
 

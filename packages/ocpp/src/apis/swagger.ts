@@ -60,13 +60,6 @@ function OcppTransformObject({
 const registerSwaggerUi = async (systemConfig: SystemConfig, server: FastifyInstance) => {
   const swaggerUiOptions: any = {
     routePrefix: systemConfig.swagger?.path,
-    securityDefinitions: {
-      authorization: {
-        name: 'authorization',
-        type: 'apiKey',
-        in: 'header',
-      },
-    },
     exposeRoute: true,
     uiConfig: {
       filter: true,
@@ -168,6 +161,7 @@ const registerFastifySwagger = (systemConfig: SystemConfig, server: FastifyInsta
           },
         },
       },
+      security: [{ authorization: [] }],
     },
     transformObject: OcppTransformObject,
     refResolver: {
