@@ -31,9 +31,7 @@ export class RabbitMqModuleReceiver extends RabbitMqReceiver {
   protected readonly _catchUpPrefetch: number;
   protected readonly _maxCallLengthMs: number;
 
-  /** Main queue name -> its catch-up queue, for queues that receive station Calls. */
   protected _catchUpQueues = new Map<string, string>();
-  /** Identifiers whose catch-up queue is being consumed on the current connection. */
   protected _catchUpConsumers = new Set<string>();
 
   protected _consumerTags = new Map<string, string[]>();

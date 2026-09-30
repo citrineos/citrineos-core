@@ -99,10 +99,6 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
    * bindings are gone a re-emit could route straight back here, so these wait for the unbind.
    */
   protected _deregistering = new Map<string, RoutedMessage[]>();
-  /**
-   * CSMS Calls waiting, in order, for the station's outstanding Call to finish: OCPP allows one
-   * at a time. Held here rather than requeued, so they occupy no prefetch slots.
-   */
   protected _pendingCalls = new Map<
     string,
     { messages: RoutedMessage[]; timer?: ReturnType<typeof setTimeout> }
