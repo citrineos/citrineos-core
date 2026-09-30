@@ -125,6 +125,54 @@ async function seedVariableAttribute(
 // Tests
 // ---------------------------------------------------------------------------
 
+describe('findComponentAndVariable', () => {
+  beforeEach(async () => {
+    await seedBase();
+  });
+
+  it('resolves the component belonging to the requested EVSE', async () => {
+    const repo = makeRepo();
+    const onEvse1 = await repo.findOrCreateEvseAndComponent(TENANT_ID, {
+      name: 'EVSE',
+      evse: { id: 1 },
+    });
+    const onEvse2 = await repo.findOrCreateEvseAndComponent(TENANT_ID, {
+      name: 'EVSE',
+      evse: { id: 2 },
+    });
+    await Variable.create({ name: 'Power', tenantId: TENANT_ID } as any);
+
+    const [first] = await repo.findComponentAndVariable(
+      TENANT_ID,
+      { name: 'EVSE', evse: { id: 1 } },
+      { name: 'Power' },
+    );
+    const [second] = await repo.findComponentAndVariable(
+      TENANT_ID,
+      { name: 'EVSE', evse: { id: 2 } },
+      { name: 'Power' },
+    );
+
+    expect(onEvse1.id).not.toBe(onEvse2.id);
+    expect(first!.id).toBe(onEvse1.id);
+    expect(second!.id).toBe(onEvse2.id);
+  });
+
+  it('still resolves a station-level component, which carries no evse', async () => {
+    const repo = makeRepo();
+    const created = await repo.findOrCreateEvseAndComponent(TENANT_ID, { name: 'ClockCtrlr' });
+    await Variable.create({ name: 'TimeOffset', tenantId: TENANT_ID } as any);
+
+    const [component] = await repo.findComponentAndVariable(
+      TENANT_ID,
+      { name: 'ClockCtrlr' },
+      { name: 'TimeOffset' },
+    );
+
+    expect(component!.id).toBe(created.id);
+  });
+});
+
 describe('findOrCreateEvseAndComponent', () => {
   const evseComponentAt = (evseId: number): OCPP2_0_1.ComponentType => ({
     name: 'EVSE',

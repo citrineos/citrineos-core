@@ -578,10 +578,20 @@ export class SequelizeDeviceModelRepository
     componentType: OCPP2_0_1.ComponentType,
     variableType: OCPP2_0_1.VariableType,
   ): Promise<[Component | undefined, Variable | undefined]> {
+    const evse = componentType.evse
+      ? await this.evse.readOnlyOneByQuery(tenantId, {
+          where: {
+            id: componentType.evse.id,
+            connectorId: componentType.evse.connectorId ?? null,
+          },
+        })
+      : undefined;
+
     const component = await this.component.readOnlyOneByQuery(tenantId, {
       where: {
         name: componentType.name,
         instance: componentType.instance ? componentType.instance : null,
+        ...(evse ? { evseDatabaseId: evse.databaseId } : {}),
       },
     });
     const variable = await this.variable.readOnlyOneByQuery(tenantId, {

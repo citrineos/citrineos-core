@@ -4,7 +4,7 @@
 
 import type { ComponentDto, VariableDto } from '@citrineos/types';
 import { OCPP2_0_1, type OCPP2_common_types } from '@citrineos/types';
-import { and, eq, isNull, type SQL } from 'drizzle-orm';
+import { and, eq, isNull, sql, type SQL } from 'drizzle-orm';
 import type { PgColumn } from 'drizzle-orm/pg-core';
 import {
   chargingStationTable,
@@ -315,6 +315,32 @@ export class DrizzleComponentRepository
     return this.toDto(row);
   }
 
+  private async evseFilter(
+    tenantId: number,
+    table: typeof componentTable,
+    evseType: OCPP2_common_types.EVSEType | undefined | null,
+  ): Promise<SQL> {
+    if (!evseType) {
+      return isNull(table.evseDatabaseId);
+    }
+    const evseTypes = this.getEvseTypeTable(tenantId);
+    const rows = (await this.db
+      .select()
+      .from(evseTypes)
+      .where(
+        and(
+          eq(evseTypes.id, evseType.id),
+          evseType.connectorId
+            ? eq(evseTypes.connectorId, evseType.connectorId)
+            : isNull(evseTypes.connectorId),
+          this.tenantFilter(evseTypes, tenantId),
+        ),
+      )
+      .limit(1)) as EvseTypeEntity[];
+
+    return rows[0] ? eq(table.evseDatabaseId, rows[0].databaseId) : sql`false`;
+  }
+
   // ─── IComponentRepository methods ────────────────────────────────────────
 
   async findComponentAndVariable(
@@ -330,6 +356,7 @@ export class DrizzleComponentRepository
         and(
           eq(components.name, componentType.name),
           instanceFilter(components.instance, componentType.instance),
+          await this.evseFilter(tenantId, components, componentType.evse),
           this.tenantFilter(components, tenantId),
         ),
       )

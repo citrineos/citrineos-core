@@ -374,6 +374,53 @@ describe('DrizzleComponentRepository.findOrCreateEvseAndComponentAndVariable', (
 });
 
 describe('DrizzleComponentRepository.findComponentAndVariable', () => {
+  it('resolves the component belonging to the requested EVSE', async () => {
+    const repo = new DrizzleComponentRepository(deps());
+    const connectorId = await aConnectorWithId(TENANT, 1);
+    const onEvse1 = await repo.findOrCreateEvseAndComponent(TENANT, {
+      name: 'Connector',
+      evse: { id: 1, connectorId },
+    });
+    const onEvse2 = await repo.findOrCreateEvseAndComponent(TENANT, {
+      name: 'Connector',
+      evse: { id: 2, connectorId },
+    });
+    await aVariable(TENANT, 'AvailabilityState');
+
+    const [first] = await repo.findComponentAndVariable(
+      TENANT,
+      { name: 'Connector', evse: { id: 1, connectorId } },
+      { name: 'AvailabilityState' },
+    );
+    const [second] = await repo.findComponentAndVariable(
+      TENANT,
+      { name: 'Connector', evse: { id: 2, connectorId } },
+      { name: 'AvailabilityState' },
+    );
+
+    expect(onEvse1.id).not.toBe(onEvse2.id);
+    expect(first!.id).toBe(onEvse1.id);
+    expect(second!.id).toBe(onEvse2.id);
+  });
+
+  it('matches nothing when the requested EVSE does not exist', async () => {
+    const repo = new DrizzleComponentRepository(deps());
+    const connectorId = await aConnectorWithId(TENANT, 1);
+    await repo.findOrCreateEvseAndComponent(TENANT, {
+      name: 'Connector',
+      evse: { id: 1, connectorId },
+    });
+    await aVariable(TENANT, 'AvailabilityState');
+
+    const [component] = await repo.findComponentAndVariable(
+      TENANT,
+      { name: 'Connector', evse: { id: 99, connectorId } },
+      { name: 'AvailabilityState' },
+    );
+
+    expect(component).toBeUndefined();
+  });
+
   it('returns the variable with its characteristics attached', async () => {
     const repo = new DrizzleComponentRepository(deps());
     await aComponent(TENANT, 'Connector');
