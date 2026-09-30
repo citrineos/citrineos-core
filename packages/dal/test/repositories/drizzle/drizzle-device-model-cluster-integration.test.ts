@@ -305,7 +305,7 @@ describe('DrizzleComponentRepository.findOrCreateEvseAndComponent', () => {
     expect(await VariableAttribute.count()).toBe(0);
   });
 
-  it('repoints an existing component at a different EVSE', async () => {
+  it('keeps one component per EVSE instead of repointing the first', async () => {
     const repo = new DrizzleComponentRepository(deps());
 
     const connectorId = await aConnectorWithId(TENANT, 1);
@@ -313,15 +313,30 @@ describe('DrizzleComponentRepository.findOrCreateEvseAndComponent', () => {
       name: 'Connector',
       evse: { id: 1, connectorId },
     });
-    const moved = await repo.findOrCreateEvseAndComponent(TENANT, {
+    const second = await repo.findOrCreateEvseAndComponent(TENANT, {
       name: 'Connector',
       evse: { id: 2, connectorId },
     });
 
-    expect(moved.id).toBe(first.id);
-    expect(moved.evseDatabaseId).not.toBe(first.evseDatabaseId);
-    expect(await Component.count()).toBe(1);
+    expect(second.id).not.toBe(first.id);
+    expect(second.evseDatabaseId).not.toBe(first.evseDatabaseId);
+    expect(await Component.count()).toBe(2);
     expect(await EvseType.count()).toBe(2);
+
+    // The first EVSE's component must be left where it was.
+    const reloaded = await Component.findByPk(first.id!);
+    expect(reloaded!.get('evseDatabaseId')).toBe(first.evseDatabaseId);
+  });
+
+  it('still dedupes station-level components, which carry no evse', async () => {
+    const repo = new DrizzleComponentRepository(deps());
+
+    const first = await repo.findOrCreateEvseAndComponent(TENANT, { name: 'ClockCtrlr' });
+    const again = await repo.findOrCreateEvseAndComponent(TENANT, { name: 'ClockCtrlr' });
+
+    expect(again.id).toBe(first.id);
+    expect(first.evseDatabaseId).toBeNull();
+    expect(await Component.count()).toBe(1);
   });
 });
 

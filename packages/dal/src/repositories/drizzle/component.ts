@@ -267,6 +267,7 @@ export class DrizzleComponentRepository
     const match = and(
       eq(table.name, componentType.name),
       instanceFilter(table.instance, componentType.instance),
+      evse ? eq(table.evseDatabaseId, evse.databaseId) : isNull(table.evseDatabaseId),
       this.tenantFilter(table, tenantId),
     );
 
@@ -301,21 +302,6 @@ export class DrizzleComponentRepository
       );
     }
 
-    let dto = this.toDto(row);
-
-    // Permits moving an existing component to a different EVSE.
-    if (evse && row.evseDatabaseId !== evse.databaseId) {
-      const updated = await this.updateById(
-        tenantId,
-        row.id,
-        { evseDatabaseId: evse.databaseId, updatedAt: new Date() },
-        ctx,
-      );
-      if (updated) {
-        dto = updated;
-      }
-    }
-
     if (created && ocppConnectionName) {
       await this.seedDefaultVariableAttributes(
         tenantId,
@@ -326,7 +312,7 @@ export class DrizzleComponentRepository
       );
     }
 
-    return dto;
+    return this.toDto(row);
   }
 
   // ─── IComponentRepository methods ────────────────────────────────────────
