@@ -23,6 +23,7 @@ import {
 import type { ConnectorMapper, EvseMapper, LocationMapper } from '../../mappers/index.js';
 import type { OcpiDependencies } from '../../server/dependencies.js';
 import { OcpiEmptyResponseSchema } from '../../types/ocpi-empty-response.js';
+import { toOcpiDateTime } from '../../util/date-time.js';
 
 export interface LocationsBroadcasterDependencies extends OcpiDependencies {
   credentialsService: CredentialsService;
@@ -120,6 +121,27 @@ export class LocationsBroadcaster extends BaseBroadcaster {
     if (!evse) throw new Error('Failed to map EVSE data');
     const path = `/${tenant.countryCode}/${tenant.partyId}/${locationId}/${UID_FORMAT(chargingStationDto.ocppConnectionName!, evseDto.id!)}`;
     await this.broadcastEvse(tenant, evse, HttpMethod.Patch, path);
+  }
+
+  // A StatusNotification only writes the Connector row, but OCPI carries status on the EVSE:
+  // push the status derived from the connectors, and nothing else.
+  async broadcastPatchEvseStatus(
+    tenant: TenantDto,
+    evseDto: EvseDto,
+    chargingStationDto: ChargingStationDto,
+  ): Promise<void> {
+    const locationId = chargingStationDto.locationId;
+    if (!locationId) throw new Error('Location ID missing in EVSE data');
+    const path = `/${tenant.countryCode}/${tenant.partyId}/${locationId}/${UID_FORMAT(chargingStationDto.ocppConnectionName, evseDto.id!)}`;
+    await this.broadcastEvse(
+      tenant,
+      {
+        status: this.evseMapper.mapEvseStatusFromConnectors(evseDto.connectors ?? []),
+        last_updated: toOcpiDateTime(evseDto.updatedAt!),
+      },
+      HttpMethod.Patch,
+      path,
+    );
   }
 
   private async broadcastEvse(
