@@ -267,24 +267,42 @@ export abstract class BaseClientApi {
     const partners = (response.TenantPartners as TenantPartnerDto[]).filter(
       (partner) => tenantPartnerId === undefined || partner.id === tenantPartnerId,
     );
+    const failures: unknown[] = [];
     for (const partner of partners) {
       this.logger.debug(`Requesting partner ${partner.countryCode}_${partner.partyId}`);
-      const response = await this.request(
-        cpoCountryCode,
-        cpoPartyId,
-        partner.countryCode!,
-        partner.partyId!,
-        httpMethod,
-        schema,
-        partner.partnerProfileOCPI!,
-        routingHeaders,
-        url,
-        body,
-        paginatedParams,
-        otherParams,
-        path,
+      try {
+        responses.push(
+          await this.request(
+            cpoCountryCode,
+            cpoPartyId,
+            partner.countryCode!,
+            partner.partyId!,
+            httpMethod,
+            schema,
+            partner.partnerProfileOCPI!,
+            routingHeaders,
+            url,
+            body,
+            paginatedParams,
+            otherParams,
+            path,
+          ),
+        );
+      } catch (e) {
+        // One partner's failure must not starve the partners after it; the caller still
+        // gets to log the failure against its own object once every partner was tried.
+        this.logger.error(
+          `${httpMethod} ${moduleId}_${interfaceRole} to partner ${partner.countryCode}_${partner.partyId} failed`,
+          e,
+        );
+        failures.push(e);
+      }
+    }
+    if (failures.length > 0) {
+      throw new AggregateError(
+        failures,
+        `${httpMethod} ${moduleId}_${interfaceRole} failed for ${failures.length} of ${partners.length} partners`,
       );
-      responses.push(response);
     }
     return responses;
   }
