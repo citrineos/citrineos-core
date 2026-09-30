@@ -160,7 +160,12 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
     // The service needs ComponentRepository and DeviceModelRepository, but the
     // 1.6 path doesn't use them. Stubs are sufficient.
     const service = new StatusNotificationService({
-      componentRepository: { readAllByQuery: vi.fn().mockResolvedValue([]) } as any,
+      componentRepository: {
+        findConnectorComponentsForAvailabilityState: vi.fn().mockResolvedValue([]),
+        findComponentAndVariable: vi.fn(),
+        findOrCreateEvseAndComponent: vi.fn(),
+        findOrCreateEvseAndComponentAndVariable: vi.fn(),
+      },
       deviceModelRepository: { createOrUpdateDeviceModelByStationId: vi.fn() } as any,
       chargingStationRepository: locationRepository,
       evseRepository: locationRepository,
@@ -220,7 +225,12 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
     } as unknown as ICache;
 
     const service = new StatusNotificationService({
-      componentRepository: { readAllByQuery: vi.fn().mockResolvedValue([]) } as any,
+      componentRepository: {
+        findConnectorComponentsForAvailabilityState: vi.fn().mockResolvedValue([]),
+        findComponentAndVariable: vi.fn(),
+        findOrCreateEvseAndComponent: vi.fn(),
+        findOrCreateEvseAndComponentAndVariable: vi.fn(),
+      },
       deviceModelRepository: { createOrUpdateDeviceModelByStationId: vi.fn() } as any,
       chargingStationRepository: locationRepository,
       evseRepository: locationRepository,
@@ -292,7 +302,12 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
     } as unknown as ICache;
 
     const service = new StatusNotificationService({
-      componentRepository: { readAllByQuery: vi.fn().mockResolvedValue([]) } as any,
+      componentRepository: {
+        findConnectorComponentsForAvailabilityState: vi.fn().mockResolvedValue([]),
+        findComponentAndVariable: vi.fn(),
+        findOrCreateEvseAndComponent: vi.fn(),
+        findOrCreateEvseAndComponentAndVariable: vi.fn(),
+      },
       deviceModelRepository: { createOrUpdateDeviceModelByStationId: vi.fn() } as any,
       chargingStationRepository: locationRepository,
       evseRepository: locationRepository,
@@ -333,7 +348,12 @@ describe('StatusNotificationService.processStatusNotification end-to-end (2.0.1 
     } as unknown as ICache;
 
     return new StatusNotificationService({
-      componentRepository: { readAllByQuery: vi.fn().mockResolvedValue([]) } as any,
+      componentRepository: {
+        findConnectorComponentsForAvailabilityState: vi.fn().mockResolvedValue([]),
+        findComponentAndVariable: vi.fn(),
+        findOrCreateEvseAndComponent: vi.fn(),
+        findOrCreateEvseAndComponentAndVariable: vi.fn(),
+      },
       deviceModelRepository: { createOrUpdateDeviceModelByStationId: vi.fn() } as any,
       chargingStationRepository: locationRepository,
       evseRepository: locationRepository,
