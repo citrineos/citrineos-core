@@ -102,6 +102,43 @@ describe('RabbitMqRouterReceiver', () => {
 
       expect(mockConnectionManager.on).toHaveBeenCalledWith('connected', expect.any(Function));
     });
+
+    it('should recover once when channel invalidation races initial queue setup', async () => {
+      const replacement = aMockAmqpChannel();
+      let releaseAssert!: () => void;
+      let channelClosed = false;
+      let invalidated = false;
+      const assertGate = new Promise<void>((resolve) => {
+        releaseAssert = resolve;
+      });
+      vi.mocked(mockChannel.assertExchange).mockImplementation(async () => {
+        await assertGate;
+        if (channelClosed) throw new Error('initial channel closed');
+        return { exchange: 'test-exchange', messageCount: 0, consumerCount: 0 };
+      });
+      vi.mocked(mockChannelManager.getChannel).mockImplementation(async () =>
+        invalidated ? replacement : mockChannel,
+      );
+
+      const subscription = receiver.subscribe('charger-race', undefined, {
+        ocppConnectionName: 'CS-RACE',
+      });
+      await vi.waitFor(() => expect(mockChannel.assertExchange).toHaveBeenCalled());
+      invalidated = true;
+      channelClosed = true;
+      mockChannelManager.emit('channelInvalidated', 'router-receiver');
+      releaseAssert();
+
+      await expect(subscription).rejects.toThrow('initial channel closed');
+      await vi.waitFor(() => expect(replacement.consume).toHaveBeenCalledTimes(1));
+      expect(replacement.assertQueue).toHaveBeenCalledTimes(1);
+
+      await receiver.subscribe('charger-after-recovery', undefined, {
+        ocppConnectionName: 'CS-AFTER-RECOVERY',
+      });
+
+      expect(replacement.consume).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('subscribe() — binding behaviour', () => {

@@ -142,6 +142,29 @@ describe('RabbitMqModuleReceiver', () => {
         vi.mocked(mockChannel.consume).mock.invocationCallOrder[0],
       );
     });
+
+    it('should cancel partial consumers before retrying channel recovery', async () => {
+      const replacement = aMockAmqpChannel();
+      let invalidated = false;
+      vi.mocked(mockChannelManager.getChannel).mockImplementation(async () =>
+        invalidated ? replacement : mockChannel,
+      );
+      await receiver.subscribe('Transactions', [OCPP_CallAction.TransactionEvent], {});
+      await receiver.subscribe('Transactions', [OCPP_CallAction.StatusNotification], {});
+
+      vi.mocked(replacement.consume)
+        .mockImplementationOnce(async () => ({ consumerTag: 'partial-consumer' }))
+        .mockRejectedValueOnce(new Error('channel closed during partial recovery'))
+        .mockImplementationOnce(async () => ({ consumerTag: 'recovered-consumer-1' }))
+        .mockImplementationOnce(async () => ({ consumerTag: 'recovered-consumer-2' }));
+      invalidated = true;
+      mockChannelManager.emit('channelInvalidated', 'module-receiver-Transactions');
+
+      await vi.waitFor(() => expect(replacement.consume).toHaveBeenCalledTimes(4));
+
+      expect(replacement.cancel).toHaveBeenCalledWith('partial-consumer');
+      expect(replacement.consume).toHaveBeenCalledTimes(4);
+    });
   });
 
   describe('unsubscribe()', () => {

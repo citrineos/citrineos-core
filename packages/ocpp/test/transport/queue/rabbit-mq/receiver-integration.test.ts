@@ -272,6 +272,32 @@ describe('RabbitMq receivers', () => {
       // Queue may still exist (durable) but must have no active consumers
       await waitForConsumerCount(`rabbit_queue_${id}`, 0);
     }, 15_000);
+
+    it('should restore one consumer and all bindings after a channel-only close', async () => {
+      const id = `ChannelRecovery-${uid}`;
+      const queueName = `rabbit_queue_${id}`;
+      await receiver.subscribe(
+        id,
+        [OCPP_CallAction.StatusNotification, OCPP_CallAction.Heartbeat],
+        { origin: 'CS' },
+      );
+      const originalConnection = await connectionManager.connect();
+      const originalChannel = await channelManager.getChannel(`module-receiver-${id}`);
+      const originalBindings = await getQueueBindings(queueName);
+
+      await originalChannel.close();
+      const replacementChannel = await channelManager.getChannel(`module-receiver-${id}`);
+
+      expect(replacementChannel).not.toBe(originalChannel);
+      expect(await connectionManager.connect()).toBe(originalConnection);
+      await waitForConsumerCount(queueName, 1);
+      const restoredBindings = await getQueueBindings(queueName);
+      expect(restoredBindings).toHaveLength(2);
+      expect(restoredBindings.map((binding) => binding.arguments).sort()).toEqual(
+        originalBindings.map((binding) => binding.arguments).sort(),
+      );
+      expect(await getActiveConsumerCount(queueName)).toBe(1);
+    }, 15_000);
   });
 
   // ---------------------------------------------------------------------------
@@ -392,6 +418,31 @@ describe('RabbitMq receivers', () => {
       const actions = bindings.map((b) => b.arguments['action']);
       expect(actions).toContain(OCPP_CallAction.BootNotification);
       expect(actions).toContain(OCPP_CallAction.Heartbeat);
+    }, 15_000);
+
+    it('should restore one consumer and all bindings after a channel-only close', async () => {
+      const queueName = `rabbit_queue_router_${instanceId}-${uid}`;
+      await receiver.subscribe(
+        'channel-recovery-1',
+        [OCPP_CallAction.StatusNotification, OCPP_CallAction.Heartbeat],
+        { ocppConnectionName: 'CS-CHANNEL-1', tenantId: '1' },
+      );
+      const originalConnection = await connectionManager.connect();
+      const originalChannel = await channelManager.getChannel('router-receiver');
+      const originalBindings = await getQueueBindings(queueName);
+
+      await originalChannel.close();
+      const replacementChannel = await channelManager.getChannel('router-receiver');
+
+      expect(replacementChannel).not.toBe(originalChannel);
+      expect(await connectionManager.connect()).toBe(originalConnection);
+      await waitForConsumerCount(queueName, 1);
+      const restoredBindings = await getQueueBindings(queueName);
+      expect(restoredBindings).toHaveLength(2);
+      expect(restoredBindings.map((binding) => binding.arguments).sort()).toEqual(
+        originalBindings.map((binding) => binding.arguments).sort(),
+      );
+      expect(await getActiveConsumerCount(queueName)).toBe(1);
     }, 15_000);
 
     it('should remove only the unsubscribed charger bindings from the broker', async () => {

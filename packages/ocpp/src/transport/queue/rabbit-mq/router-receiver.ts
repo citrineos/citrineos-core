@@ -6,6 +6,7 @@ import { type IModule } from '@citrineos/base';
 import { type CallAction, type SystemConfig } from '@citrineos/types';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
+import type * as amqplib from 'amqplib';
 import { RabbitMQChannelManager } from './channel-manager.js';
 import { RabbitMqReceiver } from './receiver.js';
 
@@ -30,6 +31,7 @@ export class RabbitMqRouterReceiver extends RabbitMqReceiver {
   protected readonly _prefetch: number;
   protected _instanceQueueReady?: Promise<void>;
   protected _instanceConsumerTags: string[] = [];
+  protected _instanceConsumerChannel?: amqplib.Channel;
   protected _instanceBindings = new Map<string, Array<Record<string, string>>>();
 
   constructor(deps: {
@@ -64,15 +66,26 @@ export class RabbitMqRouterReceiver extends RabbitMqReceiver {
    * @param queueName  Stable, instance-unique name (e.g. `rabbit_queue_router_<hostname>`).
    */
   async initializeInstanceQueue(queueName: string): Promise<void> {
+    if (this._isStopping) return;
     const channel = await this._channelManager.getChannel(RabbitMqRouterReceiver.CHANNEL_ID);
+    if (this._isStopping) return;
+    if (this._instanceConsumerChannel === channel && this._instanceConsumerTags.length > 0) return;
     await channel.assertExchange(this.exchange, 'headers', { durable: false });
     await channel.assertQueue(queueName, {
       durable: true,
       autoDelete: true,
       exclusive: false,
     });
+    if (this._isStopping) return;
 
-    this._instanceConsumerTags.push(await this._consume(channel, queueName, this._prefetch));
+    const consumerTag = await this._consume(channel, queueName, this._prefetch);
+    if (this._isStopping) {
+      if (consumerTag) await channel.cancel(consumerTag).catch(() => undefined);
+      return;
+    }
+    if (!consumerTag) return;
+    this._instanceConsumerTags = [consumerTag];
+    this._instanceConsumerChannel = channel;
 
     this._logger.info(`[instance-queue] Initialized ${queueName} with 1 consumer`);
   }
@@ -87,6 +100,9 @@ export class RabbitMqRouterReceiver extends RabbitMqReceiver {
 
     const queueName = this._instanceQueueName;
     const channel = await this._channelManager.getChannel(RabbitMqRouterReceiver.CHANNEL_ID);
+    if (this._isStopping) return;
+    if (this._instanceConsumerChannel === channel && this._instanceConsumerTags.length > 0) return;
+    this._instanceConsumerChannel = undefined;
 
     await channel.assertExchange(this.exchange, 'headers', { durable: false });
     await channel.assertQueue(queueName, {
@@ -100,15 +116,69 @@ export class RabbitMqRouterReceiver extends RabbitMqReceiver {
     for (const bindings of this._instanceBindings.values()) {
       for (const args of bindings) {
         await channel.bindQueue(queueName, this.exchange, '', args);
+        if (this._isStopping) return;
         reboundCount++;
       }
     }
 
     // Re-create the single consumer on the new channel
-    this._instanceConsumerTags = [await this._consume(channel, queueName, this._prefetch)];
+    const consumerTag = await this._consume(channel, queueName, this._prefetch);
+    if (this._isStopping) {
+      if (consumerTag) await channel.cancel(consumerTag).catch(() => undefined);
+      return;
+    }
+    if (!consumerTag) return;
+    this._instanceConsumerTags = [consumerTag];
+    this._instanceConsumerChannel = channel;
 
     this._logger.info(
       `[instance-queue] Reinitialized ${queueName} after reconnect: ` +
+        `1 consumer, ${reboundCount} binding(s) restored`,
+    );
+  }
+
+  protected async _onChannelInvalidated(channelId: string): Promise<void> {
+    if (channelId !== RabbitMqRouterReceiver.CHANNEL_ID || !this._instanceQueueReady) return;
+    try {
+      await this._instanceQueueReady;
+    } catch {
+      // The in-flight initial consumer may have failed with the channel that was replaced.
+    }
+    if (this._isStopping) return;
+
+    const channel = await this._channelManager.getChannel(channelId);
+    if (this._isStopping) return;
+    if (this._instanceConsumerChannel === channel && this._instanceConsumerTags.length > 0) return;
+
+    this._instanceConsumerTags = [];
+    this._instanceConsumerChannel = undefined;
+    await channel.assertExchange(this.exchange, 'headers', { durable: false });
+    await channel.assertQueue(this._instanceQueueName, {
+      durable: true,
+      autoDelete: true,
+      exclusive: false,
+    });
+    if (this._isStopping) return;
+
+    let reboundCount = 0;
+    for (const bindings of this._instanceBindings.values()) {
+      for (const args of bindings) {
+        await channel.bindQueue(this._instanceQueueName, this.exchange, '', args);
+        if (this._isStopping) return;
+        reboundCount++;
+      }
+    }
+
+    const consumerTag = await this._consume(channel, this._instanceQueueName, this._prefetch);
+    if (this._isStopping) {
+      if (consumerTag) await channel.cancel(consumerTag).catch(() => undefined);
+      return;
+    }
+    if (!consumerTag) return;
+    this._instanceConsumerTags = [consumerTag];
+    this._instanceConsumerChannel = channel;
+    this._logger.info(
+      `[instance-queue] Restored ${this._instanceQueueName} after channel failure: ` +
         `1 consumer, ${reboundCount} binding(s) restored`,
     );
   }
@@ -193,6 +263,7 @@ export class RabbitMqRouterReceiver extends RabbitMqReceiver {
   }
 
   async shutdown(): Promise<void> {
+    this._stopRecovery();
     try {
       const channel = await this._channelManager.getChannel(RabbitMqRouterReceiver.CHANNEL_ID);
       for (const tag of this._instanceConsumerTags) {

@@ -266,6 +266,20 @@ describe('RabbitMQChannelManager', () => {
     expect(connection.createChannel).toHaveBeenCalledTimes(2);
   });
 
+  it('should coalesce concurrent requests for the same channel id', async () => {
+    const ch = aManagedChannel();
+    connection.createChannel.mockResolvedValue(ch);
+
+    const [first, second] = await Promise.all([
+      manager.getChannel('sender'),
+      manager.getChannel('sender'),
+    ]);
+
+    expect(first).toBe(ch);
+    expect(second).toBe(ch);
+    expect(connection.createChannel).toHaveBeenCalledTimes(1);
+  });
+
   it('should recreate the channel after a channel error event', async () => {
     const chA = aManagedChannel();
     const chB = aManagedChannel();
@@ -277,6 +291,22 @@ describe('RabbitMQChannelManager', () => {
 
     expect(replacement).toBe(chB);
     expect(connection.createChannel).toHaveBeenCalledTimes(2);
+  });
+
+  it('should notify receivers once and ignore a stale close after channel replacement', async () => {
+    const chA = aManagedChannel();
+    const chB = aManagedChannel();
+    const invalidated = vi.fn();
+    connection.createChannel.mockResolvedValueOnce(chA).mockResolvedValueOnce(chB);
+    manager.on('channelInvalidated', invalidated);
+
+    await manager.getChannel('sender');
+    chA.emit('error', new Error('channel torn down'));
+    await manager.getChannel('sender');
+    chA.emit('close');
+
+    expect(invalidated).toHaveBeenCalledTimes(1);
+    expect(invalidated).toHaveBeenCalledWith('sender');
   });
 
   it('should recreate the channel after a channel close event', async () => {
