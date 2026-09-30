@@ -202,5 +202,30 @@ describe('RabbitMqModuleReceiver', () => {
       expect(mockChannel.cancel).toHaveBeenCalledWith('tag-A');
       expect(mockChannel.cancel).toHaveBeenCalledWith('tag-B');
     });
+
+    it('should cancel a consumer if shutdown races channel recovery', async () => {
+      const replacement = aMockAmqpChannel();
+      await receiver.subscribe('Transactions', [OCPP_CallAction.TransactionEvent], {});
+
+      let finishConsume!: (value: Awaited<ReturnType<typeof replacement.consume>>) => void;
+      const pendingConsume = new Promise<Awaited<ReturnType<typeof replacement.consume>>>(
+        (resolve) => {
+          finishConsume = resolve;
+        },
+      );
+      vi.mocked(replacement.consume).mockReturnValueOnce(pendingConsume);
+      vi.mocked(mockChannelManager.getChannel).mockResolvedValue(replacement);
+
+      mockChannelManager.emit('channelInvalidated', 'module-receiver-Transactions');
+      await vi.waitFor(() => expect(replacement.consume).toHaveBeenCalledTimes(1));
+
+      await receiver.shutdown();
+      finishConsume({ consumerTag: 'late-recovery-consumer' });
+
+      await vi.waitFor(() =>
+        expect(replacement.cancel).toHaveBeenCalledWith('late-recovery-consumer'),
+      );
+      expect(replacement.consume).toHaveBeenCalledTimes(1);
+    });
   });
 });

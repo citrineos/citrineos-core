@@ -253,5 +253,30 @@ describe('RabbitMqRouterReceiver', () => {
       expect(mockChannel.cancel).toHaveBeenCalledWith('instance-consumer-tag');
       expect(mockChannel.cancel).toHaveBeenCalledTimes(1);
     });
+
+    it('should cancel a consumer if shutdown races channel recovery', async () => {
+      const replacement = aMockAmqpChannel();
+      await receiver.subscribe('charger-1', undefined, { ocppConnectionName: 'CS001' });
+
+      let finishConsume!: (value: Awaited<ReturnType<typeof replacement.consume>>) => void;
+      const pendingConsume = new Promise<Awaited<ReturnType<typeof replacement.consume>>>(
+        (resolve) => {
+          finishConsume = resolve;
+        },
+      );
+      vi.mocked(replacement.consume).mockReturnValueOnce(pendingConsume);
+      vi.mocked(mockChannelManager.getChannel).mockResolvedValue(replacement);
+
+      mockChannelManager.emit('channelInvalidated', 'router-receiver');
+      await vi.waitFor(() => expect(replacement.consume).toHaveBeenCalledTimes(1));
+
+      await receiver.shutdown();
+      finishConsume({ consumerTag: 'late-recovery-consumer' });
+
+      await vi.waitFor(() =>
+        expect(replacement.cancel).toHaveBeenCalledWith('late-recovery-consumer'),
+      );
+      expect(replacement.consume).toHaveBeenCalledTimes(1);
+    });
   });
 });
