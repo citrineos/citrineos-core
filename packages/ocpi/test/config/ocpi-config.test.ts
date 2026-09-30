@@ -5,12 +5,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ZodError } from 'zod';
 
-import { ocpiConfigInputSchema, ocpiConfigSchema } from '@ocpi/config/ocpi-types.js';
+import { ocpiConfigInputSchema, ocpiConfigSchema } from '../../src/config/ocpi-types.js';
 import {
   OCPI_ENV_VAR_PREFIX,
   defineOcpiConfig,
   loadOcpiConfig,
-} from '@ocpi/config/define-ocpi-config.js';
+} from '../../src/config/define-ocpi-config.js';
 
 const OCPP1_6_URLS = {
   remoteStartTransactionRequestUrl: 'http://core/ocpp16/remoteStart',
@@ -258,6 +258,14 @@ describe('defineOcpiConfig', () => {
 
     expect(config.database.host).toBe('env-db-host');
     expect(config.database.username).toBe('ocpi');
+  });
+
+  it('leaves ocpiServer.trustProxy unset until a boolean env value turns it on', () => {
+    expect(defineOcpiConfig(aFullConfig()).ocpiServer.trustProxy).toBeUndefined();
+
+    setEnv('CITRINEOS_OCPI_OCPISERVER_TRUSTPROXY', 'true');
+
+    expect(defineOcpiConfig(aFullConfig()).ocpiServer.trustProxy).toBe(true);
   });
 
   it('overrides a top-level key', () => {
