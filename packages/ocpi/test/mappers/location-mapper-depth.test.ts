@@ -26,15 +26,15 @@ import {
   EvseMapper,
   LocationMapper,
   formatCoordinate,
-} from '@ocpi/mappers/location-mapper.js';
-import { ConnectorType } from '@ocpi/types/connector-type.js';
-import { ConnectorFormat } from '@ocpi/types/connector-format.js';
-import { PowerType } from '@ocpi/types/power-type.js';
-import { EvseStatus } from '@ocpi/types/evse-status.js';
-import { Capability } from '@ocpi/types/capability.js';
-import { ParkingRestriction } from '@ocpi/types/parking-restriction.js';
-import { ParkingType } from '@ocpi/types/parking-type.js';
-import { Facilities } from '@ocpi/types/facilities.js';
+} from '../../src/mappers/location-mapper.js';
+import { ConnectorType } from '../../src/types/connector-type.js';
+import { ConnectorFormat } from '../../src/types/connector-format.js';
+import { PowerType } from '../../src/types/power-type.js';
+import { EvseStatus } from '../../src/types/evse-status.js';
+import { Capability } from '../../src/types/capability.js';
+import { ParkingRestriction } from '../../src/types/parking-restriction.js';
+import { ParkingType } from '../../src/types/parking-type.js';
+import { Facilities } from '../../src/types/facilities.js';
 
 const UPDATED_AT = new Date('2026-08-20T11:00:00Z');
 
@@ -277,6 +277,27 @@ describe('ConnectorMapper', () => {
     expect(dto.max_voltage).toBeUndefined();
     expect(dto.tariff_ids).toBeUndefined();
     expect(dto.last_updated).toBe(UPDATED_AT);
+  });
+
+  it('turns the timestamptz string GraphQL delivers into a Date that serialises as RFC 3339 string(25)', () => {
+    const { connectorMapper } = mappers();
+
+    const dto = connectorMapper.fromPartialGraphql({
+      updatedAt: '2026-08-20T11:00:00.123456+00:00',
+    } as unknown as Partial<ConnectorDto>);
+
+    expect(dto.last_updated).toEqual(new Date('2026-08-20T11:00:00.123Z'));
+    expect(JSON.stringify(dto.last_updated)).toBe('"2026-08-20T11:00:00.123Z"');
+  });
+
+  it('refuses a timestamp that cannot form a Date instead of serialising last_updated as null', () => {
+    const { connectorMapper } = mappers();
+
+    expect(() =>
+      connectorMapper.fromPartialGraphql({
+        updatedAt: 'yesterday',
+      } as unknown as Partial<ConnectorDto>),
+    ).toThrow('Not a timestamp: yesterday');
   });
 });
 
