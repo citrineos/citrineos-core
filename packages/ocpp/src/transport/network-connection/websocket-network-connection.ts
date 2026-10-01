@@ -150,14 +150,6 @@ export class WebsocketNetworkConnection implements INetworkConnection {
     for (const websocketServerConfig of this._websocketServers) {
       const _httpServer = await this._createAndStartWebsocketServer(websocketServerConfig);
       this._httpServersMap.set(websocketServerConfig.id, _httpServer);
-      if (websocketServerConfig.securityProfile > 1) {
-        const certManager = new TlsCredentialManager(
-          websocketServerConfig,
-          this._fileStorage,
-          this._logger,
-        );
-        this._certManagersMap.set(websocketServerConfig.id, certManager);
-      }
     }
   }
 
@@ -189,6 +181,11 @@ export class WebsocketNetworkConnection implements INetworkConnection {
     const certManager = this._certManagersMap.get(serverId);
     if (certManager) {
       await certManager.reload();
+      const httpsServer = this._httpServersMap.get(serverId);
+      if (httpsServer instanceof https.Server) {
+        const { key, cert, ca } = await certManager.getCredentials();
+        httpsServer.setSecureContext({ key, cert, ca });
+      }
     } else {
       this._logger.error(`No TLS Credential Manager found for server ${serverId}`);
       throw new Error(`No TLS Credential Manager found for server ${serverId}`);
@@ -937,15 +934,19 @@ export class WebsocketNetworkConnection implements INetworkConnection {
   private async _generateServerOptions(
     config: WebsocketServerConfig,
   ): Promise<https.ServerOptions> {
+    let certManager = this._certManagersMap.get(config.id);
+    if (!certManager) {
+      certManager = new TlsCredentialManager(config, this._fileStorage, this._logger);
+      this._certManagersMap.set(config.id, certManager);
+    }
+    const { key, cert } = await certManager.getServerOptions(config);
     const serverOptions: https.ServerOptions = {
-      SNICallback:
-        config.securityProfile > 1
-          ? async (serverName, cb) => {
-              const opts = await this._certManagersMap.get(config.id)!.getServerOptions(config);
-              const ctx = tls.createSecureContext(opts);
-              cb(null, ctx);
-            }
-          : undefined,
+      key,
+      cert,
+      SNICallback: async (serverName, cb) => {
+        const opts = await certManager.getServerOptions(config);
+        cb(null, tls.createSecureContext(opts));
+      },
       ca:
         config.securityProfile > 2 && config.rootCACertificateFilePath
           ? (await this._fileStorage.getFile(config.rootCACertificateFilePath, undefined, {
