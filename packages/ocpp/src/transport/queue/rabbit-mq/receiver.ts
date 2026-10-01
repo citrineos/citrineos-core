@@ -32,6 +32,7 @@ export abstract class RabbitMqReceiver extends AbstractMessageHandler {
   private _channelRecoveries = new Map<string, Promise<void>>();
   private _pendingChannelRecoveries = new Set<string>();
   private readonly _channelInvalidationListener: (channelId: string) => void;
+  private readonly _connectionConnectedListener: () => Promise<void>;
 
   constructor({
     config,
@@ -74,7 +75,7 @@ export abstract class RabbitMqReceiver extends AbstractMessageHandler {
     };
     this._channelManager.on('channelInvalidated', this._channelInvalidationListener);
 
-    this._channelManager.getConnectionManager().on('connected', async () => {
+    this._connectionConnectedListener = async () => {
       if (this._stopping) return;
       try {
         await Promise.allSettled([...this._channelRecoveries.values()]);
@@ -83,7 +84,10 @@ export abstract class RabbitMqReceiver extends AbstractMessageHandler {
       } catch (err) {
         this._logger.error('Failed to reinitialize after reconnect:', err);
       }
-    });
+    };
+    this._channelManager
+      .getConnectionManager()
+      .on('connected', this._connectionConnectedListener);
   }
 
   /**
@@ -97,6 +101,9 @@ export abstract class RabbitMqReceiver extends AbstractMessageHandler {
   protected _stopRecovery(): void {
     this._stopping = true;
     this._channelManager.off('channelInvalidated', this._channelInvalidationListener);
+    this._channelManager
+      .getConnectionManager()
+      .off('connected', this._connectionConnectedListener);
   }
 
   protected get _isStopping(): boolean {
@@ -125,20 +132,17 @@ export abstract class RabbitMqReceiver extends AbstractMessageHandler {
   private async _drainChannelRecoveries(channelId: string): Promise<void> {
     while (this._pendingChannelRecoveries.delete(channelId)) {
       if (this._stopping) return;
-      const retryDelaysMs = [100, 250];
-      for (let attempt = 0; attempt <= retryDelaysMs.length; attempt++) {
+      const retryDelaysMs = [100, 250, 500, 1_000, 2_000, 5_000];
+      let attempt = 0;
+      while (!this._stopping) {
         try {
-          if (!this._stopping) await this._onChannelInvalidated(channelId);
+          await this._onChannelInvalidated(channelId);
           break;
         } catch (error) {
-          this._logger.error(
-            `Failed to restore receiver channel ${channelId} (attempt ${attempt + 1}/3):`,
-            error,
-          );
-          const delay = retryDelaysMs[attempt];
-          if (delay !== undefined && !this._stopping) {
-            await new Promise((resolve) => setTimeout(resolve, delay));
-          }
+          this._logger.error(`Failed to restore receiver channel ${channelId}:`, error);
+          const delay = retryDelaysMs[Math.min(attempt, retryDelaysMs.length - 1)];
+          attempt++;
+          await new Promise((resolve) => setTimeout(resolve, delay ?? 5_000));
         }
       }
     }

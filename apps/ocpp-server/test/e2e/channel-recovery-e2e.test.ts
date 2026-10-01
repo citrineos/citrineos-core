@@ -6,7 +6,7 @@ import { CitrineOSServer } from '@citrineos/ocpp';
 import { ConfigLoader, type IMessageRouter } from '@citrineos/base';
 import { OCPP_CallAction, OCPPVersion, type OCPP1_6, type OCPP2_0_1 } from '@citrineos/types';
 import type { RabbitMQChannelManager, RabbitMQConnectionManager } from '@citrineos/ocpp';
-import { execFileSync } from 'child_process';
+import { execFileSync, execSync } from 'child_process';
 import { randomBytes } from 'crypto';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { type AddressInfo, createServer } from 'net';
@@ -18,7 +18,6 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import WebSocket from 'ws';
 
 const SERVER_ROOT = fileURLToPath(new URL('../../', import.meta.url));
-const PNPM_CLI = join(process.env.APPDATA ?? '', 'npm', 'node_modules', 'pnpm', 'bin', 'pnpm.cjs');
 const EXCHANGE = 'citrineos';
 const INSTANCE = `channel-recovery-${process.pid}-${Date.now()}`;
 const ROUTER_QUEUE = `rabbit_queue_router_${INSTANCE}`;
@@ -465,7 +464,7 @@ describe('CitrineOS channel-only recovery with OCPP stations', () => {
 
     const testEnvironment = buildTestEnvironment();
     testEnvironment.CITRINEOS_MESSAGEBROKER_AMQP_URL = `amqp://${RABBIT_TEST_USER}:${RABBIT_TEST_PASSWORD}@127.0.0.1:${amqpPort}`;
-    execFileSync(process.execPath, [PNPM_CLI, 'run', 'db:migrate'], {
+    execSync('pnpm run db:migrate', {
       cwd: SERVER_ROOT,
       env: testEnvironment,
       stdio: 'pipe',

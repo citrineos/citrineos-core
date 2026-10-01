@@ -242,6 +242,21 @@ describe('RabbitMqRouterReceiver', () => {
   });
 
   describe('shutdown()', () => {
+    it('should detach reconnect and channel recovery listeners', async () => {
+      const connectedListener = mockConnectionManager.on.mock.calls.find(
+        ([event]) => event === 'connected',
+      )?.[1];
+      expect(connectedListener).toBeTypeOf('function');
+
+      await receiver.shutdown();
+
+      expect(mockConnectionManager.off).toHaveBeenCalledWith('connected', connectedListener);
+      expect(mockChannelManager.off).toHaveBeenCalledWith(
+        'channelInvalidated',
+        expect.any(Function),
+      );
+    });
+
     it('should cancel the single instance consumer', async () => {
       (mockChannel.consume as any).mockResolvedValueOnce({
         consumerTag: 'instance-consumer-tag',

@@ -86,11 +86,13 @@ export function aMockAmqpChannel(): amqplib.Channel {
 }
 
 /**
- * Minimal mock for RabbitMQConnectionManager — only the `on` event registration
- * is needed by RabbitMqReceiver for reconnect handling.
+ * Minimal mock for the connection lifecycle events used by RabbitMqReceiver.
  */
-export function aMockConnectionManager(): { on: ReturnType<typeof vi.fn> } {
-  return { on: vi.fn() };
+export function aMockConnectionManager(): {
+  on: ReturnType<typeof vi.fn>;
+  off: ReturnType<typeof vi.fn>;
+} {
+  return { on: vi.fn(), off: vi.fn() };
 }
 
 /**
