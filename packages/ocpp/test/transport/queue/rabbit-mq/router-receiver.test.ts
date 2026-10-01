@@ -139,6 +139,44 @@ describe('RabbitMqRouterReceiver', () => {
 
       expect(replacement.consume).toHaveBeenCalledTimes(1);
     });
+
+    it('should not duplicate the consumer when channel and connection recovery overlap', async () => {
+      await receiver.subscribe('charger-1', undefined, { ocppConnectionName: 'CS001' });
+      const replacement = aMockAmqpChannel();
+      vi.mocked(mockChannelManager.getChannel).mockResolvedValue(replacement);
+
+      let releaseAssertions!: () => void;
+      let assertionCount = 0;
+      const assertionsGate = new Promise<void>((resolve) => {
+        releaseAssertions = resolve;
+      });
+      vi.mocked(replacement.assertExchange).mockImplementation(async () => {
+        assertionCount++;
+        await assertionsGate;
+        return { exchange: 'test-exchange', messageCount: 0, consumerCount: 0 };
+      });
+
+      const connectedListener = mockConnectionManager.on.mock.calls.find(
+        ([event]) => event === 'connected',
+      )?.[1] as () => Promise<void>;
+      const connectionRecovery = connectedListener();
+      await vi.waitFor(() => expect(assertionCount).toBe(1));
+
+      mockChannelManager.emit('channelInvalidated', 'router-receiver');
+      const channelRecoveries = Reflect.get(receiver, '_channelRecoveries') as Map<
+        string,
+        Promise<void>
+      >;
+      const channelRecovery = channelRecoveries.get('router-receiver');
+      expect(channelRecovery).toBeDefined();
+      await vi.waitFor(() => expect(assertionCount).toBe(1));
+
+      releaseAssertions();
+      await Promise.all([connectionRecovery, channelRecovery]);
+
+      expect(replacement.assertExchange).toHaveBeenCalledTimes(1);
+      expect(replacement.consume).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('subscribe() — binding behaviour', () => {

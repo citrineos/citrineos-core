@@ -85,9 +85,7 @@ export abstract class RabbitMqReceiver extends AbstractMessageHandler {
         this._logger.error('Failed to reinitialize after reconnect:', err);
       }
     };
-    this._channelManager
-      .getConnectionManager()
-      .on('connected', this._connectionConnectedListener);
+    this._channelManager.getConnectionManager().on('connected', this._connectionConnectedListener);
   }
 
   /**
@@ -101,9 +99,7 @@ export abstract class RabbitMqReceiver extends AbstractMessageHandler {
   protected _stopRecovery(): void {
     this._stopping = true;
     this._channelManager.off('channelInvalidated', this._channelInvalidationListener);
-    this._channelManager
-      .getConnectionManager()
-      .off('connected', this._connectionConnectedListener);
+    this._channelManager.getConnectionManager().off('connected', this._connectionConnectedListener);
   }
 
   protected get _isStopping(): boolean {

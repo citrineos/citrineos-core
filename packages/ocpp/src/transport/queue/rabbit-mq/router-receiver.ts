@@ -30,6 +30,7 @@ export class RabbitMqRouterReceiver extends RabbitMqReceiver {
   protected readonly _instanceQueueName: string;
   protected readonly _prefetch: number;
   protected _instanceQueueReady?: Promise<void>;
+  protected _instanceQueueRecovery?: Promise<void>;
   protected _instanceConsumerTags: string[] = [];
   protected _instanceConsumerChannel?: amqplib.Channel;
   protected _instanceBindings = new Map<string, Array<Record<string, string>>>();
@@ -97,44 +98,7 @@ export class RabbitMqRouterReceiver extends RabbitMqReceiver {
    */
   protected async _onReconnect(): Promise<void> {
     if (!this._instanceQueueReady) return; // no charger has connected yet, nothing to reinitialize
-
-    const queueName = this._instanceQueueName;
-    const channel = await this._channelManager.getChannel(RabbitMqRouterReceiver.CHANNEL_ID);
-    if (this._isStopping) return;
-    if (this._instanceConsumerChannel === channel && this._instanceConsumerTags.length > 0) return;
-    this._instanceConsumerChannel = undefined;
-
-    await channel.assertExchange(this.exchange, 'headers', { durable: false });
-    await channel.assertQueue(queueName, {
-      durable: true,
-      autoDelete: true,
-      exclusive: false,
-    });
-
-    // Re-bind all active charger subscriptions (idempotent if queue already has them)
-    let reboundCount = 0;
-    for (const bindings of this._instanceBindings.values()) {
-      for (const args of bindings) {
-        await channel.bindQueue(queueName, this.exchange, '', args);
-        if (this._isStopping) return;
-        reboundCount++;
-      }
-    }
-
-    // Re-create the single consumer on the new channel
-    const consumerTag = await this._consume(channel, queueName, this._prefetch);
-    if (this._isStopping) {
-      if (consumerTag) await channel.cancel(consumerTag).catch(() => undefined);
-      return;
-    }
-    if (!consumerTag) return;
-    this._instanceConsumerTags = [consumerTag];
-    this._instanceConsumerChannel = channel;
-
-    this._logger.info(
-      `[instance-queue] Reinitialized ${queueName} after reconnect: ` +
-        `1 consumer, ${reboundCount} binding(s) restored`,
-    );
+    await this._recoverInstanceQueue();
   }
 
   protected async _onChannelInvalidated(channelId: string): Promise<void> {
@@ -145,15 +109,27 @@ export class RabbitMqRouterReceiver extends RabbitMqReceiver {
       // The in-flight initial consumer may have failed with the channel that was replaced.
     }
     if (this._isStopping) return;
+    await this._recoverInstanceQueue();
+  }
 
-    const channel = await this._channelManager.getChannel(channelId);
+  private _recoverInstanceQueue(): Promise<void> {
+    if (this._instanceQueueRecovery) return this._instanceQueueRecovery;
+    this._instanceQueueRecovery = this._restoreInstanceQueue().finally(() => {
+      this._instanceQueueRecovery = undefined;
+    });
+    return this._instanceQueueRecovery;
+  }
+
+  private async _restoreInstanceQueue(): Promise<void> {
+    const queueName = this._instanceQueueName;
+    const channel = await this._channelManager.getChannel(RabbitMqRouterReceiver.CHANNEL_ID);
     if (this._isStopping) return;
     if (this._instanceConsumerChannel === channel && this._instanceConsumerTags.length > 0) return;
 
     this._instanceConsumerTags = [];
     this._instanceConsumerChannel = undefined;
     await channel.assertExchange(this.exchange, 'headers', { durable: false });
-    await channel.assertQueue(this._instanceQueueName, {
+    await channel.assertQueue(queueName, {
       durable: true,
       autoDelete: true,
       exclusive: false,
@@ -163,13 +139,13 @@ export class RabbitMqRouterReceiver extends RabbitMqReceiver {
     let reboundCount = 0;
     for (const bindings of this._instanceBindings.values()) {
       for (const args of bindings) {
-        await channel.bindQueue(this._instanceQueueName, this.exchange, '', args);
+        await channel.bindQueue(queueName, this.exchange, '', args);
         if (this._isStopping) return;
         reboundCount++;
       }
     }
 
-    const consumerTag = await this._consume(channel, this._instanceQueueName, this._prefetch);
+    const consumerTag = await this._consume(channel, queueName, this._prefetch);
     if (this._isStopping) {
       if (consumerTag) await channel.cancel(consumerTag).catch(() => undefined);
       return;
@@ -178,7 +154,7 @@ export class RabbitMqRouterReceiver extends RabbitMqReceiver {
     this._instanceConsumerTags = [consumerTag];
     this._instanceConsumerChannel = channel;
     this._logger.info(
-      `[instance-queue] Restored ${this._instanceQueueName} after channel failure: ` +
+      `[instance-queue] Restored ${queueName} after channel failure: ` +
         `1 consumer, ${reboundCount} binding(s) restored`,
     );
   }
