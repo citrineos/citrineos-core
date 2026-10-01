@@ -5,6 +5,7 @@ import { LocalStorage } from '@/config/index.js';
 import { childLogger, type IFileStorage } from '@citrineos/base';
 import type { WebsocketServerConfig } from '@citrineos/types';
 import * as https from 'https';
+import * as tls from 'tls';
 import type { ILogObj, Logger } from 'tslog';
 
 export class TlsCredentialManager {
@@ -21,8 +22,15 @@ export class TlsCredentialManager {
   }
 
   async reload(): Promise<void> {
-    this._credentialsPromise = this._readFromStorage();
-    await this._credentialsPromise;
+    // Swap only after the new credentials are read and usable, so a failure keeps the last good ones.
+    try {
+      const credentials = await this._readFromStorage();
+      tls.createSecureContext(credentials);
+      this._credentialsPromise = Promise.resolve(credentials);
+    } catch (error) {
+      this._logger.error('TLS credentials reload failed, keeping previous credentials', error);
+      throw error;
+    }
     this._logger.info('TLS credentials reloaded from storage');
   }
 

@@ -434,25 +434,69 @@ describe('TlsCredentialManager', () => {
     );
   });
 
-  it('reload re-reads credentials from storage', async () => {
-    const storage = makeStorage();
-    storage.exists.mockResolvedValue(true);
-    storage.getFile
-      .mockResolvedValueOnce('KEY-1')
-      .mockResolvedValueOnce('CERT-1')
-      .mockResolvedValueOnce('KEY-2')
-      .mockResolvedValueOnce('CERT-2');
-    const config = makeConfig({ rootCACertificateFilePath: undefined });
+  describe('reload', () => {
+    const read = (p: string) => fs.readFileSync(p, 'utf-8');
+    const rootKeyPath = resourcePath('RootKeySample.pem');
 
-    const manager = new TlsCredentialManager(config, storage as unknown as IFileStorage, logger);
-    const before = await manager.getServerOptions(config);
-    await manager.reload();
-    const after = await manager.getServerOptions(config);
+    it('re-reads credentials from storage', async () => {
+      const storage = makeStorage();
+      storage.exists.mockResolvedValue(true);
+      storage.getFile
+        .mockResolvedValueOnce('KEY-1')
+        .mockResolvedValueOnce('CERT-1')
+        .mockResolvedValueOnce(read(keyPath))
+        .mockResolvedValueOnce(read(certPath));
+      const config = makeConfig({ rootCACertificateFilePath: undefined });
 
-    expect(before.cert).toEqual(Buffer.from('CERT-1'));
-    expect(after.cert).toEqual(Buffer.from('CERT-2'));
-    expect(storage.getFile).toHaveBeenCalledTimes(4);
-    expect(logger.info).toHaveBeenCalledWith('TLS credentials reloaded from storage');
+      const manager = new TlsCredentialManager(config, storage as unknown as IFileStorage, logger);
+      const before = await manager.getServerOptions(config);
+      await manager.reload();
+      const after = await manager.getServerOptions(config);
+
+      expect(before.cert).toEqual(Buffer.from('CERT-1'));
+      expect(after.cert).toEqual(Buffer.from(read(certPath)));
+      expect(storage.getFile).toHaveBeenCalledTimes(4);
+      expect(logger.info).toHaveBeenCalledWith('TLS credentials reloaded from storage');
+    });
+
+    it('keeps the previous credentials when the key cannot be read', async () => {
+      const storage = makeStorage();
+      storage.exists.mockResolvedValue(true);
+      storage.getFile
+        .mockResolvedValueOnce(read(keyPath))
+        .mockResolvedValueOnce(read(certPath))
+        .mockResolvedValueOnce(undefined);
+      const config = makeConfig({ rootCACertificateFilePath: undefined });
+
+      const manager = new TlsCredentialManager(config, storage as unknown as IFileStorage, logger);
+      const before = await manager.getServerOptions(config);
+
+      await expect(manager.reload()).rejects.toThrow(`TLS key file not found: ${keyPath}`);
+      const after = await manager.getServerOptions(config);
+
+      expect(after.key).toEqual(before.key);
+      expect(after.cert).toEqual(before.cert);
+    });
+
+    it('keeps the previous credentials when the key does not match the certificate', async () => {
+      const storage = makeStorage();
+      storage.exists.mockResolvedValue(true);
+      storage.getFile
+        .mockResolvedValueOnce(read(keyPath))
+        .mockResolvedValueOnce(read(certPath))
+        .mockResolvedValueOnce(read(rootKeyPath))
+        .mockResolvedValueOnce(read(certPath));
+      const config = makeConfig({ rootCACertificateFilePath: undefined });
+
+      const manager = new TlsCredentialManager(config, storage as unknown as IFileStorage, logger);
+      const before = await manager.getServerOptions(config);
+
+      await expect(manager.reload()).rejects.toThrow();
+      const after = await manager.getServerOptions(config);
+
+      expect(after.key).toEqual(before.key);
+      expect(after.key).toEqual(Buffer.from(read(keyPath)));
+    });
   });
 });
 

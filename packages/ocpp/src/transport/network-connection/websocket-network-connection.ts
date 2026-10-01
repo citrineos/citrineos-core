@@ -941,9 +941,13 @@ export class WebsocketNetworkConnection implements INetworkConnection {
       SNICallback:
         config.securityProfile > 1
           ? async (serverName, cb) => {
-              const opts = await this._certManagersMap.get(config.id)!.getServerOptions(config);
-              const ctx = tls.createSecureContext(opts);
-              cb(null, ctx);
+              try {
+                const opts = await this._certManagersMap.get(config.id)!.getServerOptions(config);
+                cb(null, tls.createSecureContext(opts));
+              } catch (error) {
+                this._logger.error(`SNI callback failed for server ${config.id}`, error);
+                cb(error instanceof Error ? error : new Error(String(error)));
+              }
             }
           : undefined,
       ca:
