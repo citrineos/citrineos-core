@@ -142,7 +142,13 @@ export class Transaction extends Model implements TransactionDto {
   @Column(DataType.DECIMAL)
   declare meterStart?: number | null;
 
-  @Column(DataType.DECIMAL)
+  @Column({
+    type: DataType.DECIMAL,
+    get() {
+      const value = this.getDataValue('totalKwh');
+      return value == null ? value : Number(value);
+    },
+  })
   declare totalKwh?: number | null;
 
   @Column(DataType.STRING)

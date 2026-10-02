@@ -138,6 +138,20 @@ function aRegisterSample(kwh: number, timestamp: string): OCPP2_0_1.MeterValueTy
   } as OCPP2_0_1.MeterValueType;
 }
 
+function anIntervalSample(wh: number, timestamp: string): OCPP2_0_1.MeterValueType {
+  return {
+    timestamp,
+    sampledValue: [
+      {
+        value: wh,
+        measurand: OCPP2_0_1.MeasurandEnumType.Energy_Active_Import_Interval,
+        context: OCPP2_0_1.ReadingContextEnumType.Sample_Periodic,
+        unitOfMeasure: { unit: 'Wh' },
+      },
+    ],
+  } as OCPP2_0_1.MeterValueType;
+}
+
 // Register reading in the already-mapped DTO shape the 1.6 paths receive.
 function aDtoReading(kwh: number, timestamp: string): MeterValueDto {
   return {
@@ -289,6 +303,52 @@ describe('SequelizeTransactionEventRepository', () => {
       expect(row.isActive).toBe(true);
       expect(Number(row.meterStart)).toBe(1);
       expect(Number(row.totalKwh)).toBe(4.5);
+    });
+
+    it('sums interval readings onto totalKwh as numbers across events', async () => {
+      await aStation();
+      const repo = makeRepo();
+      const send = (eventType: OCPP2_0_1.TransactionEventEnumType, seqNo: number, wh?: number) =>
+        repo.createOrUpdateTransactionByTransactionEventAndStationId(
+          TENANT_A,
+          aTxEvent(eventType, {
+            timestamp: T1,
+            seqNo,
+            ...(wh === undefined ? {} : { meterValue: [anIntervalSample(wh, T1)] }),
+          }),
+          STATION,
+        );
+
+      const started = await send(OCPP2_0_1.TransactionEventEnumType.Started, 0);
+      await send(OCPP2_0_1.TransactionEventEnumType.Updated, 1, 500);
+      await send(OCPP2_0_1.TransactionEventEnumType.Updated, 2, 700);
+      await send(OCPP2_0_1.TransactionEventEnumType.Ended, 3, 200);
+
+      const row = (await Transaction.findByPk(started.id))!;
+      expect(row.totalKwh).toBeCloseTo(1.4, 6);
+      expect(row.isActive).toBe(false);
+    });
+
+    it('sums interval readings onto a whole-number totalKwh instead of concatenating', async () => {
+      await aStation();
+      const repo = makeRepo();
+      const send = (eventType: OCPP2_0_1.TransactionEventEnumType, seqNo: number, wh?: number) =>
+        repo.createOrUpdateTransactionByTransactionEventAndStationId(
+          TENANT_A,
+          aTxEvent(eventType, {
+            timestamp: T1,
+            seqNo,
+            ...(wh === undefined ? {} : { meterValue: [anIntervalSample(wh, T1)] }),
+          }),
+          STATION,
+        );
+
+      const started = await send(OCPP2_0_1.TransactionEventEnumType.Started, 0);
+      await send(OCPP2_0_1.TransactionEventEnumType.Updated, 1, 1000);
+      await send(OCPP2_0_1.TransactionEventEnumType.Updated, 2, 500);
+
+      const row = (await Transaction.findByPk(started.id))!;
+      expect(row.totalKwh).toBe(1.5);
     });
 
     it('Ended event deactivates the transaction and stamps endTime', async () => {
