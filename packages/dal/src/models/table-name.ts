@@ -65,6 +65,11 @@ export const TableName = {
   MessageInfos: 'MessageInfos',
   OCPPMessages: 'OCPPMessages',
 
+  // Network alerts
+  NetworkAlertConfigs: 'NetworkAlertConfigs',
+  NetworkAlertOccurrences: 'NetworkAlertOccurrences',
+  NetworkAlerts: 'NetworkAlerts',
+
   // Reservation
   Reservations: 'Reservations',
 

@@ -46,6 +46,11 @@ export {
 } from '../../models/location/index.js';
 export { ChargingStationSequence } from '../../models/charging-station-sequence/index.js';
 export { MessageInfo } from '../../models/message-info/index.js';
+export {
+  NetworkAlert,
+  NetworkAlertConfig,
+  NetworkAlertOccurrence,
+} from '../../models/network-alert/index.js';
 export { Tariff } from '../../models/tariff/index.js';
 export { Subscription } from '../../models/subscription/index.js';
 export {
