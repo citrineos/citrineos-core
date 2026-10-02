@@ -51,7 +51,7 @@ export const chargingProfileTable = pgTable(
   chargingProfileColumns(),
   // Sequelize composite unique 'stationName_tenantId_id'.
   (t) => [
-    uniqueIndex('charging_profiles_ocpp_connection_name_id_tenant_id').on(
+    uniqueIndex('ChargingProfiles_stationId_tenantId_id').on(
       t.ocppConnectionName,
       t.id,
       t.tenantId,

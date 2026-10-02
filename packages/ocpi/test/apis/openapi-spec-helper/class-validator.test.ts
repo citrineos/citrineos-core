@@ -18,10 +18,10 @@ import {
   defaultClassValidatorJsonSchemaOptions,
   nestedClassToJsonSchema,
   refPointerPrefix,
-} from '../../../src/apis/openapi-spec-helper/class-validator.js';
-import { SchemaStore } from '../../../src/apis/openapi-spec-helper/schema-store.js';
-import { Optional } from '../../../src/apis/decorators/optional.js';
-import { Enum } from '../../../src/apis/decorators/enum.js';
+} from '@ocpi/apis/openapi-spec-helper/class-validator.js';
+import { SchemaStore } from '@ocpi/apis/openapi-spec-helper/schema-store.js';
+import { Optional } from '@ocpi/apis/decorators/optional.js';
+import { Enum } from '@ocpi/apis/decorators/enum.js';
 
 enum Status {
   ACTIVE = 'ACTIVE',

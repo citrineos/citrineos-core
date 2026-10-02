@@ -124,7 +124,7 @@ export class Tariff extends Model implements TariffDto {
   declare taxRate?: number | null;
 
   @Column(DataType.JSONB)
-  declare tariffAltText?: object[] | null;
+  declare tariffAltText?: Record<string, any> | null;
 
   // OCPP 2.1 TariffType fields
 

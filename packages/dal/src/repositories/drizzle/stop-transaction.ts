@@ -16,7 +16,7 @@ import { DrizzleRepository } from './base.js';
 export function toStopTransactionDto(entity: StopTransactionEntity): StopTransactionDto {
   const dto: Explicit<StopTransactionDto> = {
     id: entity.id,
-    ocppConnectionName: entity.ocppConnectionName,
+    ocppConnectionName: entity.ocppConnectionName ?? '',
     transactionDatabaseId: entity.transactionDatabaseId,
     transactionCreatedAt: entity.transactionCreatedAt,
     meterStop: entity.meterStop,

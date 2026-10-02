@@ -125,6 +125,7 @@ export class Authorization extends Model implements AuthorizationDto {
   @Column(DataType.DECIMAL)
   declare prepaidBalance?: number | null;
 
+  @Column(DataType.JSONB)
   declare customData?: any | null;
 
   // For cases where Authorization is owned by an upstream partner, i.e. an eMSP

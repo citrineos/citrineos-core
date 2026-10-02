@@ -7,11 +7,11 @@ import { TableName } from '@dal/models/table-name.js';
 import {
   boolean,
   integer,
-  jsonb,
+  json,
   numeric,
-  primaryKey,
   pgSchema,
   pgTable,
+  primaryKey,
   serial,
   timestamp,
   varchar,
@@ -41,7 +41,7 @@ function transactionEventColumns() {
     transactionCreatedAt: timestamp('transactionCreatedAt', { withTimezone: true, mode: 'date' })
       .notNull()
       .$defaultFn(() => new Date()),
-    transactionInfo: jsonb('transactionInfo').$type<TransactionType>(),
+    transactionInfo: json('transactionInfo').$type<TransactionType>(),
     evseId: integer('evseId'),
     idTokenValue: varchar('idTokenValue', { length: 255 }),
     idTokenType: varchar('idTokenType', { length: 255 }),

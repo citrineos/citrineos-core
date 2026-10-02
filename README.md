@@ -88,7 +88,7 @@ Here's a **flowchart-style overview** of CitrineOS architecture and message flow
    ┌─────┴─────────┐                    ┌─────────────┐            │
    ▼               ▼                    │ File Storage│            ▼
 ┌─────────────┐ ┌─────────────┐         │ (S3 / GCS / │      ┌─────────────┐
-│ Message     │ │ PostgreSQL  │         │  MinIO)     │      │ PostgreSQL  │
+│ Message     │ │ PostgreSQL  │         │  local)     │      │ PostgreSQL  │
 │ Broker      │ │ (PostGIS)   │         └─────────────┘      │ (PostGIS)   │
 │ (RabbitMQ)  │ │ Persistence │                              │ (same DB)   │
 └─────────────┘ └─────────────┘                              └─────────────┘
@@ -100,7 +100,7 @@ Here's a **flowchart-style overview** of CitrineOS architecture and message flow
 2. **CitrineOS Server** receives and routes messages via **WebSocket** to the **OCPP Router**.
 3. The **Message Broker (RabbitMQ)** handles **inter-module communication**, enabling asynchronous processing between the OCPP Router and other server modules.
 4. Operational and configuration data are persisted in **PostgreSQL** (with the PostGIS extension).
-5. Files and assets are stored in **Amazon S3** or **Google Cloud Storage (GCS)** in supported environments. **MinIO** is used for **local development**, providing **S3-compatible storage**. Local development does **not** support a GCS-compatible storage backend.
+5. Files and assets are stored on the **local filesystem** by default, or in **Amazon S3** (or another S3-compatible store) or **Google Cloud Storage (GCS)**, selected by `fileAccess.type`. The Docker stack uses local storage.
 6. The **Operator UI** reads data through the **Hasura GraphQL Engine** (which queries the same PostgreSQL database) and sends commands and manages entities through the server's **REST Data and Message APIs**.
 
 ## Repository Structure
@@ -288,7 +288,7 @@ Before you begin, make sure you have the following installed on your system:
 ## Running the Full Stack with Docker
 
 The quickest way to get a complete environment running is the launcher at the repository root, which starts the
-server, the operator UI, RabbitMQ, PostgreSQL, MinIO, and Hasura together. It picks the right Compose files and
+server, the operator UI, RabbitMQ, PostgreSQL, and Hasura together. It picks the right Compose files and
 profiles for you based on a few flags:
 
 ```shell
@@ -349,9 +349,6 @@ Once a stack is running, the following services should be available:
   - `15672`: RabbitMQ [management interface](http://localhost:15672)
 - **PostgreSQL** (service name: ocpp-db), PostGIS-enabled PostgreSQL database for persistence
   - `5432`: SQL TCP connection
-- **MinIO** (service name: minio) for S3-compatible local file storage
-  - `9000`: S3 API endpoint
-  - `9001`: MinIO [web console](http://localhost:9001)
 - **Hasura GraphQL Engine** (service name: graphql-engine)
   - `8090`: [Hasura console](http://localhost:8090)
 

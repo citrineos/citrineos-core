@@ -8,8 +8,8 @@ import { Logger } from 'tslog';
 import {
   COMMAND_RESPONSE_URL_CACHE_NAMESPACE,
   COMMAND_RESPONSE_URL_CACHE_RESOLVED,
-} from '../../src/util/consts.js';
-import { CommandsClientApi } from '../../src/transport/trigger/commands-client-api.js';
+} from '@ocpi/util/consts.js';
+import { CommandsClientApi } from '@ocpi/transport/trigger/commands-client-api.js';
 
 const COMMAND_ID = 'cmd-1';
 const COMMAND_TIMEOUT_SECONDS = 30;

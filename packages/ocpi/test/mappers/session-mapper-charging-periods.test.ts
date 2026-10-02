@@ -10,11 +10,11 @@ import { Logger } from 'tslog';
 
 // LocationsService is a typedi-decorated service sitting on an import cycle with this mapper.
 // Charging period mapping never reaches it.
-vi.mock('../../src/services/locations-service.js', () => ({ LocationsService: class {} }));
+vi.mock('@ocpi/services/locations-service.js', () => ({ LocationsService: class {} }));
 
-import { SessionMapper } from '../../src/mappers/session-mapper.js';
-import { CdrDimensionType } from '../../src/types/cdr-dimension-type.js';
-import type { CdrDimension } from '../../src/types/cdr-dimension.js';
+import { SessionMapper } from '@ocpi/mappers/session-mapper.js';
+import { CdrDimensionType } from '@ocpi/types/cdr-dimension-type.js';
+import type { CdrDimension } from '@ocpi/types/cdr-dimension.js';
 
 const TARIFF_ID = '7';
 

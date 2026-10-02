@@ -12,8 +12,8 @@ vi.mock('../../../index.js', () => ({
   CommandType: { START_SESSION: 'START_SESSION', UNLOCK_CONNECTOR: 'UNLOCK_CONNECTOR' },
   ModuleId: { Commands: 'commands' },
 }));
-vi.mock('../../../src/transport/graphql/index.js', () => ({ OcpiGraphqlClient: class {} }));
-vi.mock('../../../src/transport/trigger/commands-client-api.js', () => ({
+vi.mock('@ocpi/transport/graphql/index.js', () => ({ OcpiGraphqlClient: class {} }));
+vi.mock('@ocpi/transport/trigger/commands-client-api.js', () => ({
   CommandsClientApi: class {},
 }));
 
@@ -32,7 +32,7 @@ vi.mock('typedi', () => {
   };
 });
 
-import { OCPP1_6_CommandHandler } from '../../../src/services/ocpp-command-handlers/ocpp-16-command-handler.js';
+import { OCPP1_6_CommandHandler } from '@ocpi/services/ocpp-command-handlers/ocpp-16-command-handler.js';
 
 /**
  * OCPI addresses a connector by its database id; OCPP 1.6 addresses it by the per-station serial

@@ -6,12 +6,12 @@ import type { TenantPartnerDto } from '@citrineos/types';
 import { describe, expect, it, vi } from 'vitest';
 import { Logger } from 'tslog';
 
-import { CredentialsService } from '../../src/services/credentials-service.js';
-import type { CredentialsDTO } from '../../src/types/dto/credentials-dto.js';
-import { EndpointIdentifier } from '../../src/types/endpoint-identifier.js';
-import { InterfaceRole } from '../../src/types/interface-role.js';
-import { ModuleId } from '../../src/types/module-id.js';
-import { Role } from '../../src/types/role.js';
+import { CredentialsService } from '@ocpi/services/credentials-service.js';
+import type { CredentialsDTO } from '@ocpi/types/dto/credentials-dto.js';
+import { EndpointIdentifier } from '@ocpi/types/endpoint-identifier.js';
+import { InterfaceRole } from '@ocpi/types/interface-role.js';
+import { ModuleId } from '@ocpi/types/module-id.js';
+import { Role } from '@ocpi/types/role.js';
 
 const NEW_VERSIONS_URL = 'https://new.msp.test/ocpi/versions';
 const NEW_VERSION_DETAILS_URL = 'https://new.msp.test/ocpi/2.2.1';

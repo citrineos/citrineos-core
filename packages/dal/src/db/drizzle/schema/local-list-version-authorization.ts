@@ -12,8 +12,8 @@ import { type z } from 'zod';
 // Pure many-to-many join table: only composite FK columns, no serial id.
 function localListVersionAuthorizationColumns() {
   return {
-    localListVersionId: integer('localListVersionId'),
-    authorizationId: integer('authorizationId'),
+    localListVersionId: integer('localListVersionId').notNull(),
+    authorizationId: integer('authorizationId').notNull(),
     tenantId: integer('tenantId').notNull(),
     createdAt: timestamp('createdAt', { withTimezone: true, mode: 'date' })
       .notNull()

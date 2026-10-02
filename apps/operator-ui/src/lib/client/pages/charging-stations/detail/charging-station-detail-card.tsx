@@ -3,12 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 'use client';
 
-import {
-  type ChargingStationDto,
-  type OCPPMessageDto,
-  ChargingStationProps,
-  OCPPMessageProps,
-} from '@citrineos/types';
+import { type ChargingStationDto, ChargingStationProps } from '@citrineos/types';
 import { MenuSection } from '@lib/client/components/main-menu/main-menu';
 import { ModalComponentType } from '@lib/client/components/modals/modal-types';
 import ProtocolTag from '@lib/client/components/protocol-tag';
@@ -19,7 +14,6 @@ import {
   ChargingStationClass,
   type ChargingStationDetailsDto,
 } from '@lib/cls/charging-station-dto';
-import { OCPPMessageClass } from '@lib/cls/ocpp-message-dto';
 import type { TransactionClass } from '@lib/cls/transaction-dto';
 import {
   CHARGING_STATIONS_DELETE_MUTATION,
@@ -30,7 +24,7 @@ import { DETAIL_TAB_STATE, NOT_APPLICABLE } from '@lib/utils/consts';
 import { chargingStationEditPath, chargingStationPath } from '@lib/utils/resource-paths';
 import { openModal } from '@lib/utils/store/modal-slice';
 import { getPlainToInstanceOptions } from '@lib/utils/tables';
-import { CanAccess, Link, useDelete, useList, useOne, useTranslate } from '@refinedev/core';
+import { CanAccess, Link, useDelete, useOne, useTranslate } from '@refinedev/core';
 import { instanceToPlain } from 'class-transformer';
 import { ChevronLeft, Edit, Info, MoreHorizontal, RefreshCw, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -83,31 +77,6 @@ export const ChargingStationDetailCard = ({
   });
 
   const station = data?.data;
-
-  const {
-    query: { data: latestLogsData },
-  } = useList<OCPPMessageDto>({
-    resource: ResourceType.OCPP_MESSAGES,
-    meta: {
-      fields: [OCPPMessageProps.id, OCPPMessageProps.timestamp],
-    },
-    sorters: [{ field: OCPPMessageProps.timestamp, order: 'desc' }],
-    filters: [
-      {
-        field: OCPPMessageProps.stationId,
-        operator: 'eq',
-        value: station?.id,
-      },
-    ],
-    pagination: {
-      pageSize: 1,
-      currentPage: 1,
-    },
-    liveMode: 'off',
-    queryOptions: getPlainToInstanceOptions(OCPPMessageClass),
-  });
-
-  const latestLog = latestLogsData?.data?.[0] || undefined;
 
   const handleDeleteClick = useCallback(() => {
     if (!station) return;
@@ -184,9 +153,10 @@ export const ChargingStationDetailCard = ({
     )?.securityProfile ?? station.connectedServerNetworkProfile?.securityProfile;
 
   let latestTimestamp = NOT_APPLICABLE;
-  if (latestLog) {
-    latestTimestamp = formatDate(latestLog.timestamp);
+  if (station.latestOcppMessageTimestamp) {
+    latestTimestamp = formatDate(station.latestOcppMessageTimestamp);
   }
+  const hasOcppMessageHistory = !isEmpty(station.ocppMessages);
 
   const unknownText = translate('Common.unknown');
 
@@ -245,9 +215,11 @@ export const ChargingStationDetailCard = ({
               variant="destructive"
               size="sm"
               onClick={handleDeleteClick}
-              disabled={!!latestLog}
+              disabled={hasOcppMessageHistory}
               title={
-                latestLog ? 'Cannot delete a station that has OCPP message history' : undefined
+                hasOcppMessageHistory
+                  ? 'Cannot delete a station that has OCPP message history'
+                  : undefined
               }
             >
               <Trash2 className={buttonIconSize} />

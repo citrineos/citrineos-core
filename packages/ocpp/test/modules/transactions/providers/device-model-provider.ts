@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { applyUpdateFunction, type UpdateFunction } from '../utils/update-util.js';
+import { applyUpdateFunction, type UpdateFunction } from '@test/helpers/update-util.js';
 import { Component, EvseType, Variable } from '@citrineos/dal';
 import type { EvseDto } from '@citrineos/types';
 import type { ChargingStationDto, ConnectorDto } from '@citrineos/types';

@@ -4,45 +4,45 @@
 
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
-import { DtoEvent, DtoEventObjectType, DtoEventType } from '../../../src/handlers/types.js';
-import { AlreadyRegisteredException } from '../../../src/apis/exception/already-registered-exception.js';
-import { InvalidParamException } from '../../../src/apis/exception/invalid-param-exception.js';
-import { MissingParamException } from '../../../src/apis/exception/missing-param-exception.js';
-import { NotFoundException } from '../../../src/apis/exception/not-found-exception.js';
-import { NotRegisteredException } from '../../../src/apis/exception/not-registered-exception.js';
-import { UnknownTokenException } from '../../../src/apis/exception/unknown-token-exception.js';
-import { UnsuccessfulRequestException } from '../../../src/apis/exception/unsuccessful-request-exception.js';
-import { WrongClientAccessException } from '../../../src/apis/exception/wrong-client-access-exception.js';
-import { AuthMethod } from '../../../src/types/auth-method.js';
-import { CommandResultType } from '../../../src/types/command-result.js';
-import { Role } from '../../../src/types/role.js';
-import { SessionStatus } from '../../../src/types/session-status.js';
-import { TokenType } from '../../../src/types/token-type.js';
-import { VersionNumber } from '../../../src/types/version-number.js';
-import { GetCdrParamsSchema } from '../../../src/transport/trigger/param/cdrs/get-cdr-params.js';
-import { PostCdrParamsSchema } from '../../../src/transport/trigger/param/cdrs/post-cdr-params.js';
+import { DtoEvent, DtoEventObjectType, DtoEventType } from '@ocpi/handlers/types.js';
+import { AlreadyRegisteredException } from '@ocpi/apis/exception/already-registered-exception.js';
+import { InvalidParamException } from '@ocpi/apis/exception/invalid-param-exception.js';
+import { MissingParamException } from '@ocpi/apis/exception/missing-param-exception.js';
+import { NotFoundException } from '@ocpi/apis/exception/not-found-exception.js';
+import { NotRegisteredException } from '@ocpi/apis/exception/not-registered-exception.js';
+import { UnknownTokenException } from '@ocpi/apis/exception/unknown-token-exception.js';
+import { UnsuccessfulRequestException } from '@ocpi/apis/exception/unsuccessful-request-exception.js';
+import { WrongClientAccessException } from '@ocpi/apis/exception/wrong-client-access-exception.js';
+import { AuthMethod } from '@ocpi/types/auth-method.js';
+import { CommandResultType } from '@ocpi/types/command-result.js';
+import { Role } from '@ocpi/types/role.js';
+import { SessionStatus } from '@ocpi/types/session-status.js';
+import { TokenType } from '@ocpi/types/token-type.js';
+import { VersionNumber } from '@ocpi/types/version-number.js';
+import { GetCdrParamsSchema } from '@ocpi/transport/trigger/param/cdrs/get-cdr-params.js';
+import { PostCdrParamsSchema } from '@ocpi/transport/trigger/param/cdrs/post-cdr-params.js';
 import {
   buildPutChargingProfileParams,
   PutChargingProfileParamsSchema,
-} from '../../../src/transport/trigger/param/charging-profiles/put-charging-profile-params.js';
-import { PostCommandParamsSchema } from '../../../src/transport/trigger/param/commands/post-command-params.js';
+} from '@ocpi/transport/trigger/param/charging-profiles/put-charging-profile-params.js';
+import { PostCommandParamsSchema } from '@ocpi/transport/trigger/param/commands/post-command-params.js';
 import {
   buildPostCredentialsParams,
   PostCredentialsParamsSchema,
-} from '../../../src/transport/trigger/param/credentials/post-credentials-params.js';
-import { buildPutCredentialsParams } from '../../../src/transport/trigger/param/credentials/put-credentials-params.js';
+} from '@ocpi/transport/trigger/param/credentials/post-credentials-params.js';
+import { buildPutCredentialsParams } from '@ocpi/transport/trigger/param/credentials/put-credentials-params.js';
 import {
   buildPaginatedOcpiParams,
   PaginatedOcpiParamsSchema,
-} from '../../../src/transport/trigger/param/paginated-ocpi-params.js';
+} from '@ocpi/transport/trigger/param/paginated-ocpi-params.js';
 import {
   buildPaginatedParams,
   PaginatedParamsSchema,
-} from '../../../src/transport/trigger/param/paginated-params.js';
-import { GetSessionParamsSchema } from '../../../src/transport/trigger/param/sessions/get-session-params.js';
-import { PatchSessionParamsSchema } from '../../../src/transport/trigger/param/sessions/patch-session-params.js';
-import { PutSessionParamsSchema } from '../../../src/transport/trigger/param/sessions/put-session-params.js';
-import { PostTokenParamsSchema } from '../../../src/transport/trigger/param/tokens/post-token-params.js';
+} from '@ocpi/transport/trigger/param/paginated-params.js';
+import { GetSessionParamsSchema } from '@ocpi/transport/trigger/param/sessions/get-session-params.js';
+import { PatchSessionParamsSchema } from '@ocpi/transport/trigger/param/sessions/patch-session-params.js';
+import { PutSessionParamsSchema } from '@ocpi/transport/trigger/param/sessions/put-session-params.js';
+import { PostTokenParamsSchema } from '@ocpi/transport/trigger/param/tokens/post-token-params.js';
 
 const ocpi = {
   fromCountryCode: 'US',

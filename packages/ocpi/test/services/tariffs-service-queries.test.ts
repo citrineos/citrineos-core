@@ -6,17 +6,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // TariffMapper.map is static and the barrel it lives in reaches the package index, so the whole
 // module is replaced. The stub makes the mapped rows recognisable in the assertions below.
-vi.mock('../../src/mappers/index.js', () => ({
+vi.mock('@ocpi/mappers/index.js', () => ({
   TariffMapper: class {
     static map = vi.fn((tariff: { id: number }) => ({ id: `mapped-${tariff.id}` }));
   },
 }));
 
-import { TariffsService } from '../../src/services/tariffs-service.js';
-import { TariffMapper } from '../../src/mappers/index.js';
-import { OcpiHeaders } from '../../src/types/ocpi-headers.js';
-import { PaginatedParams } from '../../src/apis/controllers/param/paginated-params.js';
-import { GET_TARIFF_BY_KEY_QUERY, GET_TARIFFS_QUERY } from '../../src/transport/graphql/index.js';
+import { TariffsService } from '@ocpi/services/tariffs-service.js';
+import { TariffMapper } from '@ocpi/mappers/index.js';
+import { OcpiHeaders } from '@ocpi/types/ocpi-headers.js';
+import { PaginatedParams } from '@ocpi/apis/controllers/param/paginated-params.js';
+import { GET_TARIFF_BY_KEY_QUERY, GET_TARIFFS_QUERY } from '@ocpi/transport/graphql/index.js';
 
 const COUNTRY_CODE = 'DE';
 const PARTY_ID = 'CPO';

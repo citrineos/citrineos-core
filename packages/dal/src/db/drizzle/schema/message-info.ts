@@ -8,7 +8,7 @@ import {
   boolean,
   index,
   integer,
-  jsonb,
+  json,
   pgSchema,
   pgTable,
   serial,
@@ -32,7 +32,7 @@ function messageInfoColumns() {
     startDateTime: timestamp('startDateTime', { withTimezone: true, mode: 'date' }),
     endDateTime: timestamp('endDateTime', { withTimezone: true, mode: 'date' }),
     transactionId: varchar('transactionId', { length: 255 }),
-    message: jsonb('message').$type<MessageContent>(),
+    message: json('message').$type<MessageContent>(),
     active: boolean('active'),
     displayComponentId: integer('displayComponentId'),
     tenantId: integer('tenantId').notNull(),
@@ -47,8 +47,8 @@ function messageInfoColumns() {
 
 // Row-level tenancy (current approach): single public schema, tenantId column filter on every query
 export const messageInfoTable = pgTable(TableName.MessageInfos, messageInfoColumns(), (t) => [
-  index('message_infos_ocpp_connection_name').on(t.ocppConnectionName),
-  uniqueIndex('message_infos_station_name_tenant_id_id').on(t.ocppConnectionName, t.id, t.tenantId),
+  index('message_infos_station_id').on(t.ocppConnectionName),
+  uniqueIndex('MessageInfos_stationId_tenantId_id').on(t.ocppConnectionName, t.tenantId, t.id),
 ]);
 
 // Schema-per-tenant (future approach): one Postgres schema per tenant, no tenantId filter needed

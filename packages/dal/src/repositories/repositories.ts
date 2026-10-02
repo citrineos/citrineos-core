@@ -60,6 +60,7 @@ import type {
   ChargingProfileInput,
   CompositeScheduleInput,
 } from '../mappers/2.0.1/charging-profile-mapper.js';
+import type { CompositeScheduleInput as CompositeScheduleInput21 } from '../mappers/2.1/charging-profile-mapper.js';
 import type { LocalListVersion } from '../models/authorization/local-list-version.js';
 import type { SendLocalList } from '../models/authorization/send-local-list.js';
 import type {
@@ -638,7 +639,7 @@ export interface IChargingProfileRepository extends CrudRepository<ChargingProfi
   ): Promise<ChargingNeeds | undefined>;
   createCompositeSchedule(
     tenantId: number,
-    compositeSchedule: CompositeScheduleInput,
+    compositeSchedule: CompositeScheduleInput | CompositeScheduleInput21,
     ocppConnectionName: string,
   ): Promise<CompositeSchedule>;
   getNextChargingProfileId(tenantId: number, ocppConnectionName: string): Promise<number>;

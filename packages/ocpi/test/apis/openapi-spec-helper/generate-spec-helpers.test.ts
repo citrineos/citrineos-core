@@ -21,16 +21,16 @@ import {
   getStatusCode,
   getSummary,
   getTags,
-} from '../../../src/apis/openapi-spec-helper/generate-spec-helpers.js';
-import type { IRoute } from '../../../src/apis/openapi-spec-helper/parse-metadata.js';
-import { mergeDeep } from '../../../src/apis/openapi-spec-helper/merge-deep.js';
-import { smartcase } from '../../../src/apis/openapi-spec-helper/smart-case.js';
-import { capitalize } from '../../../src/apis/openapi-spec-helper/capitalize.js';
-import { SchemaStore } from '../../../src/apis/openapi-spec-helper/schema-store.js';
-import { ENUM_PARAM } from '../../../src/apis/decorators/enum-param.js';
-import { ENUM_QUERY_PARAM } from '../../../src/apis/decorators/enum-query-param.js';
-import { MULTIPLE_TYPES } from '../../../src/apis/decorators/multiple-types.js';
-import { BODY_PARAM } from '../../../src/apis/decorators/body-with-schema.js';
+} from '@ocpi/apis/openapi-spec-helper/generate-spec-helpers.js';
+import type { IRoute } from '@ocpi/apis/openapi-spec-helper/parse-metadata.js';
+import { mergeDeep } from '@ocpi/apis/openapi-spec-helper/merge-deep.js';
+import { smartcase } from '@ocpi/apis/openapi-spec-helper/smart-case.js';
+import { capitalize } from '@ocpi/apis/openapi-spec-helper/capitalize.js';
+import { SchemaStore } from '@ocpi/apis/openapi-spec-helper/schema-store.js';
+import { ENUM_PARAM } from '@ocpi/apis/decorators/enum-param.js';
+import { ENUM_QUERY_PARAM } from '@ocpi/apis/decorators/enum-query-param.js';
+import { MULTIPLE_TYPES } from '@ocpi/apis/decorators/multiple-types.js';
+import { BODY_PARAM } from '@ocpi/apis/decorators/body-with-schema.js';
 
 class TokensController {
   getTokenById(_tokenId: string) {}
@@ -476,7 +476,7 @@ describe('getOperation', () => {
     });
   });
 
-  it('adds a security requirement when an Authorization header param exists', () => {
+  it('moves an Authorization header param into a security requirement', () => {
     const host = paramHost([String]);
     const route = aRoute({
       action: { target: TokensController, method: 'getTokenById', route: '', type: 'get' },
@@ -493,9 +493,55 @@ describe('getOperation', () => {
     });
     const operation = getOperation(route, {});
     expect(operation.security).toEqual([{ authorization: [] }]);
+    expect(operation.parameters).toBeUndefined();
+  });
+
+  it('keeps the other header params when removing Authorization', () => {
+    const host = paramHost([String, String]);
+    const route = aRoute({
+      action: { target: TokensController, method: 'getTokenById', route: '', type: 'get' },
+      params: [
+        {
+          type: 'header',
+          name: 'Authorization',
+          object: host,
+          method: 'getTokenById',
+          index: 0,
+          required: true,
+        },
+        {
+          type: 'header',
+          name: 'X-Request-ID',
+          object: host,
+          method: 'getTokenById',
+          index: 1,
+          required: true,
+        },
+      ],
+    });
+    const operation = getOperation(route, {});
+    expect(operation.security).toEqual([{ authorization: [] }]);
     expect(operation.parameters).toEqual([
-      { in: 'header', name: 'Authorization', required: true, schema: { type: 'string' } },
+      { in: 'header', name: 'X-Request-ID', required: true, schema: { type: 'string' } },
     ]);
+  });
+
+  it('adds no security requirement without an Authorization header param', () => {
+    const host = paramHost([String]);
+    const route = aRoute({
+      action: { target: TokensController, method: 'getTokenById', route: '', type: 'get' },
+      params: [
+        {
+          type: 'header',
+          name: 'X-Request-ID',
+          object: host,
+          method: 'getTokenById',
+          index: 0,
+          required: true,
+        },
+      ],
+    });
+    expect(getOperation(route, {}).security).toBeUndefined();
   });
 });
 

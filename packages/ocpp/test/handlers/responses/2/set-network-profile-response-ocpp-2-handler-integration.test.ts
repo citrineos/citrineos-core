@@ -8,8 +8,8 @@ import {
   MessageOrigin,
   MessageState,
   OCPP2_0_1,
-  OCPP_CallAction,
   type OCPP2_response_types,
+  OCPP_CallAction,
   OCPPVersion,
   SetNetworkProfileStatusEnum,
   type SystemConfig,
@@ -17,11 +17,11 @@ import {
 import {
   ChargingStationNetworkProfile,
   DefaultSequelizeInstance,
-  SequelizeLocationRepository,
-  SequelizeTenantRepository,
   type ITenantRepository,
+  SequelizeLocationRepository,
   SequelizeServerNetworkProfileRepository,
   SequelizeSetNetworkProfileRepository,
+  SequelizeTenantRepository,
 } from '@citrineos/dal';
 import { SetNetworkProfileResponseOcpp2Handler } from '@handlers/index.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
@@ -158,6 +158,7 @@ describe('SetNetworkProfileResponseOcpp2Handler with a batched correlation id', 
         securityProfile: 1,
         allowUnknownChargingStations: false,
         tenantId: DEFAULT_TENANT_ID,
+        dynamicTenantResolution: false,
       },
       30,
     );

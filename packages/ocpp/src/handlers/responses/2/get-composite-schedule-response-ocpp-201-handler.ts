@@ -17,8 +17,6 @@ import {
 import type { IChargingProfileRepository } from '@citrineos/dal';
 import { OCPP2_0_1_Mapper } from '@citrineos/dal';
 
-// TODO: 2.1 GetCompositeSchedule needs its own handler (or a 2.1 mapper) — see
-// SmartChargingModule's TODO comment following the original _handleGetCompositeSchedule.
 @AsResponseHandler([OCPPVersion.OCPP2_0_1], OCPP_CallAction.GetCompositeSchedule)
 export class GetCompositeScheduleResponseOcpp201Handler extends AbstractHandler {
   protected _chargingProfileRepository: IChargingProfileRepository;

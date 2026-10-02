@@ -9,11 +9,11 @@ import { type ILogObj, Logger } from 'tslog';
 
 // LocationsService sits on an import cycle with this mapper.
 // The batch token mapping never touches it, so a bare stub is enough to load the module.
-vi.mock('../../src/services/locations-service.js', () => ({ LocationsService: class {} }));
+vi.mock('@ocpi/services/locations-service.js', () => ({ LocationsService: class {} }));
 
-import { BaseTransactionMapper } from '../../src/mappers/base-transaction-mapper.js';
-import { TokensMapper } from '../../src/mappers/tokens-mapper.js';
-import type { TokenDTO } from '../../src/types/dto/token-dto.js';
+import { BaseTransactionMapper } from '@ocpi/mappers/base-transaction-mapper.js';
+import { TokensMapper } from '@ocpi/mappers/tokens-mapper.js';
+import type { TokenDTO } from '@ocpi/types/dto/token-dto.js';
 
 /**
  * Exposes the protected batch mapper. Nothing here reaches the GraphQL client: every transaction

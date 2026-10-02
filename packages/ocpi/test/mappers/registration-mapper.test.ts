@@ -10,15 +10,15 @@ import type {
   TenantPartnerDto,
 } from '@citrineos/types';
 import { describe, expect, it } from 'vitest';
-import { RegistrationMapper } from '../../src/mappers/registration-mapper.js';
-import type { ImageDTO } from '../../src/types/dto/image-dto.js';
-import { EndpointIdentifier } from '../../src/types/endpoint-identifier.js';
-import { ImageCategory } from '../../src/types/image-category.js';
-import { ImageType } from '../../src/types/image-type.js';
-import { InterfaceRole } from '../../src/types/interface-role.js';
-import { ModuleId } from '../../src/types/module-id.js';
-import { Role } from '../../src/types/role.js';
-import { VersionNumber } from '../../src/types/version-number.js';
+import { RegistrationMapper } from '@ocpi/mappers/registration-mapper.js';
+import type { ImageDTO } from '@ocpi/types/dto/image-dto.js';
+import { EndpointIdentifier } from '@ocpi/types/endpoint-identifier.js';
+import { ImageCategory } from '@ocpi/types/image-category.js';
+import { ImageType } from '@ocpi/types/image-type.js';
+import { InterfaceRole } from '@ocpi/types/interface-role.js';
+import { ModuleId } from '@ocpi/types/module-id.js';
+import { Role } from '@ocpi/types/role.js';
+import { VersionNumber } from '@ocpi/types/version-number.js';
 
 const URL = 'https://cpo.example.com/ocpi/emsp/2.2.1/cdrs';
 
@@ -311,27 +311,27 @@ describe('RegistrationMapper endpoint mapping', () => {
   ];
 
   it('serializes the identifier as module_ROLE', () => {
-    const result = RegistrationMapper.toEndpoint({
+    const result = RegistrationMapper.toSupportedEndpoint({
       identifier: ModuleId.Cdrs,
       role: InterfaceRole.SENDER,
       url: URL,
     });
-    expect(result.identifier).toBe('cdrs_SENDER');
-    expect(result.url).toBe(URL);
+    expect(result?.identifier).toBe('cdrs_SENDER');
+    expect(result?.url).toBe(URL);
   });
 
-  it('round-trips every module/role pair through toEndpoint and toModuleAndRole', () => {
+  it('round-trips every module/role pair through toSupportedEndpoint and toModuleAndRole', () => {
     for (const [identifier, role, wire] of wirePairs) {
-      const endpoint = RegistrationMapper.toEndpoint({ identifier, role, url: URL });
-      expect(endpoint.identifier).toBe(wire);
-      expect(RegistrationMapper.toModuleAndRole(endpoint)).toEqual({ identifier, role });
+      const endpoint = RegistrationMapper.toSupportedEndpoint({ identifier, role, url: URL });
+      expect(endpoint?.identifier).toBe(wire);
+      expect(RegistrationMapper.toModuleAndRole(endpoint!)).toEqual({ identifier, role });
     }
   });
 
   it('maps credentials without a role suffix regardless of interface role', () => {
     for (const role of [InterfaceRole.SENDER, InterfaceRole.RECEIVER]) {
       expect(
-        RegistrationMapper.toEndpointIdentifier({
+        RegistrationMapper.toEndpointIdentifierOrNull({
           identifier: ModuleId.Credentials,
           role,
           url: URL,
@@ -349,30 +349,60 @@ describe('RegistrationMapper endpoint mapping', () => {
     expect(result).toEqual({ identifier: ModuleId.Credentials, role: InterfaceRole.SENDER });
   });
 
-  it('rejects a module with no OCPI endpoint identifier', () => {
-    expect(() =>
-      RegistrationMapper.toEndpointIdentifier({
-        identifier: ModuleId.Hubclientinfo,
-        role: InterfaceRole.SENDER,
-        url: URL,
-      }),
-    ).toThrow('Unknown module identifier: hubclientinfo');
-  });
-
-  it('rejects a known module with an unknown role', () => {
-    expect(() =>
-      RegistrationMapper.toEndpointIdentifier({
-        identifier: ModuleId.Cdrs,
-        role: 'OBSERVER' as InterfaceRole,
-        url: URL,
-      }),
-    ).toThrow('Unknown role for module cdrs: OBSERVER');
-  });
-
   it('rejects an unknown endpoint identifier on the way back', () => {
     const endpoint: BaseEndpoint = { identifier: 'hubclientinfo', url: URL };
     expect(() => RegistrationMapper.toModuleAndRole(endpoint)).toThrow(
       'Unknown endpoint identifier: hubclientinfo',
     );
+  });
+
+  it('skips valid OCPI modules we do not expose as endpoints', () => {
+    for (const identifier of [ModuleId.Hubclientinfo, ModuleId.Versions]) {
+      expect(
+        RegistrationMapper.toEndpointIdentifierOrNull({
+          identifier,
+          role: InterfaceRole.RECEIVER,
+          url: URL,
+        }),
+      ).toBeNull();
+      expect(
+        RegistrationMapper.toSupportedEndpoint({
+          identifier,
+          role: InterfaceRole.RECEIVER,
+          url: URL,
+        }),
+      ).toBeNull();
+    }
+  });
+
+  it('throws for any other unmapped module identifier', () => {
+    const identifier = 'made-up-module' as ModuleId;
+    expect(() =>
+      RegistrationMapper.toEndpointIdentifierOrNull({
+        identifier,
+        role: InterfaceRole.SENDER,
+        url: URL,
+      }),
+    ).toThrow(`Unknown module identifier: ${identifier}`);
+    expect(() =>
+      RegistrationMapper.toSupportedEndpoint({ identifier, role: InterfaceRole.SENDER, url: URL }),
+    ).toThrow(`Unknown module identifier: ${identifier}`);
+  });
+
+  it('still throws for a known module with an unknown role, even via the nullable path', () => {
+    expect(() =>
+      RegistrationMapper.toEndpointIdentifierOrNull({
+        identifier: ModuleId.Cdrs,
+        role: 'OBSERVER' as InterfaceRole,
+        url: URL,
+      }),
+    ).toThrow('Unknown role for module cdrs: OBSERVER');
+    expect(() =>
+      RegistrationMapper.toSupportedEndpoint({
+        identifier: ModuleId.Cdrs,
+        role: 'OBSERVER' as InterfaceRole,
+        url: URL,
+      }),
+    ).toThrow('Unknown role for module cdrs: OBSERVER');
   });
 });

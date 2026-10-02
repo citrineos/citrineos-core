@@ -5,11 +5,11 @@ import {
   type ChargingStationDto,
   type LocationDto,
   type LocationFacilityEnumType,
+  LocationHours,
   type LocationParkingEnumType,
   type Point,
   type TenantDto,
   type TransactionDto,
-  LocationHours,
 } from '@citrineos/types';
 import { DEFAULT_TENANT_ID, OCPP2_Namespace } from '@citrineos/base';
 import {
@@ -88,7 +88,10 @@ export class Location extends Model implements LocationDto {
   /**
    * [longitude, latitude]
    */
-  @Column(DataType.GEOMETRY('POINT'))
+  @Column({
+    type: DataType.GEOMETRY('POINT'),
+    allowNull: false,
+  })
   declare coordinates: Point;
 
   @HasMany(() => ChargingStation, 'locationId')

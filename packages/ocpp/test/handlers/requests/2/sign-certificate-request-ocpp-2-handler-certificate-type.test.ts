@@ -18,7 +18,7 @@ import { SignCertificateRequestOcpp2Handler } from '@handlers/index.js';
 import type { CertificateAuthorityService } from '@services/index.js';
 import type { InstallCertificateHelperService } from '@services/certificate/install-certificate-helper-service.js';
 import { createTestContainer, makeMockOcppSender } from '@test/test-container.js';
-import { readFile } from '../../../utils/file-util.js';
+import { readFile } from '../../../helpers/file-util.js';
 import { describe, expect, it, vi } from 'vitest';
 
 const STATION = 'station-001';

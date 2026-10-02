@@ -43,7 +43,7 @@ function tenantColumns() {
 }
 
 export const tenantTable = pgTable(TableName.Tenants, tenantColumns(), (t) => [
-  uniqueIndex('tenants_tenant_websocket_server_path').on(t.tenantWebsocketServerPath),
+  uniqueIndex('Tenants_tenantWebsocketServerPath_key').on(t.tenantWebsocketServerPath),
 ]);
 
 // Schema-per-tenant reference (kept for symmetry with the other schemas).

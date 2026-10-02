@@ -227,6 +227,11 @@ describe('initSwagger', () => {
     expect(register).toHaveBeenCalledTimes(3);
     const swaggerOptions = register.mock.calls[0][1];
     expect(swaggerOptions.openapi.info.title).toBe('CitrineOS Central System API');
+    expect(swaggerOptions.openapi.security).toEqual([{ authorization: [] }]);
+    expect(swaggerOptions.openapi.components.securitySchemes.authorization).toEqual({
+      type: 'http',
+      scheme: 'bearer',
+    });
     const swaggerUiOptions = register.mock.calls[1][1];
     expect(swaggerUiOptions.routePrefix).toBe('/docs');
     expect(decorate).toHaveBeenCalledTimes(1);

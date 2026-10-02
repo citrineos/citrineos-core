@@ -52,7 +52,7 @@ export const chargingScheduleTable = pgTable(
   chargingScheduleColumns(),
   // Sequelize composite unique 'stationName_tenantId_id'.
   (t) => [
-    uniqueIndex('charging_schedules_id_ocpp_connection_name_tenant_id').on(
+    uniqueIndex('ChargingSchedules_stationId_tenantId_id').on(
       t.id,
       t.ocppConnectionName,
       t.tenantId,

@@ -64,6 +64,7 @@ export { GetBaseReportResponseOcpp2Handler } from './responses/2/get-base-report
 export { GetChargingProfilesResponseOcpp2Handler } from './responses/2/get-charging-profiles-response-ocpp-2-handler.js';
 export { GetCompositeScheduleResponseOcpp16Handler } from './responses/1.6/get-composite-schedule-response-ocpp-16-handler.js';
 export { GetCompositeScheduleResponseOcpp201Handler } from './responses/2/get-composite-schedule-response-ocpp-201-handler.js';
+export { GetCompositeScheduleResponseOcpp21Handler } from './responses/2/get-composite-schedule-response-ocpp-21-handler.js';
 export { GetConfigurationResponseOcpp16Handler } from './responses/1.6/get-configuration-response-ocpp-16-handler.js';
 export { GetDiagnosticsResponseOcpp16Handler } from './responses/1.6/get-diagnostics-response-ocpp-16-handler.js';
 export { GetDisplayMessagesResponseOcpp2Handler } from './responses/2/get-display-messages-response-ocpp-2-handler.js';

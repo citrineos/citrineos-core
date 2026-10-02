@@ -7,13 +7,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 // Barrel first: the ModuleApi files resolve BaseController through src/index.js,
 // so the barrel must finish evaluating before the deep imports below run.
 import { CommandType, OcpiHeaders, PaginatedParams, VersionNumber } from '../../index.js';
-import { CommandsModuleApi } from '../../src/modules/commands/module/commands-module-api.js';
-import { LocationsModuleApi } from '../../src/modules/locations/module/locations-module-api.js';
-import { SessionsModuleApi } from '../../src/modules/sessions/module/sessions-module-api.js';
-import { CdrsModuleApi } from '../../src/modules/cdrs/module/cdrs-module-api.js';
-import { TariffsModuleApi } from '../../src/modules/tariffs/module/tariffs-module-api.js';
-import { ChargingProfilesModuleApi } from '../../src/modules/charging-profiles/module/charging-profiles-module-api.js';
-import { VersionsModuleApi } from '../../src/modules/versions/module/versions-module-api.js';
+import { CommandsModuleApi } from '@ocpi/modules/commands/module/commands-module-api.js';
+import { LocationsModuleApi } from '@ocpi/modules/locations/module/locations-module-api.js';
+import { SessionsModuleApi } from '@ocpi/modules/sessions/module/sessions-module-api.js';
+import { CdrsModuleApi } from '@ocpi/modules/cdrs/module/cdrs-module-api.js';
+import { TariffsModuleApi } from '@ocpi/modules/tariffs/module/tariffs-module-api.js';
+import { ChargingProfilesModuleApi } from '@ocpi/modules/charging-profiles/module/charging-profiles-module-api.js';
+import { VersionsModuleApi } from '@ocpi/modules/versions/module/versions-module-api.js';
 
 const logger = { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() } as any;
 

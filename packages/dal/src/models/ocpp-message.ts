@@ -5,12 +5,12 @@
 import { DEFAULT_TENANT_ID, Namespace } from '@citrineos/base';
 import {
   type ChargingStationDto,
+  MessageOrigin,
   type MessageState,
   type MessageTypeId,
   type OCPPMessageDto,
-  type TenantDto,
-  MessageOrigin,
   OCPPVersion,
+  type TenantDto,
 } from '@citrineos/types';
 import {
   BeforeCreate,
@@ -95,6 +95,7 @@ export class OCPPMessage extends Model implements OCPPMessageDto {
     get() {
       return this.getDataValue('timestamp')?.toISOString();
     },
+    allowNull: false,
   })
   declare timestamp: string;
 

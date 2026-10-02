@@ -52,6 +52,8 @@ const ChargingStationDetailsSchema = ChargingStationSchema.extend({
       }),
     )
     .nullish(),
+
+  ocppMessages: z.array(z.object({ id: z.number() })).nullish(),
 });
 
 export const ChargingStationDetailsProps = ChargingStationDetailsSchema.keyof().enum;
@@ -70,6 +72,7 @@ export class ChargingStationClass implements Partial<ChargingStationDto> {
   @IsBoolean()
   isOnline!: boolean;
   protocol?: any;
+  latestOcppMessageTimestamp?: string | null;
   chargePointVendor?: string | null;
   chargePointModel?: string | null;
   chargePointSerialNumber?: string | null;
@@ -92,6 +95,7 @@ export class ChargingStationClass implements Partial<ChargingStationDto> {
   location?: LocationDto;
   networkProfiles?: any;
   transactions?: any[] | null;
+  ocppMessages?: { id: number }[] | null;
   connectedWebsocketServerConfigId?: string | null;
   @Expose({ name: 'ConnectedServerNetworkProfile' })
   connectedServerNetworkProfile?: {

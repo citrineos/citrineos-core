@@ -7,6 +7,7 @@ import { TableName } from '@dal/models/table-name.js';
 import {
   boolean,
   integer,
+  json,
   jsonb,
   numeric,
   pgSchema,
@@ -17,6 +18,7 @@ import {
   varchar,
 } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
+import { citext } from './column-types.js';
 import { type z } from 'zod';
 
 // Column definitions are a function to ensure fresh objects per table instance,
@@ -28,17 +30,16 @@ function authorizationColumns() {
     // Sequelize ARRAY(STRING) → varchar(255)[]
     allowedConnectorTypes: varchar('allowedConnectorTypes', { length: 255 }).array(),
     disallowedEvseIdPrefixes: varchar('disallowedEvseIdPrefixes', { length: 255 }).array(),
-    // Sequelize CITEXT (case-insensitive text) stored as varchar here.
-    idToken: varchar('idToken', { length: 255 }),
+    idToken: citext('idToken').notNull(),
     idTokenType: varchar('idTokenType', { length: 255 }),
     additionalInfo: jsonb('additionalInfo').$type<[AdditionalInfo, ...AdditionalInfo[]]>(),
-    status: varchar('status', { length: 255 }),
+    status: varchar('status', { length: 255 }).notNull(),
     // DataType.DATE → timestamptz; mapped to ISO string in the repository layer
     cacheExpiryDateTime: timestamp('cacheExpiryDateTime', { withTimezone: true, mode: 'date' }),
     chargingPriority: integer('chargingPriority'),
     language1: varchar('language1', { length: 255 }),
     language2: varchar('language2', { length: 255 }),
-    personalMessage: jsonb('personalMessage'),
+    personalMessage: json('personalMessage'),
     realTimeAuth: varchar('realTimeAuth', { length: 255 }),
     realTimeAuthLastAttempt: jsonb('realTimeAuthLastAttempt').$type<RealTimeAuthLastAttempt>(),
     realTimeAuthTimeout: integer('realTimeAuthTimeout'),
@@ -47,10 +48,11 @@ function authorizationColumns() {
     groupAuthorizationId: integer('groupAuthorizationId'),
     tariffId: integer('tariffId'),
     concurrentTransaction: boolean('concurrentTransaction').default(false),
-    isPrepaid: boolean('isPrepaid').default(false),
+    isPrepaid: boolean('isPrepaid').default(false).notNull(),
     // Sequelize DECIMAL → numeric (returned as string, converted in the repository layer)
     prepaidBalance: numeric('prepaidBalance'),
     tenantPartnerId: integer('tenantPartnerId'),
+    customData: jsonb('customData'),
     tenantId: integer('tenantId').notNull(),
     createdAt: timestamp('createdAt', { withTimezone: true, mode: 'date' })
       .notNull()
@@ -64,7 +66,7 @@ function authorizationColumns() {
 // Row-level tenancy (current approach): single public schema, tenantId column filter on every query
 export const authorizationTable = pgTable(TableName.Authorizations, authorizationColumns(), (t) => [
   // Sequelize unique: 'idToken_type' spans idToken, idTokenType and tenantId.
-  uniqueIndex('authorizations_id_token_type').on(t.idToken, t.idTokenType, t.tenantId),
+  uniqueIndex('idToken_type').on(t.idToken, t.idTokenType, t.tenantId),
 ]);
 
 // Schema-per-tenant (future approach): one Postgres schema per tenant, no tenantId filter needed

@@ -9,31 +9,25 @@ import { ModuleId } from '../../types/module-id.js';
 import { InterfaceRole } from '../../types/interface-role.js';
 import { type TariffDto, type TenantDto, HttpMethod } from '@citrineos/types';
 import type { Tariff } from '../../types/tariff.js';
-import { TariffMapper } from '../../mappers/index.js';
 import { OcpiEmptyResponseSchema } from '../../types/ocpi-empty-response.js';
-import type {
-  GetTariffByKeyQueryResult,
-  GetTariffByKeyQueryVariables,
-} from '../../transport/graphql/index.js';
-import { GET_TARIFF_BY_KEY_QUERY } from '../../transport/graphql/index.js';
-import type { IOcpiGraphqlClient } from '../../transport/graphql/index.js';
+import type { TariffsService } from '../tariffs-service.js';
 import type { OcpiDependencies } from '../../server/dependencies.js';
 
 export interface TariffsBroadcasterDependencies extends OcpiDependencies {
   tariffsClientApi: TariffsClientApi;
-  ocpiGraphqlClient: IOcpiGraphqlClient;
+  tariffsService: TariffsService;
 }
 
 export class TariffsBroadcaster extends BaseBroadcaster {
   readonly logger: Logger<ILogObj>;
   readonly tariffsClientApi: TariffsClientApi;
-  readonly ocpiGraphqlClient: IOcpiGraphqlClient;
+  readonly tariffsService: TariffsService;
 
-  constructor({ logger, tariffsClientApi, ocpiGraphqlClient }: TariffsBroadcasterDependencies) {
+  constructor({ logger, tariffsClientApi, tariffsService }: TariffsBroadcasterDependencies) {
     super();
     this.logger = logger;
     this.tariffsClientApi = tariffsClientApi;
-    this.ocpiGraphqlClient = ocpiGraphqlClient;
+    this.tariffsService = tariffsService;
   }
 
   private async broadcast(
@@ -59,29 +53,18 @@ export class TariffsBroadcaster extends BaseBroadcaster {
   }
 
   async broadcastPutTariff(tenant: TenantDto, tariffDto: Partial<TariffDto>): Promise<void> {
-    if (!tariffDto.currency || !tariffDto.pricePerKwh) {
-      this.logger.debug(
-        `Currency or pricePerKwh missing in Tariff ${tariffDto.id}, fetching data.`,
+    const tariff = await this.tariffsService.getTariffByKey({
+      id: tariffDto.id!,
+      countryCode: tenant.countryCode!,
+      partyId: tenant.partyId!,
+    });
+    if (!tariff) {
+      this.logger.error(
+        `Failed to fetch Tariff ${tariffDto.id} data from GraphQL for broadcast PUT`,
       );
-      const tariffResponse = await this.ocpiGraphqlClient.request<
-        GetTariffByKeyQueryResult,
-        GetTariffByKeyQueryVariables
-      >(GET_TARIFF_BY_KEY_QUERY, {
-        id: tariffDto.id!,
-        countryCode: tenant.countryCode!,
-        partyId: tenant.partyId!,
-      });
-      if (!tariffResponse?.Tariffs[0]) {
-        this.logger.error(
-          `Failed to fetch Tariff ${tariffDto.id} data from GraphQL to fill required fields for broadcast PUT`,
-        );
-        return;
-      }
-      tariffDto.currency = tariffResponse.Tariffs[0].currency;
-      tariffDto.pricePerKwh = tariffResponse.Tariffs[0].pricePerKwh;
+      return;
     }
 
-    const tariff = TariffMapper.map(tariffDto);
     const path = `/${tenant.countryCode}/${tenant.partyId}/${tariff.id}`;
     await this.broadcast(tenant, HttpMethod.Put, path, tariff);
   }

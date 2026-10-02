@@ -34,19 +34,24 @@ export class StopTransaction extends Model implements StopTransactionDto {
   @Column({
     type: DataType.INTEGER,
     unique: 'transactionDatabaseId_transactionCreatedAt',
+    allowNull: false,
   })
   declare transactionDatabaseId: number;
 
   @Column({
     type: DataType.DATE,
     unique: 'transactionDatabaseId_transactionCreatedAt',
+    allowNull: false,
   })
-  declare transactionCreatedAt?: Date;
+  declare transactionCreatedAt: Date;
 
   @BelongsTo(() => Transaction, 'transactionDatabaseId')
   declare transaction: TransactionDto;
 
-  @Column(DataType.INTEGER)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+  })
   declare meterStop: number;
 
   @Column({
@@ -54,6 +59,7 @@ export class StopTransaction extends Model implements StopTransactionDto {
     get() {
       return this.getDataValue('timestamp')?.toISOString();
     },
+    allowNull: false,
   })
   declare timestamp: string;
 

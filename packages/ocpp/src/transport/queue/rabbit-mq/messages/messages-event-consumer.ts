@@ -9,11 +9,19 @@ import {
   type MessagesEvent,
   MessagesEventSchema,
   type MessagesQueueSpec,
+  type SystemConfig,
 } from '@citrineos/types';
 import { childLogger } from '@citrineos/base';
 import type * as amqplib from 'amqplib';
 import type { ILogObj, Logger } from 'tslog';
 import type { RabbitMQChannelManager } from '@/transport/index.js';
+import {
+  initMessagesMetrics,
+  MessagesEventOutcome,
+  recordMessagesEventLag,
+  recordMessagesEventProcessed,
+  recordMessagesEventsInFlightDelta,
+} from './messages-metrics.js';
 
 export type MessagesEventHandler = (event: MessagesEvent) => Promise<void>;
 
@@ -22,6 +30,7 @@ export class MessagesEventConsumer {
 
   private readonly _channelManager: RabbitMQChannelManager;
   private readonly _logger: Logger<ILogObj>;
+  private readonly _prefetch: number;
 
   private _handler?: MessagesEventHandler;
   /** queue name -> consumerTag, for queues currently being consumed on this connection. */
@@ -29,14 +38,18 @@ export class MessagesEventConsumer {
   private _started = false;
 
   constructor({
+    config,
     channelManager,
     logger,
   }: {
+    config: SystemConfig;
     channelManager: RabbitMQChannelManager;
     logger?: Logger<ILogObj>;
   }) {
     this._channelManager = channelManager;
     this._logger = childLogger(logger, this.constructor.name);
+    this._prefetch = config.messageBroker.amqp.prefetch.messages;
+    initMessagesMetrics();
 
     // ChannelManager recreates channels after a reconnect but not consumers — the tags it held
     // referenced a dead channel. Re-subscribe from scratch.
@@ -110,19 +123,34 @@ export class MessagesEventConsumer {
     });
     await channel.bindQueue(spec.queue, MESSAGES_EXCHANGE, spec.binding);
 
+    // basic.qos only applies to consumers started after it, so it is set ahead of each consume.
+    await channel.prefetch(this._prefetch);
     const { consumerTag } = await channel.consume(spec.queue, (message) =>
-      this._onMessage(spec.queue, message, channel),
+      this._onMessage(spec, message, channel),
     );
     this._consumerTags.set(spec.queue, consumerTag);
   }
 
   private async _onMessage(
-    queue: string,
+    spec: MessagesQueueSpec,
     message: amqplib.ConsumeMessage | null,
     channel: amqplib.Channel,
   ): Promise<void> {
     if (!message) return;
 
+    recordMessagesEventsInFlightDelta(1);
+    try {
+      await this._settle(spec, message, channel);
+    } finally {
+      recordMessagesEventsInFlightDelta(-1);
+    }
+  }
+
+  private async _settle(
+    { kind, queue }: MessagesQueueSpec,
+    message: amqplib.ConsumeMessage,
+    channel: amqplib.Channel,
+  ): Promise<void> {
     let event: MessagesEvent;
     try {
       const parsed = MessagesEventSchema.safeParse(JSON.parse(message.content.toString()));
@@ -131,18 +159,27 @@ export class MessagesEventConsumer {
         // immediately rather than looping — this is the poison-message case.
         this._logger.error(`Unusable event on ${queue}; dead-lettering.`, parsed.error.issues);
         channel.nack(message, false, false);
+        recordMessagesEventProcessed(kind, MessagesEventOutcome.Poison);
         return;
       }
       event = parsed.data;
     } catch (error) {
       this._logger.error(`Non-JSON event on ${queue}; dead-lettering.`, error);
       channel.nack(message, false, false);
+      recordMessagesEventProcessed(kind, MessagesEventOutcome.Poison);
       return;
+    }
+
+    const lagMs = Date.now() - Date.parse(event.timestamp);
+    if (Number.isFinite(lagMs)) {
+      // Producer and consumer clocks can disagree; a negative lag would be dropped by the histogram.
+      recordMessagesEventLag(Math.max(0, lagMs) / 1000, kind);
     }
 
     try {
       await this._handler!(event);
       channel.ack(message);
+      recordMessagesEventProcessed(kind, MessagesEventOutcome.Ack);
     } catch (error) {
       const requeue = !message.fields.redelivered;
       this._logger.error(
@@ -151,6 +188,10 @@ export class MessagesEventConsumer {
         error,
       );
       channel.nack(message, false, requeue);
+      recordMessagesEventProcessed(
+        kind,
+        requeue ? MessagesEventOutcome.Requeue : MessagesEventOutcome.DeadLetter,
+      );
     }
   }
 }

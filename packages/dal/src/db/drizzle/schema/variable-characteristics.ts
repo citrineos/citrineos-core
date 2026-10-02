@@ -45,10 +45,7 @@ function variableCharacteristicsColumns() {
 export const variableCharacteristicsTable = pgTable(
   TableName.VariableCharacteristics,
   variableCharacteristicsColumns(),
-  (t) => [
-    // Column-level `unique: true` on variableId
-    uniqueIndex('variable_characteristics_variableId').on(t.variableId),
-  ],
+  (t) => [uniqueIndex('VariableCharacteristics_variableId_key').on(t.variableId)],
 );
 
 // Schema-per-tenant (future approach): one Postgres schema per tenant, no tenantId filter needed

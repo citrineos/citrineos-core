@@ -9,6 +9,7 @@ import { DefaultSequelizeInstance, SequelizeLocationRepository } from '../../../
 import { Tenant } from '../../../src/models/tenant.js';
 import { ChargingStation } from '../../../src/models/location/charging-station.js';
 import { Connector } from '../../../src/models/location/connector.js';
+import { Evse } from '../../../src/models/location/evse.js';
 import type { Sequelize } from 'sequelize-typescript';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -71,11 +72,16 @@ beforeEach(async () => {
     tenantId: DEFAULT_TENANT_ID,
   });
   stationId = station.id;
+  const evse = await Evse.create({
+    tenantId: DEFAULT_TENANT_ID,
+    stationId,
+  });
   for (const connectorId of [1, 2]) {
     await Connector.create({
       tenantId: DEFAULT_TENANT_ID,
       stationId,
       connectorId,
+      evseId: evse.id,
       timestamp: new Date(),
     });
   }
@@ -115,6 +121,7 @@ describe('SequelizeLocationRepository', () => {
         StatusNotification.build({
           tenantId: DEFAULT_TENANT_ID,
           connectorId: 2,
+          evseId: 1,
           connectorStatus: 'Faulted',
           errorCode: 'GroundFailure',
           info: 'RCD tripped',
@@ -130,6 +137,7 @@ describe('SequelizeLocationRepository', () => {
         tenantId: DEFAULT_TENANT_ID,
         stationId,
         connectorId: 2,
+        evseId: 1,
         connectorStatus: 'Faulted',
         errorCode: 'GroundFailure',
         info: 'RCD tripped',

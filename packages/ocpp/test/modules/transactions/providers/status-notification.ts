@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { OCPP1_6, OCPP2_0_1, type StatusNotificationDto } from '@citrineos/types';
-import { applyUpdateFunction, type UpdateFunction } from '../utils/update-util.js';
+import { applyUpdateFunction, type UpdateFunction } from '@test/helpers/update-util.js';
 import { MOCK_CONNECTOR_ID, MOCK_EVSE_ID } from './device-model-provider.js';
 
 export function aStatusNotificationRequest(

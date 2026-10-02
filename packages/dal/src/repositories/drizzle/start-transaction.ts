@@ -16,7 +16,7 @@ import { DrizzleRepository } from './base.js';
 export function toStartTransactionDto(entity: StartTransactionEntity): StartTransactionDto {
   const dto: Explicit<StartTransactionDto> = {
     id: entity.id,
-    ocppConnectionName: entity.ocppConnectionName,
+    ocppConnectionName: entity.ocppConnectionName ?? '',
     meterStart: entity.meterStart,
     // Drizzle returns timestamp as JS Date (mode: 'date'); DTO contract is ISO string.
     timestamp: entity.timestamp.toISOString(),
@@ -26,6 +26,7 @@ export function toStartTransactionDto(entity: StartTransactionEntity): StartTran
     connectorDatabaseId: entity.connectorDatabaseId,
     // Relation not present as a scalar column.
     connector: undefined,
+    idTokenDatabaseId: entity.idTokenDatabaseId,
     tenantId: entity.tenantId,
     tenant: undefined,
     createdAt: entity.createdAt,

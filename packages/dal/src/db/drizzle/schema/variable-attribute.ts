@@ -7,7 +7,6 @@ import { TableName } from '@dal/models/table-name.js';
 import { sql } from 'drizzle-orm';
 import {
   boolean,
-  index,
   integer,
   pgSchema,
   pgTable,
@@ -56,8 +55,6 @@ export const variableAttributeTable = pgTable(
   TableName.VariableAttributes,
   variableAttributeColumns(),
   (t) => [
-    // Non-unique @Index on the station FK
-    index('variable_attributes_station_id').on(t.stationId),
     // Partial unique indexes from the @Table decorator
     uniqueIndex('variable_attributes_stationId')
       .on(t.stationId)

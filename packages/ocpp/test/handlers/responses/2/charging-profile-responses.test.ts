@@ -13,6 +13,7 @@ import {
   GenericStatusEnum,
   MessageOrigin,
   MessageState,
+  OCPP2_1,
   OCPP_CallAction,
   OCPPVersion,
   TariffSetStatusEnum,
@@ -26,6 +27,7 @@ import {
   ClearChargingProfileResponseOcpp2Handler,
   GetChargingProfilesResponseOcpp2Handler,
   GetCompositeScheduleResponseOcpp201Handler,
+  GetCompositeScheduleResponseOcpp21Handler,
   SetChargingProfileResponseOcpp2Handler,
   SetDefaultTariffResponseOcpp21Handler,
 } from '@handlers/index.js';
@@ -442,6 +444,100 @@ describe('GetCompositeScheduleResponseOcpp201Handler', () => {
       makeMessage(OCPP_CallAction.GetCompositeSchedule, OCPPVersion.OCPP2_0_1, {
         status: GenericStatusEnum.Rejected,
       } as never),
+    );
+
+    expect(chargingProfileRepository.createCompositeSchedule).not.toHaveBeenCalled();
+    expect(logger.error).toHaveBeenCalledWith(
+      `Failed to get composite schedule: ${GenericStatusEnum.Rejected} ${JSON.stringify(undefined)}`,
+    );
+  });
+});
+
+describe('GetCompositeScheduleResponseOcpp21Handler', () => {
+  const { container, logger } = createTestContainer();
+  let chargingProfileRepository: Mocked<IChargingProfileRepository>;
+  let handler: GetCompositeScheduleResponseOcpp21Handler;
+
+  const SCHEDULE_START = '2026-09-23T09:00:00.000Z';
+
+  beforeEach(() => {
+    chargingProfileRepository = makeChargingProfileRepository();
+    handler = getTestInstance(container, GetCompositeScheduleResponseOcpp21Handler, {
+      chargingProfileRepository,
+    });
+  });
+
+  it('persists the composite schedule with its 2.1 period fields', async () => {
+    const response: OCPP2_1.GetCompositeScheduleResponse = {
+      status: OCPP2_1.GenericStatusEnumType.Accepted,
+      schedule: {
+        evseId: 1,
+        duration: 3600,
+        scheduleStart: SCHEDULE_START,
+        chargingRateUnit: OCPP2_1.ChargingRateUnitEnumType.W,
+        chargingSchedulePeriod: [
+          {
+            startPeriod: 0,
+            limit: 11000,
+            limit_L2: 3700,
+            dischargeLimit: -11000,
+            setpoint: 5000,
+            operationMode: OCPP2_1.OperationModeEnumType.CentralSetpoint,
+            v2xFreqWattCurve: [{ frequency: 50, power: 0 }],
+          },
+          { startPeriod: 600, setpointReactive: 200, evseSleep: true },
+        ],
+      },
+    };
+
+    await handler.handle(
+      makeMessage(OCPP_CallAction.GetCompositeSchedule, OCPPVersion.OCPP2_1, response),
+    );
+
+    expect(chargingProfileRepository.createCompositeSchedule).toHaveBeenCalledTimes(1);
+    expect(chargingProfileRepository.createCompositeSchedule).toHaveBeenCalledWith(
+      DEFAULT_TENANT_ID,
+      {
+        evseId: 1,
+        duration: 3600,
+        scheduleStart: SCHEDULE_START,
+        chargingRateUnit: 'W',
+        chargingSchedulePeriod: [
+          expect.objectContaining({
+            startPeriod: 0,
+            limit: 11000,
+            limit_L2: 3700,
+            dischargeLimit: -11000,
+            setpoint: 5000,
+            operationMode: OCPP2_1.OperationModeEnumType.CentralSetpoint,
+            v2xFreqWattCurve: [{ frequency: 50, power: 0 }],
+          }),
+          expect.objectContaining({ startPeriod: 600, setpointReactive: 200, evseSleep: true }),
+        ],
+      },
+      STATION,
+    );
+  });
+
+  it('stores nothing when the response is accepted but carries no schedule', async () => {
+    await handler.handle(
+      makeMessage(OCPP_CallAction.GetCompositeSchedule, OCPPVersion.OCPP2_1, {
+        status: OCPP2_1.GenericStatusEnumType.Accepted,
+        statusInfo: { reasonCode: 'NoSchedule' },
+      }),
+    );
+
+    expect(chargingProfileRepository.createCompositeSchedule).not.toHaveBeenCalled();
+    expect(logger.error).toHaveBeenCalledWith(
+      `Missing schedule in response: ${GenericStatusEnum.Accepted} ${JSON.stringify({ reasonCode: 'NoSchedule' })}`,
+    );
+  });
+
+  it('stores nothing when the station rejected the request', async () => {
+    await handler.handle(
+      makeMessage(OCPP_CallAction.GetCompositeSchedule, OCPPVersion.OCPP2_1, {
+        status: OCPP2_1.GenericStatusEnumType.Rejected,
+      }),
     );
 
     expect(chargingProfileRepository.createCompositeSchedule).not.toHaveBeenCalled();
