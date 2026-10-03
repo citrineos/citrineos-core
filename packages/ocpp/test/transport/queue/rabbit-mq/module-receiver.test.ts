@@ -9,6 +9,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   aMockAmqpChannel,
   aMockChannelManager,
+  aMockConnectionManager,
   aSystemConfigWithAmqp,
 } from '../../../providers/rabbit-mq-provider.js';
 
@@ -18,11 +19,13 @@ const { container } = createTestContainer();
 describe('RabbitMqModuleReceiver', () => {
   let receiver: RabbitMqModuleReceiver;
   let mockChannel: ReturnType<typeof aMockAmqpChannel>;
+  let mockConnectionManager: ReturnType<typeof aMockConnectionManager>;
   let mockChannelManager: ReturnType<typeof aMockChannelManager>;
 
   beforeEach(() => {
     mockChannel = aMockAmqpChannel();
-    mockChannelManager = aMockChannelManager(mockChannel);
+    mockConnectionManager = aMockConnectionManager();
+    mockChannelManager = aMockChannelManager(mockChannel, mockConnectionManager);
     receiver = getTestInstance(container, RabbitMqModuleReceiver, {
       config: aSystemConfigWithAmqp(),
       channelManager: mockChannelManager,
@@ -142,6 +145,48 @@ describe('RabbitMqModuleReceiver', () => {
         vi.mocked(mockChannel.consume).mock.invocationCallOrder[0],
       );
     });
+
+    it('should cancel partial consumers before retrying channel recovery', async () => {
+      const replacement = aMockAmqpChannel();
+      let invalidated = false;
+      vi.mocked(mockChannelManager.getChannel).mockImplementation(async () =>
+        invalidated ? replacement : mockChannel,
+      );
+      await receiver.subscribe('Transactions', [OCPP_CallAction.TransactionEvent], {});
+      await receiver.subscribe('Transactions', [OCPP_CallAction.StatusNotification], {});
+
+      vi.mocked(replacement.consume)
+        .mockImplementationOnce(async () => ({ consumerTag: 'partial-consumer' }))
+        .mockRejectedValueOnce(new Error('channel closed during partial recovery'))
+        .mockImplementationOnce(async () => ({ consumerTag: 'recovered-consumer-1' }))
+        .mockImplementationOnce(async () => ({ consumerTag: 'recovered-consumer-2' }));
+      invalidated = true;
+      mockChannelManager.emit('channelInvalidated', 'module-receiver-Transactions');
+
+      await vi.waitFor(() => expect(replacement.consume).toHaveBeenCalledTimes(4));
+
+      expect(replacement.cancel).toHaveBeenCalledWith('partial-consumer');
+      expect(replacement.consume).toHaveBeenCalledTimes(4);
+    });
+
+    it('should keep retrying channel recovery until the consumer is restored', async () => {
+      const replacement = aMockAmqpChannel();
+      await receiver.subscribe('Transactions', [OCPP_CallAction.TransactionEvent], {});
+
+      vi.mocked(mockChannelManager.getChannel).mockResolvedValue(replacement);
+      vi.mocked(replacement.assertExchange)
+        .mockRejectedValueOnce(new Error('temporary broker error 1'))
+        .mockRejectedValueOnce(new Error('temporary broker error 2'))
+        .mockRejectedValueOnce(new Error('temporary broker error 3'));
+
+      mockChannelManager.emit('channelInvalidated', 'module-receiver-Transactions');
+
+      await vi.waitFor(() => expect(replacement.consume).toHaveBeenCalledTimes(1), {
+        timeout: 5_000,
+      });
+      expect(replacement.assertExchange).toHaveBeenCalledTimes(4);
+      expect(replacement.assertQueue).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('unsubscribe()', () => {
@@ -166,6 +211,21 @@ describe('RabbitMqModuleReceiver', () => {
   });
 
   describe('shutdown()', () => {
+    it('should detach reconnect and channel recovery listeners', async () => {
+      const connectedListener = mockConnectionManager.on.mock.calls.find(
+        ([event]) => event === 'connected',
+      )?.[1];
+      expect(connectedListener).toBeTypeOf('function');
+
+      await receiver.shutdown();
+
+      expect(mockConnectionManager.off).toHaveBeenCalledWith('connected', connectedListener);
+      expect(mockChannelManager.off).toHaveBeenCalledWith(
+        'channelInvalidated',
+        expect.any(Function),
+      );
+    });
+
     it('should cancel every tracked consumer across all identifiers', async () => {
       (mockChannel.consume as any)
         .mockResolvedValueOnce({ consumerTag: 'tag-A' })
@@ -178,6 +238,31 @@ describe('RabbitMqModuleReceiver', () => {
 
       expect(mockChannel.cancel).toHaveBeenCalledWith('tag-A');
       expect(mockChannel.cancel).toHaveBeenCalledWith('tag-B');
+    });
+
+    it('should cancel a consumer if shutdown races channel recovery', async () => {
+      const replacement = aMockAmqpChannel();
+      await receiver.subscribe('Transactions', [OCPP_CallAction.TransactionEvent], {});
+
+      let finishConsume!: (value: Awaited<ReturnType<typeof replacement.consume>>) => void;
+      const pendingConsume = new Promise<Awaited<ReturnType<typeof replacement.consume>>>(
+        (resolve) => {
+          finishConsume = resolve;
+        },
+      );
+      vi.mocked(replacement.consume).mockReturnValueOnce(pendingConsume);
+      vi.mocked(mockChannelManager.getChannel).mockResolvedValue(replacement);
+
+      mockChannelManager.emit('channelInvalidated', 'module-receiver-Transactions');
+      await vi.waitFor(() => expect(replacement.consume).toHaveBeenCalledTimes(1));
+
+      await receiver.shutdown();
+      finishConsume({ consumerTag: 'late-recovery-consumer' });
+
+      await vi.waitFor(() =>
+        expect(replacement.cancel).toHaveBeenCalledWith('late-recovery-consumer'),
+      );
+      expect(replacement.consume).toHaveBeenCalledTimes(1);
     });
   });
 });

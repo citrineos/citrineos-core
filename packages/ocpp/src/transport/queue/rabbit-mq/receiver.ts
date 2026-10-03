@@ -28,6 +28,11 @@ export abstract class RabbitMqReceiver extends AbstractMessageHandler {
   protected _channelManager: RabbitMQChannelManager;
   protected exchange: string;
   protected _messageMaxAgeSeconds: number;
+  private _stopping = false;
+  private _channelRecoveries = new Map<string, Promise<void>>();
+  private _pendingChannelRecoveries = new Set<string>();
+  private readonly _channelInvalidationListener: (channelId: string) => void;
+  private readonly _connectionConnectedListener: () => Promise<void>;
 
   constructor({
     config,
@@ -56,19 +61,50 @@ export abstract class RabbitMqReceiver extends AbstractMessageHandler {
     }
     this.exchange = exchange;
 
-    this._channelManager.getConnectionManager().on('connected', async () => {
+    this._channelInvalidationListener = (channelId) => {
+      if (this._stopping) return;
+      this._pendingChannelRecoveries.add(channelId);
+      if (!this._channelRecoveries.has(channelId)) {
+        const recovery = this._drainChannelRecoveries(channelId).finally(() => {
+          if (this._channelRecoveries.get(channelId) === recovery) {
+            this._channelRecoveries.delete(channelId);
+          }
+        });
+        this._channelRecoveries.set(channelId, recovery);
+      }
+    };
+    this._channelManager.on('channelInvalidated', this._channelInvalidationListener);
+
+    this._connectionConnectedListener = async () => {
+      if (this._stopping) return;
       try {
+        await Promise.allSettled([...this._channelRecoveries.values()]);
+        if (this._stopping) return;
         await this._onReconnect();
       } catch (err) {
         this._logger.error('Failed to reinitialize after reconnect:', err);
       }
-    });
+    };
+    this._channelManager.getConnectionManager().on('connected', this._connectionConnectedListener);
   }
 
   /**
    * Re-establishes this receiver's queues, bindings, and consumers on a fresh channel.
    */
   protected abstract _onReconnect(): Promise<void>;
+
+  /** Restores only subscriptions owned by this receiver on the invalidated channel. */
+  protected abstract _onChannelInvalidated(channelId: string): Promise<void>;
+
+  protected _stopRecovery(): void {
+    this._stopping = true;
+    this._channelManager.off('channelInvalidated', this._channelInvalidationListener);
+    this._channelManager.getConnectionManager().off('connected', this._connectionConnectedListener);
+  }
+
+  protected get _isStopping(): boolean {
+    return this._stopping;
+  }
 
   /**
    * Starts a consumer on `queueName` that allows at most `prefetch` unacked deliveries.
@@ -82,10 +118,30 @@ export abstract class RabbitMqReceiver extends AbstractMessageHandler {
   ): Promise<string> {
     // basic.qos only applies to consumers started after it, so it is set ahead of each consume.
     await channel.prefetch(prefetch);
+    if (this._stopping) return '';
     const { consumerTag } = await channel.consume(queueName, (msg) =>
       this._onMessage(msg, channel, queueName),
     );
     return consumerTag;
+  }
+
+  private async _drainChannelRecoveries(channelId: string): Promise<void> {
+    while (this._pendingChannelRecoveries.delete(channelId)) {
+      if (this._stopping) return;
+      const retryDelaysMs = [100, 250, 500, 1_000, 2_000, 5_000];
+      let attempt = 0;
+      while (!this._stopping) {
+        try {
+          await this._onChannelInvalidated(channelId);
+          break;
+        } catch (error) {
+          this._logger.error(`Failed to restore receiver channel ${channelId}:`, error);
+          const delay = retryDelaysMs[Math.min(attempt, retryDelaysMs.length - 1)];
+          attempt++;
+          await new Promise((resolve) => setTimeout(resolve, delay ?? 5_000));
+        }
+      }
+    }
   }
 
   /**

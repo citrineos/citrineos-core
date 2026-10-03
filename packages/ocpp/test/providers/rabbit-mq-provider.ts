@@ -86,11 +86,13 @@ export function aMockAmqpChannel(): amqplib.Channel {
 }
 
 /**
- * Minimal mock for RabbitMQConnectionManager — only the `on` event registration
- * is needed by RabbitMqReceiver for reconnect handling.
+ * Minimal mock for the connection lifecycle events used by RabbitMqReceiver.
  */
-export function aMockConnectionManager(): { on: ReturnType<typeof vi.fn> } {
-  return { on: vi.fn() };
+export function aMockConnectionManager(): {
+  on: ReturnType<typeof vi.fn>;
+  off: ReturnType<typeof vi.fn>;
+} {
+  return { on: vi.fn(), off: vi.fn() };
 }
 
 /**
@@ -104,9 +106,20 @@ export function aMockChannelManager(
 ): RabbitMQChannelManager {
   const mockChannel = channel ?? aMockAmqpChannel();
   const mockConnManager = connectionManager ?? aMockConnectionManager();
+  let invalidationListener: ((channelId: string) => void) | undefined;
+  const on = vi.fn((event: string, listener: (channelId: string) => void) => {
+    if (event === 'channelInvalidated') invalidationListener = listener;
+  });
   return {
     getChannel: vi.fn().mockResolvedValue(mockChannel),
     getConnectionManager: vi.fn().mockReturnValue(mockConnManager),
+    on,
+    off: vi.fn(),
+    emit: vi.fn((event: string, ...args: unknown[]) => {
+      if (event === 'channelInvalidated' && typeof args[0] === 'string') {
+        invalidationListener?.(args[0]);
+      }
+    }),
   } as unknown as RabbitMQChannelManager;
 }
 

@@ -6,6 +6,7 @@ import { type IModule } from '@citrineos/base';
 import { type CallAction, type SystemConfig } from '@citrineos/types';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
+import type amqplib from 'amqplib';
 import { RabbitMQChannelManager } from './channel-manager.js';
 import { RabbitMqReceiver } from './receiver.js';
 
@@ -24,6 +25,7 @@ export class RabbitMqModuleReceiver extends RabbitMqReceiver {
   protected readonly _prefetch: number;
 
   protected _consumerTags = new Map<string, string[]>();
+  protected _consumerChannels = new Map<string, amqplib.Channel>();
   protected _moduleSubscriptions = new Map<
     string,
     Array<{ actions?: CallAction[]; filter?: Record<string, string> }>
@@ -51,8 +53,25 @@ export class RabbitMqModuleReceiver extends RabbitMqReceiver {
 
     let restored = 0;
     for (const [identifier, subscriptions] of this._moduleSubscriptions) {
-      for (const { actions, filter } of subscriptions) {
-        await this._subscribePerIdentifierQueue(identifier, actions, filter);
+      if (this._isStopping) return;
+      const channel = await this._channelManager.getChannel(this._channelId(identifier));
+      if (
+        this._consumerChannels.get(identifier) === channel &&
+        this._consumerTags.get(identifier)?.length === subscriptions.length
+      ) {
+        continue;
+      }
+      await this._discardPartialConsumers(identifier, channel);
+      this._consumerTags.delete(identifier);
+      this._consumerChannels.delete(identifier);
+      for (const subscription of subscriptions) {
+        if (!this._moduleSubscriptions.get(identifier)?.includes(subscription)) continue;
+        await this._subscribePerIdentifierQueue(
+          identifier,
+          subscription.actions,
+          subscription.filter,
+          subscription,
+        );
         restored++;
       }
     }
@@ -61,6 +80,39 @@ export class RabbitMqModuleReceiver extends RabbitMqReceiver {
       `[module-queues] Reinitialized ${this._moduleSubscriptions.size} queue(s) after reconnect ` +
         `(${restored} subscription(s) restored)`,
     );
+  }
+
+  protected async _onChannelInvalidated(channelId: string): Promise<void> {
+    if (!channelId.startsWith(RabbitMqModuleReceiver.CHANNEL_PREFIX)) return;
+    const identifier = channelId.slice(RabbitMqModuleReceiver.CHANNEL_PREFIX.length);
+    const subscriptions = this._moduleSubscriptions.get(identifier);
+    if (!subscriptions?.length || this._isStopping) return;
+
+    const replacement = await this._channelManager.getChannel(channelId);
+    if (this._isStopping) return;
+    if (
+      this._consumerChannels.get(identifier) === replacement &&
+      this._consumerTags.get(identifier)?.length === subscriptions.length
+    ) {
+      return;
+    }
+    await this._discardPartialConsumers(identifier, replacement);
+    this._consumerTags.delete(identifier);
+    this._consumerChannels.delete(identifier);
+
+    for (const subscription of subscriptions) {
+      if (!this._moduleSubscriptions.get(identifier)?.includes(subscription)) continue;
+      if (this._isStopping) return;
+      await this._subscribePerIdentifierQueue(
+        identifier,
+        subscription.actions,
+        subscription.filter,
+        subscription,
+      );
+    }
+    if (!this._isStopping) {
+      this._logger.info(`[module-queues] Restored channel ${channelId} after channel failure`);
+    }
   }
 
   /**
@@ -85,34 +137,40 @@ export class RabbitMqModuleReceiver extends RabbitMqReceiver {
       return true;
     }
 
+    const subscription = { actions, filter };
     const existing = this._moduleSubscriptions.get(identifier) ?? [];
-    this._moduleSubscriptions.set(identifier, [...existing, { actions, filter }]);
+    this._moduleSubscriptions.set(identifier, [...existing, subscription]);
 
-    return this._subscribePerIdentifierQueue(identifier, actions, filter);
+    return this._subscribePerIdentifierQueue(identifier, actions, filter, subscription);
   }
 
   protected async _subscribePerIdentifierQueue(
     identifier: string,
     actions?: CallAction[],
     filter?: { [k: string]: string },
+    expectedSubscription?: { actions?: CallAction[]; filter?: Record<string, string> },
   ): Promise<boolean> {
     const queueName = `${RabbitMqModuleReceiver.QUEUE_PREFIX}${identifier}`;
+    if (this._isStopping) return true;
 
     // Ensure that filter includes the x-match header set to all
     filter = filter ? { 'x-match': 'all', ...filter } : { 'x-match': 'all' };
 
     const channel = await this._channelManager.getChannel(this._channelId(identifier));
+    if (this._isStopping) return true;
     if (!channel) {
       throw new Error('RabbitMQ is down: cannot subscribe.');
     }
 
     // Assert exchange and queue
     await channel.assertExchange(this.exchange, 'headers', { durable: false });
+    if (this._isStopping) return true;
     await channel.assertQueue(queueName, {
       durable: true,
       autoDelete: true,
       exclusive: false,
     });
+    if (this._isStopping) return true;
 
     // Bind queue based on provided actions and filters
     if (actions && actions.length > 0) {
@@ -121,6 +179,7 @@ export class RabbitMqModuleReceiver extends RabbitMqReceiver {
           `Bind ${queueName} on ${this.exchange} for ${action} with filter ${JSON.stringify(filter)}.`,
         );
         await channel.bindQueue(queueName, this.exchange, '', { action, ...filter });
+        if (this._isStopping) return true;
         this._logger.info(
           `Queue ${queueName} bound to exchange ${this.exchange} for action ${action} with filter ${JSON.stringify(filter)}.`,
         );
@@ -130,14 +189,28 @@ export class RabbitMqModuleReceiver extends RabbitMqReceiver {
         `Bind ${queueName} on ${this.exchange} with filter ${JSON.stringify(filter)}.`,
       );
       await channel.bindQueue(queueName, this.exchange, '', filter);
+      if (this._isStopping) return true;
       this._logger.info(
         `Queue ${queueName} bound to exchange ${this.exchange} with filter ${JSON.stringify(filter)}.`,
       );
     }
 
     const consumerTag = await this._consume(channel, queueName, this._prefetch);
+    if (this._isStopping) {
+      if (consumerTag) await channel.cancel(consumerTag).catch(() => undefined);
+      return true;
+    }
+    if (
+      expectedSubscription &&
+      !this._moduleSubscriptions.get(identifier)?.includes(expectedSubscription)
+    ) {
+      if (consumerTag) await channel.cancel(consumerTag).catch(() => undefined);
+      return true;
+    }
+    if (!consumerTag) return true;
     const existing = this._consumerTags.get(identifier) ?? [];
     this._consumerTags.set(identifier, [...existing, consumerTag]);
+    this._consumerChannels.set(identifier, channel);
 
     return true;
   }
@@ -165,6 +238,7 @@ export class RabbitMqModuleReceiver extends RabbitMqReceiver {
   }
 
   async shutdown(): Promise<void> {
+    this._stopRecovery();
     for (const [identifier, consumerTags] of this._consumerTags) {
       const channel = await this._channelManager.getChannel(this._channelId(identifier));
       if (channel) {
@@ -185,5 +259,19 @@ export class RabbitMqModuleReceiver extends RabbitMqReceiver {
 
   protected _channelId(identifier: string): string {
     return `${RabbitMqModuleReceiver.CHANNEL_PREFIX}${identifier}`;
+  }
+
+  private async _discardPartialConsumers(
+    identifier: string,
+    channel: amqplib.Channel,
+  ): Promise<void> {
+    if (this._consumerChannels.get(identifier) !== channel) return;
+    for (const consumerTag of this._consumerTags.get(identifier) ?? []) {
+      try {
+        await channel.cancel(consumerTag);
+      } catch {
+        // A partially restored consumer may already have disappeared with a channel failure.
+      }
+    }
   }
 }
