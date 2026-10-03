@@ -9,6 +9,7 @@ import type { TariffElement } from '../types/tariff-element.js';
 import { TariffType } from '../types/tariff-type.js';
 import { MINUTES_IN_HOUR } from '../util/consts.js';
 import type { TariffDto } from '@citrineos/types';
+import { toOcpiDateTime } from '../util/date-time.js';
 
 export class TariffMapper {
   constructor() {}
@@ -28,7 +29,7 @@ export class TariffMapper {
       energy_mix: undefined,
       start_date_time: undefined,
       end_date_time: undefined,
-      last_updated: coreTariff.updatedAt!,
+      last_updated: toOcpiDateTime(coreTariff.updatedAt!),
     };
   }
   /**
