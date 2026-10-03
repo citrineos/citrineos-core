@@ -926,10 +926,10 @@ export class SequelizeTransactionEventRepository
     const activeTransactions = await this.transaction.readAllByQuery(tenantId, {
       where: {
         stationId: await stationIdFilter(tenantId, ocppConnectionName),
+        evseId,
         isActive: true,
         transactionId: { [Op.ne]: excludeTransactionId },
       },
-      include: [{ model: Evse, where: { evseTypeId: evseId }, required: true }],
     });
 
     if (activeTransactions.length === 0) {
