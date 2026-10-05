@@ -27,7 +27,7 @@ describe('MessagesModule', () => {
   };
   let pipeline: {
     run: ReturnType<typeof vi.fn>;
-    processorNames: { frame: string[]; connection: string[] };
+    processorNames: { frame: string[]; connection: string[]; websocket: string[] };
   };
   let webhookDispatcher: { shutdown: ReturnType<typeof vi.fn> };
 
@@ -61,6 +61,7 @@ describe('MessagesModule', () => {
       processorNames: {
         frame: ['ocpp-message-persist', 'frame-webhook', 'latest-ocpp-message-timestamp'],
         connection: ['connection-webhook'],
+        websocket: [],
       },
     };
     webhookDispatcher = { shutdown: vi.fn() };
@@ -101,7 +102,7 @@ describe('MessagesModule', () => {
     });
 
     it('should warn when it was started with no processors at all', async () => {
-      pipeline.processorNames = { frame: [], connection: [] };
+      pipeline.processorNames = { frame: [], connection: [], websocket: [] };
 
       await buildModule().start();
 
@@ -109,7 +110,7 @@ describe('MessagesModule', () => {
     });
 
     it('should not warn when at least one kind is served', async () => {
-      pipeline.processorNames = { frame: [], connection: ['connection-webhook'] };
+      pipeline.processorNames = { frame: [], connection: ['connection-webhook'], websocket: [] };
 
       await buildModule().start();
 

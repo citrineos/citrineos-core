@@ -43,8 +43,8 @@ export class MessagesModule {
   }
 
   async start(): Promise<void> {
-    const { frame, connection } = this._pipeline.processorNames;
-    if (frame.length === 0 && connection.length === 0) {
+    const { frame, connection, websocket } = this._pipeline.processorNames;
+    if (frame.length === 0 && connection.length === 0 && websocket.length === 0) {
       this._logger.warn(
         'Starting with no processors — every event will be acked and discarded. Check registerMessagesServices in register.ts.',
       );
@@ -59,6 +59,7 @@ export class MessagesModule {
     this._logger.info(
       `Started. Frame processors: [${frame.join(', ')}]. ` +
         `Connection processors: [${connection.join(', ')}]. ` +
+        `Websocket processors: [${websocket.join(', ')}]. ` +
         `Consuming: [${this._consumer.consumedQueues.join(', ')}]. ` +
         `Draining: [${this._deadLetterConsumer.consumedQueues.join(', ')}]`,
     );

@@ -1,6 +1,21 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import { buildConnectionEvent, buildFrameEvent, MessagesExchangeSink } from '@/transport/index.js';
+import {
+  CallHandledOutcome,
+  CallResponseOutcome,
+  CallResultSentOutcome,
+  CallSentOutcome,
+  recordOcppCallHandled,
+  recordOcppCallResponse,
+  recordOcppCallResultSent,
+  recordOcppCallRoundtripDuration,
+  recordOcppCallSent,
+  recordOcppMessageReceived,
+  recordOcppMessageRouted,
+  UNKNOWN_ACTION,
+} from '@/transport/metrics.js';
 import {
   AbstractMessageRouter,
   CacheNamespace,
@@ -24,6 +39,7 @@ import {
   type RpcMessage,
   UNREADABLE_MESSAGE_ID,
 } from '@citrineos/base';
+import type { IChargingStationRepository } from '@citrineos/dal';
 import {
   type CallAction,
   ConnectionEventState,
@@ -42,26 +58,10 @@ import {
   RetryMessageError,
   type SystemConfig,
 } from '@citrineos/types';
-import type { IChargingStationRepository } from '@citrineos/dal';
-import {
-  CallHandledOutcome,
-  CallResponseOutcome,
-  CallResultSentOutcome,
-  CallSentOutcome,
-  recordOcppCallHandled,
-  recordOcppCallResponse,
-  recordOcppCallResultSent,
-  recordOcppCallRoundtripDuration,
-  recordOcppCallSent,
-  recordOcppMessageReceived,
-  recordOcppMessageRouted,
-  UNKNOWN_ACTION,
-} from '@/transport/metrics.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { v4 as uuidv4 } from 'uuid';
 import { type CallbackUrlNotifier } from './callback-url-notifier.js';
-import { buildConnectionEvent, buildFrameEvent, MessagesExchangeSink } from '@/transport/index.js';
 
 const OUTSTANDING_CALL_CACHE_KEY = 'outstanding-csms-call';
 
@@ -144,16 +144,6 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     protocol: OCPPVersion,
     connectedWebsocketServerConfigId?: string,
   ): Promise<boolean> {
-    const connectionEvent = this._messagesExchangeSink.record(
-      buildConnectionEvent({
-        tenantId,
-        ocppConnectionName,
-        state: ConnectionEventState.Connected,
-        timestamp: new Date().toISOString(),
-        protocol,
-      }),
-    );
-
     const connectionIdentifier = createIdentifier(tenantId, ocppConnectionName);
     const requestSubscription = this._handler.subscribe(connectionIdentifier, undefined, {
       tenantId: tenantId.toString(),
@@ -177,12 +167,76 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       connectedWebsocketServerConfigId,
     );
 
-    return Promise.all([connectionEvent, requestSubscription, responseSubscription, onlineCharger])
-      .then((resolvedArray) => resolvedArray[1] && resolvedArray[2])
-      .catch((error) => {
-        this._logger.error(`Error registering connection for ${connectionIdentifier}: ${error}`);
-        return false;
+    const [request, response, online] = await Promise.allSettled([
+      requestSubscription,
+      responseSubscription,
+      onlineCharger,
+    ]);
+    const subscribed = [request, response].map(
+      (result) => result.status === 'fulfilled' && result.value,
+    );
+
+    if (subscribed.every(Boolean) && online.status === 'fulfilled') {
+      await this._messagesExchangeSink.record(
+        buildConnectionEvent({
+          tenantId,
+          ocppConnectionName,
+          state: ConnectionEventState.Connected,
+          timestamp: new Date().toISOString(),
+          protocol,
+        }),
+      );
+      return true;
+    }
+
+    const errors = [request, response, online].flatMap((result) =>
+      result.status === 'rejected' ? [result.reason] : [],
+    );
+    this._logger.error(`Error registering connection for ${connectionIdentifier}`, ...errors);
+    await this._rollBackRegistration(
+      tenantId,
+      ocppConnectionName,
+      protocol,
+      subscribed.some(Boolean),
+      online.status === 'fulfilled',
+    );
+    return false;
+  }
+
+  /**
+   * Undoes the steps of a registration that did succeed. Nothing else would: the network
+   * connection only deregisters connections whose close listener is attached, which happens after
+   * registration.
+   */
+  private async _rollBackRegistration(
+    tenantId: number,
+    ocppConnectionName: string,
+    protocol: OCPPVersion,
+    anySubscribed: boolean,
+    markedOnline: boolean,
+  ): Promise<void> {
+    const connectionIdentifier = createIdentifier(tenantId, ocppConnectionName);
+    if (anySubscribed) {
+      await this._handler.unsubscribe(connectionIdentifier).catch((error) => {
+        this._logger.error(`Failed to unsubscribe ${connectionIdentifier} after rollback`, error);
       });
+    }
+    if (markedOnline) {
+      await this._chargingStationRepository
+        .setChargingStationIsOnlineAndOCPPVersion(
+          tenantId,
+          ocppConnectionName,
+          false,
+          protocol,
+          null,
+        )
+        .catch((error) => {
+          this._logger.error(
+            `Failed to mark ${connectionIdentifier} offline after rollback; it stays online until its next disconnect`,
+            error,
+          );
+        });
+    }
   }
 
   async deregisterConnection(tenantId: number, ocppConnectionName: string): Promise<boolean> {

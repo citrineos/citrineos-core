@@ -2,7 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { IConnectionEventProcessor, IFrameEventProcessor } from '@citrineos/types';
+import type {
+  IConnectionEventProcessor,
+  IFrameEventProcessor,
+  IWebsocketLifecycleEventProcessor,
+} from '@citrineos/types';
 import { asClass, asFunction, type AwilixContainer } from 'awilix';
 import {
   MessagesDeadLetterConsumer,
@@ -39,6 +43,10 @@ export function registerMessagesServices(container: AwilixContainer): void {
     connectionEventProcessors: asFunction((cradle: MessagesCradle): IConnectionEventProcessor[] => [
       cradle.connectionWebhookProcessor,
     ]).singleton(),
+
+    websocketLifecycleEventProcessors: asFunction(
+      (): IWebsocketLifecycleEventProcessor[] => [],
+    ).singleton(),
 
     ocppMessagePersistProcessor: asClass(OcppMessagePersistProcessor).singleton(),
     frameWebhookProcessor: asClass(FrameWebhookProcessor).singleton(),

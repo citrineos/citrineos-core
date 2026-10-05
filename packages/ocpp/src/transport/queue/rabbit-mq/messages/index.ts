@@ -12,7 +12,12 @@ export { MessagesExchangeSink } from './messages-exchange-sink.js';
 export {
   buildConnectionEvent,
   buildFrameEvent,
+  buildWebsocketLifecycleEvent,
   directionFromOrigin,
   extractPayloadFromRpcMessage,
 } from './messages-event-builder.js';
-export type { BuildConnectionEventInput, BuildFrameEventInput } from './messages-event-builder.js';
+export type {
+  BuildConnectionEventInput,
+  BuildFrameEventInput,
+  BuildWebsocketLifecycleEventInput,
+} from './messages-event-builder.js';

@@ -238,6 +238,82 @@ describe('MessageRouterImpl', () => {
 
       expect(result).toBe(false);
     });
+
+    describe('when registration only partly succeeds', () => {
+      const setOnline = () => chargingStationRepository.setChargingStationIsOnlineAndOCPPVersion;
+
+      it('should not publish a connected event', async () => {
+        handler.subscribe.mockRejectedValueOnce(new Error('channel closed'));
+
+        await router.registerConnection(TENANT_ID, STATION_ID, PROTOCOL);
+
+        expect(recorded(sink, 'connection')).toEqual([]);
+      });
+
+      it('should mark the station offline again and unbind what it bound', async () => {
+        handler.subscribe
+          .mockRejectedValueOnce(new Error('channel closed')) // request
+          .mockResolvedValueOnce(true); // response
+
+        const result = await router.registerConnection(TENANT_ID, STATION_ID, PROTOCOL, 'ws-0');
+
+        expect(result).toBe(false);
+        expect(handler.unsubscribe).toHaveBeenCalledWith(IDENTIFIER);
+        expect(setOnline().mock.calls).toEqual([
+          [TENANT_ID, STATION_ID, true, PROTOCOL, 'ws-0'],
+          [TENANT_ID, STATION_ID, false, PROTOCOL, null],
+        ]);
+      });
+
+      it('should wait for an online write still in flight before marking the station offline', async () => {
+        let finishOnlineWrite!: () => void;
+        setOnline().mockImplementationOnce(
+          () => new Promise((resolve) => (finishOnlineWrite = () => resolve(undefined))),
+        );
+        handler.subscribe.mockRejectedValueOnce(new Error('channel closed'));
+
+        const registering = router.registerConnection(TENANT_ID, STATION_ID, PROTOCOL);
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        expect(setOnline()).toHaveBeenCalledTimes(1);
+
+        finishOnlineWrite();
+        await registering;
+
+        expect(setOnline()).toHaveBeenCalledTimes(2);
+        expect(setOnline().mock.calls[1][2]).toBe(false);
+      });
+
+      it('should only unbind when the online write is what failed', async () => {
+        setOnline().mockRejectedValueOnce(new Error('database down'));
+
+        const result = await router.registerConnection(TENANT_ID, STATION_ID, PROTOCOL);
+
+        expect(result).toBe(false);
+        expect(handler.unsubscribe).toHaveBeenCalledWith(IDENTIFIER);
+        expect(setOnline()).toHaveBeenCalledTimes(1);
+        expect(recorded(sink, 'connection')).toEqual([]);
+      });
+
+      it('should not unbind when nothing was bound', async () => {
+        handler.subscribe.mockRejectedValue(new Error('channel closed'));
+
+        await router.registerConnection(TENANT_ID, STATION_ID, PROTOCOL);
+
+        expect(handler.unsubscribe).not.toHaveBeenCalled();
+      });
+
+      it('should still return false when the rollback itself fails', async () => {
+        handler.subscribe.mockRejectedValueOnce(new Error('channel closed'));
+        setOnline()
+          .mockResolvedValueOnce(undefined)
+          .mockRejectedValueOnce(new Error('database down'));
+        handler.unsubscribe.mockRejectedValueOnce(new Error('channel closed'));
+
+        await expect(router.registerConnection(TENANT_ID, STATION_ID, PROTOCOL)).resolves.toBe(
+          false,
+        );
+      });
+    });
   });
 
   // ─── deregisterConnection ─────────────────────────────────────────────────

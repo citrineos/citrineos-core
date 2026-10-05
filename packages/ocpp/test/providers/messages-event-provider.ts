@@ -13,6 +13,7 @@ import {
   MessageTypeId,
   OCPP_CallAction,
   OCPPVersion,
+  type WebsocketLifecycleEvent,
 } from '@citrineos/types';
 import type * as amqplib from 'amqplib';
 import { EventEmitter } from 'events';
@@ -52,6 +53,22 @@ export function aConnectionEvent(override?: Partial<ConnectionEvent>): Connectio
     timestamp: '2026-01-01T00:00:00.000Z',
     ...override,
   } as ConnectionEvent;
+}
+
+export function aWebsocketLifecycleEvent(
+  override?: Partial<WebsocketLifecycleEvent>,
+): WebsocketLifecycleEvent {
+  return {
+    kind: MessagesEventKind.Websocket,
+    tenantId: TENANT_ID,
+    ocppConnectionName: STATION_ID,
+    type: 'Open',
+    serverId: 'ws-0',
+    host: 'pod-a',
+    subprotocol: OCPPVersion.OCPP2_0_1,
+    timestamp: '2026-01-01T00:00:00.000Z',
+    ...override,
+  };
 }
 
 export function anEmittingConnectionManager(): {
