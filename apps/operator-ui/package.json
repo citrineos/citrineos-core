@@ -111,7 +111,7 @@
     "cross-env": "catalog:",
     "dotenv": "^16.4.5",
     "eslint": "catalog:",
-    "eslint-config-next": "15.5.26",
+    "eslint-config-next": "15.5.27",
     "eslint-config-prettier": "catalog:",
     "eslint-plugin-prettier": "catalog:",
     "eslint-plugin-react": "^7.37.0",
