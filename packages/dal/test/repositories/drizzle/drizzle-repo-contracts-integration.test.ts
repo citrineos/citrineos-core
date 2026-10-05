@@ -4,11 +4,13 @@
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import {
+  AsyncJobStatus,
   Boot,
   Certificate,
   ChargingStation,
   DeleteCertificateAttempt,
   InstalledCertificate,
+  TenantPartner,
 } from '@dal/db/sequelize/index.js';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
@@ -20,17 +22,20 @@ import {
   InstallCertificateStatusEnum,
 } from '@citrineos/types';
 import {
+  type IAsyncJobStatusRepository,
   type IBootRepository,
   type ICertificateRepository,
   type IDeleteCertificateAttemptRepository,
   type IInstallCertificateAttemptRepository,
   type IInstalledCertificateRepository,
+  SequelizeAsyncJobStatusRepository,
   SequelizeBootRepository,
   SequelizeCertificateRepository,
   SequelizeDeleteCertificateAttemptRepository,
   SequelizeInstallCertificateAttemptRepository,
   SequelizeInstalledCertificateRepository,
 } from '../../../index.js';
+import { DrizzleAsyncJobStatusRepository } from '@dal/repositories/drizzle/async-job-status.js';
 import { DrizzleBootRepository, toBootDto } from '@dal/repositories/drizzle/boot.js';
 import {
   DrizzleCertificateRepository,
@@ -112,6 +117,15 @@ function bootRepo(kind: Kind): IBootRepository {
       drizzleInstance: db,
     }),
   });
+}
+
+function asyncJobStatusRepo(kind: Kind): IAsyncJobStatusRepository {
+  return kind === 'sequelize'
+    ? new SequelizeAsyncJobStatusRepository({
+        config: h.config,
+        sequelizeInstance: h.sequelizeInstance,
+      })
+    : new DrizzleAsyncJobStatusRepository({ config: h.config, drizzleInstance: db });
 }
 
 function certificateRepo(kind: Kind): ICertificateRepository {
@@ -840,5 +854,123 @@ describe('drizzle row-to-DTO mappers', () => {
     expect(dto.serialNumber).toBe('s');
     expect(dto.status).toBe('Failed');
     expect(dto.tenantId).toBe(TENANT);
+  });
+});
+
+describe.each(kinds)('AsyncJobStatus repository (%s)', (kind) => {
+  const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+  // tenantPartnerId is NOT NULL, so every job row needs a partner under its own tenant.
+  async function aPartnerId(tenantId: number): Promise<number> {
+    const partner = await TenantPartner.create({
+      partyId: `P${tenantId}`,
+      countryCode: 'US',
+      tenantId,
+    });
+    return partner.id;
+  }
+
+  async function aJob(repo: IAsyncJobStatusRepository, tenantId: number) {
+    return repo.createAsyncJobStatus(tenantId, {
+      jobName: 'FETCH_OCPI_TOKENS',
+      tenantPartnerId: await aPartnerId(tenantId),
+      paginatedParams: { offset: 0, limit: 25 },
+      totalObjects: 250,
+      stopScheduled: false,
+      isFailed: false,
+    });
+  }
+
+  it('createAsyncJobStatus generates a uuid jobId and stores the job under the tenant', async () => {
+    const repo = asyncJobStatusRepo(kind);
+
+    const created = await aJob(repo, TENANT);
+
+    expect(created.jobId).toMatch(UUID);
+    expect(created.jobName).toBe('FETCH_OCPI_TOKENS');
+    expect(created.tenantId).toBe(TENANT);
+    expect(created.paginatedParams).toEqual({ offset: 0, limit: 25 });
+    expect(created.totalObjects).toBe(250);
+    expect(created.stopScheduled).toBe(false);
+    expect(created.isFailed).toBe(false);
+
+    const stored = await AsyncJobStatus.findByPk(created.jobId);
+    expect(stored!.tenantId).toBe(TENANT);
+    expect(stored!.paginationParams).toEqual({ offset: 0, limit: 25 });
+  });
+
+  it('readByJobId returns the job only under its own tenant', async () => {
+    const repo = asyncJobStatusRepo(kind);
+    const created = await aJob(repo, TENANT);
+
+    const found = await repo.readByJobId(TENANT, created.jobId);
+    expect(found!.jobId).toBe(created.jobId);
+    expect(found!.tenantPartnerId).toBe(created.tenantPartnerId);
+    expect(found!.paginatedParams).toEqual({ offset: 0, limit: 25 });
+
+    expect(await repo.readByJobId(OTHER_TENANT, created.jobId)).toBeUndefined();
+    expect(await repo.readByJobId(TENANT, '11111111-2222-3333-4444-555555555555')).toBeUndefined();
+  });
+
+  it('updateAsyncJobStatus applies the given fields', async () => {
+    const repo = asyncJobStatusRepo(kind);
+    const created = await aJob(repo, TENANT);
+    const finishedAt = new Date('2026-10-05T12:00:00.000Z');
+
+    const updated = await repo.updateAsyncJobStatus(TENANT, created.jobId, {
+      paginatedParams: { offset: 25, limit: 25 },
+      totalObjects: 300,
+      finishedAt,
+      stopScheduled: true,
+      isFailed: true,
+    });
+
+    expect(updated.jobId).toBe(created.jobId);
+    expect(updated.paginatedParams).toEqual({ offset: 25, limit: 25 });
+    expect(updated.totalObjects).toBe(300);
+    expect(updated.finishedAt!.toISOString()).toBe(finishedAt.toISOString());
+    expect(updated.stopScheduled).toBe(true);
+    expect(updated.isFailed).toBe(true);
+
+    const reread = await repo.readByJobId(TENANT, created.jobId);
+    expect(reread!.totalObjects).toBe(300);
+    expect(reread!.isFailed).toBe(true);
+  });
+
+  it('updateAsyncJobStatus leaves pagination untouched when it is not given', async () => {
+    const repo = asyncJobStatusRepo(kind);
+    const created = await aJob(repo, TENANT);
+
+    const updated = await repo.updateAsyncJobStatus(TENANT, created.jobId, { totalObjects: 7 });
+
+    expect(updated.totalObjects).toBe(7);
+    expect(updated.paginatedParams).toEqual({ offset: 0, limit: 25 });
+  });
+
+  it('updateAsyncJobStatus rejects an unknown jobId and a job under another tenant', async () => {
+    const repo = asyncJobStatusRepo(kind);
+    const created = await aJob(repo, TENANT);
+
+    await expect(
+      repo.updateAsyncJobStatus(TENANT, 'no-such-job', { totalObjects: 5 }),
+    ).rejects.toThrow('Failed to update AsyncJobStatus with id no-such-job');
+    await expect(
+      repo.updateAsyncJobStatus(OTHER_TENANT, created.jobId, { totalObjects: 5 }),
+    ).rejects.toThrow(`Failed to update AsyncJobStatus with id ${created.jobId}`);
+
+    expect((await repo.readByJobId(TENANT, created.jobId))!.totalObjects).toBe(250);
+  });
+
+  it('deleteByJobId removes the job only under its own tenant', async () => {
+    const repo = asyncJobStatusRepo(kind);
+    const created = await aJob(repo, TENANT);
+
+    expect(await repo.deleteByJobId(OTHER_TENANT, created.jobId)).toBeUndefined();
+    expect(await AsyncJobStatus.count()).toBe(1);
+
+    const deleted = await repo.deleteByJobId(TENANT, created.jobId);
+    expect(deleted!.jobId).toBe(created.jobId);
+    expect(await AsyncJobStatus.count()).toBe(0);
+    expect(await repo.deleteByJobId(TENANT, created.jobId)).toBeUndefined();
   });
 });

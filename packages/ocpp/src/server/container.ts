@@ -23,6 +23,7 @@ import { type ILogObj, Logger } from 'tslog';
 import {
   DefaultDrizzleInstance,
   DefaultSequelizeInstance,
+  DrizzleAsyncJobStatusRepository,
   DrizzleAuthorizationRepository,
   DrizzleBootRepository,
   DrizzleCertificateRepository,
@@ -338,6 +339,7 @@ function registerRepositories(container: AwilixContainer): void {
 
       useTenantSchema: asValue(false),
 
+      asyncJobStatusRepository: asClass(DrizzleAsyncJobStatusRepository).singleton(),
       authorizationRepository: asClass(DrizzleAuthorizationRepository).singleton(),
       bootRepository: asClass(DrizzleBootRepository).singleton(),
       certificateRepository: asClass(DrizzleCertificateRepository).singleton(),

@@ -16,6 +16,18 @@ export {
   type TenantScopedTable,
 } from '../../repositories/drizzle/base.js';
 export {
+  DrizzleAsyncJobStatusRepository,
+  toAsyncJobStatusDto,
+} from '../../repositories/drizzle/async-job-status.js';
+export {
+  asyncJobStatusTable,
+  tenantAsyncJobStatusTable,
+  AsyncJobStatusEntitySchema,
+  AsyncJobStatusEntityInsertSchema,
+  type AsyncJobStatusEntity,
+  type AsyncJobStatusEntityInsert,
+} from './schema/async-job-status.js';
+export {
   DrizzleAuthorizationRepository,
   toAuthorizationDto,
 } from '../../repositories/drizzle/authorization.js';
