@@ -4,7 +4,6 @@
 
 import type { OcppRequest, OcppResponse } from '../internal-types.js';
 
-
 export interface SecurityEventNotificationRequest extends OcppRequest {
   type: string;
   timestamp: string;
