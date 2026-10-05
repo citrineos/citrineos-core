@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { OCPP1_6, OCPP2_0_1, OCPP2_1, OCPP_CallAction } from '@citrineos/types';
+import { OCPP1_6, OCPP1_6_Security, OCPP2_0_1, OCPP2_1, OCPP_CallAction } from '@citrineos/types';
 
 export const OCPP1_6_CALL_SCHEMA_RECORD: Record<string, object> = {
   [OCPP_CallAction.Authorize]: OCPP1_6.AuthorizeRequestSchema,
@@ -26,6 +26,7 @@ export const OCPP1_6_CALL_SCHEMA_RECORD: Record<string, object> = {
   [OCPP_CallAction.RemoteStopTransaction]: OCPP1_6.RemoteStopTransactionRequestSchema,
   [OCPP_CallAction.ReserveNow]: OCPP1_6.ReserveNowRequestSchema,
   [OCPP_CallAction.Reset]: OCPP1_6.ResetRequestSchema,
+  [OCPP_CallAction.SecurityEventNotification]: OCPP1_6_Security.SecurityEventNotificationRequestSchema,
   [OCPP_CallAction.SendLocalList]: OCPP1_6.SendLocalListRequestSchema,
   [OCPP_CallAction.SetChargingProfile]: OCPP1_6.SetChargingProfileRequestSchema,
   [OCPP_CallAction.StartTransaction]: OCPP1_6.StartTransactionRequestSchema,
@@ -209,6 +210,7 @@ export const OCPP1_6_CALL_RESULT_SCHEMA_RECORD: Record<string, object> = {
   [OCPP_CallAction.RemoteStopTransaction]: OCPP1_6.RemoteStopTransactionResponseSchema,
   [OCPP_CallAction.ReserveNow]: OCPP1_6.ReserveNowResponseSchema,
   [OCPP_CallAction.Reset]: OCPP1_6.ResetResponseSchema,
+  [OCPP_CallAction.SecurityEventNotification]: OCPP1_6_Security.SecurityEventNotificationResponseSchema,
   [OCPP_CallAction.SendLocalList]: OCPP1_6.SendLocalListResponseSchema,
   [OCPP_CallAction.SetChargingProfile]: OCPP1_6.SetChargingProfileResponseSchema,
   [OCPP_CallAction.StartTransaction]: OCPP1_6.StartTransactionResponseSchema,
