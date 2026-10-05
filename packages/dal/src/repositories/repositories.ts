@@ -52,6 +52,8 @@ import type {
   UpdateEnumType,
   VariableAttributeDto,
   VariableCharacteristicsDto,
+  WebsocketEventCreate,
+  WebsocketEventDto,
 } from '@citrineos/types';
 import type { AuthorizationQuerystring } from '../interfaces/queries/authorization.js';
 import type { TariffQueryString } from '../interfaces/queries/tariff.js';
@@ -685,6 +687,14 @@ export interface IOCPPMessageRepository {
   ): Promise<OCPPMessageDto | undefined>;
   readOnlyOneByQuery(tenantId: number, query: object): Promise<OCPPMessageDto | undefined>;
   readAllByQuery(tenantId: number, query: object): Promise<OCPPMessageDto[]>;
+}
+
+export interface IWebsocketEventRepository {
+  createWebsocketEvent(
+    tenantId: number,
+    ocppConnectionName: string | undefined,
+    event: Omit<WebsocketEventCreate, 'stationId' | 'tenantId'>,
+  ): Promise<WebsocketEventDto>;
 }
 
 export interface IChargingStationSecurityInfoRepository

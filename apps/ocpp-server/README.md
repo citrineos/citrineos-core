@@ -195,6 +195,17 @@ dropping is destructive.
 The oldest partition the migration creates is `MINVALUE`-bounded, so it accepts anything older than itself. That
 catch-all is gone once it rotates away, after which a row predating the oldest partition has no partition to land in.
 
+#### WebsocketEvents
+
+`WebsocketEvents` was created partitioned by migration `20261005120000-create-websocket-events`: range partitioned on
+`createdAt`, one partition per ISO week, so it never needs a conversion. What is said above about `OCPPMessages`
+applies here too — the composite `(id, "createdAt")` primary key, so nothing can reference a row by `id` alone; no
+`DEFAULT` partition; a `MINVALUE`-bounded first partition; UTC week boundaries.
+
+`rotate_websocket_events_partitions(retain_weeks, future_weeks, dry_run)` provisions upcoming weeks and drops expired
+ones. Called with no arguments it keeps four weeks. `entrypoint.sh` and `pnpm run db:partitions` call it provision-only,
+as they do the others.
+
 ## Configuration
 
 Configuration comes from environment variables, validated on startup against the Zod schema in

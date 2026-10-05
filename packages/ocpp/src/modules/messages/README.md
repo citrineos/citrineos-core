@@ -81,8 +81,7 @@ lifecycle events.
 see: a refused upgrade (`UpgradeRejected` — authentication failures, invalid handshakes, failed TLS
 handshakes), a socket closed during connection setup (`ConnectionRejected`), an `Open` and a
 `Close`. Each carries the close codes, the HTTP status, who initiated it and why. These are routed
-to the "websocket" queue, which as of time of writing has no processors: events are acked and
-discarded until one is registered.
+to the "websocket" queue, where one processor persists each event to the WebsocketEvents table.
 
 # Dead-letter queues
 
