@@ -621,8 +621,8 @@ importers:
         specifier: 1.5.1
         version: 1.5.1(react-dom@19.1.4(react@19.1.4))(react@19.1.4)
       axios:
-        specifier: 1.18.0
-        version: 1.18.0(debug@4.4.3)
+        specifier: 1.20.0
+        version: 1.20.0(debug@4.4.3)
       class-transformer:
         specifier: 'catalog:'
         version: 0.5.1
@@ -5106,8 +5106,8 @@ packages:
     resolution: {integrity: sha512-UzGt8zg7Ny8djbYMhxl2zuEevVa7r2gJjYY5Lwr1xM7+XU2nd6CkIWFTVcCIbAP63vSz71NaVyyuSk9lHKcy0A==}
     engines: {node: '>=4'}
 
-  axios@1.18.0:
-    resolution: {integrity: sha512-E32NzpYKp++W7XRe52rHiXV2ehxmh3wbdgO7MHeFM+vqxLBYHzt0ElkiImtOBxtOmyp0yoC8C6uESVV84Y2/hw==}
+  axios@1.20.0:
+    resolution: {integrity: sha512-r8aOh8j9cGKpgQAqpzrUHnSIc6a59Y3Xf/cv8sy1DrHCkZHzQGEuoq1tARk6qSyDdtQGSDgpb9kFlruzPvrgwg==}
 
   axobject-query@4.1.0:
     resolution: {integrity: sha512-qIj0G9wZbMGNLjLmg1PT6v2mE9AH2zlnADJD/2tC6E00hgmhUOfEB6greHPAfLRSufHqROIUTkw6E+M3lH0PTQ==}
@@ -14054,7 +14054,7 @@ snapshots:
     dependencies:
       '@peculiar/x509': 1.14.3
       asn1js: 3.0.10
-      axios: 1.18.0(debug@4.4.3)
+      axios: 1.20.0(debug@4.4.3)
       debug: 4.4.3(supports-color@5.5.0)
       node-forge: 1.4.0
     transitivePeerDependencies:
@@ -14361,7 +14361,7 @@ snapshots:
 
   axe-core@4.13.0: {}
 
-  axios@1.18.0(debug@4.4.3):
+  axios@1.20.0(debug@4.4.3):
     dependencies:
       follow-redirects: 1.16.0(debug@4.4.3)
       form-data: 4.0.6
