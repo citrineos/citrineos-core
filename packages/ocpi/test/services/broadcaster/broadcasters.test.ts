@@ -41,7 +41,11 @@ describe('LocationsBroadcaster', () => {
     const logger = aLogger();
     const locationsClientApi = aClientApi();
     const locationMapper = { fromGraphql: vi.fn(), fromPartialGraphql: vi.fn() };
-    const evseMapper = { fromGraphql: vi.fn(), fromPartialGraphql: vi.fn() };
+    const evseMapper = {
+      fromGraphql: vi.fn(),
+      fromPartialGraphql: vi.fn(),
+      mapEvseStatusFromConnectors: vi.fn(),
+    };
     const connectorMapper = { fromGraphql: vi.fn(), fromPartialGraphql: vi.fn() };
     const broadcaster = new LocationsBroadcaster({
       logger,
@@ -196,6 +200,40 @@ describe('LocationsBroadcaster', () => {
       'broadcastPATCHEvse failed for /US/CPO/42/cp001::2',
       failure,
     );
+  });
+
+  it('PATCH evse status sends only the status derived from the connectors and last_updated', async () => {
+    const { broadcaster, locationsClientApi, evseMapper } = build();
+    evseMapper.mapEvseStatusFromConnectors.mockReturnValue('CHARGING');
+    const connectors = [{ id: 3, status: 'Charging' }];
+    const updatedAt = new Date('2026-09-30T01:02:03.000Z');
+
+    await broadcaster.broadcastPatchEvseStatus(
+      TENANT,
+      { id: 2, connectors, updatedAt } as never,
+      { locationId: 42, ocppConnectionName: 'cp001' } as never,
+    );
+
+    expect(evseMapper.mapEvseStatusFromConnectors).toHaveBeenCalledWith(connectors);
+    expect(evseMapper.fromPartialGraphql).not.toHaveBeenCalled();
+    const call = broadcastCallOf(locationsClientApi);
+    expect(call.httpMethod).toBe(HttpMethod.Patch);
+    expect(call.path).toBe('/US/CPO/42/cp001::2');
+    expect(call.body).toEqual({ status: 'CHARGING', last_updated: updatedAt });
+  });
+
+  it('PATCH evse status without a station locationId throws and skips the client', async () => {
+    const { broadcaster, locationsClientApi } = build();
+
+    await expect(
+      broadcaster.broadcastPatchEvseStatus(
+        TENANT,
+        { id: 2 } as never,
+        { ocppConnectionName: 'cp001' } as never,
+      ),
+    ).rejects.toThrow('Location ID missing in EVSE data');
+
+    expect(locationsClientApi.broadcastToClients).not.toHaveBeenCalled();
   });
 
   it('PUT connector appends the connector id after the evse uid in the path', async () => {
