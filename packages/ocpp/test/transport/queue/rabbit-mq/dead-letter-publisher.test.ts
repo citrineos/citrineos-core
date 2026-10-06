@@ -77,7 +77,11 @@ describe('RabbitMqDeadLetterPublisher', () => {
         'x-citrineos-dead-letter-error': 'boom',
       },
     });
-    expect(recordOcppMessageDeadLettered).toHaveBeenCalledWith('handler_error', 'module');
+    expect(recordOcppMessageDeadLettered).toHaveBeenCalledWith(
+      'handler_error',
+      'module',
+      'published',
+    );
   });
 
   it('should declare the DLX once per channel', async () => {
@@ -129,6 +133,24 @@ describe('RabbitMqDeadLetterPublisher', () => {
       expect.anything(),
       'lost',
       expect.any(Error),
+    );
+    expect(recordOcppMessageDeadLettered).toHaveBeenCalledExactlyOnceWith(
+      'stale',
+      'router',
+      'failed',
+    );
+  });
+
+  it('should count a failure to declare the DLX as failed, not published', async () => {
+    vi.mocked(channel.assertExchange).mockRejectedValueOnce(new Error('channel closed'));
+
+    await publisher.publishRaw(Buffer.from('lost'), {}, 'poison', 'module');
+
+    expect(channel.publish).not.toHaveBeenCalled();
+    expect(recordOcppMessageDeadLettered).toHaveBeenCalledExactlyOnceWith(
+      'poison',
+      'module',
+      'failed',
     );
   });
 });

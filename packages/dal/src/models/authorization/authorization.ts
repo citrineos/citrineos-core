@@ -122,7 +122,13 @@ export class Authorization extends Model implements AuthorizationDto {
   })
   declare isPrepaid?: boolean;
 
-  @Column(DataType.DECIMAL)
+  @Column({
+    type: DataType.DECIMAL,
+    get() {
+      const value = this.getDataValue('prepaidBalance');
+      return value == null ? value : Number(value);
+    },
+  })
   declare prepaidBalance?: number | null;
 
   @Column(DataType.JSONB)

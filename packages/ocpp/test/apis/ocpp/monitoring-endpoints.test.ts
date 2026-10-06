@@ -229,7 +229,7 @@ describe('monitoring message endpoints', () => {
       getTestInstance(container, SetVariableMonitoringEndpoint, {
         ocppSender: { sendCall },
         deviceModelService: deviceModelService(),
-        deviceModelRepository: { findComponentAndVariable },
+        componentRepository: { findComponentAndVariable },
         variableMonitoringRepository: { createOrUpdateBySetMonitoringDataTypeAndStationId },
       });
 

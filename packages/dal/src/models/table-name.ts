@@ -64,6 +64,7 @@ export const TableName = {
   // Messaging
   MessageInfos: 'MessageInfos',
   OCPPMessages: 'OCPPMessages',
+  WebsocketEvents: 'WebsocketEvents',
 
   // Network alerts
   NetworkAlertConfigs: 'NetworkAlertConfigs',

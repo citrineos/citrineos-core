@@ -7,6 +7,7 @@ import {
   FrameDirection,
   isConnectionEvent,
   isFrameEvent,
+  isWebsocketLifecycleEvent,
   MessageOrigin,
   MESSAGES_DLX,
   MESSAGES_EXCHANGE,
@@ -21,6 +22,7 @@ import {
 import {
   buildConnectionEvent,
   buildFrameEvent,
+  buildWebsocketLifecycleEvent,
   directionFromOrigin,
   extractPayloadFromRpcMessage,
 } from '@/transport/index.js';
@@ -186,6 +188,46 @@ describe('buildConnectionEvent', () => {
   });
 });
 
+describe('buildWebsocketLifecycleEvent', () => {
+  it('should build a close event carrying both close codes', () => {
+    const event = buildWebsocketLifecycleEvent({
+      tenantId: TENANT_ID,
+      ocppConnectionName: STATION_ID,
+      timestamp: TIMESTAMP,
+      type: 'Close',
+      serverId: 'ws-0',
+      host: 'pod-a',
+      wsCloseCode: 1000,
+      sentCode: 1011,
+      initiator: MessageOrigin.ChargingStationManagementSystem,
+      source: 'pong_timeout',
+    });
+
+    expect(event).toMatchObject({
+      kind: MessagesEventKind.Websocket,
+      type: 'Close',
+      wsCloseCode: 1000,
+      sentCode: 1011,
+    });
+    expect(MessagesEventSchema.safeParse(event).success).toBe(true);
+  });
+
+  it('should stay valid without a station identifier, as for a failed TLS handshake', () => {
+    const event = buildWebsocketLifecycleEvent({
+      tenantId: TENANT_ID,
+      timestamp: TIMESTAMP,
+      type: 'UpgradeRejected',
+      serverId: 'wss-0',
+      host: 'pod-a',
+      remoteAddress: '10.0.0.7',
+      source: 'tls_handshake_failed',
+    });
+
+    expect(event.ocppConnectionName).toBeUndefined();
+    expect(MessagesEventSchema.safeParse(event).success).toBe(true);
+  });
+});
+
 describe('kind discrimination', () => {
   it('should narrow a frame event', () => {
     const event = buildFrameEvent(frameInput());
@@ -201,6 +243,19 @@ describe('kind discrimination', () => {
       timestamp: TIMESTAMP,
     });
     expect(isConnectionEvent(event)).toBe(true);
+    expect(isFrameEvent(event)).toBe(false);
+  });
+
+  it('should narrow a websocket lifecycle event', () => {
+    const event = buildWebsocketLifecycleEvent({
+      tenantId: TENANT_ID,
+      timestamp: TIMESTAMP,
+      type: 'Open',
+      serverId: 'ws-0',
+      host: 'pod-a',
+    });
+    expect(isWebsocketLifecycleEvent(event)).toBe(true);
+    expect(isConnectionEvent(event)).toBe(false);
     expect(isFrameEvent(event)).toBe(false);
   });
 
@@ -251,6 +306,20 @@ describe('messagesEventRoutingKey', () => {
     ).toBe('connection.closed');
   });
 
+  it('should key a websocket lifecycle event by type', () => {
+    expect(
+      messagesEventRoutingKey(
+        buildWebsocketLifecycleEvent({
+          tenantId: TENANT_ID,
+          timestamp: TIMESTAMP,
+          type: 'ConnectionRejected',
+          serverId: 'ws-0',
+          host: 'pod-a',
+        }),
+      ),
+    ).toBe('websocket.ConnectionRejected');
+  });
+
   it('should not encode the tenant, so nothing routes on it', () => {
     const one = messagesEventRoutingKey(buildFrameEvent(frameInput({ tenantId: 1 })));
     const other = messagesEventRoutingKey(buildFrameEvent(frameInput({ tenantId: 99 })));
@@ -273,6 +342,12 @@ describe('messages-plane topology constants', () => {
         queue: 'messages.connections',
         dlq: 'messages.connections.dlq',
         binding: 'connection.#',
+      },
+      {
+        kind: MessagesEventKind.Websocket,
+        queue: 'messages.websocket',
+        dlq: 'messages.websocket.dlq',
+        binding: 'websocket.#',
       },
     ]);
     expect(MESSAGES_EXCHANGE).toBe('messages');
@@ -297,8 +372,23 @@ describe('messages-plane topology constants', () => {
     for (const event of frames) {
       expect(messagesEventRoutingKey(event).startsWith('frame.')).toBe(true);
     }
+    const websocketEvents = (
+      ['UpgradeRejected', 'ConnectionRejected', 'Open', 'Close'] as const
+    ).map((type) =>
+      buildWebsocketLifecycleEvent({
+        tenantId: TENANT_ID,
+        timestamp: TIMESTAMP,
+        type,
+        serverId: 'ws-0',
+        host: 'pod-a',
+      }),
+    );
+
     for (const event of connections) {
       expect(messagesEventRoutingKey(event).startsWith('connection.')).toBe(true);
+    }
+    for (const event of websocketEvents) {
+      expect(messagesEventRoutingKey(event).startsWith('websocket.')).toBe(true);
     }
   });
 });

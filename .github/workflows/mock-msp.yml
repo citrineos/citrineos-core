@@ -57,8 +57,8 @@ jobs:
       # push / schedule / dispatch run everything regardless of paths
       all: ${{ github.event_name != 'pull_request' }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
+      - uses: actions/checkout@v7
+      - uses: dorny/paths-filter@v4
         id: filter
         if: github.event_name == 'pull_request'
         with:
@@ -103,13 +103,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.event_name == 'schedule' && 'next' || '' }}
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: 10.19.0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '24.16.0'
           cache: 'pnpm'
@@ -150,7 +150,7 @@ jobs:
             bash apps/mock-msp/scripts/ci/mock-up.sh
           curl -fs http://127.0.0.1:18084/_mock/health | jq -e '.registration.status == "unregistered"'
           bash apps/mock-msp/scripts/ci/mock-down.sh
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: mock-msp-unit
@@ -164,7 +164,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.event_name == 'schedule' && 'next' || '' }}
       - run: bash apps/mock-msp/scripts/ci/port-audit.sh 8083
@@ -200,13 +200,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.event_name == 'schedule' && 'next' || '' }}
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: 10.19.0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '24.16.0'
           cache: 'pnpm'
@@ -216,7 +216,7 @@ jobs:
       - run: bash apps/mock-msp/scripts/ci/alias-guard.sh
       - name: Cache Playwright browsers
         id: playwright-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ hashFiles('apps/mock-msp/package.json') }}
@@ -236,7 +236,7 @@ jobs:
           CI: 'true'
           MOCK_MSP_CONTROL_SECRET: e2e-secret
         run: pnpm --filter @citrineos/mock-msp run test:e2e
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: mock-msp-playwright-report
@@ -253,13 +253,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.event_name == 'schedule' && 'next' || '' }}
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: 10.19.0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '24.16.0'
           cache: 'pnpm'
@@ -341,7 +341,7 @@ jobs:
       - name: Capture diagnostics
         if: always()
         run: bash apps/mock-msp/scripts/ci/capture-diagnostics.sh apps/mock-msp/reports
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: mock-msp-live-report
@@ -359,13 +359,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.event_name == 'schedule' && 'next' || '' }}
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: 10.19.0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '24.16.0'
           cache: 'pnpm'
@@ -382,7 +382,7 @@ jobs:
           df -h /
       - name: Cache Playwright browsers
         id: playwright-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ hashFiles('apps/mock-msp/package.json') }}
@@ -479,7 +479,7 @@ jobs:
           bash apps/mock-msp/scripts/ci/capture-diagnostics.sh apps/mock-msp/reports
           docker logs everest-manager-1 > apps/mock-msp/reports/everest-manager.log 2>&1 || true
           docker logs everest-nodered-1 > apps/mock-msp/reports/everest-nodered.log 2>&1 || true
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: mock-msp-everest-report

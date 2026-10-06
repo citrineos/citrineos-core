@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {
+  DeadLetterOutcome,
   recordOcppMessageDeadLettered,
   type DeadLetterReason,
   type DeadLetterSource,
@@ -97,7 +98,6 @@ export class RabbitMqDeadLetterPublisher {
     source: DeadLetterSource,
     detail: DeadLetterDetail = {},
   ): Promise<void> {
-    recordOcppMessageDeadLettered(reason, source);
     const deadLetterHeaders: Record<string, unknown> = {
       ...headers,
       [DeadLetterHeader.Reason]: reason,
@@ -124,8 +124,10 @@ export class RabbitMqDeadLetterPublisher {
         persistent: true,
         headers: deadLetterHeaders,
       });
+      recordOcppMessageDeadLettered(reason, source, DeadLetterOutcome.Published);
       this._logger.debug(`Dead-lettered a message (${reason}) from ${source}`, deadLetterHeaders);
     } catch (error) {
+      recordOcppMessageDeadLettered(reason, source, DeadLetterOutcome.Failed);
       this._logger.error(
         `Failed to dead-letter a message (${reason}) from ${source}; it is dropped.`,
         deadLetterHeaders,

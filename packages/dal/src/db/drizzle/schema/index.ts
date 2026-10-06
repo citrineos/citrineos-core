@@ -59,3 +59,4 @@ export * from './variable-characteristics.js';
 export * from './variable-monitoring.js';
 export * from './variable-monitoring-status.js';
 export * from './variable-status.js';
+export * from './websocket-event.js';

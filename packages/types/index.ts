@@ -35,6 +35,7 @@ export {
   FrameDirection,
   isConnectionEvent,
   isFrameEvent,
+  isWebsocketLifecycleEvent,
   MESSAGES_DLX,
   MESSAGES_EXCHANGE,
   MESSAGES_QUEUES,
@@ -43,6 +44,7 @@ export {
   messagesEventRoutingKey,
   ConnectionEventSchema,
   FrameEventSchema,
+  WebsocketLifecycleEventSchema,
   type MessagesEvent,
   type MessagesEventContext,
   type MessagesQueueSpec,
@@ -51,7 +53,9 @@ export {
   type IConnectionEventProcessor,
   type IFrameEventProcessor,
   type IMessagesEventProcessor,
+  type IWebsocketLifecycleEventProcessor,
   type MessagesRecordResult,
+  type WebsocketLifecycleEvent,
 } from '@interfaces/messages/messages-types.js';
 
 export { HttpMethod } from './src/interfaces/api/http-methods.js';
@@ -145,9 +149,11 @@ export * from './src/interfaces/dto/types/sampled-value-dto.js';
 export * from './src/interfaces/dto/types/tariff-types.js';
 export * from './src/interfaces/dto/types/transaction-type.js';
 export * from './src/interfaces/dto/types/vat.js';
+export * from './src/interfaces/dto/types/websocket-event.js';
 export * from './src/interfaces/dto/variable-attribute-dto.js';
 export * from './src/interfaces/dto/variable-characteristics-dto.js';
 export * from './src/interfaces/dto/variable-dto.js';
 export * from './src/interfaces/dto/variable-monitoring-dto.js';
 export * from './src/interfaces/dto/variable-monitoring-status-dto.js';
 export * from './src/interfaces/dto/variable-status-dto.js';
+export * from './src/interfaces/dto/websocket-event-dto.js';

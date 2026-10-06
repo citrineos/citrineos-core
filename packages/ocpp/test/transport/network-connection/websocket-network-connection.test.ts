@@ -43,6 +43,7 @@ describe('WebsocketNetworkConnection', () => {
         router: {},
         authenticator: { authenticate: vi.fn().mockResolvedValue({ identifier: STATION_ID }) },
         doesChargingStationExistByOcppConnectionName: vi.fn().mockResolvedValue(false),
+        messagesExchangeSink: { record: vi.fn().mockResolvedValue({ delivered: true }) },
       }),
     );
     await networkConnection.addWebsocketServer(config);

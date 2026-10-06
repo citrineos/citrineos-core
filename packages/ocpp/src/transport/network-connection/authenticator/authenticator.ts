@@ -11,7 +11,7 @@ import { BasicAuthenticationFilter } from './basic-authentication-filter.js';
 import { ClientCertificateFilter } from './client-certificate-filter.js';
 import { ConnectedStationFilter } from './connected-station-filter.js';
 import { NetworkProfileFilter } from './network-profile-filter.js';
-import { getClientIdFromUrl } from '../websocket-network-connection.js';
+import { getClientIdFromUrl } from '../util.js';
 
 export class Authenticator implements IAuthenticator {
   protected _logger: Logger<ILogObj>;

@@ -27,8 +27,10 @@ const meter = metrics.getMeter('citrineos.ocpp');
 export const WsUpgradeResult = {
   Upgraded: 'upgraded',
   AuthFailed: 'auth_failed',
+  UnknownStation: 'unknown_station',
   BrokerUnavailable: 'broker_unavailable',
   TenantUnresolved: 'tenant_unresolved',
+  InvalidHandshake: 'invalid_handshake',
   InternalError: 'internal_error',
 } as const;
 export type WsUpgradeResult = (typeof WsUpgradeResult)[keyof typeof WsUpgradeResult];
@@ -93,7 +95,8 @@ export const UNKNOWN_ACTION = 'unknown';
 
 /**
  * Upgrade/authentication outcomes. `result` is the earliest decision point:
- * upgraded | auth_failed | broker_unavailable | tenant_unresolved | internal_error.
+ * upgraded | auth_failed | broker_unavailable | tenant_unresolved | invalid_handshake |
+ * internal_error.
  */
 const wsUpgradeTotal = meter.createCounter('ocpp_ws_upgrade_total', {
   description: 'WebSocket upgrade/authentication attempts, by result',
@@ -135,6 +138,15 @@ const wsActiveConnections = meter.createUpDownCounter('ocpp_ws_active_connection
   description: 'Currently active WebSocket connections',
 });
 
+/**
+ * TLS handshakes that failed before any HTTP request, by `server_id` and Node's error `code`. An
+ * expired or rejected client certificate lands here and never reaches ocpp_ws_upgrade_total.
+ * Load-balancer health checks and port scanners land here too, usually as ECONNRESET.
+ */
+const wsTlsHandshakeFailureTotal = meter.createCounter('ocpp_ws_tls_handshake_failure_total', {
+  description: 'TLS handshakes that failed before any HTTP request, by server and error code',
+});
+
 /** Failures sending to a station, by `reason`: no_cache | no_socket | not_open | send_error. */
 const wsSendFailureTotal = meter.createCounter('ocpp_ws_send_failure_total', {
   description: 'Failures sending a message to a charging station, by reason',
@@ -143,6 +155,11 @@ const wsSendFailureTotal = meter.createCounter('ocpp_ws_send_failure_total', {
 /** A WebSocket upgrade/authentication attempt resolved to `result`. */
 export function recordWsUpgrade(result: WsUpgradeResult): void {
   wsUpgradeTotal.add(1, { result });
+}
+
+/** A TLS handshake on websocket server `serverId` failed with Node error `code`. */
+export function recordWsTlsHandshakeFailure(serverId: string, code: string | undefined): void {
+  wsTlsHandshakeFailureTotal.add(1, { server_id: serverId, code: code ?? 'unknown' });
 }
 
 /** A connection completed the full registration path on the given OCPP version. */
@@ -373,11 +390,23 @@ export const ReemitOutcome = {
 export type ReemitOutcome = (typeof ReemitOutcome)[keyof typeof ReemitOutcome];
 
 /**
- * Messages this pod gave up on and published to the dead-letter exchange, by `reason` and
- * `source`. Counted where the decision is made, so the failure is credited to the pod that made it.
+ * `outcome` on {@link recordOcppMessageDeadLettered}. `published` means the message was handed to
+ * the channel, not that the broker accepted it or that a queue is bound to the exchange.
+ */
+export const DeadLetterOutcome = {
+  Published: 'published',
+  Failed: 'failed',
+} as const;
+export type DeadLetterOutcome = (typeof DeadLetterOutcome)[keyof typeof DeadLetterOutcome];
+
+/**
+ * Messages this pod gave up on, by `reason`, `source` and `outcome`. Counted where the decision is
+ * made, so the failure is credited to the pod that made it. `outcome="failed"` is a message that
+ * could not be published to the dead-letter exchange and is lost.
  */
 const ocppMessageDeadLetteredTotal = meter.createCounter('ocpp_message_dead_lettered_total', {
-  description: 'Messages published to the dead-letter exchange by this pod, by reason and source',
+  description:
+    'Messages this pod dead-lettered, by reason, source and whether publishing to the dead-letter exchange succeeded',
 });
 
 /**
@@ -401,8 +430,9 @@ const ocppMessageDivertedStaleTotal = meter.createCounter('ocpp_message_diverted
 export function recordOcppMessageDeadLettered(
   reason: DeadLetterReason,
   source: DeadLetterSource,
+  outcome: DeadLetterOutcome,
 ): void {
-  ocppMessageDeadLetteredTotal.add(1, { reason, source });
+  ocppMessageDeadLetteredTotal.add(1, { reason, source, outcome });
 }
 
 export function recordOcppDeadLetterReceived(reason: string, action: string): void {

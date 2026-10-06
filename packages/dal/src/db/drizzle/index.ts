@@ -73,6 +73,10 @@ export {
   type ChargingStationEntityInsert,
 } from './schema/charging-station.js';
 export {
+  DrizzleComponentRepository,
+  toComponentDto,
+} from '../../repositories/drizzle/component.js';
+export {
   DrizzleConnectorRepository,
   toConnectorDto,
 } from '../../repositories/drizzle/connector.js';
@@ -273,3 +277,14 @@ export {
   type VariableCharacteristicsEntity,
   type VariableCharacteristicsEntityInsert,
 } from './schema/variable-characteristics.js';
+export {
+  DrizzleWebsocketEventRepository,
+  toWebsocketEventDto,
+} from '../../repositories/drizzle/websocket-event.js';
+export {
+  websocketEventTable,
+  WebsocketEventEntitySchema,
+  WebsocketEventEntityInsertSchema,
+  type WebsocketEventEntity,
+  type WebsocketEventEntityInsert,
+} from './schema/websocket-event.js';
