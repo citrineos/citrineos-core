@@ -67,7 +67,8 @@ export class NetworkAlertOccurrence
   @Column({ type: DataType.STRING, allowNull: false })
   declare severity: NetworkAlertSeverity;
 
-  // No foreign key: the WebsocketEvents table does not exist yet.
+  // No foreign key: WebsocketEvents is partitioned on (id, createdAt), so id alone is not a
+  // key a foreign key can reference, and a referenced event can disappear by retention.
   @Column(DataType.INTEGER)
   declare websocketEventId?: number | null;
 
