@@ -10,7 +10,7 @@ import {
 } from '@citrineos/base';
 import {
   type HandlerProperties,
-  OCPP1_6_Security,
+  OCPP1_6,
   OCPP_CallAction,
   OCPPVersion,
   SecurityEventNotificationTypeEnumSchema,
@@ -37,7 +37,7 @@ export class SecurityEventNotificationRequestOcpp16Handler extends AbstractHandl
   }
 
   async handle(
-    message: IMessage<OCPP1_6_Security.SecurityEventNotificationRequest>,
+    message: IMessage<OCPP1_6.SecurityEventNotificationRequest>,
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug(
@@ -59,7 +59,7 @@ export class SecurityEventNotificationRequestOcpp16Handler extends AbstractHandl
       message.context.ocppConnectionName,
     );
 
-    const response: OCPP1_6_Security.SecurityEventNotificationResponse = {};
+    const response: OCPP1_6.SecurityEventNotificationResponse = {};
     const messageConfirmation = await this._ocppSender.sendCallResultWithMessage(message, response);
     this._logger.debug(
       this.createHandlerSentMessageLog('SecurityEventNotificationResponse'),

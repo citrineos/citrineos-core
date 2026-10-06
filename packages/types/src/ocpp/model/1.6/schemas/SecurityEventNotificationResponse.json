@@ -1,0 +1,8 @@
+{
+  "title": "SecurityEventNotificationResponse",
+  "type": "object",
+  "properties": {},
+  "additionalProperties": false,
+  "$id": "SecurityEventNotificationResponse",
+  "definitions": {}
+}

@@ -7,7 +7,7 @@ import {
   EventGroup,
   MessageOrigin,
   MessageState,
-  OCPP1_6_Security,
+  OCPP1_6,
   OCPP_CallAction,
 } from '@citrineos/types';
 import { SecurityEventNotificationRequestOcpp16Handler } from '@handlers/index.js';
@@ -16,8 +16,8 @@ import { createTestContainer, makeMockOcppSender, mockDeps } from '@test/test-co
 const STATION_ID = 'station-001';
 
 function aSecurityEventMessage(
-  payload: OCPP1_6_Security.SecurityEventNotificationRequest,
-): Message<OCPP1_6_Security.SecurityEventNotificationRequest> {
+  payload: OCPP1_6.SecurityEventNotificationRequest,
+): Message<OCPP1_6.SecurityEventNotificationRequest> {
   return new Message(
     MessageOrigin.ChargingStation,
     EventGroup.Reporting,
