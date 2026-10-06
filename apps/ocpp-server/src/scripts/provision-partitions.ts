@@ -11,7 +11,7 @@ import { ConfigLoader } from '@citrineos/base';
 import { Sequelize } from 'sequelize';
 
 /** Weeks of "OCPPMessages" and "WebsocketEvents" partitions to keep ahead of the current one. */
-const FUTURE_WEEKS = Number(process.env.OCPP_PARTITION_FUTURE_WEEKS ?? 1);
+const FUTURE_WEEKS = Number(process.env.OCPP_PARTITION_FUTURE_WEEKS ?? 4);
 
 /**
  * Months of "Transactions" cluster partitions to keep ahead of the current one. Nothing but
