@@ -86,7 +86,6 @@ export {
 } from '../../repositories/sequelize/base.js';
 export { SequelizeAuthorizationRepository } from '../../repositories/sequelize/authorization.js';
 export { SequelizeBootRepository } from '../../repositories/sequelize/boot.js';
-export { SequelizeComponentRepository } from '../../repositories/sequelize/component.js';
 export { SequelizeDeviceModelRepository } from '../../repositories/sequelize/device-model.js';
 export { SequelizeLocalAuthListRepository } from '../../repositories/sequelize/local-auth-list.js';
 export { SequelizeLocationRepository } from '../../repositories/sequelize/location.js';

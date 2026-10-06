@@ -41,6 +41,13 @@ import { MemoryCache } from '@citrineos/base';
 import type { CallbackUrlNotifier } from '@modules/ocpp-router/callback-url-notifier.js';
 import type { MessagesExchangeSink } from '@/transport/index.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
+import { ConnectionNotFoundError } from '@/transport/index.js';
+import {
+  aMockDeadLetterPublisher,
+  aMockReemitter,
+  type MockDeadLetterPublisher,
+  type MockReemitter,
+} from '../../providers/rabbit-mq-provider.js';
 import { afterEach, beforeEach, describe, expect, it, type Mocked, vi } from 'vitest';
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
@@ -54,9 +61,11 @@ const CORRELATION_ID = 'msg-123';
 function buildConfig(overrides?: Partial<SystemConfig['timeouts']>): any {
   return {
     logLevel: 0,
+    ocpp: { maxPendingCallsPerStation: 5 },
     timeouts: {
       maxCallLengthSeconds: 30,
       maxCachingSeconds: 60,
+      staleCallMaxAgeSeconds: 40,
       shutdownGracePeriodSeconds: 30,
       realTimeAuthDefaultTimeoutSeconds: 15,
       notReadyThresholdSeconds: 60,
@@ -137,9 +146,13 @@ describe('MessageRouterImpl', () => {
   let notifier: Mocked<CallbackUrlNotifier>;
   let networkHook: ReturnType<typeof vi.fn>;
   let chargingStationRepository: Mocked<IChargingStationRepository>;
+  let reemitter: MockReemitter;
+  let deadLetterPublisher: MockDeadLetterPublisher;
   let router: MessageRouterImpl;
 
   beforeEach(() => {
+    reemitter = aMockReemitter();
+    deadLetterPublisher = aMockDeadLetterPublisher();
     config = buildConfig();
     cache = buildMockCache();
     sender = buildMockSender();
@@ -159,6 +172,8 @@ describe('MessageRouterImpl', () => {
       networkHook,
       ocppValidator: undefined,
       chargingStationRepository,
+      reemitter,
+      deadLetterPublisher,
     });
   });
 
@@ -1128,9 +1143,9 @@ describe('MessageRouterImpl', () => {
       );
     }
 
-    function buildRouterWithStaleGuard(staleCallMaxAgeSeconds?: number) {
-      return getTestInstance(container, MessageRouterImpl, {
-        config: buildConfig({ staleCallMaxAgeSeconds }),
+    async function aConnectedRouter(timeouts: Partial<SystemConfig['timeouts']>) {
+      const connected = getTestInstance(container, MessageRouterImpl, {
+        config: buildConfig(timeouts),
         cache,
         routerSender: sender,
         routerHandler: handler,
@@ -1139,38 +1154,127 @@ describe('MessageRouterImpl', () => {
         networkHook,
         ocppValidator: undefined,
         chargingStationRepository,
+        reemitter,
+        deadLetterPublisher,
       });
+      await connected.registerConnection(TENANT_ID, STATION_ID, PROTOCOL);
+      return connected;
     }
 
-    it('should drop a Call older than staleCallMaxAgeSeconds when the guard is enabled', async () => {
-      const guardedRouter = buildRouterWithStaleGuard(30);
-      const sendCallSpy = vi.spyOn(guardedRouter, 'sendCall');
+    it('should dead-letter a Call older than staleCallMaxAgeSeconds instead of sending it', async () => {
+      const guarded = await aConnectedRouter({ staleCallMaxAgeSeconds: 30 });
+      const sendCallSpy = vi.spyOn(guarded, 'sendCall');
+      const message = buildRequestMessage(60_000);
 
-      // guard is 30s; 60s old ⇒ stale
-      await guardedRouter.handle(buildRequestMessage(60_000));
+      await guarded.handle(message);
 
       expect(sendCallSpy).not.toHaveBeenCalled();
       expect(networkHook).not.toHaveBeenCalled();
+      expect(deadLetterPublisher.publishMessage).toHaveBeenCalledWith(message, 'stale', 'router');
     });
 
-    it('should route a Call still within staleCallMaxAgeSeconds when the guard is enabled', async () => {
-      cache.get.mockResolvedValue(null);
-      const guardedRouter = buildRouterWithStaleGuard(30);
-      const sendCallSpy = vi.spyOn(guardedRouter, 'sendCall');
+    it('should route a Call still within staleCallMaxAgeSeconds', async () => {
+      const guarded = await aConnectedRouter({ staleCallMaxAgeSeconds: 30 });
+      const sendCallSpy = vi.spyOn(guarded, 'sendCall');
 
-      await guardedRouter.handle(buildRequestMessage(0));
+      await guarded.handle(buildRequestMessage(0));
+
+      expect(sendCallSpy).toHaveBeenCalledTimes(1);
+      expect(deadLetterPublisher.publishMessage).not.toHaveBeenCalled();
+    });
+
+    it('should route an aged Call when staleCallMaxAgeSeconds is 0', async () => {
+      const unguarded = await aConnectedRouter({ staleCallMaxAgeSeconds: 0 });
+      const sendCallSpy = vi.spyOn(unguarded, 'sendCall');
+
+      await unguarded.handle(buildRequestMessage(60_000));
 
       expect(sendCallSpy).toHaveBeenCalledTimes(1);
     });
+  });
 
-    it('should route an aged Call when the guard is disabled (default)', async () => {
-      cache.get.mockResolvedValue(null);
-      // default router has no staleCallMaxAgeSeconds ⇒ opt-in guard off, delivery unchanged
-      const sendCallSpy = vi.spyOn(router, 'sendCall');
+  // ─── handle (stations this router does not hold) ───────────────────────────
 
-      await router.handle(buildRequestMessage(60_000));
+  describe('handle for a station whose websocket is not here', () => {
+    const payload = { requestId: 1, reportBase: 'FullInventory' } as unknown as OcppRequest;
 
-      expect(sendCallSpy).toHaveBeenCalledTimes(1);
+    function aCall(correlationId: string = CORRELATION_ID) {
+      return RequestBuilder.buildCall(
+        STATION_ID,
+        correlationId,
+        TENANT_ID,
+        OCPP_CallAction.GetBaseReport,
+        payload,
+        EventGroup.Reporting,
+        MessageOrigin.ChargingStationManagementSystem,
+        PROTOCOL,
+      );
+    }
+
+    it('should re-emit a Call when the network connection has no websocket for the station', async () => {
+      networkHook.mockRejectedValueOnce(new ConnectionNotFoundError(IDENTIFIER));
+      const message = aCall();
+
+      await router.handle(message);
+
+      expect(reemitter.reemit).toHaveBeenCalledWith(message);
+    });
+
+    it('should forget the Call it could not send, so the station is free for the next one', async () => {
+      networkHook.mockRejectedValueOnce(new ConnectionNotFoundError(IDENTIFIER));
+
+      await router.handle(aCall());
+
+      const namespace = CacheNamespace.Transactions + IDENTIFIER;
+      expect(cache.remove).toHaveBeenCalledWith(CORRELATION_ID, namespace);
+      expect(cache.remove).toHaveBeenCalledWith('outstanding-csms-call', namespace);
+    });
+
+    it("should re-emit a response and keep the station's Call for the router that answers it", async () => {
+      const namespace = CacheNamespace.Transactions + IDENTIFIER;
+      cache.get.mockResolvedValue(`${OCPP_CallAction.Heartbeat}@2026-09-01T12:00:00.000Z`);
+      networkHook.mockRejectedValueOnce(new ConnectionNotFoundError(IDENTIFIER));
+      const response = RequestBuilder.buildCallResult(
+        STATION_ID,
+        CORRELATION_ID,
+        TENANT_ID,
+        OCPP_CallAction.Heartbeat,
+        { currentTime: '2026-09-01T12:00:00.000Z' } as unknown as OcppResponse,
+        EventGroup.Configuration,
+        MessageOrigin.ChargingStationManagementSystem,
+        PROTOCOL,
+      );
+
+      await router.handle(response);
+
+      expect(reemitter.reemit).toHaveBeenCalledWith(response);
+      expect(cache.remove).not.toHaveBeenCalledWith(CORRELATION_ID, namespace);
+    });
+
+    it('should drop, not re-emit, a Call whose send failed for another reason', async () => {
+      networkHook.mockRejectedValueOnce(new Error('socket write failed'));
+
+      await router.handle(aCall());
+
+      expect(reemitter.reemit).not.toHaveBeenCalled();
+    });
+
+    it('should hold messages that arrive while the station unbinds and re-emit them after', async () => {
+      await router.registerConnection(TENANT_ID, STATION_ID, PROTOCOL);
+      let finishUnbind: (value: boolean) => void = () => {};
+      handler.unsubscribe.mockReturnValueOnce(
+        new Promise<boolean>((resolve) => (finishUnbind = resolve)),
+      );
+      const deregistered = router.deregisterConnection(TENANT_ID, STATION_ID);
+      const message = aCall();
+
+      await router.handle(message);
+      expect(reemitter.reemit).not.toHaveBeenCalled();
+      expect(networkHook).not.toHaveBeenCalled();
+
+      finishUnbind(true);
+      await deregistered;
+      expect(reemitter.reemit).toHaveBeenCalledWith(message);
     });
   });
 
@@ -1490,6 +1594,8 @@ describe('MessageRouterImpl', () => {
         networkHook,
         ocppValidator: undefined,
         chargingStationRepository,
+        reemitter,
+        deadLetterPublisher,
       });
       vi.spyOn(router as any, '_validateCall').mockReturnValue({ isValid: true });
     });

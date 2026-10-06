@@ -4,6 +4,7 @@
 import { CrudRepository } from '@citrineos/base';
 import {
   type AttributeEnumType,
+  type ComponentDto,
   OCPP2_0_1,
   type OCPP2_common_types,
   type VariableAttributeDto,
@@ -257,16 +258,9 @@ export class SequelizeDeviceModelRepository
         tenantId,
         name: componentType.name,
         instance: componentType.instance ? componentType.instance : null,
+        evseDatabaseId: evse?.databaseId ?? null,
       },
     });
-    // Note: this permits changing the evse related to the component
-    if (component.evseDatabaseId !== evse?.databaseId && evse) {
-      await this.component.updateByKey(
-        tenantId,
-        { evseDatabaseId: evse.databaseId },
-        component.get('id'),
-      );
-    }
 
     if (componentCreated && ocppConnectionName) {
       const defaultComponentVariableNames = ['Present', 'Available', 'Enabled'];
@@ -426,6 +420,15 @@ export class SequelizeDeviceModelRepository
     isoTimestamp: string,
     acceptedValue?: string,
   ): Promise<VariableAttributeDto | undefined> {
+    const evse = result.component.evse
+      ? await this.evse.readOnlyOneByQuery(tenantId, {
+          where: {
+            id: result.component.evse.id,
+            connectorId: result.component.evse.connectorId ?? null,
+          },
+        })
+      : undefined;
+
     const existingVariableAttribute = await super.readOnlyOneByQuery(tenantId, {
       where: {
         stationId: await stationIdFilter(tenantId, ocppConnectionName),
@@ -437,6 +440,7 @@ export class SequelizeDeviceModelRepository
           where: {
             name: result.component.name,
             instance: result.component.instance ? result.component.instance : null,
+            ...(evse ? { evseDatabaseId: evse.databaseId } : {}),
           },
         },
         {
@@ -554,15 +558,40 @@ export class SequelizeDeviceModelRepository
     return variableAttribute ?? undefined;
   }
 
+  async findConnectorComponentsForAvailabilityState(
+    tenantId: number,
+    evseId: number,
+    connectorId: number,
+  ): Promise<ComponentDto[]> {
+    const components = await this.component.readAllByQuery(tenantId, {
+      where: { tenantId, name: 'Connector' },
+      include: [
+        { model: EvseType, where: { id: evseId, connectorId } },
+        { model: Variable, where: { name: 'AvailabilityState' } },
+      ],
+    });
+    return components.filter((component) => (component.variables?.length ?? 0) > 0);
+  }
+
   async findComponentAndVariable(
     tenantId: number,
     componentType: OCPP2_0_1.ComponentType,
     variableType: OCPP2_0_1.VariableType,
   ): Promise<[Component | undefined, Variable | undefined]> {
+    const evse = componentType.evse
+      ? await this.evse.readOnlyOneByQuery(tenantId, {
+          where: {
+            id: componentType.evse.id,
+            connectorId: componentType.evse.connectorId ?? null,
+          },
+        })
+      : undefined;
+
     const component = await this.component.readOnlyOneByQuery(tenantId, {
       where: {
         name: componentType.name,
         instance: componentType.instance ? componentType.instance : null,
+        ...(evse ? { evseDatabaseId: evse.databaseId } : {}),
       },
     });
     const variable = await this.variable.readOnlyOneByQuery(tenantId, {

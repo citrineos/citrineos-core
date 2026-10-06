@@ -94,7 +94,11 @@ async function aTariff(tariffId: string, tenantId = TENANT_A) {
   return Tariff.create({ currency: 'EUR', pricePerKwh: 0.3, tariffId, tenantId } as any);
 }
 
-async function anEvse(evseTypeId: number, ocppConnectionName = STATION, tenantId = TENANT_A) {
+async function anEvse(
+  evseTypeId: number | null,
+  ocppConnectionName = STATION,
+  tenantId = TENANT_A,
+) {
   const stationId = await stationIdOf(ocppConnectionName, tenantId);
   return Evse.create({ tenantId, stationId, evseTypeId } as any);
 }
@@ -133,6 +137,20 @@ function aRegisterSample(kwh: number, timestamp: string): OCPP2_0_1.MeterValueTy
         measurand: OCPP2_0_1.MeasurandEnumType.Energy_Active_Import_Register,
         context: OCPP2_0_1.ReadingContextEnumType.Sample_Periodic,
         unitOfMeasure: { unit: 'kWh' },
+      },
+    ],
+  } as OCPP2_0_1.MeterValueType;
+}
+
+function anIntervalSample(wh: number, timestamp: string): OCPP2_0_1.MeterValueType {
+  return {
+    timestamp,
+    sampledValue: [
+      {
+        value: wh,
+        measurand: OCPP2_0_1.MeasurandEnumType.Energy_Active_Import_Interval,
+        context: OCPP2_0_1.ReadingContextEnumType.Sample_Periodic,
+        unitOfMeasure: { unit: 'Wh' },
       },
     ],
   } as OCPP2_0_1.MeterValueType;
@@ -289,6 +307,52 @@ describe('SequelizeTransactionEventRepository', () => {
       expect(row.isActive).toBe(true);
       expect(Number(row.meterStart)).toBe(1);
       expect(Number(row.totalKwh)).toBe(4.5);
+    });
+
+    it('sums interval readings onto totalKwh as numbers across events', async () => {
+      await aStation();
+      const repo = makeRepo();
+      const send = (eventType: OCPP2_0_1.TransactionEventEnumType, seqNo: number, wh?: number) =>
+        repo.createOrUpdateTransactionByTransactionEventAndStationId(
+          TENANT_A,
+          aTxEvent(eventType, {
+            timestamp: T1,
+            seqNo,
+            ...(wh === undefined ? {} : { meterValue: [anIntervalSample(wh, T1)] }),
+          }),
+          STATION,
+        );
+
+      const started = await send(OCPP2_0_1.TransactionEventEnumType.Started, 0);
+      await send(OCPP2_0_1.TransactionEventEnumType.Updated, 1, 500);
+      await send(OCPP2_0_1.TransactionEventEnumType.Updated, 2, 700);
+      await send(OCPP2_0_1.TransactionEventEnumType.Ended, 3, 200);
+
+      const row = (await Transaction.findByPk(started.id))!;
+      expect(row.totalKwh).toBeCloseTo(1.4, 6);
+      expect(row.isActive).toBe(false);
+    });
+
+    it('sums interval readings onto a whole-number totalKwh instead of concatenating', async () => {
+      await aStation();
+      const repo = makeRepo();
+      const send = (eventType: OCPP2_0_1.TransactionEventEnumType, seqNo: number, wh?: number) =>
+        repo.createOrUpdateTransactionByTransactionEventAndStationId(
+          TENANT_A,
+          aTxEvent(eventType, {
+            timestamp: T1,
+            seqNo,
+            ...(wh === undefined ? {} : { meterValue: [anIntervalSample(wh, T1)] }),
+          }),
+          STATION,
+        );
+
+      const started = await send(OCPP2_0_1.TransactionEventEnumType.Started, 0);
+      await send(OCPP2_0_1.TransactionEventEnumType.Updated, 1, 1000);
+      await send(OCPP2_0_1.TransactionEventEnumType.Updated, 2, 500);
+
+      const row = (await Transaction.findByPk(started.id))!;
+      expect(row.totalKwh).toBe(1.5);
     });
 
     it('Ended event deactivates the transaction and stamps endTime', async () => {
@@ -739,7 +803,7 @@ describe('SequelizeTransactionEventRepository', () => {
       const shortCircuit = await repo.deactivateActiveTransactionsByStationIdAndEvseId(
         TENANT_A,
         STATION,
-        1,
+        evse.id,
         '0',
       );
       expect(shortCircuit).toEqual([]);
@@ -747,7 +811,7 @@ describe('SequelizeTransactionEventRepository', () => {
       const deactivated = await repo.deactivateActiveTransactionsByStationIdAndEvseId(
         TENANT_A,
         STATION,
-        1,
+        evse.id,
         'KEEP',
       );
 
@@ -756,6 +820,25 @@ describe('SequelizeTransactionEventRepository', () => {
       expect(deactivated[0].isActive).toBe(false);
       expect((await Transaction.findByPk(kept.id))!.isActive).toBe(true);
       expect((await Transaction.findByPk(elsewhere.id))!.isActive).toBe(true);
+    });
+
+    it('deactivateActiveTransactionsByStationIdAndEvseId leaves other evses with a null evseTypeId untouched', async () => {
+      await aStation();
+      const connector1Evse = await anEvse(null);
+      const connector2Evse = await anEvse(null);
+      const live = await aTransactionRow({ transactionId: '1', evseId: connector1Evse.id });
+      await aTransactionRow({ transactionId: '2', evseId: connector2Evse.id });
+      const repo = makeRepo();
+
+      const deactivated = await repo.deactivateActiveTransactionsByStationIdAndEvseId(
+        TENANT_A,
+        STATION,
+        connector2Evse.id,
+        '2',
+      );
+
+      expect(deactivated).toEqual([]);
+      expect((await Transaction.findByPk(live.id))!.isActive).toBe(true);
     });
   });
 });

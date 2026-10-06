@@ -50,6 +50,7 @@ import type { MessagesExchangeSink } from '../queue/rabbit-mq/messages/messages-
 import { UpgradeAuthenticationError } from './authenticator/errors/authentication-error.js';
 import { type IUpgradeError, isUpgradeError } from './authenticator/errors/i-upgrade-error.js';
 import { UpgradeUnknownError } from './authenticator/errors/unknown-error.js';
+import { ConnectionNotFoundError } from './connection-not-found-error.js';
 import { TlsCredentialManager } from './tls-certificate-manager.js';
 import {
   type CloseContext,
@@ -229,10 +230,10 @@ export class WebsocketNetworkConnection implements INetworkConnection {
 
     const websocketConnection = this._identifierConnections.get(identifier);
     if (!websocketConnection) {
-      const errorMsg = 'Websocket connection not found for ' + identifier;
-      connLogger.fatal(errorMsg);
+      const error = new ConnectionNotFoundError(identifier);
+      connLogger.warn(error.message);
       recordWsSendFailure(WsSendFailureReason.NoSocket);
-      throw new Error(errorMsg);
+      throw error;
     }
 
     if (websocketConnection.readyState !== WebSocket.OPEN) {
@@ -755,6 +756,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
           return;
         }
 
+        this._identifierConnections.set(identifier, ws);
         const registered = await this._router.registerConnection(
           tenantId,
           ocppConnectionName,
@@ -762,6 +764,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
           websocketServerConfig.id,
         );
         if (!registered) {
+          this._identifierConnections.delete(identifier);
           connLogger.fatal('Failed to register websocket client', identifier);
           await this._cache.remove(identifier, CacheNamespace.Connections).catch((err) => {
             connLogger.error(`Failed to remove connection string ${identifier} from cache`, err);
@@ -811,6 +814,9 @@ export class WebsocketNetworkConnection implements INetworkConnection {
         // Resume the WebSocket event emitter after events have been subscribed to
         ws.resume();
       } catch (error) {
+        if (this._identifierConnections.get(identifier) === ws) {
+          this._identifierConnections.delete(identifier);
+        }
         connLogger.fatal('Failed to connect', error);
         if (this._closeHandlers.has(identifier)) {
           // The close listener is already attached, so the Close event reports this one.
@@ -971,7 +977,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
       recordWsActiveConnectionsDelta(-1);
     }
     recordWsConnectionClosed(code);
-
+  
     // Unregister client
     const connectionStringPromise = this._cache
       .remove<string>(identifier, CacheNamespace.Connections)
@@ -983,7 +989,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
       .catch((err) => {
         connLogger.error(`Failed to deregister connection ${identifier} from router`, err);
       });
-
+      
     const connectionString = await connectionStringPromise;
     let timeConnected: number | undefined;
     if (connectionString) {

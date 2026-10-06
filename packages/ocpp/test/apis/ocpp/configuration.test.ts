@@ -50,7 +50,7 @@ describe('SetNetworkProfileEndpoint', () => {
     await endpoint.handle(
       [MOCK_STATION_ID_1],
       mockRequest,
-      undefined,
+      {},
       MOCK_TENANT_ID,
       OCPPVersion.OCPP2_0_1,
       { websocketServerConfigId: MOCK_WEBSOCKET_SERVER_CONFIG_ID },
@@ -70,7 +70,7 @@ describe('SetNetworkProfileEndpoint', () => {
     await endpoint.handle(
       [MOCK_STATION_ID_1, MOCK_STATION_ID_2],
       mockRequest,
-      undefined,
+      {},
       MOCK_TENANT_ID,
       OCPPVersion.OCPP2_0_1,
       { websocketServerConfigId: MOCK_WEBSOCKET_SERVER_CONFIG_ID },
@@ -89,7 +89,7 @@ describe('SetNetworkProfileEndpoint', () => {
     await endpoint.handle(
       [MOCK_STATION_ID_1],
       mockRequest,
-      undefined,
+      {},
       MOCK_TENANT_ID,
       OCPPVersion.OCPP2_0_1,
     );
@@ -106,7 +106,7 @@ describe('SetNetworkProfileEndpoint', () => {
     await endpoint.handle(
       [MOCK_STATION_ID_1, MOCK_STATION_ID_2],
       mockRequest,
-      undefined,
+      {},
       MOCK_TENANT_ID,
       OCPPVersion.OCPP2_0_1,
     );

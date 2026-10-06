@@ -6,6 +6,7 @@ import type {
   MessagesDeadLetterConsumer,
   MessagesEventConsumer,
   MessagesEventPipeline,
+  OcppDeadLetterConsumer,
 } from '@/transport/index.js';
 import { MessagesModule } from '@modules/messages/messages.js';
 import type { WebhookDispatcher } from '@modules/messages/webhook-dispatcher.js';
@@ -25,6 +26,11 @@ describe('MessagesModule', () => {
     shutdown: ReturnType<typeof vi.fn>;
     consumedQueues: string[];
   };
+  let ocppDeadLetterConsumer: {
+    start: ReturnType<typeof vi.fn>;
+    shutdown: ReturnType<typeof vi.fn>;
+    queue: string;
+  };
   let pipeline: {
     run: ReturnType<typeof vi.fn>;
     processorNames: { frame: string[]; connection: string[]; websocket: string[] };
@@ -35,6 +41,7 @@ describe('MessagesModule', () => {
     return getTestInstance(container, MessagesModule, {
       messagesEventConsumer: consumer as unknown as MessagesEventConsumer,
       messagesDeadLetterConsumer: deadLetterConsumer as unknown as MessagesDeadLetterConsumer,
+      ocppDeadLetterConsumer: ocppDeadLetterConsumer as unknown as OcppDeadLetterConsumer,
       messagesEventPipeline: pipeline as unknown as MessagesEventPipeline,
       webhookDispatcher: webhookDispatcher as unknown as WebhookDispatcher,
     });
@@ -55,6 +62,11 @@ describe('MessagesModule', () => {
       start: vi.fn().mockResolvedValue(undefined),
       shutdown: vi.fn().mockResolvedValue(undefined),
       consumedQueues: ['messages.ocpp.dlq', 'messages.connections.dlq'],
+    };
+    ocppDeadLetterConsumer = {
+      start: vi.fn().mockResolvedValue(undefined),
+      shutdown: vi.fn().mockResolvedValue(undefined),
+      queue: 'citrineos.dlq',
     };
     pipeline = {
       run: vi.fn().mockResolvedValue({}),
@@ -127,6 +139,21 @@ describe('MessagesModule', () => {
       expect(deadLetterConsumer.start).toHaveBeenCalled();
     });
 
+    it('should start draining the OCPP dead-letter queue', async () => {
+      await buildModule().start();
+
+      expect(ocppDeadLetterConsumer.start).toHaveBeenCalled();
+    });
+
+    it('should serve live traffic even when OCPP dead-letter reporting cannot start', async () => {
+      ocppDeadLetterConsumer.start.mockRejectedValue(new Error('dlq locked'));
+
+      await expect(buildModule().start()).resolves.toBeUndefined();
+
+      expect(consumer.start).toHaveBeenCalled();
+      expect(logger.error).toHaveBeenCalled();
+    });
+
     it('should serve live traffic even when dead-letter reporting cannot start', async () => {
       deadLetterConsumer.start.mockRejectedValue(new Error('dlq locked'));
 
@@ -138,15 +165,18 @@ describe('MessagesModule', () => {
   });
 
   describe('shutdown', () => {
-    it('should stop both consumers before releasing the dispatchers refresh timer', async () => {
+    it('should stop every consumer before releasing the dispatchers refresh timer', async () => {
       const order: string[] = [];
       consumer.shutdown.mockImplementation(async () => void order.push('consumer'));
       deadLetterConsumer.shutdown.mockImplementation(async () => void order.push('dead-letter'));
+      ocppDeadLetterConsumer.shutdown.mockImplementation(
+        async () => void order.push('ocpp-dead-letter'),
+      );
       webhookDispatcher.shutdown.mockImplementation(() => void order.push('dispatcher'));
 
       await buildModule().shutdown();
 
-      expect(order).toEqual(['consumer', 'dead-letter', 'dispatcher']);
+      expect(order).toEqual(['consumer', 'dead-letter', 'ocpp-dead-letter', 'dispatcher']);
     });
   });
 });

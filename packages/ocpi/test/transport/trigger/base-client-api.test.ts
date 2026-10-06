@@ -438,6 +438,30 @@ describe('broadcastToClients', () => {
     expect(results).toEqual([{ id: 'first' }, { id: 'second' }]);
   });
 
+  it('keeps pushing to later partners when an earlier one fails', async () => {
+    rest.get
+      .mockRejectedValueOnce(new Error('ECONNREFUSED'))
+      .mockResolvedValueOnce(ok({ id: 'second' }));
+    const { api } = anApi({
+      TenantPartners: [
+        { countryCode: 'DE', partyId: 'MS1', partnerProfileOCPI: aProfile('t-1') },
+        { countryCode: 'FR', partyId: 'MS2', partnerProfileOCPI: aProfile('t-2') },
+      ],
+    });
+
+    const results = await api.broadcastToClients({
+      cpoCountryCode: 'US',
+      cpoPartyId: 'CPO',
+      moduleId: ModuleId.Cdrs,
+      interfaceRole: InterfaceRole.SENDER,
+      httpMethod: HttpMethod.Get,
+      schema: idSchema,
+    });
+
+    expect(rest.get).toHaveBeenCalledTimes(2);
+    expect(results).toEqual([{ id: 'second' }]);
+  });
+
   it('returns an empty array when the CPO has no partners', async () => {
     const { api, graphqlRequest } = anApi({ TenantPartners: [] });
 

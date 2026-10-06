@@ -41,7 +41,7 @@ describe('evDriver message endpoints', () => {
       build().handle(
         identifiers,
         { reservationId: 7 },
-        undefined,
+        {},
         DEFAULT_TENANT_ID,
         OCPPVersion.OCPP2_0_1,
       );
@@ -107,7 +107,7 @@ describe('evDriver message endpoints', () => {
     };
 
     const handle = (identifiers: string[]) =>
-      build().handle(identifiers, request, undefined, DEFAULT_TENANT_ID, OCPPVersion.OCPP2_0_1);
+      build().handle(identifiers, request, {}, DEFAULT_TENANT_ID, OCPPVersion.OCPP2_0_1);
 
     it('stores the reservation before sending', async () => {
       await handle([STATION]);
@@ -176,7 +176,7 @@ describe('evDriver message endpoints', () => {
     });
 
     it('threads the correlation id the service returned into the send', async () => {
-      await build().handle([STATION], request, undefined, DEFAULT_TENANT_ID);
+      await build().handle([STATION], request, {}, DEFAULT_TENANT_ID);
 
       expect(prepareSendLocalList16).toHaveBeenCalledWith(DEFAULT_TENANT_ID, STATION, request);
       expect(sendCall.mock.calls[0][0]).toMatchObject({
@@ -188,7 +188,7 @@ describe('evDriver message endpoints', () => {
     it('captures a preparation failure per station', async () => {
       prepareSendLocalList16.mockRejectedValue(new Error('bad list'));
 
-      const confirmations = await build().handle([STATION], request, undefined, DEFAULT_TENANT_ID);
+      const confirmations = await build().handle([STATION], request, {}, DEFAULT_TENANT_ID);
 
       expect(confirmations).toEqual([{ success: false, payload: 'bad list' }]);
       expect(sendCall).not.toHaveBeenCalled();
@@ -214,7 +214,7 @@ describe('evDriver message endpoints', () => {
     };
 
     it('threads the correlation id and the requested version', async () => {
-      await build().handle([STATION], request, undefined, DEFAULT_TENANT_ID, OCPPVersion.OCPP2_1);
+      await build().handle([STATION], request, {}, DEFAULT_TENANT_ID, OCPPVersion.OCPP2_1);
 
       expect(prepareSendLocalList).toHaveBeenCalledWith(DEFAULT_TENANT_ID, STATION, request);
       expect(sendCall.mock.calls[0][0]).toMatchObject({
@@ -234,7 +234,7 @@ describe('evDriver message endpoints', () => {
       const confirmations = await build().handle(
         [STATION, OTHER_STATION],
         request,
-        undefined,
+        {},
         DEFAULT_TENANT_ID,
         OCPPVersion.OCPP2_0_1,
       );
@@ -275,7 +275,7 @@ describe('evDriver message endpoints', () => {
     const handle = (
       request: OCPP2_0_1.RequestStartTransactionRequest,
       version: OCPPVersion = OCPPVersion.OCPP2_0_1,
-    ) => build().handle([STATION], request, undefined, DEFAULT_TENANT_ID, version);
+    ) => build().handle([STATION], request, {}, DEFAULT_TENANT_ID, version);
 
     it('sends straight through when no charging profile is supplied', async () => {
       const confirmations = await handle(aRequest());

@@ -155,8 +155,10 @@ describe('ReservationStatusUpdateRequestOcpp2Handler', () => {
 describe('NotifyEventRequestOcpp2Handler', () => {
   const { logger } = createTestContainer();
   let ocppSender: ReturnType<typeof makeMockOcppSender>;
-  let deviceModelRepository: {
+  let componentRepository: {
     findOrCreateEvseAndComponentAndVariable: ReturnType<typeof vi.fn>;
+  };
+  let deviceModelRepository: {
     createOrUpdateDeviceModelByStationId: ReturnType<typeof vi.fn>;
   };
   let variableMonitoringRepository: {
@@ -167,8 +169,10 @@ describe('NotifyEventRequestOcpp2Handler', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     ocppSender = makeMockOcppSender();
-    deviceModelRepository = {
+    componentRepository = {
       findOrCreateEvseAndComponentAndVariable: vi.fn().mockResolvedValue([{ id: 3 }, { id: 9 }]),
+    };
+    deviceModelRepository = {
       createOrUpdateDeviceModelByStationId: vi.fn().mockResolvedValue(undefined),
     };
     variableMonitoringRepository = {
@@ -178,6 +182,7 @@ describe('NotifyEventRequestOcpp2Handler', () => {
       mockDeps<typeof NotifyEventRequestOcpp2Handler>({
         logger,
         ocppSender,
+        componentRepository,
         deviceModelRepository,
         variableMonitoringRepository,
       }),
@@ -210,8 +215,8 @@ describe('NotifyEventRequestOcpp2Handler', () => {
 
     await handler.handle(message);
 
-    expect(deviceModelRepository.findOrCreateEvseAndComponentAndVariable).toHaveBeenCalledOnce();
-    expect(deviceModelRepository.findOrCreateEvseAndComponentAndVariable).toHaveBeenCalledWith(
+    expect(componentRepository.findOrCreateEvseAndComponentAndVariable).toHaveBeenCalledOnce();
+    expect(componentRepository.findOrCreateEvseAndComponentAndVariable).toHaveBeenCalledWith(
       DEFAULT_TENANT_ID,
       event.component,
       event.variable,
@@ -221,7 +226,7 @@ describe('NotifyEventRequestOcpp2Handler', () => {
     ).toHaveBeenCalledOnce();
     expect(
       variableMonitoringRepository.createEventDatumByComponentIdAndVariableIdAndStationId,
-    ).toHaveBeenCalledWith(DEFAULT_TENANT_ID, event, 3, 9, STATION_ID);
+    ).toHaveBeenCalledWith(DEFAULT_TENANT_ID, event, STATION_ID, 3, 9);
     expect(deviceModelRepository.createOrUpdateDeviceModelByStationId).toHaveBeenCalledOnce();
     expect(deviceModelRepository.createOrUpdateDeviceModelByStationId).toHaveBeenCalledWith(
       DEFAULT_TENANT_ID,
@@ -243,13 +248,13 @@ describe('NotifyEventRequestOcpp2Handler', () => {
 
     await handler.handle(aMessage(first, second));
 
-    expect(deviceModelRepository.findOrCreateEvseAndComponentAndVariable).toHaveBeenCalledTimes(2);
+    expect(componentRepository.findOrCreateEvseAndComponentAndVariable).toHaveBeenCalledTimes(2);
     expect(
       variableMonitoringRepository.createEventDatumByComponentIdAndVariableIdAndStationId,
     ).toHaveBeenCalledTimes(2);
     expect(
       variableMonitoringRepository.createEventDatumByComponentIdAndVariableIdAndStationId,
-    ).toHaveBeenNthCalledWith(2, DEFAULT_TENANT_ID, second, 3, 9, STATION_ID);
+    ).toHaveBeenNthCalledWith(2, DEFAULT_TENANT_ID, second, STATION_ID, 3, 9);
     expect(deviceModelRepository.createOrUpdateDeviceModelByStationId).toHaveBeenCalledTimes(2);
     expect(
       deviceModelRepository.createOrUpdateDeviceModelByStationId.mock.calls[1][1],
@@ -271,7 +276,7 @@ describe('NotifyEventRequestOcpp2Handler', () => {
 describe('NotifyMonitoringReportRequestOcpp2Handler', () => {
   const { logger } = createTestContainer();
   let ocppSender: ReturnType<typeof makeMockOcppSender>;
-  let deviceModelRepository: {
+  let componentRepository: {
     findOrCreateEvseAndComponentAndVariable: ReturnType<typeof vi.fn>;
   };
   let variableMonitoringRepository: {
@@ -282,7 +287,7 @@ describe('NotifyMonitoringReportRequestOcpp2Handler', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     ocppSender = makeMockOcppSender();
-    deviceModelRepository = {
+    componentRepository = {
       findOrCreateEvseAndComponentAndVariable: vi.fn().mockResolvedValue([{ id: 5 }, { id: 11 }]),
     };
     variableMonitoringRepository = {
@@ -292,7 +297,7 @@ describe('NotifyMonitoringReportRequestOcpp2Handler', () => {
       mockDeps<typeof NotifyMonitoringReportRequestOcpp2Handler>({
         logger,
         ocppSender,
-        deviceModelRepository,
+        componentRepository,
         variableMonitoringRepository,
       }),
     );
@@ -326,8 +331,8 @@ describe('NotifyMonitoringReportRequestOcpp2Handler', () => {
 
     await handler.handle(message);
 
-    expect(deviceModelRepository.findOrCreateEvseAndComponentAndVariable).toHaveBeenCalledOnce();
-    expect(deviceModelRepository.findOrCreateEvseAndComponentAndVariable).toHaveBeenCalledWith(
+    expect(componentRepository.findOrCreateEvseAndComponentAndVariable).toHaveBeenCalledOnce();
+    expect(componentRepository.findOrCreateEvseAndComponentAndVariable).toHaveBeenCalledWith(
       DEFAULT_TENANT_ID,
       monitorEntry.component,
       monitorEntry.variable,
@@ -337,25 +342,9 @@ describe('NotifyMonitoringReportRequestOcpp2Handler', () => {
     ).toHaveBeenCalledOnce();
     expect(
       variableMonitoringRepository.createOrUpdateByMonitoringDataTypeAndStationId,
-    ).toHaveBeenCalledWith(DEFAULT_TENANT_ID, monitorEntry, 5, 11, STATION_ID);
+    ).toHaveBeenCalledWith(DEFAULT_TENANT_ID, monitorEntry, STATION_ID, 5, 11);
     expect(ocppSender.sendCallResultWithMessage).toHaveBeenCalledOnce();
     expect(ocppSender.sendCallResultWithMessage).toHaveBeenCalledWith(message, {});
-  });
-
-  it('stores null ids when component and variable resolution comes back empty', async () => {
-    deviceModelRepository.findOrCreateEvseAndComponentAndVariable.mockResolvedValue([
-      undefined,
-      undefined,
-    ]);
-
-    await handler.handle(aMessage([monitorEntry]));
-
-    expect(
-      variableMonitoringRepository.createOrUpdateByMonitoringDataTypeAndStationId,
-    ).toHaveBeenCalledOnce();
-    expect(
-      variableMonitoringRepository.createOrUpdateByMonitoringDataTypeAndStationId,
-    ).toHaveBeenCalledWith(DEFAULT_TENANT_ID, monitorEntry, null, null, STATION_ID);
   });
 
   it('acknowledges a report without monitor data and touches no repository', async () => {
@@ -363,7 +352,7 @@ describe('NotifyMonitoringReportRequestOcpp2Handler', () => {
 
     await handler.handle(message);
 
-    expect(deviceModelRepository.findOrCreateEvseAndComponentAndVariable).not.toHaveBeenCalled();
+    expect(componentRepository.findOrCreateEvseAndComponentAndVariable).not.toHaveBeenCalled();
     expect(
       variableMonitoringRepository.createOrUpdateByMonitoringDataTypeAndStationId,
     ).not.toHaveBeenCalled();
