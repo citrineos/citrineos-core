@@ -15,13 +15,13 @@ jobs:
       swagger_valid: ${{ steps.validate-swagger.outputs.swagger_valid }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
 
       - name: Build and Run Docker Compose
         run: |
@@ -42,7 +42,7 @@ jobs:
           fi
 
       - name: Upload Swagger JSON as Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: swagger-json
           path: swagger.json
@@ -57,12 +57,12 @@ jobs:
 
     steps:
       - name: Download Swagger Artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: swagger-json
 
       - name: Checkout citrineos.github.io
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: citrineos/citrineos.github.io
           ssh-key: ${{ secrets.CITRINEOS_GITHUB_IO_DEPLOY_KEY }}
