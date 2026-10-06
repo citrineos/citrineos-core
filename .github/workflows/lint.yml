@@ -14,7 +14,7 @@ concurrency:
 jobs:
   linter:
     name: Linter
-    runs-on: ubuntu-22.04 # todo: to prevent needing to run npm i we can have our own image where everything is installed
+    runs-on: ubuntu-latest # todo: to prevent needing to run npm i we can have our own image where everything is installed
     steps:
       - name: Checkout
         uses: actions/checkout@v7
