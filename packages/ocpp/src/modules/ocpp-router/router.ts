@@ -1,21 +1,6 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { buildConnectionEvent, buildFrameEvent, MessagesExchangeSink } from '@/transport/index.js';
-import {
-  CallHandledOutcome,
-  CallResponseOutcome,
-  CallResultSentOutcome,
-  CallSentOutcome,
-  recordOcppCallHandled,
-  recordOcppCallResponse,
-  recordOcppCallResultSent,
-  recordOcppCallRoundtripDuration,
-  recordOcppCallSent,
-  recordOcppMessageReceived,
-  recordOcppMessageRouted,
-  UNKNOWN_ACTION,
-} from '@/transport/metrics.js';
 import {
   buildConnectionEvent,
   buildFrameEvent,
