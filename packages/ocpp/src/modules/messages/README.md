@@ -138,9 +138,9 @@ letter.
 
 The queue is capped at `messageBroker.amqp.deadLetterQueue.maxLength` messages (100,000) and
 `maxLengthBytes` (512 MB), whichever is reached first. Past either, the oldest dead letter is
-dropped without a log; `ocpp_message_dead_lettered_total`, counted at the pod that produced each
-dead letter, still includes it, so the difference from `ocpp_dead_letter_received_total` is what
-was dropped. The bounds are queue arguments: changing them means deleting the queue first. An
+dropped without a log; `ocpp_message_dead_lettered_total{outcome="published"}`, counted at the pod
+that produced each dead letter, still includes it, so the difference from
+`ocpp_dead_letter_received_total` is what was dropped. The bounds are queue arguments: changing them means deleting the queue first. An
 operator policy can lower them in place.
 
 # Future features

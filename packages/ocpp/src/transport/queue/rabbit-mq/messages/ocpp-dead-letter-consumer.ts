@@ -80,8 +80,8 @@ export class OcppDeadLetterConsumer {
     this._exchange = config.messageBroker.amqp.exchange;
     this._prefetch = config.messageBroker.amqp.prefetch.messagesDeadLetter;
     // Bounds the queue while nothing drains it, e.g. when the messages module is down. Past
-    // either bound the oldest dead letter is dropped; ocpp_message_dead_lettered_total, counted
-    // where each is produced, still includes it.
+    // either bound the oldest dead letter is dropped; ocpp_message_dead_lettered_total with
+    // outcome="published", counted where each is produced, still includes it.
     const { maxLength, maxLengthBytes } = config.messageBroker.amqp.deadLetterQueue;
     this._queueArguments = {
       'x-max-length': maxLength,

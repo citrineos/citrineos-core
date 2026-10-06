@@ -373,11 +373,23 @@ export const ReemitOutcome = {
 export type ReemitOutcome = (typeof ReemitOutcome)[keyof typeof ReemitOutcome];
 
 /**
- * Messages this pod gave up on and published to the dead-letter exchange, by `reason` and
- * `source`. Counted where the decision is made, so the failure is credited to the pod that made it.
+ * `outcome` on {@link recordOcppMessageDeadLettered}. `published` means the message was handed to
+ * the channel, not that the broker accepted it or that a queue is bound to the exchange.
+ */
+export const DeadLetterOutcome = {
+  Published: 'published',
+  Failed: 'failed',
+} as const;
+export type DeadLetterOutcome = (typeof DeadLetterOutcome)[keyof typeof DeadLetterOutcome];
+
+/**
+ * Messages this pod gave up on, by `reason`, `source` and `outcome`. Counted where the decision is
+ * made, so the failure is credited to the pod that made it. `outcome="failed"` is a message that
+ * could not be published to the dead-letter exchange and is lost.
  */
 const ocppMessageDeadLetteredTotal = meter.createCounter('ocpp_message_dead_lettered_total', {
-  description: 'Messages published to the dead-letter exchange by this pod, by reason and source',
+  description:
+    'Messages this pod dead-lettered, by reason, source and whether publishing to the dead-letter exchange succeeded',
 });
 
 /**
@@ -401,8 +413,9 @@ const ocppMessageDivertedStaleTotal = meter.createCounter('ocpp_message_diverted
 export function recordOcppMessageDeadLettered(
   reason: DeadLetterReason,
   source: DeadLetterSource,
+  outcome: DeadLetterOutcome,
 ): void {
-  ocppMessageDeadLetteredTotal.add(1, { reason, source });
+  ocppMessageDeadLetteredTotal.add(1, { reason, source, outcome });
 }
 
 export function recordOcppDeadLetterReceived(reason: string, action: string): void {
