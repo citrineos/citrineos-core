@@ -69,7 +69,6 @@ import type {
   CompositeSchedule,
 } from '../models/charging-profile/index.js';
 import type { ChargingStationSecurityInfo } from '../models/charging-station-security-info.js';
-import type { ChargingStationSequence } from '../models/charging-station-sequence/charging-station-sequence.js';
 import type { Component } from '../models/device-model/component.js';
 import type { Variable } from '../models/device-model/variable.js';
 import type { ChargingStationNetworkProfile } from '../models/location/charging-station-network-profile.js';
@@ -697,8 +696,7 @@ export interface IChargingStationSecurityInfoRepository
   ): Promise<void>;
 }
 
-export interface IChargingStationSequenceRepository
-  extends CrudRepository<ChargingStationSequence> {
+export interface IChargingStationSequenceRepository {
   getNextSequenceValue(
     tenantId: number,
     ocppConnectionName: string,
