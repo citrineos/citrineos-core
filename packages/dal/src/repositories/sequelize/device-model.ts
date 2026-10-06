@@ -4,6 +4,7 @@
 import { CrudRepository } from '@citrineos/base';
 import {
   type AttributeEnumType,
+  type ComponentDto,
   OCPP2_0_1,
   type OCPP2_common_types,
   type VariableAttributeDto,
@@ -557,15 +558,40 @@ export class SequelizeDeviceModelRepository
     return variableAttribute ?? undefined;
   }
 
+  async findConnectorComponentsForAvailabilityState(
+    tenantId: number,
+    evseId: number,
+    connectorId: number,
+  ): Promise<ComponentDto[]> {
+    const components = await this.component.readAllByQuery(tenantId, {
+      where: { tenantId, name: 'Connector' },
+      include: [
+        { model: EvseType, where: { id: evseId, connectorId } },
+        { model: Variable, where: { name: 'AvailabilityState' } },
+      ],
+    });
+    return components.filter((component) => (component.variables?.length ?? 0) > 0);
+  }
+
   async findComponentAndVariable(
     tenantId: number,
     componentType: OCPP2_0_1.ComponentType,
     variableType: OCPP2_0_1.VariableType,
   ): Promise<[Component | undefined, Variable | undefined]> {
+    const evse = componentType.evse
+      ? await this.evse.readOnlyOneByQuery(tenantId, {
+          where: {
+            id: componentType.evse.id,
+            connectorId: componentType.evse.connectorId ?? null,
+          },
+        })
+      : undefined;
+
     const component = await this.component.readOnlyOneByQuery(tenantId, {
       where: {
         name: componentType.name,
         instance: componentType.instance ? componentType.instance : null,
+        ...(evse ? { evseDatabaseId: evse.databaseId } : {}),
       },
     });
     const variable = await this.variable.readOnlyOneByQuery(tenantId, {

@@ -71,7 +71,7 @@ function makeRepo(): SequelizeVariableMonitoringRepository {
   });
 }
 
-async function seedEvsePower(): Promise<{ componentId: string; variableId: string }> {
+async function seedEvsePower(): Promise<{ componentId: number; variableId: number }> {
   await Tenant.create({ id: TENANT_ID as any, name: String(TENANT_ID) });
   const station = await ChargingStation.create({
     ocppConnectionName: OCPP_CONNECTION_NAME,
@@ -81,7 +81,7 @@ async function seedEvsePower(): Promise<{ componentId: string; variableId: strin
   stationId = station.id;
   const component = await Component.create({ name: 'EVSE', tenantId: TENANT_ID });
   const variable = await Variable.create({ name: 'Power', tenantId: TENANT_ID });
-  return { componentId: String(component.id), variableId: String(variable.id) };
+  return { componentId: component.id, variableId: variable.id };
 }
 
 function aSetMonitoringData(
@@ -128,16 +128,16 @@ describe('SequelizeVariableMonitoringRepository with more than one monitor on a 
     await repo.createOrUpdateBySetMonitoringDataTypeAndStationId(
       TENANT_ID,
       aSetMonitoringData(UpperThreshold, 22000),
+      OCPP_CONNECTION_NAME,
       componentId,
       variableId,
-      OCPP_CONNECTION_NAME,
     );
     await repo.createOrUpdateBySetMonitoringDataTypeAndStationId(
       TENANT_ID,
       aSetMonitoringData(LowerThreshold, 100),
+      OCPP_CONNECTION_NAME,
       componentId,
       variableId,
-      OCPP_CONNECTION_NAME,
     );
 
     const rows = await monitorsOnStation();
@@ -153,16 +153,16 @@ describe('SequelizeVariableMonitoringRepository with more than one monitor on a 
     await repo.createOrUpdateBySetMonitoringDataTypeAndStationId(
       TENANT_ID,
       aSetMonitoringData(UpperThreshold, 22000),
+      OCPP_CONNECTION_NAME,
       componentId,
       variableId,
-      OCPP_CONNECTION_NAME,
     );
     await repo.createOrUpdateBySetMonitoringDataTypeAndStationId(
       TENANT_ID,
       aSetMonitoringData(LowerThreshold, 100),
+      OCPP_CONNECTION_NAME,
       componentId,
       variableId,
-      OCPP_CONNECTION_NAME,
     );
 
     await repo.updateResultByStationId(
@@ -189,9 +189,9 @@ describe('SequelizeVariableMonitoringRepository with more than one monitor on a 
     await repo.createOrUpdateBySetMonitoringDataTypeAndStationId(
       TENANT_ID,
       aSetMonitoringData(UpperThreshold, 22000),
+      OCPP_CONNECTION_NAME,
       componentId,
       variableId,
-      OCPP_CONNECTION_NAME,
     );
     await repo.updateResultByStationId(
       TENANT_ID,
@@ -202,9 +202,9 @@ describe('SequelizeVariableMonitoringRepository with more than one monitor on a 
     await repo.createOrUpdateBySetMonitoringDataTypeAndStationId(
       TENANT_ID,
       aSetMonitoringData(UpperThreshold, 30000, 11),
+      OCPP_CONNECTION_NAME,
       componentId,
       variableId,
-      OCPP_CONNECTION_NAME,
     );
 
     const rows = await monitorsOnStation();
@@ -217,9 +217,9 @@ describe('SequelizeVariableMonitoringRepository with more than one monitor on a 
     await repo.createOrUpdateBySetMonitoringDataTypeAndStationId(
       TENANT_ID,
       aSetMonitoringData(UpperThreshold, 22000),
+      OCPP_CONNECTION_NAME,
       componentId,
       variableId,
-      OCPP_CONNECTION_NAME,
     );
     await repo.updateResultByStationId(
       TENANT_ID,
@@ -229,9 +229,9 @@ describe('SequelizeVariableMonitoringRepository with more than one monitor on a 
     await repo.createOrUpdateBySetMonitoringDataTypeAndStationId(
       TENANT_ID,
       aSetMonitoringData(UpperThreshold, 30000),
+      OCPP_CONNECTION_NAME,
       componentId,
       variableId,
-      OCPP_CONNECTION_NAME,
     );
 
     const answered = await repo.updateResultByStationId(
@@ -283,9 +283,9 @@ describe('SequelizeVariableMonitoringRepository with more than one monitor on a 
           { id: 12, transaction: false, value: 50, type: LowerThreshold, severity: 4 },
         ],
       },
+      OCPP_CONNECTION_NAME,
       componentId,
       variableId,
-      OCPP_CONNECTION_NAME,
     );
 
     const rows = await monitorsOnStation();

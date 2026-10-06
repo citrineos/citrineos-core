@@ -1,13 +1,13 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { CrudRepository } from '@citrineos/base';
 import type { SystemConfig } from '@citrineos/types';
 import { Sequelize } from 'sequelize-typescript';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import type {
   IAuthorizationRepository,
+  IComponentRepository,
   IBootRepository,
   ICertificateRepository,
   IChangeConfigurationRepository,
@@ -41,6 +41,7 @@ import {
   DrizzleCertificateRepository,
   DrizzleChangeConfigurationRepository,
   DrizzleChargingStationRepository,
+  DrizzleComponentRepository,
   DrizzleConnectorRepository,
   DrizzleLocationRepository,
   DrizzleStatusNotificationRepository,
@@ -58,14 +59,12 @@ import {
   DrizzleVariableAttributeRepository,
   DrizzleVariableCharacteristicsRepository,
 } from '../../db/drizzle/index.js';
-import type { Component } from '../../models/device-model/component.js';
 import { SequelizeAuthorizationRepository } from './authorization.js';
 import { SequelizeBootRepository } from './boot.js';
 import { SequelizeCertificateRepository } from './certificate.js';
 import { SequelizeChangeConfigurationRepository } from './change-configuration.js';
 import { SequelizeChargingProfileRepository } from './charging-profile.js';
 import { SequelizeChargingStationSequenceRepository } from './charging-station-sequence.js';
-import { SequelizeComponentRepository } from './component.js';
 import { SequelizeDeleteCertificateAttemptRepository } from './delete-certificate-attempt.js';
 import { SequelizeDeviceModelRepository } from './device-model.js';
 import { SequelizeInstallCertificateAttemptRepository } from './install-certificate-attempt.js';
@@ -95,7 +94,7 @@ export class RepositoryStore {
   changeConfigurationRepository: IChangeConfigurationRepository;
   chargingProfileRepository: IChargingProfileRepository;
   chargingStationSequenceRepository: IChargingStationSequenceRepository;
-  componentRepository: CrudRepository<Component>;
+  componentRepository: IComponentRepository;
   deviceModelRepository: IDeviceModelRepository;
   localAuthListRepository: ILocalAuthListRepository;
   chargingStationRepository: IChargingStationRepository;
@@ -132,11 +131,6 @@ export class RepositoryStore {
       sequelizeInstance,
     });
     this.chargingStationSequenceRepository = new SequelizeChargingStationSequenceRepository({
-      config,
-      logger,
-      sequelizeInstance,
-    });
-    this.componentRepository = new SequelizeComponentRepository({
       config,
       logger,
       sequelizeInstance,
@@ -179,6 +173,7 @@ export class RepositoryStore {
         logger,
       });
       this.chargingStationRepository = new DrizzleChargingStationRepository({ config, logger });
+      this.componentRepository = new DrizzleComponentRepository({ config, logger });
       this.connectorRepository = new DrizzleConnectorRepository({ config, logger });
       this.deleteCertificateAttemptRepository = new DrizzleDeleteCertificateAttemptRepository({
         config,
@@ -283,6 +278,7 @@ export class RepositoryStore {
       this.connectorRepository = locationRepository;
       this.statusNotificationRepository = locationRepository;
       // DeviceModel cluster
+      this.componentRepository = this.deviceModelRepository;
       this.variableAttributeRepository = this.deviceModelRepository;
       this.variableCharacteristicsRepository = this.deviceModelRepository;
     }
