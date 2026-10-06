@@ -23,6 +23,7 @@ import {
   WsUpgradeResult,
 } from '@/transport/metrics.js';
 import { UpgradeAuthenticationError } from '@/transport/network-connection/authenticator/errors/authentication-error.js';
+import { UpgradeUnknownError } from '@/transport/network-connection/authenticator/errors/unknown-error.js';
 import { createTestContainer, mockDeps } from '@test/test-container.js';
 
 vi.mock('@/transport/metrics.js', async (importOriginal) => ({
@@ -357,6 +358,18 @@ describe('WebsocketNetworkConnection lifecycle events', () => {
         httpStatus: 401,
         source: 'auth_failed',
         details: { error: `Unauthorized ${STATION_ID}` },
+      });
+    });
+
+    it('reports an unknown station with its own source rather than as an internal error', async () => {
+      authenticate.mockRejectedValue(new UpgradeUnknownError(`Unknown identifier ${STATION_ID}`));
+      const port = await startServer();
+
+      aClient(port);
+
+      expect(await eventOfType('UpgradeRejected')).toMatchObject({
+        httpStatus: 404,
+        source: 'unknown_station',
       });
     });
 

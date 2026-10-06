@@ -49,6 +49,7 @@ import { buildWebsocketLifecycleEvent } from '../queue/rabbit-mq/messages/messag
 import type { MessagesExchangeSink } from '../queue/rabbit-mq/messages/messages-exchange-sink.js';
 import { UpgradeAuthenticationError } from './authenticator/errors/authentication-error.js';
 import { type IUpgradeError, isUpgradeError } from './authenticator/errors/i-upgrade-error.js';
+import { UpgradeUnknownError } from './authenticator/errors/unknown-error.js';
 import { TlsCredentialManager } from './tls-certificate-manager.js';
 import {
   type CloseContext,
@@ -444,7 +445,9 @@ export class WebsocketNetworkConnection implements INetworkConnection {
       const upgradeResult =
         error instanceof UpgradeAuthenticationError
           ? WsUpgradeResult.AuthFailed
-          : WsUpgradeResult.InternalError;
+          : error instanceof UpgradeUnknownError
+            ? WsUpgradeResult.UnknownStation
+            : WsUpgradeResult.InternalError;
       recordWsUpgrade(upgradeResult);
       /**
        * See {@link IUpgradeError.terminateConnection}

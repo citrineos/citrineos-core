@@ -27,6 +27,7 @@ const meter = metrics.getMeter('citrineos.ocpp');
 export const WsUpgradeResult = {
   Upgraded: 'upgraded',
   AuthFailed: 'auth_failed',
+  UnknownStation: 'unknown_station',
   BrokerUnavailable: 'broker_unavailable',
   TenantUnresolved: 'tenant_unresolved',
   InvalidHandshake: 'invalid_handshake',

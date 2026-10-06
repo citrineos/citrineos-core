@@ -109,6 +109,7 @@ test.describe('charging-stations › websocket events @everest', () => {
           stationId: null,
           httpStatus: 404,
           initiator: 'csms',
+          source: 'unknown_station',
         }),
       ]);
   });
