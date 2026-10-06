@@ -27,7 +27,7 @@ describe('smartCharging message endpoints', () => {
       getTestInstance(container, ClearChargingProfileEndpoint, { ocppSender: { sendCall } });
 
     const handle = (request: OCPP2_0_1.ClearChargingProfileRequest) =>
-      build().handle([STATION], request, undefined, DEFAULT_TENANT_ID, OCPPVersion.OCPP2_0_1);
+      build().handle([STATION], request, {}, DEFAULT_TENANT_ID, OCPPVersion.OCPP2_0_1);
 
     it('sends when only a chargingProfileId is given', async () => {
       const confirmations = await handle({ chargingProfileId: 1 });
@@ -129,7 +129,7 @@ describe('smartCharging message endpoints', () => {
       });
 
     const handle = (request: OCPP2_0_1.GetChargingProfilesRequest) =>
-      build().handle([STATION], request, undefined, DEFAULT_TENANT_ID, OCPPVersion.OCPP2_0_1);
+      build().handle([STATION], request, {}, DEFAULT_TENANT_ID, OCPPVersion.OCPP2_0_1);
 
     it('sends when queried by profile id alone', async () => {
       const confirmations = await handle({
@@ -235,7 +235,7 @@ describe('smartCharging message endpoints', () => {
       });
 
     const handle = (request: OCPP2_0_1.GetCompositeScheduleRequest) =>
-      build().handle([STATION], request, undefined, DEFAULT_TENANT_ID, OCPPVersion.OCPP2_0_1);
+      build().handle([STATION], request, {}, DEFAULT_TENANT_ID, OCPPVersion.OCPP2_0_1);
 
     it('sends for the whole station when evseId is 0, without an EVSE lookup', async () => {
       const confirmations = await handle({ duration: 60, evseId: 0 });
@@ -367,7 +367,7 @@ describe('smartCharging message endpoints', () => {
     });
 
     const handle = (request: OCPP2_0_1.SetChargingProfileRequest) =>
-      build().handle([STATION], request, undefined, DEFAULT_TENANT_ID, OCPPVersion.OCPP2_0_1);
+      build().handle([STATION], request, {}, DEFAULT_TENANT_ID, OCPPVersion.OCPP2_0_1);
 
     it('reports a validation failure as an unsuccessful confirmation without sending', async () => {
       const confirmations = await handle(aProfile({ stackLevel: -1 }));
