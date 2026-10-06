@@ -144,6 +144,7 @@ function makeHandler(): SetVariablesResponseOcpp2Handler {
   return new SetVariablesResponseOcpp2Handler({
     logger,
     deviceModelRepository: deviceModelRepo,
+    variableAttributeRepository: deviceModelRepo,
     ocppMessageRepository: ocppMessageRepo,
   });
 }

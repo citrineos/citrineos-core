@@ -12,6 +12,7 @@ import {
   Component,
   DefaultSequelizeInstance,
   DrizzleBootRepository,
+  DrizzleComponentRepository,
   DrizzleVariableAttributeRepository,
   Variable,
 } from '../../../index.js';
@@ -91,6 +92,7 @@ function aRepository(): DrizzleBootRepository {
     variableAttributeRepository: new DrizzleVariableAttributeRepository({
       config,
       drizzleInstance,
+      componentRepository: new DrizzleComponentRepository({ config, drizzleInstance }),
     }),
   });
 }

@@ -51,7 +51,7 @@ describe('monitoring message endpoints', () => {
       getTestInstance(container, SetVariablesEndpoint, {
         ocppSender: { sendCall },
         deviceModelService: deviceModelService(),
-        deviceModelRepository: { createOrUpdateBySetVariablesDataAndStationId },
+        variableAttributeRepository: { createOrUpdateBySetVariablesDataAndStationId },
       });
 
     const handle = (request: OCPP2_0_1.SetVariablesRequest) =>
