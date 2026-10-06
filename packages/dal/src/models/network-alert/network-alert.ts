@@ -119,6 +119,9 @@ export class NetworkAlert extends Model implements Omit<NetworkAlertDto, 'type' 
   @Column(DataType.STRING)
   declare resolvedBy?: NetworkAlertResolvedBy | null;
 
+  @Column(DataType.TEXT)
+  declare statusNote?: string | null;
+
   @Column({ type: DataType.JSONB, allowNull: false })
   declare details: NetworkAlertDto['details'];
 

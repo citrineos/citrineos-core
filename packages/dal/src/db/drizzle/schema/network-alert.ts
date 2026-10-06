@@ -11,7 +11,16 @@ import type {
   NetworkAlertType,
 } from '@citrineos/types';
 import { sql } from 'drizzle-orm';
-import { index, integer, jsonb, pgTable, serial, timestamp, varchar } from 'drizzle-orm/pg-core';
+import {
+  index,
+  integer,
+  jsonb,
+  pgTable,
+  serial,
+  text,
+  timestamp,
+  varchar,
+} from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { type z } from 'zod';
 
@@ -31,6 +40,7 @@ export const networkAlertTable = pgTable(
     occurrenceCount: integer('occurrenceCount').default(1).notNull(),
     resolvedAt: timestamp('resolvedAt', { withTimezone: true, mode: 'date' }),
     resolvedBy: varchar('resolvedBy', { length: 255 }).$type<NetworkAlertResolvedBy>(),
+    statusNote: text('statusNote'),
     details: jsonb('details').$type<NetworkAlertDto['details']>().notNull(),
     tenantId: integer('tenantId').notNull(),
     createdAt: timestamp('createdAt', { withTimezone: true, mode: 'date' })

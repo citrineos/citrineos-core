@@ -40,6 +40,7 @@ export const NetworkAlertBaseSchema = BaseSchema.extend({
   occurrenceCount: z.number().int().min(1),
   resolvedAt: z.iso.datetime().nullable().optional(),
   resolvedBy: NetworkAlertResolvedBySchema.nullable().optional(),
+  statusNote: z.string().nullable().optional(),
 });
 
 export const StationConnectivityAlertSchema = NetworkAlertBaseSchema.extend({

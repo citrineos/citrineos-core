@@ -96,6 +96,9 @@ export default {
           resolvedBy: {
             type: DataTypes.STRING,
           },
+          statusNote: {
+            type: DataTypes.TEXT,
+          },
           details: {
             type: DataTypes.JSONB,
             allowNull: false,

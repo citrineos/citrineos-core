@@ -185,6 +185,18 @@ describe('20261002120000-create-network-alert-tables', () => {
     expect(read?.tenantId).toBe(DEFAULT_TENANT_ID);
   });
 
+  it('stores a status note longer than a varchar(255)', async () => {
+    const stationId = await createStation('status-note');
+    const alert = await createAlert(stationId);
+    const note = `Will not resolve: poor 5G coverage at this site. ${'x'.repeat(300)}`;
+
+    await alert.update({ status: 'Acknowledged', statusNote: note });
+    const read = await dal.NetworkAlert.findByPk(alert.id);
+
+    expect(read?.status).toBe('Acknowledged');
+    expect(read?.statusNote).toBe(note);
+  });
+
   it('removes a station’s alerts and their occurrences when the station is deleted', async () => {
     const stationId = await createStation('cascade');
     const alert = await createAlert(stationId);
