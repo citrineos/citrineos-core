@@ -185,14 +185,12 @@ export class RegistrationMapper {
     }
   }
 
-  static toEndpoint(value: Endpoint): BaseEndpoint {
-    return {
-      identifier: RegistrationMapper.toEndpointIdentifier(value),
-      url: value.url,
-    };
+  static toSupportedEndpoint(value: Endpoint): BaseEndpoint | null {
+    const identifier = RegistrationMapper.toEndpointIdentifierOrNull(value);
+    return identifier === null ? null : { identifier, url: value.url };
   }
 
-  static toEndpointIdentifier(value: Endpoint): EndpointIdentifier {
+  static toEndpointIdentifierOrNull(value: Endpoint): EndpointIdentifier | null {
     switch (value.identifier) {
       case ModuleId.Credentials:
         return EndpointIdentifier.CREDENTIALS;
@@ -225,6 +223,9 @@ export class RegistrationMapper {
         if (value.role === InterfaceRole.RECEIVER)
           return EndpointIdentifier.CHARGING_PROFILES_RECEIVER;
         break;
+      case ModuleId.Hubclientinfo:
+      case ModuleId.Versions:
+        return null;
       default:
         throw new Error(`Unknown module identifier: ${value.identifier}`);
     }

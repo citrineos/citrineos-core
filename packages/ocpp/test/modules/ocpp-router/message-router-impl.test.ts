@@ -326,11 +326,6 @@ describe('MessageRouterImpl', () => {
 
         expect(result).toBe(true);
         expect(recorded(sink, 'frame')).toHaveLength(1);
-        expect(chargingStationRepository.updateChargingStationTimestamp).toHaveBeenCalledWith(
-          TENANT_ID,
-          STATION_ID,
-          timestamp.toISOString(),
-        );
       });
 
       it('should return false and send CallError for invalid JSON', async () => {
@@ -458,7 +453,7 @@ describe('MessageRouterImpl', () => {
       ]);
     });
 
-    it('should always attempt to update timestamp', async () => {
+    it('should leave latestOcppMessageTimestamp to the messages module', async () => {
       vi.spyOn(router as any, '_validateCall').mockReturnValue({ isValid: true });
       cache.exists.mockResolvedValue(false);
 
@@ -471,30 +466,7 @@ describe('MessageRouterImpl', () => {
 
       await router.onMessage(IDENTIFIER, callMessage, timestamp, PROTOCOL);
 
-      expect(chargingStationRepository.updateChargingStationTimestamp).toHaveBeenCalledWith(
-        TENANT_ID,
-        STATION_ID,
-        timestamp.toISOString(),
-      );
-    });
-
-    it('should not throw when updateChargingStationTimestamp fails', async () => {
-      chargingStationRepository.updateChargingStationTimestamp.mockRejectedValue(
-        new Error('db error'),
-      );
-      vi.spyOn(router as any, '_validateCall').mockReturnValue({ isValid: true });
-      cache.exists.mockResolvedValue(false);
-
-      const callMessage = JSON.stringify([
-        MessageTypeId.Call,
-        CORRELATION_ID,
-        OCPP_CallAction.Heartbeat,
-        {},
-      ]);
-
-      // Should not throw
-      const result = await router.onMessage(IDENTIFIER, callMessage, timestamp, PROTOCOL);
-      expect(result).toBe(true);
+      expect(chargingStationRepository.updateChargingStationTimestamp).not.toHaveBeenCalled();
     });
   });
 

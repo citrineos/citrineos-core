@@ -6,13 +6,13 @@ import { describe, expect, it, vi } from 'vitest';
 
 // The mapper barrel pulls in the whole typedi service graph, which needs a configured container.
 // These tests construct the services by hand and never map a row, so a stub is enough to load them.
-vi.mock('../../src/mappers/index.js', () => ({
+vi.mock('@ocpi/mappers/index.js', () => ({
   CdrMapper: class {},
   SessionMapper: class {},
 }));
 
-import { CdrsService } from '../../src/services/cdrs-service.js';
-import { SessionsService } from '../../src/services/sessions-service.js';
+import { CdrsService } from '@ocpi/services/cdrs-service.js';
+import { SessionsService } from '@ocpi/services/sessions-service.js';
 
 const DATE_FROM = new Date('2026-08-01T00:00:00.000Z');
 const DATE_TO = new Date('2026-08-19T00:00:00.000Z');

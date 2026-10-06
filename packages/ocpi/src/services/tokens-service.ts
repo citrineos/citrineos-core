@@ -248,6 +248,7 @@ export class TokensService {
         GetChargingStationByIdQueryVariables
       >(GET_CHARGING_STATION_BY_ID_QUERY, {
         id: realTimeAuthRequest.ocppConnectionName,
+        tenantId: tenantPartnerResponse.TenantPartners_by_pk.tenantId,
       });
       if (
         !chargingStationResponse.ChargingStations[0] ||

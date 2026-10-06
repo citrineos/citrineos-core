@@ -3,7 +3,16 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { TableName } from '@dal/models/table-name.js';
-import { integer, jsonb, pgSchema, pgTable, serial, timestamp, varchar } from 'drizzle-orm/pg-core';
+import {
+  integer,
+  json,
+  jsonb,
+  pgSchema,
+  pgTable,
+  serial,
+  timestamp,
+  varchar,
+} from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { type z } from 'zod';
 
@@ -16,19 +25,20 @@ function localListAuthorizationColumns() {
     // Sequelize ARRAY(STRING) → varchar(255)[]
     allowedConnectorTypes: varchar('allowedConnectorTypes', { length: 255 }).array(),
     disallowedEvseIdPrefixes: varchar('disallowedEvseIdPrefixes', { length: 255 }).array(),
-    idToken: varchar('idToken', { length: 255 }),
+    idToken: varchar('idToken', { length: 255 }).notNull(),
     idTokenType: varchar('idTokenType', { length: 255 }),
     additionalInfo: jsonb('additionalInfo'),
-    status: varchar('status', { length: 255 }),
+    status: varchar('status', { length: 255 }).notNull(),
     // DataType.DATE → timestamptz; mapped to ISO string in the repository layer
     cacheExpiryDateTime: timestamp('cacheExpiryDateTime', { withTimezone: true, mode: 'date' }),
     chargingPriority: integer('chargingPriority'),
     language1: varchar('language1', { length: 255 }),
     language2: varchar('language2', { length: 255 }),
-    personalMessage: jsonb('personalMessage'),
+    personalMessage: json('personalMessage'),
     groupAuthorizationId: integer('groupAuthorizationId'),
     // FK to the "actual" Authorization (DataType.INTEGER in the sequelize model).
     authorizationId: integer('authorizationId'),
+    customData: jsonb('customData'),
     tenantId: integer('tenantId').notNull(),
     createdAt: timestamp('createdAt', { withTimezone: true, mode: 'date' })
       .notNull()

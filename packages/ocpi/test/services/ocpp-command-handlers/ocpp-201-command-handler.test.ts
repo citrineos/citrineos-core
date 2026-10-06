@@ -9,15 +9,15 @@ import { Logger } from 'tslog';
 // subclass of the class under test - so importing the handler through it leaves the base class
 // undefined. Stub the barrel down to the three values the handler and its base read from it.
 vi.mock('../../../index.js', async () => {
-  const { CommandResultType } = await import('../../../src/types/command-result.js');
-  const { CommandType } = await import('../../../src/types/command-type.js');
-  const { ModuleId } = await import('../../../src/types/module-id.js');
+  const { CommandResultType } = await import('@ocpi/types/command-result.js');
+  const { CommandType } = await import('@ocpi/types/command-type.js');
+  const { ModuleId } = await import('@ocpi/types/module-id.js');
   return { CommandResultType, CommandType, ModuleId };
 });
 
-import { OCPP2_0_1_CommandHandler } from '../../../src/services/ocpp-command-handlers/ocpp-201-command-handler.js';
-import { CommandResultType } from '../../../src/types/command-result.js';
-import { uidDelimiter } from '../../../src/types/dto/evse-dto.js';
+import { OCPP2_0_1_CommandHandler } from '@ocpi/services/ocpp-command-handlers/ocpp-201-command-handler.js';
+import { CommandResultType } from '@ocpi/types/command-result.js';
+import { uidDelimiter } from '@ocpi/types/dto/evse-dto.js';
 
 /**
  * OCPI addresses an EVSE by a uid built as `<stationId><delimiter><evseId>`, and evse_uid is

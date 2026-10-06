@@ -481,6 +481,14 @@ describe('ClearChargingProfileResponseOcpp16Handler', () => {
   it('Accepted deactivates only the station-scoped active profiles', async () => {
     await respond(OCPP1_6.ClearChargingProfileResponseStatus.Accepted);
 
+    expect(ocppMessageRepository.readOnlyOneByQuery).toHaveBeenCalledWith(DEFAULT_TENANT_ID, {
+      where: {
+        tenantId: DEFAULT_TENANT_ID,
+        stationId: STATION_DB_ID,
+        correlationId: CORRELATION_ID,
+        origin: MessageOrigin.ChargingStationManagementSystem,
+      },
+    });
     expect(chargingProfileRepository.updateAllByQuery).toHaveBeenCalledTimes(1);
     expect(chargingProfileRepository.updateAllByQuery).toHaveBeenCalledWith(
       DEFAULT_TENANT_ID,

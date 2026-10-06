@@ -10,7 +10,7 @@ vi.mock('typedi', () => ({
   Container: { get: () => undefined, set: () => undefined },
 }));
 
-import { PaginatedMiddleware } from '../../../src/apis/middleware/paginated-middleware.js';
+import { PaginatedMiddleware } from '@ocpi/apis/middleware/paginated-middleware.js';
 
 function aContext(body: unknown) {
   const set: Record<string, unknown> = {};

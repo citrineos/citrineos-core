@@ -16,8 +16,8 @@ import {
 import { SignatureAlgorithmEnumType } from '@citrineos/dal';
 import { OCPP2_1 } from '@citrineos/types';
 import jsrsasign from 'jsrsasign';
-import { readFile } from '../../utils/file-util.js';
-import { parseOcspRequestHex } from '../../utils/ocsp-request-parser.js';
+import { readFile } from '../../helpers/file-util.js';
+import { parseOcspRequestHex } from '../../helpers/ocsp-request-parser.js';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import X509 = jsrsasign.X509;
 import KJUR = jsrsasign.KJUR;

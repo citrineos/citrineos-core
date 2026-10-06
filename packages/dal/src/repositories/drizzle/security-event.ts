@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { ISecurityEventRepository } from '@dal/repositories/repositories.js';
-import { type SecurityEventDto, OCPP2_0_1 } from '@citrineos/types';
+import { OCPP2_0_1, type SecurityEventDto } from '@citrineos/types';
 import { and, between, eq, gte, lte } from 'drizzle-orm';
 import {
   type SecurityEventEntity,
@@ -24,7 +24,7 @@ import { DrizzleRepository } from './base.js';
 export function toSecurityEventDto(entity: SecurityEventEntity): SecurityEventDto {
   const dto: Explicit<SecurityEventDto> = {
     id: entity.id,
-    ocppConnectionName: entity.ocppConnectionName,
+    ocppConnectionName: entity.ocppConnectionName ?? '',
     type: entity.type ?? '',
     // Drizzle returns timestamp as JS Date (mode: 'date'); DTO contract is ISO string.
     timestamp: entity.timestamp.toISOString(),

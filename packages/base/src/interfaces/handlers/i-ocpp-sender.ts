@@ -14,10 +14,8 @@ import type { IMessage } from '@interfaces/messages/message.js';
 import type { IMessageConfirmation } from '@interfaces/messages/message-confirmation.js';
 
 /**
- * Fields shared by the methods that build a new outbound message from scratch
- * ({@link IOcppSender.sendCall}, {@link IOcppSender.sendCallResult}, {@link IOcppSender.sendCallError}).
- * Methods that respond using an existing {@link IMessage} envelope already carry
- * these fields on `message` and don't take this type.
+ * Fields {@link IOcppSender.sendCall} needs to build a new outbound Call. Responses are built from
+ * the Call they answer, which already carries these fields.
  */
 export interface BaseOcppSenderArgs {
   ocppConnectionName: string;
@@ -34,24 +32,16 @@ export interface SendCallArgs extends BaseOcppSenderArgs {
   correlationId?: string;
 }
 
-export interface SendCallResultArgs extends BaseOcppSenderArgs {
-  payload: OcppResponse;
-  correlationId: string;
-}
-
-export interface SendCallErrorArgs extends BaseOcppSenderArgs {
-  payload: OcppError;
-  correlationId: string;
-}
-
+/**
+ * Responses are only sent through the Call they answer (the *WithMessage methods): the Call's
+ * timestamp is what shows whether the station is still waiting for one.
+ */
 export interface IOcppSender {
   sendCall(args: SendCallArgs): Promise<IMessageConfirmation>;
-  sendCallResult(args: SendCallResultArgs): Promise<IMessageConfirmation>;
   sendCallResultWithMessage(
     message: IMessage<OcppRequest>,
     payload: OcppResponse,
   ): Promise<IMessageConfirmation>;
-  sendCallError(args: SendCallErrorArgs): Promise<IMessageConfirmation>;
   sendCallErrorWithMessage(
     message: IMessage<OcppRequest>,
     payload: OcppError,

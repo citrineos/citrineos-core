@@ -13,8 +13,8 @@ vi.mock('typedi', () => ({
   Container: { get: () => undefined, set: () => undefined },
 }));
 
-import { OcpiHeaderMiddleware } from '../../../src/apis/middleware/ocpi-header-middleware.js';
-import { UniqueMessageIdsMiddleware } from '../../../src/apis/middleware/unique-message-ids-middleware.js';
+import { OcpiHeaderMiddleware } from '@ocpi/apis/middleware/ocpi-header-middleware.js';
+import { UniqueMessageIdsMiddleware } from '@ocpi/apis/middleware/unique-message-ids-middleware.js';
 
 /** Mirrors the parts of the Koa context these middlewares touch, recording what they set. */
 function aContext(headers: Record<string, string>) {

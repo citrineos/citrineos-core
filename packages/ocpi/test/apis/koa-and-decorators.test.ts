@@ -22,18 +22,18 @@ import {
   Paginated,
   VersionNumberParam,
 } from '../../index.js';
-import { extractToken } from '../../src/apis/decorators/auth-token.js';
-import { Enum } from '../../src/apis/decorators/enum.js';
-import { Optional, OPTIONAL_PARAM } from '../../src/apis/decorators/optional.js';
-import { BODY_PARAM } from '../../src/apis/decorators/body-with-schema.js';
-import { BODY_WITH_EXAMPLE_PARAM } from '../../src/apis/decorators/body-with-example.js';
-import { ENUM_PARAM } from '../../src/apis/decorators/enum-param.js';
-import { ENUM_QUERY_PARAM } from '../../src/apis/decorators/enum-query-param.js';
-import { MULTIPLE_TYPES } from '../../src/apis/decorators/multiple-types.js';
-import { versionIdParam } from '../../src/apis/decorators/version-number-param.js';
-import { InvalidParamException } from '../../src/apis/exception/invalid-param-exception.js';
-import { SchemaStore } from '../../src/apis/openapi-spec-helper/schema-store.js';
-import { base64Encode } from '../../src/util/util.js';
+import { extractToken } from '@ocpi/apis/decorators/auth-token.js';
+import { Enum } from '@ocpi/apis/decorators/enum.js';
+import { Optional, OPTIONAL_PARAM } from '@ocpi/apis/decorators/optional.js';
+import { BODY_PARAM } from '@ocpi/apis/decorators/body-with-schema.js';
+import { BODY_WITH_EXAMPLE_PARAM } from '@ocpi/apis/decorators/body-with-example.js';
+import { ENUM_PARAM } from '@ocpi/apis/decorators/enum-param.js';
+import { ENUM_QUERY_PARAM } from '@ocpi/apis/decorators/enum-query-param.js';
+import { MULTIPLE_TYPES } from '@ocpi/apis/decorators/multiple-types.js';
+import { versionIdParam } from '@ocpi/apis/decorators/version-number-param.js';
+import { InvalidParamException } from '@ocpi/apis/exception/invalid-param-exception.js';
+import { SchemaStore } from '@ocpi/apis/openapi-spec-helper/schema-store.js';
+import { base64Encode } from '@ocpi/util/util.js';
 
 const paramsFor = (proto: object, method: string) =>
   getMetadataArgsStorage().params.filter((p) => p.object === proto && p.method === method);

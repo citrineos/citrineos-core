@@ -67,6 +67,7 @@ export async function seedLocation(
         address: overrides.address ?? '1 Test Street',
         city: overrides.city ?? 'Testville',
         country: overrides.country ?? 'US',
+        coordinates: { type: 'Point', coordinates: [-119.4179, 36.7783] },
         createdAt: now,
         updatedAt: now,
       },

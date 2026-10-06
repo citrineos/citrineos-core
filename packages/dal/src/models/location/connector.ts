@@ -56,6 +56,7 @@ export class Connector extends Model implements ConnectorDto {
   @Column({
     unique: 'evseId_evseTypeConnectorId',
     type: DataType.INTEGER,
+    allowNull: false,
   })
   declare evseId: number;
 

@@ -37,7 +37,7 @@ export class CaliforniaPricingService {
   private readonly _changeConfigurationRepository: IChangeConfigurationRepository;
   private readonly _tariffRepository: ITariffRepository;
   private readonly _transactionEventRepository: ITransactionEventRepository;
-  private readonly _locationRepository: IConnectorRepository;
+  private readonly _connectorRepository: IConnectorRepository;
   protected _costCalculator: CostCalculator;
 
   constructor({
@@ -46,7 +46,7 @@ export class CaliforniaPricingService {
     ocppSender,
     changeConfigurationRepository,
     tariffRepository,
-    locationRepository,
+    connectorRepository,
     costCalculator,
   }: {
     logger: Logger<ILogObj>;
@@ -54,7 +54,7 @@ export class CaliforniaPricingService {
     changeConfigurationRepository: IChangeConfigurationRepository;
     transactionEventRepository: ITransactionEventRepository;
     tariffRepository: ITariffRepository;
-    locationRepository: IConnectorRepository;
+    connectorRepository: IConnectorRepository;
     costCalculator: CostCalculator;
   }) {
     this._logger = logger
@@ -65,7 +65,7 @@ export class CaliforniaPricingService {
     this._ocppSender = ocppSender;
     this._changeConfigurationRepository = changeConfigurationRepository;
     this._tariffRepository = tariffRepository;
-    this._locationRepository = locationRepository;
+    this._connectorRepository = connectorRepository;
   }
 
   /**
@@ -177,7 +177,7 @@ export class CaliforniaPricingService {
     ocppConnectionName: string,
     reportedDefaultPrice: string | null,
   ): Promise<void> {
-    const connectors = await this._locationRepository.readConnectorsByStationId(
+    const connectors = await this._connectorRepository.readConnectorsByStationId(
       tenantId,
       ocppConnectionName,
     );

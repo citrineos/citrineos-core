@@ -7,9 +7,9 @@ import {
   type DCChargingParametersType,
   type EnergyTransferModeEnumType,
   type EvseDto,
+  OCPP2_0_1,
   type TenantDto,
   type TransactionDto,
-  OCPP2_0_1,
 } from '@citrineos/types';
 import { DEFAULT_TENANT_ID, OCPP2_Namespace } from '@citrineos/base';
 import {
@@ -67,8 +67,11 @@ export class ChargingNeeds extends Model implements ChargingNeedsDto {
   @Column(DataType.INTEGER)
   declare transactionDatabaseId: number;
 
-  @Column(DataType.DATE)
-  declare transactionCreatedAt?: Date;
+  @Column({
+    type: DataType.DATE,
+    allowNull: false,
+  })
+  declare transactionCreatedAt: Date;
 
   @BelongsTo(() => Transaction, 'transactionDatabaseId')
   declare transaction: TransactionDto;

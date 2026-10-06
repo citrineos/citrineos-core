@@ -23,11 +23,17 @@ export class LocalListVersionAuthorization extends Model {
   static readonly MODEL_NAME: string = 'LocalListVersionAuthorization';
 
   @ForeignKey(() => LocalListVersion)
-  @Column(DataType.INTEGER)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+  })
   declare localListVersionId: number;
 
   @ForeignKey(() => LocalListAuthorization)
-  @Column(DataType.INTEGER)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+  })
   declare authorizationId: number;
 
   @ForeignKey(() => Tenant)

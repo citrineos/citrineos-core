@@ -5,9 +5,9 @@
 import { TableName } from '@dal/models/table-name.js';
 import {
   integer,
-  primaryKey,
   pgSchema,
   pgTable,
+  primaryKey,
   serial,
   timestamp,
   uniqueIndex,
@@ -21,7 +21,7 @@ import { type z } from 'zod';
 function startTransactionColumns() {
   return {
     id: serial('id'),
-    ocppConnectionName: varchar('ocppConnectionName', { length: 255 }).notNull(),
+    ocppConnectionName: varchar('ocppConnectionName', { length: 255 }),
     meterStart: integer('meterStart').notNull(), // in Wh
     // mode: 'date' returns a JS Date — mapped to ISO string in the repository layer
     timestamp: timestamp('timestamp', { withTimezone: true, mode: 'date' }).notNull(),
@@ -31,6 +31,7 @@ function startTransactionColumns() {
       .notNull()
       .$defaultFn(() => new Date()),
     connectorDatabaseId: integer('connectorDatabaseId').notNull(),
+    idTokenDatabaseId: integer('idTokenDatabaseId'),
     tenantId: integer('tenantId').notNull(),
     createdAt: timestamp('createdAt', { withTimezone: true, mode: 'date' })
       .notNull()
@@ -47,7 +48,7 @@ export const startTransactionTable = pgTable(
   startTransactionColumns(),
   (t) => [
     primaryKey({ columns: [t.id, t.transactionCreatedAt] }),
-    uniqueIndex('start_transactions_transaction_database_id').on(
+    uniqueIndex('StartTransactions_transactionDatabaseId_key').on(
       t.transactionDatabaseId,
       t.transactionCreatedAt,
     ),

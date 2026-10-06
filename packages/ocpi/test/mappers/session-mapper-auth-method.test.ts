@@ -8,12 +8,12 @@ import { Logger } from 'tslog';
 
 // LocationsService is a typedi-decorated service sitting on an import cycle with this mapper.
 // Mapping from maps that are already populated never reaches it.
-vi.mock('../../src/services/locations-service.js', () => ({ LocationsService: class {} }));
+vi.mock('@ocpi/services/locations-service.js', () => ({ LocationsService: class {} }));
 
-import { SessionMapper } from '../../src/mappers/session-mapper.js';
-import { AuthMethod } from '../../src/types/auth-method.js';
-import type { LocationDTO } from '../../src/types/dto/location-dto.js';
-import type { TokenDTO } from '../../src/types/dto/token-dto.js';
+import { SessionMapper } from '@ocpi/mappers/session-mapper.js';
+import { AuthMethod } from '@ocpi/types/auth-method.js';
+import type { LocationDTO } from '@ocpi/types/dto/location-dto.js';
+import type { TokenDTO } from '@ocpi/types/dto/token-dto.js';
 
 const TRANSACTION_ID = 'tx-1';
 

@@ -8,7 +8,7 @@ import { RetryMessageError } from '@citrineos/types';
 
 // amqplib and pg are mocked below; imports must go through the events barrel,
 // mirroring how the transports import each other in production.
-import type { IDtoEvent, IDtoPayload } from '../../src/handlers/index.js';
+import type { IDtoEvent, IDtoPayload } from '@ocpi/handlers/index.js';
 import {
   AbstractDtoModule,
   AsDtoEventHandler,
@@ -18,8 +18,8 @@ import {
   PgNotifyEventSubscriber,
   RabbitMqDtoReceiver,
   RabbitMqDtoSender,
-} from '../../src/handlers/index.js';
-import { getDtoEventHandlerMetaData } from '../../src/handlers/as-dto-event-handler.js';
+} from '@ocpi/handlers/index.js';
+import { getDtoEventHandlerMetaData } from '@ocpi/handlers/as-dto-event-handler.js';
 
 // Shared by the pg fixture and the client-options assertion.
 const FIXTURE_VALUE = 'pw';

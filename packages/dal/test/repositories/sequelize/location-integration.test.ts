@@ -596,6 +596,7 @@ describe('SequelizeLocationRepository', () => {
         connectorId: 1,
         status: 'Available',
         timestamp: TS,
+        evseId: 1,
       } as any);
 
       await makeRepo().updateAllConnectorsByStationId(TENANT_A, station.id, {
@@ -646,6 +647,34 @@ describe('SequelizeLocationRepository', () => {
       expect(new Date(stamped!.latestOcppMessageTimestamp as any).toISOString()).toBe(TS);
       const other = await ChargingStation.findOne({ where: { ocppConnectionName: 'CS002' } });
       expect(other!.latestOcppMessageTimestamp ?? null).toBeNull();
+    });
+
+    it('never moves the stamp backwards when an older timestamp lands late', async () => {
+      await aStation();
+      const repo = makeRepo();
+      const older = new Date(new Date(TS).getTime() - 1000).toISOString();
+
+      await repo.updateChargingStationTimestamp(TENANT_A, STATION_NAME, TS);
+      await repo.updateChargingStationTimestamp(TENANT_A, STATION_NAME, older);
+
+      const stamped = await ChargingStation.findOne({
+        where: { ocppConnectionName: STATION_NAME },
+      });
+      expect(new Date(stamped!.latestOcppMessageTimestamp as any).toISOString()).toBe(TS);
+    });
+
+    it('advances the stamp when a newer timestamp arrives', async () => {
+      await aStation();
+      const repo = makeRepo();
+      const newer = new Date(new Date(TS).getTime() + 1000).toISOString();
+
+      await repo.updateChargingStationTimestamp(TENANT_A, STATION_NAME, TS);
+      await repo.updateChargingStationTimestamp(TENANT_A, STATION_NAME, newer);
+
+      const stamped = await ChargingStation.findOne({
+        where: { ocppConnectionName: STATION_NAME },
+      });
+      expect(new Date(stamped!.latestOcppMessageTimestamp as any).toISOString()).toBe(newer);
     });
   });
 

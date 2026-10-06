@@ -11,11 +11,16 @@ import EventEmitter from 'events';
 import type { ILogObj, Logger } from 'tslog';
 import { DefaultDrizzleInstance } from '../../db/drizzle/util.js';
 
-// Every CitrineOS table shares these two columns — used to implement common
-// query patterns (findById, deleteById, etc.) in the base class without casting.
-export type CitrineTable = PgTable & {
-  id: Column;
+// Every CitrineOS table is tenant-scoped. This is the floor: join tables carry a
+// tenantId but have no surrogate key of their own, so it is all they can promise.
+export type TenantScopedTable = PgTable & {
   tenantId: Column;
+};
+
+// Most tables additionally have a surrogate primary key — used to implement the
+// id-keyed query patterns (findById, deleteById, etc.) without casting.
+export type CitrineTable = TenantScopedTable & {
+  id: Column;
 };
 
 /**
@@ -54,12 +59,20 @@ export interface DrizzleRepositoryDependencies {
   useTenantSchema?: boolean;
 }
 
-export abstract class DrizzleRepository<TTable extends CitrineTable, TDto> extends EventEmitter {
+/**
+ * Join tables — `ChargingStationNetworkProfiles`, `ComponentVariables`,
+ * `LocalListVersionAuthorizations`, `SendLocalListAuthorizations` — have a
+ * tenantId but no `id` column, so they extend this directly and reach their rows
+ * by natural key in their own domain methods. Everything else extends
+ * {@link DrizzleRepository}, which adds the id-keyed methods on top.
+ */
+export abstract class DrizzleTenantScopedRepository<
+  TTable extends TenantScopedTable,
+  TDto,
+> extends EventEmitter {
   protected readonly db: NodePgDatabase;
   protected readonly logger: Logger<ILogObj>;
 
-  // When true, queries target a per-tenant Postgres schema ("tenant_X"."Table")
-  // and the tenantId column filter is omitted — the schema is the isolation boundary.
   protected readonly useTenantSchema: boolean;
 
   constructor({
@@ -85,28 +98,11 @@ export abstract class DrizzleRepository<TTable extends CitrineTable, TDto> exten
   // Returns the tenant isolation predicate for WHERE clauses.
   // Undefined in schema-per-tenant mode because isolation lives at the schema level.
   // Protected, so subclasses can apply it to sibling tables they join against.
-  protected tenantFilter(table: CitrineTable, tenantId: number) {
+  protected tenantFilter(table: TenantScopedTable, tenantId: number) {
     return this.useTenantSchema ? undefined : eq(table.tenantId, tenantId);
   }
 
   // ─── Shared read methods ──────────────────────────────────────────────────
-
-  async findById(tenantId: number, id: number): Promise<TDto | undefined> {
-    const table = this.getTable(tenantId);
-    const filter = this.tenantFilter(table, tenantId);
-    const where = filter ? and(eq(table.id, id), filter) : eq(table.id, id);
-
-    // `as any` on table: Drizzle's from() has internal generic constraints
-    // (TableLikeHasEmptySelection) that don't resolve for bounded generic PgTables.
-    // The public return type is fully typed via TDto.
-    const rows = (await this.db
-      .select()
-      .from(table as any)
-      .where(where)
-      .limit(1)) as InferSelectModel<TTable>[];
-
-    return rows[0] ? this.toDto(rows[0]) : undefined;
-  }
 
   async findAll(tenantId: number): Promise<TDto[]> {
     const table = this.getTable(tenantId);
@@ -122,20 +118,6 @@ export abstract class DrizzleRepository<TTable extends CitrineTable, TDto> exten
     ) as InferSelectModel<TTable>[];
 
     return rows.map((row) => this.toDto(row));
-  }
-
-  async exists(tenantId: number, id: number): Promise<boolean> {
-    const table = this.getTable(tenantId);
-    const filter = this.tenantFilter(table, tenantId);
-    const where = filter ? and(eq(table.id, id), filter) : eq(table.id, id);
-
-    const rows = await this.db
-      .select({ id: table.id as any })
-      .from(table as any)
-      .where(where)
-      .limit(1);
-
-    return rows.length > 0;
   }
 
   async countAll(tenantId: number): Promise<number> {
@@ -172,6 +154,78 @@ export abstract class DrizzleRepository<TTable extends CitrineTable, TDto> exten
     this.raise(ctx, 'created', [dto]);
     return dto;
   }
+
+  /**
+   * Runs `fn` inside a single database transaction, committing when it resolves and
+   * rolling back when it throws. Pass the supplied context to the shared write
+   * helpers so their statements join the transaction.
+   */
+  protected async withAtomicWrite<T>(fn: (ctx: DrizzleWriteContext) => Promise<T>): Promise<T> {
+    const events: DrizzleWriteContext['events'] = [];
+
+    const result = await this.db.transaction(async (tx) => fn({ db: tx, events }));
+
+    for (const event of events) {
+      this.emit(event.name, event.payload);
+    }
+    return result;
+  }
+
+  // Emits immediately outside a transaction; buffers for post-commit inside one.
+  // Protected, not private: subclasses that write by natural key rather than by id
+  // must go through this, or their events fire before the commit they belong to.
+  protected raise(ctx: DrizzleWriteContext | undefined, name: string, payload: unknown) {
+    if (ctx) {
+      ctx.events.push({ name, payload });
+    } else {
+      this.emit(name, payload);
+    }
+  }
+}
+
+/**
+ * Adds the id-keyed operations to {@link DrizzleTenantScopedRepository}, for the
+ * tables that have a surrogate primary key — which is all of them except the join
+ * tables. This is the base class virtually every repository should extend.
+ */
+export abstract class DrizzleRepository<
+  TTable extends CitrineTable,
+  TDto,
+> extends DrizzleTenantScopedRepository<TTable, TDto> {
+  // ─── Shared read methods ──────────────────────────────────────────────────
+
+  async findById(tenantId: number, id: number): Promise<TDto | undefined> {
+    const table = this.getTable(tenantId);
+    const filter = this.tenantFilter(table, tenantId);
+    const where = filter ? and(eq(table.id, id), filter) : eq(table.id, id);
+
+    // `as any` on table: Drizzle's from() has internal generic constraints
+    // (TableLikeHasEmptySelection) that don't resolve for bounded generic PgTables.
+    // The public return type is fully typed via TDto.
+    const rows = (await this.db
+      .select()
+      .from(table as any)
+      .where(where)
+      .limit(1)) as InferSelectModel<TTable>[];
+
+    return rows[0] ? this.toDto(rows[0]) : undefined;
+  }
+
+  async exists(tenantId: number, id: number): Promise<boolean> {
+    const table = this.getTable(tenantId);
+    const filter = this.tenantFilter(table, tenantId);
+    const where = filter ? and(eq(table.id, id), filter) : eq(table.id, id);
+
+    const rows = await this.db
+      .select({ id: table.id as any })
+      .from(table as any)
+      .where(where)
+      .limit(1);
+
+    return rows.length > 0;
+  }
+
+  // ─── Shared write methods (all emit events) ───────────────────────────────
 
   // values is typed as object for the same reason as insert above.
   async updateById(
@@ -210,30 +264,5 @@ export abstract class DrizzleRepository<TTable extends CitrineTable, TDto> exten
     const dto = this.toDto(rows[0]);
     this.raise(ctx, 'deleted', [dto]);
     return dto;
-  }
-
-  /**
-   * Runs `fn` inside a single database transaction, committing when it resolves and
-   * rolling back when it throws. Pass the supplied context to the shared write
-   * helpers so their statements join the transaction.
-   */
-  protected async withAtomicWrite<T>(fn: (ctx: DrizzleWriteContext) => Promise<T>): Promise<T> {
-    const events: DrizzleWriteContext['events'] = [];
-
-    const result = await this.db.transaction(async (tx) => fn({ db: tx, events }));
-
-    for (const event of events) {
-      this.emit(event.name, event.payload);
-    }
-    return result;
-  }
-
-  // Emits immediately outside a transaction; buffers for post-commit inside one.
-  private raise(ctx: DrizzleWriteContext | undefined, name: string, payload: unknown) {
-    if (ctx) {
-      ctx.events.push({ name, payload });
-    } else {
-      this.emit(name, payload);
-    }
   }
 }

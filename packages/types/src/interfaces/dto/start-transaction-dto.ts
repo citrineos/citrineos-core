@@ -16,6 +16,7 @@ export const StartTransactionSchema = BaseSchema.extend({
   transactionCreatedAt: z.date().optional(),
   connectorDatabaseId: z.number().int(),
   connector: ConnectorSchema.optional(),
+  idTokenDatabaseId: z.number().int().nullish(),
 });
 
 export const StartTransactionProps = StartTransactionSchema.keyof().enum;

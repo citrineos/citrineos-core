@@ -3,16 +3,16 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
- * Integration tests for RabbitMqReceiver using a real RabbitMQ broker via Testcontainers.
+ * Integration tests for RabbitMqModuleReceiver and RabbitMqRouterReceiver using a real RabbitMQ broker via Testcontainers.
  *
- * These tests complement the unit tests in receiver.test.ts by verifying actual broker
+ * These tests complement the unit tests in module-receiver.test.ts and router-receiver.test.ts by verifying actual broker
  * state — queue existence, binding arguments, and consumer counts — through the
  * RabbitMQ Management HTTP API (port 15672).
  *
  * What we verify that mocks cannot:
  *  • Queues are actually created with the correct durability flags.
  *  • Header bindings land in the broker with the right arguments.
- *  • Consumer count on the instance queue never exceeds 1 in ROUTER_MODE,
+ *  • Consumer count on the router's instance queue never exceeds 1,
  *    regardless of how many chargers subscribe.
  *  • Unsubscribe actually removes bindings from the broker.
  */
@@ -22,7 +22,9 @@ import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainer
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { RabbitMQChannelManager } from '@/transport/queue/rabbit-mq/channel-manager.js';
 import { RabbitMQConnectionManager } from '@/transport/queue/rabbit-mq/connection-manager.js';
-import { RabbitMqReceiver } from '@/transport/queue/rabbit-mq/receiver.js';
+import { RabbitMqModuleReceiver } from '@/transport/queue/rabbit-mq/module-receiver.js';
+import { type RabbitMqReceiver } from '@/transport/queue/rabbit-mq/receiver.js';
+import { RabbitMqRouterReceiver } from '@/transport/queue/rabbit-mq/router-receiver.js';
 import { aSystemConfigWithAmqp } from '../../../providers/rabbit-mq-provider.js';
 
 // ---------------------------------------------------------------------------
@@ -48,6 +50,7 @@ interface MgmtBinding {
 interface MgmtConsumer {
   queue: { name: string; vhost: string };
   consumer_tag: string;
+  prefetch_count: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -138,6 +141,13 @@ async function waitForConsumerCount(
   );
 }
 
+/** Polls until `queueName` has a consumer, then returns the prefetch_count the broker applied to it. */
+async function getConsumerPrefetch(queueName: string): Promise<number> {
+  await waitForConsumerCount(queueName, 1);
+  const all = await mgmtGet<MgmtConsumer[]>(`/api/consumers/${VHOST}`);
+  return all.find((c) => c.queue.name === queueName)!.prefetch_count;
+}
+
 /** Returns only header-exchange bindings (filters out the default queue↔queue binding). */
 async function getQueueBindings(queueName: string): Promise<MgmtBinding[]> {
   const all = await mgmtGet<MgmtBinding[]>(
@@ -183,14 +193,14 @@ afterEach(async () => {
   }
 });
 
-describe('RabbitMqReceiver', () => {
+describe('RabbitMq receivers', () => {
   // ---------------------------------------------------------------------------
-  // MODULE_MODE — dedicated queue per identifier
+  // RabbitMqModuleReceiver — dedicated queue per identifier
   // ---------------------------------------------------------------------------
 
-  describe('MODULE_MODE — broker state', () => {
+  describe('RabbitMqModuleReceiver — broker state', () => {
     beforeEach(() => {
-      receiver = new RabbitMqReceiver({
+      receiver = new RabbitMqModuleReceiver({
         config: aSystemConfigWithAmqp({ exchange: EXCHANGE }),
         channelManager,
       });
@@ -246,6 +256,13 @@ describe('RabbitMqReceiver', () => {
       expect(binding.arguments['ocppConnectionName']).toBe('CS001');
     }, 15_000);
 
+    it('should apply the configured module prefetch to the consumer', async () => {
+      const id = `Prefetch-${uid}`;
+      await receiver.subscribe(id, [OCPP_CallAction.BootNotification], {});
+
+      expect(await getConsumerPrefetch(`rabbit_queue_${id}`)).toBe(10);
+    }, 15_000);
+
     it('should drop the consumer count to 0 after unsubscribe', async () => {
       const id = `Cert-${uid}`;
       await receiver.subscribe(id, [OCPP_CallAction.CertificateSigned], {});
@@ -258,20 +275,19 @@ describe('RabbitMqReceiver', () => {
   });
 
   // ---------------------------------------------------------------------------
-  // ROUTER_MODE — single instance queue, dynamic bindings per charger
+  // RabbitMqRouterReceiver — single instance queue, dynamic bindings per charger
   // ---------------------------------------------------------------------------
 
-  describe('ROUTER_MODE — broker state', () => {
+  describe('RabbitMqRouterReceiver — broker state', () => {
     const instanceId = `router-integration`;
 
     beforeEach(() => {
-      receiver = new RabbitMqReceiver({
+      receiver = new RabbitMqRouterReceiver({
         config: aSystemConfigWithAmqp({
           exchange: EXCHANGE,
           instanceIdentifier: `${instanceId}-${uid}`,
         }),
         channelManager,
-        routerMode: true,
       });
     });
 
@@ -309,6 +325,15 @@ describe('RabbitMqReceiver', () => {
       });
 
       await waitForConsumerCount(queueName, 1);
+    }, 15_000);
+
+    it('should apply the configured router prefetch to the instance consumer', async () => {
+      await receiver.subscribe('charger-1', undefined, {
+        ocppConnectionName: 'CS001',
+        tenantId: '1',
+      });
+
+      expect(await getConsumerPrefetch(`rabbit_queue_router_${instanceId}-${uid}`)).toBe(100);
     }, 15_000);
 
     it('should add one binding to the instance queue per charger subscribe', async () => {

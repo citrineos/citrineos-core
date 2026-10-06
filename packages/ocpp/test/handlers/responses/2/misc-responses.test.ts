@@ -58,9 +58,7 @@ function makeMessage<T extends OcppResponse>(
 
 function expectNoOutboundTraffic() {
   expect(ocppSender.sendCall).not.toHaveBeenCalled();
-  expect(ocppSender.sendCallResult).not.toHaveBeenCalled();
   expect(ocppSender.sendCallResultWithMessage).not.toHaveBeenCalled();
-  expect(ocppSender.sendCallError).not.toHaveBeenCalled();
   expect(ocppSender.sendCallErrorWithMessage).not.toHaveBeenCalled();
 }
 

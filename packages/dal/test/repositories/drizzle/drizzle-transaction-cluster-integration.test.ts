@@ -14,6 +14,7 @@ import type {
   TransactionEventDto,
 } from '@citrineos/types';
 import { MeterValue, StartTransaction, Transaction } from '../../../index.js';
+import { SequelizeLocationRepository } from '@dal/repositories/sequelize/location.js';
 import {
   DrizzleMeterValueRepository,
   toMeterValueDto,
@@ -54,6 +55,7 @@ const STATION = 'CS-TX-1';
 let h: PgHarness;
 let drizzlePool: pg.Pool;
 let db: NodePgDatabase;
+let locationRepository: SequelizeLocationRepository;
 
 beforeAll(async () => {
   h = await startPgHarness();
@@ -70,6 +72,10 @@ beforeAll(async () => {
   // the run even when every test passed.
   drizzlePool.on('error', () => {});
   db = drizzle(drizzlePool);
+  locationRepository = new SequelizeLocationRepository({
+    config: h.config,
+    sequelizeInstance: h.sequelizeInstance,
+  });
 }, 90_000);
 
 afterAll(async () => {
@@ -133,13 +139,27 @@ function stopTransactionRepo(): StopTransactionRepo {
   return new StopTransactionRepo({ config: h.config, drizzleInstance: db });
 }
 
-async function aStation(tenantId: number, ocppConnectionName = STATION): Promise<{ id: number }> {
+async function aStation(
+  tenantId: number,
+  ocppConnectionName = STATION,
+): Promise<{ id: number; connectorDatabaseId: number }> {
   const station = await ChargingStation.create({
     ocppConnectionName,
     isOnline: false,
     tenantId,
   } as any);
-  return station as unknown as { id: number };
+  const { evseId } = await locationRepository.autoCommissionEvseForOcpp16Connector(
+    tenantId,
+    ocppConnectionName,
+  );
+  const connector = await locationRepository.createOrUpdateOcpp16Connector(tenantId, {
+    stationId: station.id,
+    evseId,
+    connectorId: 1,
+    status: 'Available',
+    timestamp: new Date().toISOString(),
+  });
+  return { id: station.id, connectorDatabaseId: connector!.id! };
 }
 
 async function aTransaction(
@@ -147,21 +167,22 @@ async function aTransaction(
   stationId: number,
   transactionId: string,
   overrides: Record<string, unknown> = {},
-): Promise<{ id: number }> {
+): Promise<Transaction> {
   const row = await Transaction.create({
     stationId,
     transactionId,
     isActive: true,
     tenantId,
+    transactionCreatedAt: new Date(),
     ...overrides,
   } as any);
-  return row as unknown as { id: number };
+  return row;
 }
 
 async function anEvent(
   tenantId: number,
   overrides: Record<string, unknown> = {},
-): Promise<{ id: number }> {
+): Promise<TransactionEvent> {
   const row = await TransactionEvent.create({
     ocppConnectionName: STATION,
     eventType: 'Started',
@@ -169,9 +190,10 @@ async function anEvent(
     triggerReason: 'Authorized',
     seqNo: 0,
     tenantId,
+    transactionCreatedAt: new Date(),
     ...overrides,
   } as any);
-  return row as unknown as { id: number };
+  return row;
 }
 
 describe('DrizzleTransactionRepository', () => {
@@ -417,7 +439,7 @@ describe('DrizzleMeterValueRepository', () => {
       timestamp: '2025-06-01T08:00:00.000Z',
       tenantId: TENANT,
     } as any);
-    const id = (row as unknown as { id: number }).id;
+    const id = row.id;
     const deletedEvents: MeterValueDto[][] = [];
     repo.on('deleted', (dtos: MeterValueDto[]) => deletedEvents.push(dtos));
 
@@ -455,14 +477,14 @@ describe('DrizzleStartTransactionRepository', () => {
       meterStart: 100,
       timestamp: new Date('2025-06-01T08:00:00.000Z'),
       transactionDatabaseId: tx.id,
+      connectorDatabaseId: station.connectorDatabaseId,
     });
 
     expect(dto.meterStart).toBe(100);
     expect(dto.timestamp).toBe('2025-06-01T08:00:00.000Z');
     expect(dto.transactionDatabaseId).toBe(tx.id);
     expect(dto.reservationId).toBeNull();
-    // No connector seeded; the DB column is nullable even though the DTO types it as required.
-    expect(dto.connectorDatabaseId).toBeNull();
+    expect(dto.connectorDatabaseId).toBe(station.connectorDatabaseId);
     // Partition key column, filled by the schema default when the payload omits it.
     expect(dto.transactionCreatedAt).toBeInstanceOf(Date);
     expect(dto.tenantId).toBe(TENANT);
@@ -482,6 +504,7 @@ describe('DrizzleStartTransactionRepository', () => {
     const values = {
       ocppConnectionName: STATION,
       meterStart: 100,
+      connectorDatabaseId: station.connectorDatabaseId,
       timestamp: new Date('2025-06-01T08:00:00.000Z'),
       transactionDatabaseId: tx.id,
       transactionCreatedAt: new Date('2025-06-01T07:59:00.000Z'),
@@ -509,6 +532,7 @@ describe('DrizzleStopTransactionRepository', () => {
       reason: 'Local',
       idTokenValue: 'TOKEN-9',
       idTokenType: 'ISO14443',
+      connectorDatabaseId: station.connectorDatabaseId,
     });
 
     expect(dto.meterStop).toBe(4500);
@@ -540,6 +564,7 @@ describe('DrizzleStopTransactionRepository', () => {
       meterStop: 4500,
       timestamp: new Date('2025-06-01T09:00:00.000Z'),
       transactionCreatedAt: new Date('2025-06-01T08:59:00.000Z'),
+      connectorDatabaseId: station.connectorDatabaseId,
     };
     await repo.create(TENANT, values);
 

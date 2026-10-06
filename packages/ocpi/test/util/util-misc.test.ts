@@ -15,15 +15,15 @@ import {
   invalidClientCredentialsRoles,
   invalidServerCredentialsRoles,
   plainToClass,
-} from '../../src/util/util.js';
-import { ResponseGenerator } from '../../src/apis/response-generator.js';
-import * as Consts from '../../src/util/consts.js';
-import { validateRole } from '../../src/apis/validators/credentials-validators.js';
-import { PaginatedParams } from '../../src/apis/controllers/param/paginated-params.js';
-import { BaseController } from '../../src/apis/controllers/base-controller.js';
-import { NotFoundException } from '../../src/apis/exception/not-found-exception.js';
-import { Role } from '../../src/types/role.js';
-import type { CredentialsRoleDTO } from '../../src/types/dto/credentials-role-dto.js';
+} from '@ocpi/util/util.js';
+import { ResponseGenerator } from '@ocpi/apis/response-generator.js';
+import * as Consts from '@ocpi/util/consts.js';
+import { validateRole } from '@ocpi/apis/validators/credentials-validators.js';
+import { PaginatedParams } from '@ocpi/apis/controllers/param/paginated-params.js';
+import { BaseController } from '@ocpi/apis/controllers/base-controller.js';
+import { NotFoundException } from '@ocpi/apis/exception/not-found-exception.js';
+import { Role } from '@ocpi/types/role.js';
+import type { CredentialsRoleDTO } from '@ocpi/types/dto/credentials-role-dto.js';
 
 const credentialsRole = (role: Role, country_code = 'US', party_id = 'CPO'): CredentialsRoleDTO =>
   ({ role, country_code, party_id, business_details: { name: 'Test Co' } }) as CredentialsRoleDTO;
@@ -335,7 +335,7 @@ describe('BaseController mock generators', () => {
     vi.resetModules();
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     try {
-      const mod = await import('../../src/apis/controllers/base-controller.js');
+      const mod = await import('@ocpi/apis/controllers/base-controller.js');
       await expect(mod.generateMockForSchema(schema, 'Sample')).resolves.toBeNull();
       expect(generateMock).toHaveBeenCalledTimes(1);
       // the schema handed to the faker carries the converted zod shape plus components

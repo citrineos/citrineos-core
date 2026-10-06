@@ -40,7 +40,7 @@ function subscriptionColumns() {
 
 // Row-level tenancy (current approach): single public schema, tenantId column filter on every query
 export const subscriptionTable = pgTable(TableName.Subscriptions, subscriptionColumns(), (t) => [
-  index('subscriptions_ocpp_connection_name').on(t.ocppConnectionName),
+  index('subscriptions_station_id').on(t.ocppConnectionName),
 ]);
 
 // Schema-per-tenant (future approach): one Postgres schema per tenant, no tenantId filter needed

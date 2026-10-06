@@ -6,20 +6,20 @@ import { describe, expect, it, vi } from 'vitest';
 import { BadRequestError, NotFoundError, UnauthorizedError } from 'routing-controllers';
 import { UnauthorizedException } from '@citrineos/base';
 
-import { AdminAuthMiddleware } from '../../../src/apis/middleware/admin-auth-middleware.js';
+import { AdminAuthMiddleware } from '@ocpi/apis/middleware/admin-auth-middleware.js';
 import {
   AuthMiddleware,
   RegistrationAuthMiddleware,
-} from '../../../src/apis/middleware/auth-middleware.js';
-import { HttpExceptionHandler } from '../../../src/apis/middleware/http-exception-handler.js';
-import { OcpiExceptionHandler } from '../../../src/apis/middleware/ocpi-exception-handler.js';
-import { oidcAuthMiddleware } from '../../../src/apis/middleware/oidc-auth-middleware.js';
-import { GET_TENANT_PARTNER_BY_SERVER_TOKEN } from '../../../src/transport/graphql/index.js';
-import { MissingParamException } from '../../../src/apis/exception/missing-param-exception.js';
-import { AlreadyRegisteredException } from '../../../src/apis/exception/already-registered-exception.js';
-import { UnknownTokenException } from '../../../src/apis/exception/unknown-token-exception.js';
-import { WrongClientAccessException } from '../../../src/apis/exception/wrong-client-access-exception.js';
-import { UnsuccessfulRequestException } from '../../../src/apis/exception/unsuccessful-request-exception.js';
+} from '@ocpi/apis/middleware/auth-middleware.js';
+import { HttpExceptionHandler } from '@ocpi/apis/middleware/http-exception-handler.js';
+import { OcpiExceptionHandler } from '@ocpi/apis/middleware/ocpi-exception-handler.js';
+import { oidcAuthMiddleware } from '@ocpi/apis/middleware/oidc-auth-middleware.js';
+import { GET_TENANT_PARTNER_BY_SERVER_TOKEN } from '@ocpi/transport/graphql/index.js';
+import { MissingParamException } from '@ocpi/apis/exception/missing-param-exception.js';
+import { AlreadyRegisteredException } from '@ocpi/apis/exception/already-registered-exception.js';
+import { UnknownTokenException } from '@ocpi/apis/exception/unknown-token-exception.js';
+import { WrongClientAccessException } from '@ocpi/apis/exception/wrong-client-access-exception.js';
+import { UnsuccessfulRequestException } from '@ocpi/apis/exception/unsuccessful-request-exception.js';
 
 // 'Token ' + base64('example-token')
 const VALID_AUTH_HEADER = 'Token ZXhhbXBsZS10b2tlbg==';

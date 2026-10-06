@@ -4,8 +4,8 @@
 import 'reflect-metadata';
 import { describe, expect, it, vi } from 'vitest';
 
-import { CdrsService } from '../../src/services/cdrs-service.js';
-import { GET_TRANSACTIONS_QUERY } from '../../src/transport/graphql/index.js';
+import { CdrsService } from '@ocpi/services/cdrs-service.js';
+import { GET_TRANSACTIONS_QUERY } from '@ocpi/transport/graphql/index.js';
 
 /** Captures the query document and Hasura variables the service builds. */
 function aCapturingGraphqlClient(result: unknown = { Transactions: [] }) {

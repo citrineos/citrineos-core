@@ -4,9 +4,9 @@
 
 import type { TransactionDto } from '@citrineos/types';
 import {
+  tenantTransactionTable,
   type TransactionEntity,
   transactionTable,
-  tenantTransactionTable,
 } from '../../db/drizzle/schema/transaction.js';
 import { DrizzleRepository } from './base.js';
 

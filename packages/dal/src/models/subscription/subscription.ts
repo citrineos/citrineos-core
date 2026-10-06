@@ -21,37 +21,47 @@ export class Subscription extends Model implements SubscriptionDto {
   static readonly MODEL_NAME: string = OCPP2_Namespace.Subscription;
 
   @Index
-  @Column(DataType.STRING)
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+  })
   declare ocppConnectionName: string;
 
   @Column({
     type: DataType.BOOLEAN,
     defaultValue: false,
+    allowNull: false,
   })
   declare onConnect: boolean;
 
   @Column({
     type: DataType.BOOLEAN,
     defaultValue: false,
+    allowNull: false,
   })
   declare onClose: boolean;
 
   @Column({
     type: DataType.BOOLEAN,
     defaultValue: false,
+    allowNull: false,
   })
   declare onMessage: boolean;
 
   @Column({
     type: DataType.BOOLEAN,
     defaultValue: false,
+    allowNull: false,
   })
   declare sentMessage: boolean;
 
   @Column(DataType.STRING)
   declare messageRegexFilter?: string | null;
 
-  @Column(DataType.STRING)
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+  })
   declare url: string;
 
   @ForeignKey(() => Tenant)

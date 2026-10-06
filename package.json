@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/workspace",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "type": "module",
   "private": false,
   "packageManager": "pnpm@10.19.0",
@@ -33,7 +33,7 @@
       "utf-8-validate"
     ],
     "overrides": {
-      "@tanstack/react-query": "5.101.4",
+      "@tanstack/react-query": "5.104.1",
       "zod": "catalog:",
       "graphql": "15.6.1",
       "reflect-metadata": "catalog:"

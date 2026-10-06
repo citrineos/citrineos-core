@@ -12,6 +12,7 @@ import {
 import { childLogger } from '@citrineos/base';
 import type { IOCPPMessageRepository } from '@citrineos/dal';
 import type { ILogObj, Logger } from 'tslog';
+import { recordMessagesPersistActionUnresolved } from '@/transport/queue/rabbit-mq/messages/messages-metrics.js';
 
 /**
  * OcppMessagePersistProcessor is responsible for persisting OCPPMessages into the database.
@@ -59,6 +60,12 @@ export class OcppMessagePersistProcessor implements IFrameEventProcessor {
     // Handing it back is how the webhook `info` map keeps carrying a real action.
     context.persistedAction = record.action;
     context.persistedId = record.id;
+    if (
+      !record.action &&
+      (event.type === MessageTypeId.CallResult || event.type === MessageTypeId.CallError)
+    ) {
+      recordMessagesPersistActionUnresolved();
+    }
 
     this._logger.debug(
       `Persisted ${event.direction} frame for ${event.ocppConnectionName} ` +

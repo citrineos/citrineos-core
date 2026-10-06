@@ -92,4 +92,9 @@ export {
   DrizzleTenantRepository,
   DrizzleVariableAttributeRepository,
   DrizzleVariableCharacteristicsRepository,
+  citext,
+  registeredTables,
+  registeredTableNames,
+  type RegisteredTable,
+  drizzleSchema,
 } from './src/db/drizzle/index.js';
