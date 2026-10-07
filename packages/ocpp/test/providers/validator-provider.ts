@@ -106,6 +106,12 @@ export function aCost(override?: Partial<OCPP2_0_1.CostType>): OCPP2_0_1.CostTyp
 }
 
 // Repository mock builders
+export function createMockVariableAttributeRepository(): Mocked<IVariableAttributeRepository> {
+  return {
+    readAllByQuerystring: vi.fn(),
+  } as any;
+}
+
 export function createMockChargingProfileRepository(): Mocked<IChargingProfileRepository> {
   return {
     findChargingNeedsByEvseDBIdAndTransactionDBId: vi.fn(),
