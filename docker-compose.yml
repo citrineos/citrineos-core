@@ -20,6 +20,10 @@ services:
   citrine:
     image: ghcr.io/citrineos/citrineos-server:latest
     pull_policy: always
+    volumes:
+      # Role definitions, re-read every roles.refreshIntervalSeconds. Mounted so an
+      # edit takes effect without a rebuild or a restart.
+      - ./apps/ocpp-server/src/assets/roles.seed.json:/usr/local/apps/citrineos/apps/ocpp-server/dist/assets/roles.seed.json
     environment:
       # Which process this container runs (EventGroup): 'all' = router + every module + APIs.
       APP_NAME: 'all'

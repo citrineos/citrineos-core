@@ -4,6 +4,10 @@
 'use client';
 
 import { ActionType, CommandType, ResourceType } from '@lib/utils/access-types';
+import {
+  PERMISSION_REMOTE_STOP_TRANSACTION,
+  PERMISSION_REQUEST_STOP_TRANSACTION,
+} from '@lib/utils/permissions';
 import { Button } from '@lib/client/components/ui/button';
 import { CanAccess, useTranslate } from '@refinedev/core';
 import { useDispatch } from 'react-redux';
@@ -31,7 +35,7 @@ export const StopTransactionButton = ({
       action={ActionType.COMMAND}
       params={{
         id: station.id,
-        commandType: CommandType.STOP_TRANSACTION,
+        permission: [PERMISSION_REMOTE_STOP_TRANSACTION, PERMISSION_REQUEST_STOP_TRANSACTION],
       }}
     >
       <Button

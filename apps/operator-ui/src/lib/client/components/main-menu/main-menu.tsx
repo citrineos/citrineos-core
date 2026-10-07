@@ -26,6 +26,8 @@ import { LocaleSwitcher } from '@lib/client/components/locale-switcher';
 import { ConnectionModal } from '@lib/client/components/modals/shared/connection-modal/connection-modal';
 import { LogoutButton } from '@lib/client/components/logout-button';
 import { useTranslate } from '@refinedev/core';
+import { ActionType, ResourceType } from '@lib/utils/access-types';
+import { useCanAccessList } from '@lib/client/hooks/use-can-access-list';
 
 export enum MenuSection {
   OVERVIEW = 'overview',
@@ -45,6 +47,7 @@ interface MenuItem {
   key: string;
   label: string;
   icon: React.ReactNode;
+  resource?: ResourceType;
 }
 
 export const MainMenu = ({ activeSection }: MainMenuProps) => {
@@ -63,7 +66,7 @@ export const MainMenu = ({ activeSection }: MainMenuProps) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const mainMenuItems: MenuItem[] = [
+  const allMenuItems: MenuItem[] = [
     {
       key: `/${MenuSection.OVERVIEW}`,
       label: translate('menu.overview'),
@@ -71,35 +74,46 @@ export const MainMenu = ({ activeSection }: MainMenuProps) => {
     },
     {
       key: `/${MenuSection.LOCATIONS}`,
+      resource: ResourceType.LOCATIONS,
       label: translate('Locations.Locations'),
       icon: <MapPin className={sidebarIconSize} />,
     },
     {
       key: `/${MenuSection.CHARGING_STATIONS}`,
+      resource: ResourceType.CHARGING_STATIONS,
       label: translate('ChargingStations.ChargingStations'),
       icon: <EvCharger className={sidebarIconSize} />,
     },
     {
       key: `/${MenuSection.AUTHORIZATIONS}`,
+      resource: ResourceType.AUTHORIZATIONS,
       label: translate('Authorizations.Authorizations'),
       icon: <Clipboard className={sidebarIconSize} />,
     },
     {
       key: `/${MenuSection.TRANSACTIONS}`,
+      resource: ResourceType.TRANSACTIONS,
       label: translate('Transactions.Transactions'),
       icon: <ArrowLeftRight className={sidebarIconSize} />,
     },
     {
       key: `/${MenuSection.TARIFFS}`,
+      resource: ResourceType.TARIFFS,
       label: translate('Tariffs.Tariffs'),
       icon: <Receipt className={sidebarIconSize} />,
     },
     {
       key: `/${MenuSection.PARTNERS}`,
+      resource: ResourceType.PARTNERS,
       label: translate('TenantPartners.TenantPartners'),
       icon: <Users className={sidebarIconSize} />,
     },
   ];
+
+  const { items: mainMenuItems, isResolved: menuResolved } = useCanAccessList(
+    allMenuItems,
+    ActionType.LIST,
+  );
 
   return (
     <>
@@ -118,28 +132,29 @@ export const MainMenu = ({ activeSection }: MainMenuProps) => {
         {/* Main Navigation */}
         <nav className="flex-1 overflow-y-auto py-2">
           <ul className="space-y-1 px-3">
-            {mainMenuItems.map((item) => {
-              const isActive = `/${activeSection}` === item.key;
-              return (
-                <li key={item.key}>
-                  <Link
-                    href={item.key}
-                    className={cn(
-                      'flex items-center gap-3 px-3 py-3 rounded-md transition-colors text-sm',
-                      'hover:bg-accent hover:text-accent-foreground',
-                      isActive
-                        ? 'bg-accent text-accent-foreground font-medium'
-                        : 'text-muted-foreground',
-                      collapsed && 'justify-center px-2',
-                    )}
-                    title={collapsed ? item.label : undefined}
-                  >
-                    <span className="shrink-0">{item.icon}</span>
-                    {!collapsed && <span>{item.label}</span>}
-                  </Link>
-                </li>
-              );
-            })}
+            {menuResolved &&
+              mainMenuItems.map((item) => {
+                const isActive = `/${activeSection}` === item.key;
+                return (
+                  <li key={item.key}>
+                    <Link
+                      href={item.key}
+                      className={cn(
+                        'flex items-center gap-3 px-3 py-3 rounded-md transition-colors text-sm',
+                        'hover:bg-accent hover:text-accent-foreground',
+                        isActive
+                          ? 'bg-accent text-accent-foreground font-medium'
+                          : 'text-muted-foreground',
+                        collapsed && 'justify-center px-2',
+                      )}
+                      title={collapsed ? item.label : undefined}
+                    >
+                      <span className="shrink-0">{item.icon}</span>
+                      {!collapsed && <span>{item.label}</span>}
+                    </Link>
+                  </li>
+                );
+              })}
           </ul>
         </nav>
 

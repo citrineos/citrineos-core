@@ -10,7 +10,6 @@ import { getPartnersColumns } from '@lib/client/pages/partners/columns';
 import { TenantPartnerClass } from '@lib/cls/tenant-partner-cls';
 import { PARTNERS_LIST_QUERY } from '@lib/queries/tenant-partners';
 import { ActionType, ResourceType } from '@lib/utils/access-types';
-import { AccessDeniedFallback } from '@lib/utils/access-denied-fallback';
 import { DEFAULT_SORTERS } from '@lib/utils/consts';
 import { getPlainToInstanceOptions } from '@lib/utils/tables';
 import { CanAccess, useTranslate } from '@refinedev/core';
@@ -50,11 +49,7 @@ export const PartnersList = () => {
           </CanAccess>
         </div>
       </div>
-      <CanAccess
-        resource={ResourceType.PARTNERS}
-        action={ActionType.LIST}
-        fallback={<AccessDeniedFallback />}
-      >
+      <CanAccess resource={ResourceType.PARTNERS} action={ActionType.LIST}>
         <Table
           refineCoreProps={{
             resource: ResourceType.PARTNERS,

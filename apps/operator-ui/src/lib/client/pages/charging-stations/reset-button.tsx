@@ -4,6 +4,7 @@
 'use client';
 
 import { ActionType, CommandType, ResourceType } from '@lib/utils/access-types';
+import { PERMISSION_RESET } from '@lib/utils/permissions';
 import { Button } from '@lib/client/components/ui/button';
 import { CanAccess, useTranslate } from '@refinedev/core';
 import type { ChargingStationDto } from '@citrineos/types';
@@ -31,7 +32,7 @@ export const ResetButton = ({
       action={ActionType.COMMAND}
       params={{
         id: station.id,
-        commandType: CommandType.RESET,
+        permission: PERMISSION_RESET,
       }}
     >
       <Button

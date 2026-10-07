@@ -442,32 +442,24 @@ export const ChargingStationDetailCard = ({
 
         {/* Command Buttons */}
         <div className="mt-6">
-          <CanAccess
-            resource={ResourceType.CHARGING_STATIONS}
-            action={ActionType.COMMAND}
-            params={{ id: station.id }}
-          >
-            <div className="flex flex-col gap-2">
-              {!station.isOnline && <CommandsUnavailableText />}
-              <div className="flex gap-4 flex-wrap">
-                <ForceDisconnectButton
-                  id={station.id}
-                  onClickAction={() => showForceDisconnectModal(station)}
-                />
-                {canStart && (
-                  <StartTransactionButton station={station} disabled={!station.isOnline} />
-                )}
-                {canStop && (
-                  <StopTransactionButton station={station} disabled={!station.isOnline} />
-                )}
-                <ResetButton station={station} disabled={!station.isOnline} />
-                <Button onClick={showOtherCommandsModal} disabled={!station.isOnline}>
-                  <MoreHorizontal className={buttonIconSize} />
-                  {translate('ChargingStations.otherCommands')}
-                </Button>
-              </div>
+          <div className="flex flex-col gap-2">
+            {!station.isOnline && <CommandsUnavailableText />}
+            <div className="flex gap-4 flex-wrap">
+              <ForceDisconnectButton
+                id={station.id}
+                onClickAction={() => showForceDisconnectModal(station)}
+              />
+              {canStart && (
+                <StartTransactionButton station={station} disabled={!station.isOnline} />
+              )}
+              {canStop && <StopTransactionButton station={station} disabled={!station.isOnline} />}
+              <ResetButton station={station} disabled={!station.isOnline} />
+              <Button onClick={showOtherCommandsModal} disabled={!station.isOnline}>
+                <MoreHorizontal className={buttonIconSize} />
+                {translate('ChargingStations.otherCommands')}
+              </Button>
             </div>
-          </CanAccess>
+          </div>
         </div>
       </CardContent>
     </Card>

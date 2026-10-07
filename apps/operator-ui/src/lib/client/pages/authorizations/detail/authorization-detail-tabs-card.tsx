@@ -8,7 +8,6 @@ import { Card, CardContent } from '@lib/client/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@lib/client/components/ui/tabs';
 import { CanAccess } from '@refinedev/core';
 import { ActionType, ResourceType } from '@lib/utils/access-types';
-import { AccessDeniedFallback } from '@lib/utils/access-denied-fallback';
 import { Table } from '@lib/client/components/table';
 import { GET_TRANSACTIONS_FOR_AUTHORIZATION } from '@lib/queries/transactions';
 import { getPlainToInstanceOptions } from '@lib/utils/tables';
@@ -45,11 +44,7 @@ export const AuthorizationDetailTabsCard = ({
             <TabsTrigger value="transactions">{translate('Transactions.Transactions')}</TabsTrigger>
           </TabsList>
           <TabsContent value="transactions" className={cardTabsStyle}>
-            <CanAccess
-              resource={ResourceType.TRANSACTIONS}
-              action={ActionType.LIST}
-              fallback={<AccessDeniedFallback />}
-            >
+            <CanAccess resource={ResourceType.TRANSACTIONS} action={ActionType.LIST}>
               <Table
                 refineCoreProps={{
                   resource: ResourceType.TRANSACTIONS,
