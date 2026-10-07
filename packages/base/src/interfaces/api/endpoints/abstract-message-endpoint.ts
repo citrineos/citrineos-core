@@ -1,12 +1,18 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { type ILogObj, Logger } from 'tslog';
 import type { CallAction, EventGroup, OCPPVersion } from '@citrineos/types';
 import type { IMessageConfirmation } from '@interfaces/messages/index.js';
+import { type ILogObj, Logger } from 'tslog';
 
 export interface AbstractMessageEndpointDependencies {
   logger: Logger<ILogObj>;
+}
+
+export interface MessageDelivery {
+  callbackUrl?: string;
+  /** See {@link IMessageContext.staleAfterSeconds}. */
+  staleAfterSeconds?: number;
 }
 
 export interface IMessageEndpointMetadata {
@@ -27,7 +33,7 @@ export abstract class AbstractMessageEndpoint {
   public abstract handle(
     identifiers: string[],
     request: unknown,
-    callbackUrl: string | undefined,
+    delivery: MessageDelivery,
     tenantId: number | undefined,
     version: OCPPVersion,
     extraQueries?: Record<string, unknown>,

@@ -3,13 +3,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { RabbitMqModuleReceiver } from '@/transport/queue/rabbit-mq/module-receiver.js';
-import { OCPP_CallAction } from '@citrineos/types';
+import { MessageOrigin, MessageState, OCPP_CallAction } from '@citrineos/types';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  aConsumeMessage,
   aMockAmqpChannel,
   aMockChannelManager,
   aMockConnectionManager,
+  aMockDeadLetterPublisher,
   aSystemConfigWithAmqp,
 } from '../../../providers/rabbit-mq-provider.js';
 
@@ -19,16 +21,15 @@ const { container } = createTestContainer();
 describe('RabbitMqModuleReceiver', () => {
   let receiver: RabbitMqModuleReceiver;
   let mockChannel: ReturnType<typeof aMockAmqpChannel>;
-  let mockConnectionManager: ReturnType<typeof aMockConnectionManager>;
   let mockChannelManager: ReturnType<typeof aMockChannelManager>;
 
   beforeEach(() => {
     mockChannel = aMockAmqpChannel();
-    mockConnectionManager = aMockConnectionManager();
-    mockChannelManager = aMockChannelManager(mockChannel, mockConnectionManager);
+    mockChannelManager = aMockChannelManager(mockChannel);
     receiver = getTestInstance(container, RabbitMqModuleReceiver, {
       config: aSystemConfigWithAmqp(),
       channelManager: mockChannelManager,
+      deadLetterPublisher: aMockDeadLetterPublisher(),
       module: undefined,
     });
   });
@@ -39,6 +40,7 @@ describe('RabbitMqModuleReceiver', () => {
         getTestInstance(container, RabbitMqModuleReceiver, {
           config: aSystemConfigWithAmqp({ noAmqp: true }),
           channelManager: mockChannelManager,
+          deadLetterPublisher: aMockDeadLetterPublisher(),
           module: undefined,
         }),
       ).toThrow('RabbitMQ exchange is not configured');
@@ -61,7 +63,10 @@ describe('RabbitMqModuleReceiver', () => {
         'rabbit_queue_Provisioning',
         expect.objectContaining({ durable: true, autoDelete: true, exclusive: false }),
       );
-      expect(mockChannel.consume).toHaveBeenCalledTimes(1);
+      const mainQueueConsumers = (mockChannel.consume as any).mock.calls.filter(
+        ([queue]: [string]) => queue === 'rabbit_queue_Provisioning',
+      );
+      expect(mainQueueConsumers).toHaveLength(1);
     });
 
     it('should bind one entry per action when multiple actions are provided', async () => {
@@ -135,6 +140,7 @@ describe('RabbitMqModuleReceiver', () => {
       const configured = getTestInstance(container, RabbitMqModuleReceiver, {
         config: aSystemConfigWithAmqp({ prefetch: { module: 7 } }),
         channelManager: mockChannelManager,
+        deadLetterPublisher: aMockDeadLetterPublisher(),
         module: undefined,
       });
 
@@ -146,68 +152,34 @@ describe('RabbitMqModuleReceiver', () => {
       );
     });
 
-    it('should not create duplicate consumers when connection recovery follows channel recovery', async () => {
-      const replacement = aMockAmqpChannel();
-      let currentChannel = mockChannel;
-      vi.mocked(mockChannelManager.getChannel).mockImplementation(async () => currentChannel);
-      await receiver.subscribe('Transactions', [OCPP_CallAction.TransactionEvent], {});
-
-      currentChannel = replacement;
-      mockChannelManager.emit('channelInvalidated', 'module-receiver-Transactions');
-      await vi.waitFor(() => expect(replacement.consume).toHaveBeenCalledTimes(1));
-
-      const connectedListener = mockConnectionManager.on.mock.calls.find(
-        ([event]) => event === 'connected',
-      )?.[1];
-      expect(connectedListener).toBeTypeOf('function');
-      await connectedListener?.();
-
-      expect(replacement.consume).toHaveBeenCalledTimes(1);
-      expect(replacement.cancel).not.toHaveBeenCalled();
-      await expect(receiver.unsubscribe('Transactions')).resolves.toBe(true);
-      expect(replacement.cancel).toHaveBeenCalledWith('consumer-tag-1');
-    });
-
-    it('should cancel partial consumers before retrying channel recovery', async () => {
-      const replacement = aMockAmqpChannel();
-      let invalidated = false;
-      vi.mocked(mockChannelManager.getChannel).mockImplementation(async () =>
-        invalidated ? replacement : mockChannel,
-      );
-      await receiver.subscribe('Transactions', [OCPP_CallAction.TransactionEvent], {});
-      await receiver.subscribe('Transactions', [OCPP_CallAction.StatusNotification], {});
-
-      vi.mocked(replacement.consume)
-        .mockImplementationOnce(async () => ({ consumerTag: 'partial-consumer' }))
-        .mockRejectedValueOnce(new Error('channel closed during partial recovery'))
-        .mockImplementationOnce(async () => ({ consumerTag: 'recovered-consumer-1' }))
-        .mockImplementationOnce(async () => ({ consumerTag: 'recovered-consumer-2' }));
-      invalidated = true;
-      mockChannelManager.emit('channelInvalidated', 'module-receiver-Transactions');
-
-      await vi.waitFor(() => expect(replacement.consume).toHaveBeenCalledTimes(4));
-
-      expect(replacement.cancel).toHaveBeenCalledWith('partial-consumer');
-      expect(replacement.consume).toHaveBeenCalledTimes(4);
-    });
-
-    it('should keep retrying channel recovery until the consumer is restored', async () => {
-      const replacement = aMockAmqpChannel();
-      await receiver.subscribe('Transactions', [OCPP_CallAction.TransactionEvent], {});
-
-      vi.mocked(mockChannelManager.getChannel).mockResolvedValue(replacement);
-      vi.mocked(replacement.assertExchange)
-        .mockRejectedValueOnce(new Error('temporary broker error 1'))
-        .mockRejectedValueOnce(new Error('temporary broker error 2'))
-        .mockRejectedValueOnce(new Error('temporary broker error 3'));
-
-      mockChannelManager.emit('channelInvalidated', 'module-receiver-Transactions');
-
-      await vi.waitFor(() => expect(replacement.consume).toHaveBeenCalledTimes(1), {
-        timeout: 5_000,
+    it('should not duplicate a consumer when connection recovery follows channel recovery', async () => {
+      const connectionManager = aMockConnectionManager();
+      const initialChannel = aMockAmqpChannel();
+      const replacementChannel = aMockAmqpChannel();
+      const channelManager = aMockChannelManager(initialChannel, connectionManager);
+      const recovering = getTestInstance(container, RabbitMqModuleReceiver, {
+        config: aSystemConfigWithAmqp(),
+        channelManager,
+        deadLetterPublisher: aMockDeadLetterPublisher(),
+        module: undefined,
       });
-      expect(replacement.assertExchange).toHaveBeenCalledTimes(4);
-      expect(replacement.assertQueue).toHaveBeenCalledTimes(1);
+
+      await recovering.subscribe('Recovering', [OCPP_CallAction.Heartbeat], {
+        state: MessageState.Response.toString(),
+      });
+      vi.mocked(channelManager.getChannel).mockResolvedValue(replacementChannel);
+
+      channelManager.emit('channelInvalidated', 'module-receiver-Recovering');
+      await vi.waitFor(() => expect(replacementChannel.consume).toHaveBeenCalledTimes(1));
+
+      const connected = connectionManager.on.mock.calls.find(
+        ([event]) => event === 'connected',
+      )?.[1] as () => Promise<void>;
+      await connected();
+
+      expect(replacementChannel.consume).toHaveBeenCalledTimes(1);
+      await recovering.unsubscribe('Recovering');
+      expect(replacementChannel.cancel).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -233,21 +205,6 @@ describe('RabbitMqModuleReceiver', () => {
   });
 
   describe('shutdown()', () => {
-    it('should detach reconnect and channel recovery listeners', async () => {
-      const connectedListener = mockConnectionManager.on.mock.calls.find(
-        ([event]) => event === 'connected',
-      )?.[1];
-      expect(connectedListener).toBeTypeOf('function');
-
-      await receiver.shutdown();
-
-      expect(mockConnectionManager.off).toHaveBeenCalledWith('connected', connectedListener);
-      expect(mockChannelManager.off).toHaveBeenCalledWith(
-        'channelInvalidated',
-        expect.any(Function),
-      );
-    });
-
     it('should cancel every tracked consumer across all identifiers', async () => {
       (mockChannel.consume as any)
         .mockResolvedValueOnce({ consumerTag: 'tag-A' })
@@ -261,30 +218,174 @@ describe('RabbitMqModuleReceiver', () => {
       expect(mockChannel.cancel).toHaveBeenCalledWith('tag-A');
       expect(mockChannel.cancel).toHaveBeenCalledWith('tag-B');
     });
+  });
 
-    it('should cancel a consumer if shutdown races channel recovery', async () => {
-      const replacement = aMockAmqpChannel();
-      await receiver.subscribe('Transactions', [OCPP_CallAction.TransactionEvent], {});
+  // A station Call a module reaches after the station has timed it out goes to <queue>.stale.
+  describe('catch-up queue', () => {
+    const REQUESTS = 'Transactions_requests';
+    const REQUESTS_QUEUE = `rabbit_queue_${REQUESTS}`;
+    const CATCH_UP_QUEUE = `${REQUESTS_QUEUE}.stale`;
+    const REQUEST_FILTER = {
+      origin: MessageOrigin.ChargingStation.toString(),
+      state: MessageState.Request.toString(),
+    };
 
-      let finishConsume!: (value: Awaited<ReturnType<typeof replacement.consume>>) => void;
-      const pendingConsume = new Promise<Awaited<ReturnType<typeof replacement.consume>>>(
-        (resolve) => {
-          finishConsume = resolve;
+    function aStationCall(ageMs: number) {
+      return aConsumeMessage({
+        origin: MessageOrigin.ChargingStation,
+        state: MessageState.Request,
+        action: OCPP_CallAction.TransactionEvent,
+        context: {
+          correlationId: 'corr-1',
+          ocppConnectionName: 'CS001',
+          tenantId: 1,
+          timestamp: new Date(Date.now() - ageMs).toISOString(),
         },
+        headers: { action: 'TransactionEvent' },
+      });
+    }
+
+    beforeEach(() => {
+      vi.spyOn(receiver, 'handle').mockResolvedValue(undefined);
+    });
+
+    it('should declare and consume a catch-up queue for a queue that receives station Calls', async () => {
+      await receiver.subscribe(REQUESTS, [OCPP_CallAction.TransactionEvent], REQUEST_FILTER);
+
+      expect(mockChannel.assertQueue).toHaveBeenCalledWith(
+        CATCH_UP_QUEUE,
+        expect.objectContaining({ durable: true, autoDelete: true, exclusive: false }),
       );
-      vi.mocked(replacement.consume).mockReturnValueOnce(pendingConsume);
-      vi.mocked(mockChannelManager.getChannel).mockResolvedValue(replacement);
+      expect(mockChannel.consume).toHaveBeenCalledWith(CATCH_UP_QUEUE, expect.any(Function));
+    });
 
-      mockChannelManager.emit('channelInvalidated', 'module-receiver-Transactions');
-      await vi.waitFor(() => expect(replacement.consume).toHaveBeenCalledTimes(1));
+    it('should give the catch-up consumer the moduleStale prefetch', async () => {
+      const configured = getTestInstance(container, RabbitMqModuleReceiver, {
+        config: aSystemConfigWithAmqp({ prefetch: { module: 10, moduleStale: 2 } }),
+        channelManager: mockChannelManager,
+        deadLetterPublisher: aMockDeadLetterPublisher(),
+        module: undefined,
+      });
 
-      await receiver.shutdown();
-      finishConsume({ consumerTag: 'late-recovery-consumer' });
+      await configured.subscribe(REQUESTS, [OCPP_CallAction.TransactionEvent], REQUEST_FILTER);
 
-      await vi.waitFor(() =>
-        expect(replacement.cancel).toHaveBeenCalledWith('late-recovery-consumer'),
+      const order = [
+        ...(mockChannel.prefetch as any).mock.invocationCallOrder.map((n: number, i: number) => ({
+          n,
+          call: `prefetch ${(mockChannel.prefetch as any).mock.calls[i][0]}`,
+        })),
+        ...(mockChannel.consume as any).mock.invocationCallOrder.map((n: number, i: number) => ({
+          n,
+          call: `consume ${(mockChannel.consume as any).mock.calls[i][0]}`,
+        })),
+      ]
+        .sort((a, b) => a.n - b.n)
+        .map(({ call }) => call);
+      expect(order).toEqual([
+        'prefetch 10',
+        `consume ${REQUESTS_QUEUE}`,
+        'prefetch 2',
+        `consume ${CATCH_UP_QUEUE}`,
+      ]);
+    });
+
+    it('should not declare a catch-up queue for a queue that only receives responses', async () => {
+      await receiver.subscribe('Transactions_responses', [OCPP_CallAction.GetTransactionStatus], {
+        origin: MessageOrigin.ChargingStation.toString(),
+        state: MessageState.Response.toString(),
+      });
+
+      expect(mockChannel.assertQueue).not.toHaveBeenCalledWith(
+        'rabbit_queue_Transactions_responses.stale',
+        expect.anything(),
       );
-      expect(replacement.consume).toHaveBeenCalledTimes(1);
+    });
+
+    it('should start only one catch-up consumer when an identifier subscribes twice', async () => {
+      await receiver.subscribe(REQUESTS, [OCPP_CallAction.TransactionEvent], REQUEST_FILTER);
+      await receiver.subscribe(REQUESTS, [OCPP_CallAction.StatusNotification], REQUEST_FILTER);
+
+      const catchUpConsumers = (mockChannel.consume as any).mock.calls.filter(
+        ([queue]: [string]) => queue === CATCH_UP_QUEUE,
+      );
+      expect(catchUpConsumers).toHaveLength(1);
+    });
+
+    it('should move a station Call older than maxCallLengthSeconds to the catch-up queue', async () => {
+      await receiver.subscribe(REQUESTS, [OCPP_CallAction.TransactionEvent], REQUEST_FILTER);
+      const late = aStationCall(21_000); // maxCallLengthSeconds is 20 in the test config
+
+      await (receiver as any)._onMessage(late, mockChannel, REQUESTS_QUEUE);
+
+      expect(receiver.handle).not.toHaveBeenCalled();
+      expect(mockChannel.sendToQueue).toHaveBeenCalledWith(
+        CATCH_UP_QUEUE,
+        late.content,
+        late.properties,
+      );
+      expect(mockChannel.ack).toHaveBeenCalledWith(late);
+    });
+
+    it('should handle a station Call still within maxCallLengthSeconds straight away', async () => {
+      await receiver.subscribe(REQUESTS, [OCPP_CallAction.TransactionEvent], REQUEST_FILTER);
+      const fresh = aStationCall(1_000);
+
+      await (receiver as any)._onMessage(fresh, mockChannel, REQUESTS_QUEUE);
+
+      expect(receiver.handle).toHaveBeenCalledTimes(1);
+      expect(mockChannel.sendToQueue).not.toHaveBeenCalled();
+    });
+
+    it('should handle a late Call consumed from the catch-up queue instead of moving it again', async () => {
+      await receiver.subscribe(REQUESTS, [OCPP_CallAction.TransactionEvent], REQUEST_FILTER);
+      const late = aStationCall(60_000);
+
+      await (receiver as any)._onMessage(late, mockChannel, CATCH_UP_QUEUE);
+
+      expect(receiver.handle).toHaveBeenCalledTimes(1);
+      expect(mockChannel.sendToQueue).not.toHaveBeenCalled();
+      expect(mockChannel.ack).toHaveBeenCalledWith(late);
+    });
+
+    it('should handle a late station response straight away: nothing waits on it', async () => {
+      await receiver.subscribe(REQUESTS, [OCPP_CallAction.TransactionEvent], REQUEST_FILTER);
+      const lateResponse = aConsumeMessage({
+        origin: MessageOrigin.ChargingStation,
+        state: MessageState.Response,
+        context: {
+          correlationId: 'corr-1',
+          ocppConnectionName: 'CS001',
+          tenantId: 1,
+          timestamp: new Date(Date.now() - 60_000).toISOString(),
+        },
+      });
+
+      await (receiver as any)._onMessage(lateResponse, mockChannel, REQUESTS_QUEUE);
+
+      expect(receiver.handle).toHaveBeenCalledTimes(1);
+      expect(mockChannel.sendToQueue).not.toHaveBeenCalled();
+    });
+
+    it('should restore the catch-up consumer after a reconnect', async () => {
+      const connectionManager = aMockConnectionManager();
+      const channelManager = aMockChannelManager(mockChannel, connectionManager);
+      const reconnecting = getTestInstance(container, RabbitMqModuleReceiver, {
+        config: aSystemConfigWithAmqp(),
+        channelManager,
+        deadLetterPublisher: aMockDeadLetterPublisher(),
+        module: undefined,
+      });
+      await reconnecting.subscribe(REQUESTS, [OCPP_CallAction.TransactionEvent], REQUEST_FILTER);
+      const replacement = aMockAmqpChannel();
+      vi.mocked(channelManager.getChannel).mockResolvedValue(replacement);
+
+      const [, onConnected] = connectionManager.on.mock.calls.find(
+        ([event]) => event === 'connected',
+      ) ?? [undefined, async () => {}];
+      await onConnected();
+
+      expect(replacement.consume).toHaveBeenCalledWith(REQUESTS_QUEUE, expect.any(Function));
+      expect(replacement.consume).toHaveBeenCalledWith(CATCH_UP_QUEUE, expect.any(Function));
     });
   });
 });

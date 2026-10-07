@@ -23,7 +23,7 @@ import {
   OCPP2_request_types,
   OCPP2_response_types,
 } from '@citrineos/types';
-import { Component, type IDeviceModelRepository, Variable } from '@citrineos/dal';
+import { type IDeviceModelRepository } from '@citrineos/dal';
 import { isForeignKeyConstraintError } from '@util/errors.js';
 
 @AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.NotifyReport)
@@ -92,8 +92,8 @@ export class NotifyReportRequestOcpp2Handler extends AbstractHandler {
               attributeType: variableAttribute.type,
               attributeStatus: SetVariableStatusEnum.Accepted,
               attributeStatusInfo: { reasonCode: message.action },
-              component: variableAttribute.component,
-              variable: variableAttribute.variable,
+              component: reportDataType.component,
+              variable: reportDataType.variable,
             } as OCPP2_common_types.SetVariableResultType,
             ocppConnectionName,
             timestamp,

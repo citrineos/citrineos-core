@@ -57,6 +57,7 @@ import {
 import { UpgradeAuthenticationError } from './authenticator/errors/authentication-error.js';
 import type { IUpgradeError } from './authenticator/errors/i-upgrade-error.js';
 import { UpgradeUnknownError } from './authenticator/errors/unknown-error.js';
+import { ConnectionNotFoundError } from './connection-not-found-error.js';
 import { TlsCredentialManager } from './tls-certificate-manager.js';
 
 export class WebsocketNetworkConnection implements INetworkConnection {
@@ -217,10 +218,10 @@ export class WebsocketNetworkConnection implements INetworkConnection {
 
     const websocketConnection = this._identifierConnections.get(identifier);
     if (!websocketConnection) {
-      const errorMsg = 'Websocket connection not found for ' + identifier;
-      connLogger.fatal(errorMsg);
+      const error = new ConnectionNotFoundError(identifier);
+      connLogger.warn(error.message);
       recordWsSendFailure(WsSendFailureReason.NoSocket);
-      throw new Error(errorMsg);
+      throw error;
     }
 
     if (websocketConnection.readyState !== WebSocket.OPEN) {
@@ -606,6 +607,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
           return;
         }
 
+        this._identifierConnections.set(identifier, ws);
         const registered = await this._router.registerConnection(
           tenantId,
           ocppConnectionName,
@@ -613,6 +615,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
           websocketServerConfig.id,
         );
         if (!registered) {
+          this._identifierConnections.delete(identifier);
           connLogger.fatal('Failed to register websocket client', identifier);
           await this._cache.remove(identifier, CacheNamespace.Connections).catch((err) => {
             connLogger.error(`Failed to remove connection string ${identifier} from cache`, err);
@@ -622,7 +625,6 @@ export class WebsocketNetworkConnection implements INetworkConnection {
           return;
         }
 
-        this._identifierConnections.set(identifier, ws);
         this._tenantConnectionCounts.set(
           tenantId,
           (this._tenantConnectionCounts.get(tenantId) ?? 0) + 1,
@@ -642,6 +644,9 @@ export class WebsocketNetworkConnection implements INetworkConnection {
         // Resume the WebSocket event emitter after events have been subscribed to
         ws.resume();
       } catch (error) {
+        if (this._identifierConnections.get(identifier) === ws) {
+          this._identifierConnections.delete(identifier);
+        }
         connLogger.fatal('Failed to connect', error);
         recordWsConnectionRejected(WsRejectReason.ConnectionFailed);
         ws.close(1011, 'Failed to subscribe to message broker for ' + identifier);
@@ -756,19 +761,18 @@ export class WebsocketNetworkConnection implements INetworkConnection {
     }
     recordWsConnectionClosed(code);
 
-    // Unregister client
-    const connectionStringPromise = this._cache
-      .remove<string>(identifier, CacheNamespace.Connections)
-      .catch((err) => {
-        connLogger.error(`Failed to remove connection string ${identifier} from cache`, err);
-      });
-    const deregisterPromise = this._router
+    // Deregistered before the slot is released. Until then no other instance can claim the
+    // station, so its messages are never bound to two instances at once.
+    await this._router
       .deregisterConnection(closedTenantId, getStationIdFromIdentifier(identifier))
       .catch((err) => {
         connLogger.error(`Failed to deregister connection ${identifier} from router`, err);
       });
-
-    const connectionString = await connectionStringPromise;
+    const connectionString = await this._cache
+      .remove<string>(identifier, CacheNamespace.Connections)
+      .catch((err) => {
+        connLogger.error(`Failed to remove connection string ${identifier} from cache`, err);
+      });
     if (connectionString) {
       const connection: IWebsocketConnection = JSON.parse(connectionString);
       const timeConnected = new Date().getTime() - new Date(connection.timeConnected).getTime();
@@ -776,8 +780,6 @@ export class WebsocketNetworkConnection implements INetworkConnection {
         `Connection ${identifier} closed after being connected for ${timeConnected} ms with code ${code} and reason ${reason}`,
       );
     }
-
-    await deregisterPromise;
 
     connLogger.info(
       `Connection closed for ${identifier} live connections: ${this._identifierConnections.size}`,

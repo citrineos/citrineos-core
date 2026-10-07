@@ -2,32 +2,40 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { type IModule, AbstractMessageHandler, Message } from '@citrineos/base';
-import { type SystemConfig, RetryMessageError } from '@citrineos/types';
+import { DeadLetterReason, type DeadLetterSource } from '@/transport/metrics.js';
+import { AbstractMessageHandler, type IModule } from '@citrineos/base';
+import type { SystemConfig } from '@citrineos/types';
 import * as amqplib from 'amqplib';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { RabbitMQChannelManager } from './channel-manager.js';
+import { RabbitMqDeadLetterPublisher } from './dead-letter-publisher.js';
+import { fromAmqpContent, type OCPPMessage } from './util.js';
 
-/**
- * AMQP header carrying how many times a message has been retried. Lives on the delivery rather
- * than in the message body: it is transport bookkeeping that no handler should see, and keeping
- * it out of the body means the republished content is byte-identical to the original.
- */
-const RETRY_HEADER = 'x-retries';
+export interface RabbitMqReceiverDependencies {
+  config: SystemConfig;
+  channelManager: RabbitMQChannelManager;
+  deadLetterPublisher: RabbitMqDeadLetterPublisher;
+  logger?: Logger<ILogObj>;
+  module?: IModule;
+}
 
 /**
  * Base {@link IMessageHandler} using RabbitMQ as the underlying transport: message parsing,
- * ack/retry handling, and the reconnect hook. How queues and consumers are laid out on the
+ * settling deliveries, and the reconnect hook. How queues and consumers are laid out on the
  * broker is left to the subclasses:
  *
  * - {@link RabbitMqModuleReceiver} — used by modules; competing consumers on shared queues.
  * - {@link RabbitMqRouterReceiver} — used by the OCPP router; one queue per router instance.
+ *
+ * Every delivery is acked. A message that fails once is not retried, since it is unlikely to
+ * succeed the second time; it goes to the dead-letter exchange with the reason instead.
  */
 export abstract class RabbitMqReceiver extends AbstractMessageHandler {
   protected _channelManager: RabbitMQChannelManager;
+  protected _deadLetterPublisher: RabbitMqDeadLetterPublisher;
   protected exchange: string;
-  protected _messageMaxAgeSeconds: number;
+  protected abstract readonly _source: DeadLetterSource;
   private _stopping = false;
   private _channelRecoveries = new Map<string, Promise<void>>();
   private _pendingChannelRecoveries = new Set<string>();
@@ -37,24 +45,13 @@ export abstract class RabbitMqReceiver extends AbstractMessageHandler {
   constructor({
     config,
     channelManager,
+    deadLetterPublisher,
     logger,
     module,
-  }: {
-    config: SystemConfig;
-    channelManager: RabbitMQChannelManager;
-    logger?: Logger<ILogObj>;
-    module?: IModule;
-  }) {
+  }: RabbitMqReceiverDependencies) {
     super(logger, module);
     this._channelManager = channelManager;
-    // Upper bound on how long a message may be retried for. Unlike the stale-Call guard in
-    // AbstractRouter -- which is opt-in, and only drops on delivery -- this cap always applies:
-    // a message that can never be handled within `maxCallLengthSeconds` is not worth retrying
-    // regardless of deployment, and without a bound a permanently blocked station would have us
-    // requeueing forever. It falls back to `maxCallLengthSeconds` when the operator has not
-    // opted into a stricter staleness policy.
-    this._messageMaxAgeSeconds =
-      config.timeouts.staleCallMaxAgeSeconds ?? config.timeouts.maxCallLengthSeconds;
+    this._deadLetterPublisher = deadLetterPublisher;
     const exchange = config.messageBroker.amqp?.exchange;
     if (!exchange) {
       throw new Error('RabbitMQ exchange is not configured');
@@ -149,77 +146,65 @@ export abstract class RabbitMqReceiver extends AbstractMessageHandler {
    *
    * @param message The AMQPMessage to process
    * @param channel
-   * @param queueName The queue `message` was consumed from, used to requeue retries
+   * @param queueName The queue `message` was consumed from
    */
   protected async _onMessage(
     message: amqplib.ConsumeMessage | null,
     channel: amqplib.Channel,
     queueName: string,
   ): Promise<void> {
-    if (message) {
-      try {
-        this._logger.debug(
-          '_onMessage:Message from broker:',
-          message.properties,
-          message.content.toString(),
-        );
-        const messageData = JSON.parse(message.content.toString());
-
-        // Create Message instance with generic payload (no type transformation needed)
-        const parsed = new Message(
-          messageData.origin || messageData._origin,
-          messageData.eventGroup || messageData._eventGroup,
-          messageData.action || messageData._action,
-          messageData.state || messageData._state,
-          messageData.context || messageData._context,
-          messageData.payload || messageData._payload, // Keep payload as generic object
-          messageData.protocol || messageData._protocol,
-        );
-
-        try {
-          await this.handle(parsed, message.properties);
-        } catch (error) {
-          if (error instanceof RetryMessageError) {
-            const attempt = Number(message.properties.headers?.[RETRY_HEADER]) || 0;
-            const backoff = this._backoff(attempt);
-
-            if (!this._willStillBeFresh(parsed.context.timestamp, backoff)) {
-              this._logger.error(
-                `Dropping ${parsed.action} for ${parsed.context.ocppConnectionName} after ` +
-                  `${attempt} retries: would exceed the ${this._messageMaxAgeSeconds}s retry ` +
-                  `window. correlationId=${parsed.context.correlationId}`,
-              );
-              channel.nack(message, false, false); // discarded: no DLQ is configured
-              return;
-            }
-            if (attempt === 0) this._logger.warn('Retrying message: ', error.message);
-
-            await new Promise((resolve) => setTimeout(resolve, backoff));
-
-            channel.sendToQueue(queueName, message.content, {
-              ...message.properties,
-              headers: { ...message.properties.headers, [RETRY_HEADER]: attempt + 1 },
-            });
-            channel.ack(message);
-            return;
-          } else {
-            this._logger.error('Error while processing message:', error, message);
-          }
-        }
-      } catch (error) {
-        this._logger.error('Error while parsing message:', error, message);
-      }
-      channel.ack(message);
+    if (!message) {
+      return;
     }
+    this._logger.debug(
+      '_onMessage:Message from broker:',
+      message.properties,
+      message.content.toString(),
+    );
+
+    let parsed: OCPPMessage;
+    try {
+      parsed = fromAmqpContent(message.content);
+    } catch (error) {
+      this._logger.error('Error while parsing message:', error, message);
+      await this._deadLetter(message, DeadLetterReason.Poison, queueName, error);
+      channel.ack(message);
+      return;
+    }
+
+    try {
+      await this._dispatch(parsed, message, channel, queueName);
+    } catch (error) {
+      this._logger.error('Error while processing message:', error, message);
+      await this._deadLetter(message, DeadLetterReason.HandlerError, queueName, error);
+    }
+    channel.ack(message);
   }
 
-  private _backoff(attempt: number): number {
-    const base = Math.min(50 * 2 ** attempt, 1000);
-    return base * (0.75 + Math.random() * 0.5); // ±25% jitter
+  /**
+   * Hands a parsed delivery to the module. The delivery is acked once this settles.
+   */
+  protected async _dispatch(
+    parsed: OCPPMessage,
+    message: amqplib.ConsumeMessage,
+    _channel: amqplib.Channel,
+    _queueName: string,
+  ): Promise<void> {
+    await this.handle(parsed, message.properties);
   }
 
-  private _willStillBeFresh(timestamp: string, backoff: number): boolean {
-    const age = Date.now() - new Date(timestamp).getTime();
-    return age + backoff < this._messageMaxAgeSeconds * 1000;
+  protected _deadLetter(
+    message: amqplib.ConsumeMessage,
+    reason: DeadLetterReason,
+    queueName: string,
+    error?: unknown,
+  ): Promise<void> {
+    return this._deadLetterPublisher.publishRaw(
+      message.content,
+      message.properties.headers ?? {},
+      reason,
+      this._source,
+      { queue: queueName, error },
+    );
   }
 }

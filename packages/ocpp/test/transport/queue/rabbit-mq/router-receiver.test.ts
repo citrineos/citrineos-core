@@ -9,6 +9,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   aMockAmqpChannel,
   aMockChannelManager,
+  aMockDeadLetterPublisher,
   aMockConnectionManager,
   aSystemConfigWithAmqp,
 } from '../../../providers/rabbit-mq-provider.js';
@@ -29,6 +30,7 @@ describe('RabbitMqRouterReceiver', () => {
     receiver = getTestInstance(container, RabbitMqRouterReceiver, {
       config: aSystemConfigWithAmqp({ instanceIdentifier: 'pod-1' }),
       channelManager: mockChannelManager,
+      deadLetterPublisher: aMockDeadLetterPublisher(),
       module: undefined,
     });
   });
@@ -43,10 +45,25 @@ describe('RabbitMqRouterReceiver', () => {
       );
     });
 
+    it("should dead-letter to the exchange's fanout DLX, so expired messages are reported", async () => {
+      await receiver.subscribe('charger-1', undefined, { ocppConnectionName: 'CS001' });
+
+      expect(mockChannel.assertExchange).toHaveBeenCalledWith('test-exchange.dlx', 'fanout', {
+        durable: true,
+      });
+      expect(mockChannel.assertQueue).toHaveBeenCalledWith(
+        'rabbit_queue_router_pod-1',
+        expect.objectContaining({
+          arguments: { 'x-dead-letter-exchange': 'test-exchange.dlx' },
+        }),
+      );
+    });
+
     it('should fall back to a timestamp-based name when instanceIdentifier is absent', async () => {
       const fallbackReceiver = getTestInstance(container, RabbitMqRouterReceiver, {
         config: aSystemConfigWithAmqp(),
         channelManager: mockChannelManager,
+        deadLetterPublisher: aMockDeadLetterPublisher(),
         module: undefined,
       });
 
@@ -150,9 +167,11 @@ describe('RabbitMqRouterReceiver', () => {
       const assertionsGate = new Promise<void>((resolve) => {
         releaseAssertions = resolve;
       });
-      vi.mocked(replacement.assertExchange).mockImplementation(async () => {
-        assertionCount++;
-        await assertionsGate;
+      vi.mocked(replacement.assertExchange).mockImplementation(async (exchange) => {
+        if (exchange === 'test-exchange') {
+          assertionCount++;
+          await assertionsGate;
+        }
         return { exchange: 'test-exchange', messageCount: 0, consumerCount: 0 };
       });
 
@@ -174,7 +193,7 @@ describe('RabbitMqRouterReceiver', () => {
       releaseAssertions();
       await Promise.all([connectionRecovery, channelRecovery]);
 
-      expect(replacement.assertExchange).toHaveBeenCalledTimes(1);
+      expect(assertionCount).toBe(1);
       expect(replacement.consume).toHaveBeenCalledTimes(1);
     });
   });
@@ -235,6 +254,7 @@ describe('RabbitMqRouterReceiver', () => {
       const configured = getTestInstance(container, RabbitMqRouterReceiver, {
         config: aSystemConfigWithAmqp({ instanceIdentifier: 'pod-1', prefetch: { router: 42 } }),
         channelManager: mockChannelManager,
+        deadLetterPublisher: aMockDeadLetterPublisher(),
         module: undefined,
       });
 

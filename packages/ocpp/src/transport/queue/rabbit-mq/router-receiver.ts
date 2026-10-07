@@ -2,13 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { type IModule } from '@citrineos/base';
-import { type CallAction, type SystemConfig } from '@citrineos/types';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import { type CallAction } from '@citrineos/types';
 import type * as amqplib from 'amqplib';
-import { RabbitMQChannelManager } from './channel-manager.js';
-import { RabbitMqReceiver } from './receiver.js';
+import { DeadLetterSource } from '@/transport/metrics.js';
+import { assertDeadLetterExchange, deadLetterExchangeName } from './dead-letter-publisher.js';
+import { RabbitMqReceiver, type RabbitMqReceiverDependencies } from './receiver.js';
 
 /**
  * {@link RabbitMqReceiver} used by the OCPP router.
@@ -23,9 +21,14 @@ import { RabbitMqReceiver } from './receiver.js';
  * `router-<Date.now()>` when not set. This value should be set to a stable, unique identifier
  * per process (e.g. the ECS task hostname or Kubernetes pod name) via the `INSTANCE_IDENTIFIER`
  * environment variable wired into `SystemConfig.messageBroker.amqp.instanceIdentifier`.
+ *
+ * Messages the CSMS sends carry a broker TTL (see {@link toAmqpPublish}). One that expires
+ * on this queue is dead-lettered by the broker, with `x-death` reason `expired`.
  */
 export class RabbitMqRouterReceiver extends RabbitMqReceiver {
   protected static readonly CHANNEL_ID = 'router-receiver';
+
+  protected readonly _source = DeadLetterSource.Router;
 
   protected readonly _instanceQueueName: string;
   protected readonly _prefetch: number;
@@ -35,12 +38,7 @@ export class RabbitMqRouterReceiver extends RabbitMqReceiver {
   protected _instanceConsumerChannel?: amqplib.Channel;
   protected _instanceBindings = new Map<string, Array<Record<string, string>>>();
 
-  constructor(deps: {
-    config: SystemConfig;
-    channelManager: RabbitMQChannelManager;
-    logger?: Logger<ILogObj>;
-    module?: IModule;
-  }) {
+  constructor(deps: RabbitMqReceiverDependencies) {
     super(deps);
     const id = deps.config.messageBroker.amqp?.instanceIdentifier ?? `router-${Date.now()}`;
     this._instanceQueueName = `rabbit_queue_router_${id}`;
@@ -71,13 +69,7 @@ export class RabbitMqRouterReceiver extends RabbitMqReceiver {
     const channel = await this._channelManager.getChannel(RabbitMqRouterReceiver.CHANNEL_ID);
     if (this._isStopping) return;
     if (this._instanceConsumerChannel === channel && this._instanceConsumerTags.length > 0) return;
-    await channel.assertExchange(this.exchange, 'headers', { durable: false });
-    await channel.assertQueue(queueName, {
-      durable: true,
-      autoDelete: true,
-      exclusive: false,
-    });
-    if (this._isStopping) return;
+    await this._assertInstanceQueue(channel, queueName);
 
     const consumerTag = await this._consume(channel, queueName, this._prefetch);
     if (this._isStopping) {
@@ -92,12 +84,29 @@ export class RabbitMqRouterReceiver extends RabbitMqReceiver {
   }
 
   /**
+   * Declares the exchange, the dead-letter exchange and the instance queue. Redeclaring an
+   * existing queue with different arguments fails; this queue is auto-deleted with its last
+   * consumer, so a restarted router always declares it afresh.
+   */
+  protected async _assertInstanceQueue(channel: amqplib.Channel, queueName: string): Promise<void> {
+    await channel.assertExchange(this.exchange, 'headers', { durable: false });
+    await assertDeadLetterExchange(channel, this.exchange);
+    await channel.assertQueue(queueName, {
+      durable: true,
+      autoDelete: true,
+      exclusive: false,
+      arguments: { 'x-dead-letter-exchange': deadLetterExchangeName(this.exchange) },
+    });
+  }
+
+  /**
    * Re-establishes the instance queue and its consumer after a reconnection.
    * Re-adds all currently tracked bindings (idempotent — handles the edge case
    * where the queue was deleted and needs to be fully rebuilt).
    */
   protected async _onReconnect(): Promise<void> {
     if (!this._instanceQueueReady) return; // no charger has connected yet, nothing to reinitialize
+
     await this._recoverInstanceQueue();
   }
 
@@ -106,7 +115,7 @@ export class RabbitMqRouterReceiver extends RabbitMqReceiver {
     try {
       await this._instanceQueueReady;
     } catch {
-      // The in-flight initial consumer may have failed with the channel that was replaced.
+      // Initial queue setup may have failed because its channel was the one invalidated.
     }
     if (this._isStopping) return;
     await this._recoverInstanceQueue();
@@ -125,26 +134,26 @@ export class RabbitMqRouterReceiver extends RabbitMqReceiver {
     const channel = await this._channelManager.getChannel(RabbitMqRouterReceiver.CHANNEL_ID);
     if (this._isStopping) return;
     if (this._instanceConsumerChannel === channel && this._instanceConsumerTags.length > 0) return;
-
+    if (this._instanceConsumerChannel === channel) {
+      for (const tag of this._instanceConsumerTags) {
+        await channel.cancel(tag).catch(() => undefined);
+      }
+    }
     this._instanceConsumerTags = [];
     this._instanceConsumerChannel = undefined;
-    await channel.assertExchange(this.exchange, 'headers', { durable: false });
-    await channel.assertQueue(queueName, {
-      durable: true,
-      autoDelete: true,
-      exclusive: false,
-    });
-    if (this._isStopping) return;
+    await this._assertInstanceQueue(channel, queueName);
 
+    // Re-bind all active charger subscriptions (idempotent if queue already has them)
     let reboundCount = 0;
     for (const bindings of this._instanceBindings.values()) {
       for (const args of bindings) {
         await channel.bindQueue(queueName, this.exchange, '', args);
-        if (this._isStopping) return;
         reboundCount++;
       }
     }
 
+    // Re-create the single consumer on the new channel
+    if (this._isStopping) return;
     const consumerTag = await this._consume(channel, queueName, this._prefetch);
     if (this._isStopping) {
       if (consumerTag) await channel.cancel(consumerTag).catch(() => undefined);
@@ -153,8 +162,9 @@ export class RabbitMqRouterReceiver extends RabbitMqReceiver {
     if (!consumerTag) return;
     this._instanceConsumerTags = [consumerTag];
     this._instanceConsumerChannel = channel;
+
     this._logger.info(
-      `[instance-queue] Restored ${queueName} after channel failure: ` +
+      `[instance-queue] Reinitialized ${queueName} after reconnect: ` +
         `1 consumer, ${reboundCount} binding(s) restored`,
     );
   }
@@ -253,6 +263,8 @@ export class RabbitMqRouterReceiver extends RabbitMqReceiver {
           );
         }
       }
+      this._instanceConsumerTags = [];
+      this._instanceConsumerChannel = undefined;
     } catch {
       this._logger.warn('[instance-queue] Channel unavailable during shutdown.');
     }

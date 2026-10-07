@@ -8,6 +8,7 @@ import {
   MessagesDeadLetterConsumer,
   MessagesEventConsumer,
   MessagesEventPipeline,
+  OcppDeadLetterConsumer,
 } from '@/transport/index.js';
 import { MessagesModule } from './messages.js';
 import { ConnectionWebhookProcessor } from '@modules/messages/processors/connection-webhook-processor.js';
@@ -48,6 +49,7 @@ export function registerMessagesServices(container: AwilixContainer): void {
 
     messagesEventConsumer: asClass(MessagesEventConsumer).singleton(),
     messagesDeadLetterConsumer: asClass(MessagesDeadLetterConsumer).singleton(),
+    ocppDeadLetterConsumer: asClass(OcppDeadLetterConsumer).singleton(),
     messagesEventPipeline: asClass(MessagesEventPipeline).singleton(),
     messagesModule: asClass(MessagesModule).singleton(),
   });
