@@ -146,6 +146,28 @@ describe('RabbitMqModuleReceiver', () => {
       );
     });
 
+    it('should not create duplicate consumers when connection recovery follows channel recovery', async () => {
+      const replacement = aMockAmqpChannel();
+      let currentChannel = mockChannel;
+      vi.mocked(mockChannelManager.getChannel).mockImplementation(async () => currentChannel);
+      await receiver.subscribe('Transactions', [OCPP_CallAction.TransactionEvent], {});
+
+      currentChannel = replacement;
+      mockChannelManager.emit('channelInvalidated', 'module-receiver-Transactions');
+      await vi.waitFor(() => expect(replacement.consume).toHaveBeenCalledTimes(1));
+
+      const connectedListener = mockConnectionManager.on.mock.calls.find(
+        ([event]) => event === 'connected',
+      )?.[1];
+      expect(connectedListener).toBeTypeOf('function');
+      await connectedListener?.();
+
+      expect(replacement.consume).toHaveBeenCalledTimes(1);
+      expect(replacement.cancel).not.toHaveBeenCalled();
+      await expect(receiver.unsubscribe('Transactions')).resolves.toBe(true);
+      expect(replacement.cancel).toHaveBeenCalledWith('consumer-tag-1');
+    });
+
     it('should cancel partial consumers before retrying channel recovery', async () => {
       const replacement = aMockAmqpChannel();
       let invalidated = false;

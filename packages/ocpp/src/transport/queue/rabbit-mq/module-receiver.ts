@@ -48,9 +48,6 @@ export class RabbitMqModuleReceiver extends RabbitMqReceiver {
   protected async _onReconnect(): Promise<void> {
     if (this._moduleSubscriptions.size === 0) return;
 
-    // Old consumer tags reference a dead channel — reset before re-subscribing
-    this._consumerTags.clear();
-
     let restored = 0;
     for (const [identifier, subscriptions] of this._moduleSubscriptions) {
       if (this._isStopping) return;

@@ -53,6 +53,10 @@ interface MgmtConsumer {
   prefetch_count: number;
 }
 
+interface MgmtConnection {
+  name: string;
+}
+
 // ---------------------------------------------------------------------------
 // Container lifecycle — shared across all tests in this file
 // ---------------------------------------------------------------------------
@@ -114,6 +118,16 @@ async function getActiveConsumerCount(queueName: string): Promise<number> {
   } catch {
     return 0;
   }
+}
+
+async function waitForReplacementConnection(previousName: string): Promise<void> {
+  const deadline = Date.now() + 15_000;
+  while (Date.now() < deadline) {
+    const connections = await mgmtGet<MgmtConnection[]>(`/api/connections`);
+    if (connections.length === 1 && connections[0]?.name !== previousName) return;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  throw new Error(`Timed out waiting for RabbitMQ to replace connection ${previousName}`);
 }
 
 /**
@@ -224,6 +238,38 @@ describe('RabbitMq receivers', () => {
 
       await waitForConsumerCount(`rabbit_queue_${id}`, 1);
     }, 15_000);
+
+    it('should keep exactly one consumer after the AMQP connection is closed', async () => {
+      const id = `ConnectionRecovery-${uid}`;
+      const queueName = `rabbit_queue_${id}`;
+      const channelId = `module-receiver-${id}`;
+      await receiver.subscribe(id, [OCPP_CallAction.TransactionEvent], {});
+      await waitForConsumerCount(queueName, 1);
+
+      const originalConnection = await connectionManager.connect();
+      const originalChannel = await channelManager.getChannel(channelId);
+      const connections = await mgmtGet<MgmtConnection[]>(`/api/connections`);
+      expect(connections).toHaveLength(1);
+
+      const closeResponse = await fetch(
+        `${mgmtUrl}/api/connections/${encodeURIComponent(connections[0]!.name)}`,
+        {
+          method: 'DELETE',
+          headers: { Authorization: MGMT_AUTH },
+        },
+      );
+      expect(closeResponse.ok).toBe(true);
+
+      await waitForReplacementConnection(connections[0]!.name);
+      await waitForConsumerCount(queueName, 1);
+      expect(await connectionManager.connect()).not.toBe(originalConnection);
+      expect(await channelManager.getChannel(channelId)).not.toBe(originalChannel);
+
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      expect(await getActiveConsumerCount(queueName)).toBe(1);
+      await receiver.unsubscribe(id);
+      await waitForConsumerCount(queueName, 0);
+    }, 30_000);
 
     it('should create one binding per action on the queue', async () => {
       const id = `Monitor-${uid}`;
