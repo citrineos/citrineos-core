@@ -20,7 +20,7 @@ import { getSerializedValues } from '@lib/utils/middleware';
 import { CanAccess, type GetOneResponse, useTranslate } from '@refinedev/core';
 import { useForm } from '@refinedev/react-hook-form';
 import { AccessDeniedFallback } from '@lib/utils/access-denied-fallback';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader } from '@lib/client/components/ui/card';
 import { heading2Style, pageMargin } from '@lib/client/styles/page';
 import { cardGridStyle, cardHeaderFlex } from '@lib/client/styles/card';
@@ -33,17 +33,23 @@ type TariffUpsertProps = {
   params: { id?: string };
 };
 
-const TariffFormSchema = TariffSchema.pick({
-  [TariffProps.currency]: true,
-}).extend({
-  [TariffProps.pricePerKwh]: z.coerce.number().min(0),
-  [TariffProps.pricePerMin]: z.coerce.number().min(0).nullish(),
-  [TariffProps.pricePerSession]: z.coerce.number().min(0).nullish(),
-  [TariffProps.authorizationAmount]: z.coerce.number().min(0).nullish(),
-  [TariffProps.paymentFee]: z.coerce.number().min(0).nullish(),
-  [TariffProps.taxRate]: z.coerce.number().min(0).nullish(),
-  [TariffProps.tariffAltText]: z.union([z.string(), z.record(z.string(), z.any())]).nullish(),
-});
+const buildTariffFormSchema = (currencyMessage: string) =>
+  TariffSchema.pick({
+    [TariffProps.currency]: true,
+  }).extend({
+    [TariffProps.currency]: z
+      .string()
+      .trim()
+      .toUpperCase()
+      .regex(/^[A-Z]{3}$/, currencyMessage),
+    [TariffProps.pricePerKwh]: z.coerce.number().min(0),
+    [TariffProps.pricePerMin]: z.coerce.number().min(0).nullish(),
+    [TariffProps.pricePerSession]: z.coerce.number().min(0).nullish(),
+    [TariffProps.authorizationAmount]: z.coerce.number().min(0).nullish(),
+    [TariffProps.paymentFee]: z.coerce.number().min(0).nullish(),
+    [TariffProps.taxRate]: z.coerce.number().min(0).nullish(),
+    [TariffProps.tariffAltText]: z.union([z.string(), z.record(z.string(), z.any())]).nullish(),
+  });
 
 const defaultValues = {
   [TariffProps.currency]: '',
@@ -63,6 +69,10 @@ export const TariffUpsert = ({ params }: TariffUpsertProps) => {
 
   const tenantId = useTenantId();
 
+  const tariffFormSchema = useMemo(
+    () => buildTariffFormSchema(translate('Tariffs.validation.currencyCode')),
+    [translate],
+  );
   const form = useForm({
     refineCoreProps: {
       resource: ResourceType.TARIFFS,
@@ -88,7 +98,7 @@ export const TariffUpsert = ({ params }: TariffUpsertProps) => {
       },
     },
     defaultValues: { ...defaultValues },
-    resolver: zodResolver(TariffFormSchema),
+    resolver: zodResolver(tariffFormSchema),
     warnWhenUnsavedChanges: true,
   });
 

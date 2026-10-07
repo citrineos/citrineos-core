@@ -301,7 +301,9 @@ export const ChargingStationDetailCard = ({
 
               <KeyValueDisplay
                 keyLabel={translate('ChargingStations.columns.chargePointSerialNumber')}
-                value={station.chargePointSerialNumber || NOT_APPLICABLE}
+                value={
+                  station.chargePointSerialNumber || station.chargeBoxSerialNumber || NOT_APPLICABLE
+                }
               />
 
               <KeyValueDisplay
@@ -381,12 +383,10 @@ export const ChargingStationDetailCard = ({
               <KeyValueDisplay
                 keyLabel={translate('ChargingStations.detailCard.connectorTypes')}
                 value={
-                  isEmpty(station.connectors)
-                    ? NOT_APPLICABLE
-                    : station
-                        .connectors!.map((c) => c.type)
-                        .filter(Boolean)
-                        .join(', ')
+                  (station.connectors ?? [])
+                    .map((c) => c.type)
+                    .filter(Boolean)
+                    .join(', ') || NOT_APPLICABLE
                 }
               />
 

@@ -239,7 +239,7 @@ export const ChargerActivityCard: React.FC = () => {
           {error ? (
             <p>{translate('Overview.errorLoadingData')}</p>
           ) : (
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {[
                 ChargerStatusEnum.CHARGING,
                 ChargerStatusEnum.AVAILABLE,

@@ -83,7 +83,10 @@ export const PowerOverTime = ({ meterValues, validContexts }: PowerOverTimeProps
                 label={getXAxisLabelConfig(translate('Transactions.charts.timeElapsed'))}
               />
               <YAxis
-                domain={[minValue - buffer, maxValue + buffer]}
+                domain={[
+                  minValue >= 0 ? Math.max(0, minValue - buffer) : minValue - buffer,
+                  maxValue + buffer,
+                ]}
                 label={getYAxisLabelConfig(powerAxisLabel)}
               />
               <ChartTooltip content={<ChartTooltipContent />} />

@@ -33,6 +33,9 @@
       "paymentFee": "Payment Fee",
       "taxRate": "Tax Rate (%)",
       "tariffAltText": "Tariff Alt Text"
+    },
+    "validation": {
+      "currencyCode": "Enter a 3-letter currency code, e.g. CAD"
     }
   }
 }

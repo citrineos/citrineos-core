@@ -774,7 +774,7 @@ export class SequelizeTransactionEventRepository
           stationId,
         },
         include: [Tariff],
-        sequelizeTransaction,
+        transaction: sequelizeTransaction,
       });
       if (!connector) {
         this.logger.error(`Unable to find connector ${request.connectorId}.`);

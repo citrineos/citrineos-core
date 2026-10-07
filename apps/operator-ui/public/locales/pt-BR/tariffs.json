@@ -32,6 +32,9 @@
       "authorizationAmount": "Valor de Autorização",
       "paymentFee": "Taxa de Pagamento",
       "taxRate": "Alíquota de Imposto (%)"
+    },
+    "validation": {
+      "currencyCode": "Informe um código de moeda de 3 letras, ex.: BRL"
     }
   }
 }
