@@ -342,7 +342,7 @@ export const configSchema = z.object({
 
   roles: z
     .object({
-      seedFile: z.string().default('roles.seed.json'),
+      seedFile: z.string().default('roles-seed.json'),
       refreshIntervalSeconds: z.number().int().min(1).default(60),
       common: z.array(z.string()).default(['permissions.user.get']),
     })

@@ -467,7 +467,7 @@ Role definitions are read through `fileAccess`, so the file can sit on a mounted
 
 | Variable                                 | Default                | Meaning                                    |
 | ---------------------------------------- | ---------------------- | ------------------------------------------ |
-| `CITRINEOS_ROLES_SEEDFILE`               | `roles.seed.json`      | Key resolved against the `fileAccess` root |
+| `CITRINEOS_ROLES_SEEDFILE`               | `roles-seed.json`      | Key resolved against the `fileAccess` root |
 | `CITRINEOS_ROLES_REFRESHINTERVALSECONDS` | `60`                   | How often the file is re-read              |
 | `CITRINEOS_ROLES_COMMON`                 | `permissions.user.get` | Granted to every authenticated caller      |
 

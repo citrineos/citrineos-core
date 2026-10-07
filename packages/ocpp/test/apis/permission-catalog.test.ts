@@ -25,7 +25,7 @@ interface RoleDefinition {
 }
 
 const seed: Record<string, RoleDefinition> = JSON.parse(
-  fs.readFileSync(repoFile('apps/ocpp-server/src/assets/roles.seed.json'), 'utf8'),
+  fs.readFileSync(repoFile('apps/ocpp-server/src/assets/roles-seed.json'), 'utf8'),
 );
 
 describe('permission catalog', () => {
