@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { apiAuthPluginFp, initSwagger } from '@/apis/index.js';
+import { DEV_ENDPOINT_PREFIX } from '@/apis/dev-api.js';
+import type { PolicyStore } from '@/apis/authorization/policy/policy-store.js';
 import { GcpCloudStorage, LocalStorage, S3Storage } from '@/config/index.js';
 import type {
   BrokerAwareMessageSender,
@@ -126,6 +128,7 @@ export class CitrineOSServer {
   protected _connectionManager?: RabbitMQConnectionManager;
   protected _channelManager?: RabbitMQChannelManager;
   protected _healthCheckService?: HealthCheckService;
+  protected _policyStore?: PolicyStore;
   protected _isShuttingDown = false;
   protected _schemaValidationReport: SchemaValidationReport | null = null;
   protected _drizzleSchemaValidationReport: SchemaValidationReport | null = null;
@@ -165,7 +168,7 @@ export class CitrineOSServer {
 
   protected static readonly DEFAULT_API_SPECS: Partial<Record<EventGroup, ApiInitSpec>> = {
     [EventGroup.Api]: {
-      apiTokens: ['commandsApi', 'ocppMessageApi', 'webPaymentApi'],
+      apiTokens: ['commandsApi', 'permissionsApi', 'devApi', 'ocppMessageApi', 'webPaymentApi'],
     },
   };
 
@@ -237,8 +240,10 @@ export class CitrineOSServer {
    * as an ordered sequence. Kept as a flat list of overridable steps on purpose.
    */
   async initialize(): Promise<void> {
+    this.assertAuthModeAllowed();
     this.initPrimitives();
     await this.initContainer();
+    await this.initPolicyStore();
     await this.registerHttpPlugins();
     this.initSequelizeInstance();
     await this.initMessageBrokerConnection();
@@ -276,6 +281,8 @@ export class CitrineOSServer {
     this._logger.info('Closing RabbitMQ connections...');
     await this._channelManager?.closeAll();
     await this._connectionManager?.close();
+
+    this._policyStore?.shutdown();
 
     this._logger.info('Closing PostgreSQL connections...');
     await this._sequelizeInstance.connectionManager.close();
@@ -447,7 +454,56 @@ export class CitrineOSServer {
       '/health/live',
       '/health/ready',
       '/docs', // API documentation
+      ...(this._config.auth.mode === 'localDev' ? [DEV_ENDPOINT_PREFIX] : []),
     ];
+  }
+
+  protected assertAuthModeAllowed(): void {
+    if (this._config.auth.mode === 'localDev' && this._config.env === 'production') {
+      throw new Error(
+        "auth.mode 'localDev' mints its own tokens and cannot be used when env is 'production'",
+      );
+    }
+
+    if (this._config.auth.mode === 'localDev') {
+      const nested = [this._config.auth.jwt?.rolesClaim, this._config.auth.jwt?.tenantClaim].filter(
+        (path) => path?.includes('.'),
+      );
+      if (nested.length > 0) {
+        throw new Error(
+          `auth.mode 'localDev' requires flat claim paths; nested paths will not be minted locally: ${nested.join(', ')}`,
+        );
+      }
+    }
+  }
+
+  protected logAuthMode(): void {
+    const mode = this._config.auth.mode;
+    const message = `API auth mode: ${mode} (${mode === 'localBypass' ? 'not enforcing' : 'enforcing'})`;
+    if (mode === 'localBypass') {
+      this._logger.warn(`${message} — every request is accepted without a token`);
+    } else if (mode === 'localDev') {
+      this._logger.warn(`${message} — tokens are self-signed, for development only`);
+    } else {
+      this._logger.info(message);
+    }
+  }
+
+  protected assertCommonPermissionsKnown(): void {
+    const catalog = this._container.resolve<Set<string>>('permissionCatalog');
+    const unknown = this._config.roles.common.filter((permission) => !catalog.has(permission));
+    if (unknown.length > 0) {
+      throw new Error(
+        `roles.common names permissions this build does not expose: ${unknown.join(', ')}`,
+      );
+    }
+  }
+
+  protected async initPolicyStore(): Promise<void> {
+    this.logAuthMode();
+    this.assertCommonPermissionsKnown();
+    this._policyStore = this._container.resolve<PolicyStore>('policyStore');
+    await this._policyStore.start();
   }
 
   protected registerApiAuth() {

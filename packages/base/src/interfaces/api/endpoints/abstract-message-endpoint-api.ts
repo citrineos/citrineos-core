@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { joinRoutePath } from '@base-util/endpoints/paths.js';
+import { messagePermissionName } from '@base-util/endpoints/permission-name.js';
 import { childLogger } from '@base-util/logging.js';
 import { registerRouteSchema } from '@base-util/endpoints/route-schemas.js';
 import {
@@ -127,12 +128,14 @@ export abstract class AbstractMessageEndpointApi {
       response: responseSchema,
     };
 
+    const permission = messagePermissionName(route);
+
     if (this._config.swagger?.exposeMessage) {
-      this._registerWithSharedSchemas(url, handler, version, schemas);
+      this._registerWithSharedSchemas(url, handler, version, schemas, permission);
       return;
     }
 
-    this._registerWithInlineSchemas(url, handler, schemas);
+    this._registerWithInlineSchemas(url, handler, schemas, permission);
   }
 
   private _registerWithSharedSchemas(
@@ -140,15 +143,21 @@ export abstract class AbstractMessageEndpointApi {
     handler: MessageRouteHandler,
     version: OCPPVersion,
     schemas: MessageRouteSchemaSources,
+    permission: string,
   ): void {
     this._server.register(async (fastifyInstance) => {
       const targets = { scoped: fastifyInstance, root: this._server, logger: this._logger };
       fastifyInstance.route(
-        this._routeOptions(url, handler, {
-          body: registerRouteSchema(targets, schemas.body, `${version}-`),
-          querystring: registerRouteSchema(targets, schemas.querystring),
-          response: registerRouteSchema(targets, schemas.response),
-        }),
+        this._routeOptions(
+          url,
+          handler,
+          {
+            body: registerRouteSchema(targets, schemas.body, `${version}-`),
+            querystring: registerRouteSchema(targets, schemas.querystring),
+            response: registerRouteSchema(targets, schemas.response),
+          },
+          permission,
+        ),
       );
     });
   }
@@ -157,14 +166,16 @@ export abstract class AbstractMessageEndpointApi {
     url: string,
     handler: MessageRouteHandler,
     schemas: MessageRouteSchemaSources,
+    permission: string,
   ): void {
-    this._server.route(this._routeOptions(url, handler, schemas));
+    this._server.route(this._routeOptions(url, handler, schemas, permission));
   }
 
   private _routeOptions(
     url: string,
     handler: MessageRouteHandler,
     schemas: MessageRouteSchemas,
+    permission: string,
   ): RouteOptions<
     RawServerDefault,
     RawRequestDefaultExpression,
@@ -175,6 +186,7 @@ export abstract class AbstractMessageEndpointApi {
       method: HttpMethod.Post,
       url,
       handler,
+      config: { permission },
       schema: {
         body: schemas.body,
         querystring: schemas.querystring,

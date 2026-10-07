@@ -135,7 +135,7 @@ export const TariffUpsert = ({ params }: TariffUpsertProps) => {
   return (
     <CanAccess
       resource={ResourceType.TARIFFS}
-      action={ActionType.EDIT}
+      action={id ? ActionType.EDIT : ActionType.CREATE}
       fallback={<AccessDeniedFallback />}
       params={{ id }}
     >

@@ -18,8 +18,10 @@ import { type AuthenticationContextProvider, type User } from '@lib/utils/access
 import config from '@lib/utils/config';
 import { HasuraHeader, HasuraRole } from '@lib/utils/hasura-types';
 import { useLogin, useTranslate, type AuthProvider } from '@refinedev/core';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { signIn } from 'next-auth/react';
+import { fetchDevRoles, fetchDevToken, isStaleDevSession } from '@lib/utils/dev-client';
+import { useQuery } from '@tanstack/react-query';
 
 /**
  * Configuration for the auth provider
@@ -48,7 +50,21 @@ export const genericAdminUser: User = {
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState('');
+  const { data: devRoles = [] } = useQuery({
+    queryKey: ['dev', 'roles'],
+    queryFn: fetchDevRoles,
+    staleTime: Infinity,
+    retry: false,
+  });
+
+  useEffect(() => {
+    if (!role && devRoles.length > 0) {
+      setRole(devRoles.includes('admin') ? 'admin' : devRoles[0]);
+    }
+  }, [devRoles, role]);
   const [error, setError] = useState<string | null>(null);
+
   const { mutate: login, isPending: isLoading } = useLogin();
   const translate = useTranslate();
 
@@ -57,7 +73,7 @@ const LoginPage: React.FC = () => {
     setError(null);
 
     login(
-      { email, password },
+      { email, password, roles: role ? [role] : undefined },
       {
         onError: () => {
           setError(translate('pages.login.invalidCredentials'));
@@ -113,6 +129,28 @@ const LoginPage: React.FC = () => {
               />
             </div>
 
+            {devRoles.length > 0 && (
+              <div className="space-y-2">
+                <Alert>
+                  <AlertDescription>{translate('pages.login.localDevNotice')}</AlertDescription>
+                </Alert>
+                <Label htmlFor="role">{translate('pages.login.fields.role')}</Label>
+                <select
+                  id="role"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  disabled={isLoading}
+                >
+                  {devRoles.map((name) => (
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? translate('pages.login.signingIn') : translate('pages.login.signin')}
             </Button>
@@ -127,6 +165,8 @@ const LoginPage: React.FC = () => {
  * Creates a default permissive auth provider that uses localStorage
  * for persistence and always grants permissions
  */
+let sessionChecked = false;
+
 export const createGenericAuthProvider = (
   config: GenericAuthProviderConfig = {},
 ): AuthProvider & AuthenticationContextProvider => {
@@ -206,7 +246,7 @@ export const createGenericAuthProvider = (
 
   // Return the auth provider implementation
   return {
-    login: async ({ email, password }) => {
+    login: async ({ email, password, roles }) => {
       const result = await signIn('generic', {
         username: email,
         password,
@@ -223,9 +263,12 @@ export const createGenericAuthProvider = (
         };
       }
 
-      const mockToken = 'mock_token_' + Math.random().toString(36).slice(2);
-      saveToken(mockToken);
-      saveUser({ ...genericAdminUser, email });
+      const chosenRoles: string[] = roles?.length ? roles : ['admin'];
+      const token = await fetchDevToken(chosenRoles);
+      if (token) {
+        saveToken(token);
+      }
+      saveUser({ ...genericAdminUser, email, roles: chosenRoles });
 
       window.location.href = '/overview';
       return {
@@ -247,9 +290,21 @@ export const createGenericAuthProvider = (
     check: async () => {
       const token = await getToken();
 
-      console.log('🔐 Auth check - token exists:', !!token);
+      if (token && !sessionChecked) {
+        sessionChecked = true;
+        if (await isStaleDevSession(token)) {
+          localStorage.removeItem(tokenKey);
+          localStorage.removeItem(userKey);
+          return {
+            authenticated: false,
+            redirectTo: '/login',
+            logout: true,
+            error: { message: 'Session expired', name: 'Authentication Error' },
+          };
+        }
+      }
 
-      if (token) {
+      if (token || getUser()) {
         return {
           authenticated: true,
         };

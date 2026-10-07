@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { joinRoutePath } from '@base-util/endpoints/paths.js';
+import { commandPermissionName } from '@base-util/endpoints/permission-name.js';
 import { childLogger } from '@base-util/logging.js';
 import { removeUnknownSchemaKeys } from '@base-util/endpoints/route-schemas.js';
 import { serializeError } from '@base-util/errors.js';
@@ -37,6 +38,7 @@ export abstract class AbstractEndpointApi {
     this._server.route({
       method: route.method,
       url,
+      config: { permission: commandPermissionName(this._prefix, route) },
       schema: this._toRouteSchema(route),
       handler: async (request: FastifyRequest, reply: FastifyReply) => {
         try {

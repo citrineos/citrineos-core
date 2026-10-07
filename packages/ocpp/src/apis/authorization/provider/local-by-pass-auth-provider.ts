@@ -8,6 +8,7 @@ import {
   ApiAuthenticationResult,
   ApiAuthorizationResult,
   childLogger,
+  DEFAULT_TENANT_ID,
   type IApiAuthProvider,
   type UserInfo,
 } from '@citrineos/base';
@@ -18,14 +19,11 @@ import {
  */
 export class LocalBypassAuthProvider implements IApiAuthProvider {
   private readonly _logger: Logger<ILogObj>;
+  private readonly _roles: string[];
 
-  /**
-   * Creates a new local bypass authentication provider
-   *
-   * @param logger Optional logger instance
-   */
-  constructor(logger?: Logger<ILogObj>) {
+  constructor(roles: string[], logger?: Logger<ILogObj>) {
     this._logger = childLogger(logger, this.constructor.name);
+    this._roles = roles;
 
     this._logger.warn(
       '⚠️ WARNING: Using LocalBypassAuthProvider - This should only be used in development environments',
@@ -54,9 +52,9 @@ export class LocalBypassAuthProvider implements IApiAuthProvider {
       id: 'local-admin',
       name: 'Local Admin',
       email: 'admin@local',
-      roles: ['admin', 'user'],
+      roles: this._roles,
       groups: ['administrators'],
-      tenantId: '1',
+      tenantId: String(DEFAULT_TENANT_ID),
       metadata: {
         isLocalBypass: true,
       },

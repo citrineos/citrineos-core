@@ -257,21 +257,38 @@ export const configSchema = z.object({
 
   auth: z
     .object({
-      oidc: z
+      mode: z.enum(['jwt', 'localDev', 'localBypass']).default('localDev'),
+      jwt: z
         .object({
           jwksUri: z.string(),
           issuer: z.string(),
-          audience: z.string(),
+          audience: z.string().optional(),
+          rolesClaim: z.string().default('roles'),
+          tenantClaim: z.string().default('tenant_id'),
           cacheTimeSeconds: z.number().int().min(1).optional(),
           rateLimit: z.boolean().default(true),
         })
         .optional(),
-      localBypass: z.boolean().default(false),
+      localDev: z
+        .object({
+          roles: z.array(z.string()).default(['admin']),
+          tokenTtlSeconds: z
+            .number()
+            .int()
+            .min(1)
+            .default(60 * 60 * 12),
+        })
+        .prefault({}),
+      localBypass: z
+        .object({
+          roles: z.array(z.string()).default(['admin']),
+        })
+        .prefault({}),
     })
-    .refine((o) => o.oidc || o.localBypass, {
-      message: 'Either oidc config or localBypass must be enabled',
+    .refine((o) => o.mode !== 'jwt' || !!o.jwt, {
+      message: "auth.jwt must be provided when auth.mode is 'jwt'",
     })
-    .prefault({ localBypass: true }),
+    .prefault({}),
   oidcClient: z
     .object({
       tokenUrl: z.string(),
@@ -323,12 +340,13 @@ export const configSchema = z.object({
     })
     .prefault({}),
 
-  rbac: z
+  roles: z
     .object({
-      rulesDir: z.string().optional(),
-      rulesFileName: z.string().default('rbac-rules.json'),
+      seedFile: z.string().default('roles.seed.json'),
+      refreshIntervalSeconds: z.number().int().min(1).default(60),
+      common: z.array(z.string()).default(['permissions.user.get']),
     })
-    .optional(),
+    .prefault({}),
 
   // logoPath is resolved from the process working directory, not from fileAccess.
   swagger: z
@@ -422,21 +440,12 @@ export type SystemConfig = z.infer<typeof configSchema>;
 /** Pre-parse config: defaulted fields are optional. What you hand-author or merge env vars into. */
 export type SystemConfigInput = z.input<typeof configSchema>;
 
-export const HttpMethodSchema = z.record(
-  z.string(), // HTTP method (GET, POST, etc., or * for all methods)
-  z.array(z.string()), // Array of role names required for this method
-);
+export const RoleDefinitionSchema = z.object({
+  resources: z.record(z.string(), z.array(z.string())).default({}),
+  permissions: z.array(z.string()).default([]),
+});
 
-export const UrlPatternSchema = z.record(
-  z.string(), // URL pattern (/api/users, /api/users/:id, etc.)
-  HttpMethodSchema,
-);
+export const RoleDefinitionsSchema = z.record(z.string(), RoleDefinitionSchema);
 
-export const TenantSchema = z.record(
-  z.string(), // Tenant ID
-  UrlPatternSchema,
-);
-
-export const RbacRulesSchema = TenantSchema;
-
-export type RbacRules = z.infer<typeof RbacRulesSchema>;
+export type RoleDefinition = z.infer<typeof RoleDefinitionSchema>;
+export type RoleDefinitions = z.infer<typeof RoleDefinitionsSchema>;

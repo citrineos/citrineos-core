@@ -9,7 +9,6 @@ import { Table } from '@lib/client/components/table';
 import { Button } from '@lib/client/components/ui/button';
 import { getChargingStationsColumns } from '@lib/client/pages/charging-stations/columns';
 import { ActionType, ResourceType } from '@lib/utils/access-types';
-import { AccessDeniedFallback } from '@lib/utils/access-denied-fallback';
 import { CanAccess, useTranslate } from '@refinedev/core';
 import { Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -63,11 +62,7 @@ export const LocationsChargingStationsTable = ({
           </CanAccess>
         </div>
       )}
-      <CanAccess
-        resource={ResourceType.CHARGING_STATIONS}
-        action={ActionType.LIST}
-        fallback={<AccessDeniedFallback />}
-      >
+      <CanAccess resource={ResourceType.CHARGING_STATIONS} action={ActionType.LIST}>
         <Table data={stationsToDisplay} useClientData onRowClick={handleRowClick}>
           {renderedVisibleColumns}
         </Table>

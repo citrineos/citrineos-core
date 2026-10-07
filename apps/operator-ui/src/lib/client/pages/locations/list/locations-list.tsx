@@ -13,7 +13,6 @@ import { LocationsChargingStationsTable } from '@lib/client/pages/locations/list
 import { LocationClass } from '@lib/cls/location-dto';
 import { LOCATIONS_LIST_QUERY } from '@lib/queries/locations';
 import { ActionType, ResourceType } from '@lib/utils/access-types';
-import { AccessDeniedFallback } from '@lib/utils/access-denied-fallback';
 import { DEFAULT_SORTERS } from '@lib/utils/consts';
 import { getPlainToInstanceOptions } from '@lib/utils/tables';
 import { CanAccess, useTranslate } from '@refinedev/core';
@@ -69,11 +68,7 @@ export const LocationsList = () => {
           </CanAccess>
         </div>
       </div>
-      <CanAccess
-        resource={ResourceType.LOCATIONS}
-        action={ActionType.LIST}
-        fallback={<AccessDeniedFallback />}
-      >
+      <CanAccess resource={ResourceType.LOCATIONS} action={ActionType.LIST}>
         <Table<LocationDto>
           refineCoreProps={{
             resource: ResourceType.LOCATIONS,

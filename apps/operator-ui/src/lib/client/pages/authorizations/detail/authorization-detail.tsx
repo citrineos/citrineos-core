@@ -9,7 +9,6 @@ import { AuthorizationDetailCard } from '@lib/client/pages/authorizations/detail
 import { AuthorizationClass } from '@lib/cls/authorization-dto';
 import { AUTHORIZATIONS_SHOW_QUERY } from '@lib/queries/authorizations';
 import { ActionType, ResourceType } from '@lib/utils/access-types';
-import { AccessDeniedFallback } from '@lib/utils/access-denied-fallback';
 import { getPlainToInstanceOptions } from '@lib/utils/tables';
 import { CanAccess, useOne, useTranslate } from '@refinedev/core';
 import { pageFlex, pageMargin } from '@lib/client/styles/page';

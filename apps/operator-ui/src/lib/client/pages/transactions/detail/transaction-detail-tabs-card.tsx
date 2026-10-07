@@ -8,7 +8,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@lib/client/components
 import { cardTabsStyle } from '@lib/client/styles/card';
 import { CanAccess, useList, useTranslate } from '@refinedev/core';
 import { ActionType, ResourceType, TransactionAccessType } from '@lib/utils/access-types';
-import { AccessDeniedFallback } from '@lib/utils/access-denied-fallback';
 import { Table } from '@lib/client/components/table';
 import {
   type MeterValueDto,
@@ -101,11 +100,7 @@ export const TransactionDetailTabsCard = ({ transaction }: { transaction: Transa
           </TabsList>
 
           <TabsContent value={TransactionDetailTabType.authorizations} className={cardTabsStyle}>
-            <CanAccess
-              resource={ResourceType.AUTHORIZATIONS}
-              action={ActionType.LIST}
-              fallback={<AccessDeniedFallback />}
-            >
+            <CanAccess resource={ResourceType.AUTHORIZATIONS} action={ActionType.LIST}>
               <Table
                 refineCoreProps={{
                   resource: ResourceType.AUTHORIZATIONS,
@@ -139,7 +134,6 @@ export const TransactionDetailTabsCard = ({ transaction }: { transaction: Transa
             <CanAccess
               resource={ResourceType.TRANSACTIONS}
               action={ActionType.ACCESS}
-              fallback={<AccessDeniedFallback />}
               params={{
                 id: transaction.id,
                 accessType: TransactionAccessType.EVENTS,
@@ -168,7 +162,6 @@ export const TransactionDetailTabsCard = ({ transaction }: { transaction: Transa
             <CanAccess
               resource={ResourceType.TRANSACTIONS}
               action={ActionType.ACCESS}
-              fallback={<AccessDeniedFallback />}
               params={{
                 id: transaction.id,
                 accessType: TransactionAccessType.EVENTS,
@@ -189,7 +182,6 @@ export const TransactionDetailTabsCard = ({ transaction }: { transaction: Transa
             <CanAccess
               resource={ResourceType.TRANSACTIONS}
               action={ActionType.ACCESS}
-              fallback={<AccessDeniedFallback />}
               params={{
                 id: transaction.id,
                 accessType: TransactionAccessType.EVENTS,

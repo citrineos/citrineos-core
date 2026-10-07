@@ -8,16 +8,27 @@ import {
   type BuiltMessageEndpoint,
   buildEndpoints,
   buildMessageEndpoints,
+  commandPermissionName,
   type EndpointClass,
   type EndpointResolverCradle,
+  messagePermissionName,
   type MessageEndpointClass,
 } from '@citrineos/base';
+import { EventGroup, type SystemConfig } from '@citrineos/types';
+import { ADMIN_ENDPOINT_PREFIX } from './admin-api.js';
+import { COMMANDS_ENDPOINT_PREFIX } from './commands-api.js';
+import { DEV_ENDPOINT_PREFIX } from './dev-api.js';
+import { PERMISSIONS_ENDPOINT_PREFIX } from './permissions-api.js';
 import { DeleteStationNetworkProfileEndpoint } from './commands/delete-station-network-profile-endpoint.js';
 import {
   DeleteBootConfigEndpoint,
   GetBootConfigEndpoint,
   PutBootConfigEndpoint,
 } from './commands/boot-config-endpoints.js';
+import { GetPermissionCatalogEndpoint } from './permissions/get-permission-catalog-endpoint.js';
+import { GetUserPermissionsEndpoint } from './permissions/get-user-permissions-endpoint.js';
+import { DevTokenEndpoint } from './authorization/dev/dev-token-endpoint.js';
+import { DevRolesEndpoint } from './authorization/dev/dev-roles-endpoint.js';
 import { GetLocalListVersionEndpoint } from './commands/get-local-list-version-endpoint.js';
 import { GetStationNetworkProfilesEndpoint } from './commands/get-station-network-profiles-endpoint.js';
 import { GetTransactionEndpoint } from './commands/get-transaction-endpoint.js';
@@ -56,7 +67,7 @@ import { GetSubscriptionsEndpoint } from './router/get-subscriptions-endpoint.js
 import { PutWebsocketMappingEndpoint } from './router/put-websocket-mapping-endpoint.js';
 import { ReloadTlsCertificatesEndpoint } from './router/reload-tls-certificates-endpoint.js';
 
-const COMMAND_ENDPOINTS = [
+export const COMMAND_ENDPOINTS = [
   DeleteBootConfigEndpoint,
   DeleteStationNetworkProfileEndpoint,
   DeleteStationVariablesEndpoint,
@@ -76,9 +87,21 @@ const COMMAND_ENDPOINTS = [
   UploadExistingCertificateEndpoint,
 ] satisfies ReadonlyArray<EndpointClass>;
 
-const WEB_PAYMENT_ENDPOINTS = [InitiateWebPaymentEndpoint] satisfies ReadonlyArray<EndpointClass>;
+export const WEB_PAYMENT_ENDPOINTS = [
+  InitiateWebPaymentEndpoint,
+] satisfies ReadonlyArray<EndpointClass>;
 
-const MESSAGE_ENDPOINTS = [
+export const PERMISSION_ENDPOINTS = [
+  GetPermissionCatalogEndpoint,
+  GetUserPermissionsEndpoint,
+] satisfies ReadonlyArray<EndpointClass>;
+
+export const DEV_ENDPOINTS = [
+  DevTokenEndpoint,
+  DevRolesEndpoint,
+] satisfies ReadonlyArray<EndpointClass>;
+
+export const MESSAGE_ENDPOINTS = [
   ...CONFIGURATION_OCPP16_ENDPOINTS,
   ...EV_DRIVER_OCPP16_ENDPOINTS,
   ...REPORTING_OCPP16_ENDPOINTS,
@@ -92,7 +115,7 @@ const MESSAGE_ENDPOINTS = [
   ...TRANSACTIONS_OCPP2_ENDPOINTS,
 ] satisfies ReadonlyArray<MessageEndpointClass>;
 
-const ADMIN_ENDPOINTS = [
+export const ADMIN_ENDPOINTS = [
   CreateSubscriptionEndpoint,
   DeleteSubscriptionEndpoint,
   DeleteWebsocketConnectionEndpoint,
@@ -103,6 +126,23 @@ const ADMIN_ENDPOINTS = [
   ReloadTlsCertificatesEndpoint,
 ] satisfies ReadonlyArray<EndpointClass>;
 
+export const COMMAND_SURFACES = [
+  [COMMANDS_ENDPOINT_PREFIX, COMMAND_ENDPOINTS],
+  [ADMIN_ENDPOINT_PREFIX, ADMIN_ENDPOINTS],
+  [PERMISSIONS_ENDPOINT_PREFIX, PERMISSION_ENDPOINTS],
+  [DEV_ENDPOINT_PREFIX, DEV_ENDPOINTS],
+  [EventGroup.EVDriver, WEB_PAYMENT_ENDPOINTS],
+] as const satisfies ReadonlyArray<readonly [string, ReadonlyArray<EndpointClass>]>;
+
+export function buildPermissionCatalog(): Set<string> {
+  return new Set([
+    ...COMMAND_SURFACES.flatMap(([prefix, endpoints]) =>
+      endpoints.map((endpointClass) => commandPermissionName(prefix, endpointClass.route)),
+    ),
+    ...MESSAGE_ENDPOINTS.map((endpointClass) => messagePermissionName(endpointClass.route)),
+  ]);
+}
+
 export function registerApiServices(container: AwilixContainer): void {
   container.register({
     commandEndpoints: asFunction((cradle: EndpointResolverCradle): BuiltEndpoint[] =>
@@ -110,6 +150,14 @@ export function registerApiServices(container: AwilixContainer): void {
     ).scoped(),
     webPaymentEndpoints: asFunction((cradle: EndpointResolverCradle): BuiltEndpoint[] =>
       buildEndpoints(cradle.moduleScope, WEB_PAYMENT_ENDPOINTS),
+    ).scoped(),
+    permissionEndpoints: asFunction((cradle: EndpointResolverCradle): BuiltEndpoint[] =>
+      buildEndpoints(cradle.moduleScope, PERMISSION_ENDPOINTS),
+    ).scoped(),
+    devEndpoints: asFunction((cradle: EndpointResolverCradle & { config: SystemConfig }) =>
+      cradle.config.auth.mode === 'localDev'
+        ? buildEndpoints(cradle.moduleScope, DEV_ENDPOINTS)
+        : [],
     ).scoped(),
     adminEndpoints: asFunction((cradle: EndpointResolverCradle): BuiltEndpoint[] =>
       buildEndpoints(cradle.moduleScope, ADMIN_ENDPOINTS),

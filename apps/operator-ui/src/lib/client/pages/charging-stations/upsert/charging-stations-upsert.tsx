@@ -296,7 +296,7 @@ export const ChargingStationUpsert = ({
   return (
     <CanAccess
       resource={ResourceType.CHARGING_STATIONS}
-      action={ActionType.EDIT}
+      action={isEditing ? ActionType.EDIT : ActionType.CREATE}
       fallback={<AccessDeniedFallback />}
       params={{ id }}
     >

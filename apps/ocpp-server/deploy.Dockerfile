@@ -25,10 +25,8 @@ COPY --from=build /deploy /usr/local/apps/citrineos/apps/ocpp-server
 # living outside dist/ must be copied explicitly.
 COPY --from=build /usr/local/apps/citrineos/apps/ocpp-server/entrypoint.sh /usr/local/apps/citrineos/apps/ocpp-server/entrypoint.sh
 COPY --from=build /usr/local/apps/citrineos/apps/ocpp-server/.sequelizerc /usr/local/apps/citrineos/apps/ocpp-server/.sequelizerc
-# static assets read from the image by k8s (hasura's copy-metadata initContainer)
-# and potentially by the app at runtime (rbac rules) — not part of dist/.
+# static assets read from the image by k8s (hasura's copy-metadata initContainer).
 COPY --from=build /usr/local/apps/citrineos/apps/ocpp-server/db/hasura-metadata /usr/local/apps/citrineos/apps/ocpp-server/db/hasura-metadata
-COPY --from=build /usr/local/apps/citrineos/apps/ocpp-server/rbac-rules.json /usr/local/apps/citrineos/apps/ocpp-server/rbac-rules.json
 
 WORKDIR /usr/local/apps/citrineos/apps/ocpp-server
 

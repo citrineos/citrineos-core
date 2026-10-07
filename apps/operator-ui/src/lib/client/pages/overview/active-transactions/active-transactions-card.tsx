@@ -18,7 +18,6 @@ import { Card, CardContent, CardHeader } from '@lib/client/components/ui/card';
 import { clickableLinkStyle, heading2Style } from '@lib/client/styles/page';
 import { overviewClickableStyle } from '@lib/client/styles/card';
 import { Skeleton } from '@lib/client/components/ui/skeleton';
-import { AccessDeniedFallbackCard } from '@lib/client/components/access-denied-fallback-card';
 
 export const ActiveTransactionsCard = () => {
   const { push } = useRouter();
@@ -93,11 +92,7 @@ export const ActiveTransactionsCard = () => {
   }
 
   return (
-    <CanAccess
-      resource={ResourceType.TRANSACTIONS}
-      action={ActionType.LIST}
-      fallback={<AccessDeniedFallbackCard />}
-    >
+    <CanAccess resource={ResourceType.TRANSACTIONS} action={ActionType.LIST}>
       <Card className="h-full overflow-scroll">
         <CardHeader>
           <div className="flex justify-between">

@@ -1,0 +1,293 @@
+{
+  "admin": {
+    "resources": {
+      "Locations": [
+        "list",
+        "show",
+        "create",
+        "edit",
+        "delete"
+      ],
+      "ChargingStations": [
+        "access:configuration",
+        "access:ocpp-messages",
+        "access:topology",
+        "create",
+        "delete",
+        "edit",
+        "list",
+        "show"
+      ],
+      "Authorizations": [
+        "list",
+        "show",
+        "create",
+        "edit",
+        "delete"
+      ],
+      "Transactions": [
+        "access:events",
+        "edit",
+        "list",
+        "show"
+      ],
+      "Tariffs": [
+        "list",
+        "show",
+        "create",
+        "edit",
+        "delete"
+      ],
+      "TenantPartners": [
+        "list",
+        "show",
+        "create",
+        "edit",
+        "delete"
+      ]
+    },
+    "permissions": [
+      "commands.bootConfig.delete",
+      "commands.bootConfig.get",
+      "commands.bootConfig.put",
+      "commands.installRootCertificate.put",
+      "commands.localListVersion.get",
+      "commands.provisionStationVariables.put",
+      "commands.regenerateCertificate.post",
+      "commands.setStationPassword.post",
+      "commands.stationNetworkProfile.delete",
+      "commands.stationNetworkProfile.get",
+      "commands.stationVariables.delete",
+      "commands.stationVariables.get",
+      "commands.tariff.delete",
+      "commands.tariff.get",
+      "commands.tariff.put",
+      "commands.transaction.get",
+      "commands.uploadExistingCertificate.post",
+      "evdriver.webpayment.initiate.post",
+      "ocpp.certificates.certificateSigned",
+      "ocpp.certificates.deleteCertificate",
+      "ocpp.certificates.getInstalledCertificateIds",
+      "ocpp.certificates.installCertificate",
+      "ocpp.configuration.changeAvailability",
+      "ocpp.configuration.changeConfiguration",
+      "ocpp.configuration.clearDisplayMessage",
+      "ocpp.configuration.dataTransfer",
+      "ocpp.configuration.getConfiguration",
+      "ocpp.configuration.getDisplayMessages",
+      "ocpp.configuration.publishFirmware",
+      "ocpp.configuration.reset",
+      "ocpp.configuration.setDisplayMessage",
+      "ocpp.configuration.setNetworkProfile",
+      "ocpp.configuration.signedUpdateFirmware",
+      "ocpp.configuration.triggerMessage",
+      "ocpp.configuration.unpublishFirmware",
+      "ocpp.configuration.updateFirmware",
+      "ocpp.evdriver.cancelReservation",
+      "ocpp.evdriver.clearCache",
+      "ocpp.evdriver.getLocalListVersion",
+      "ocpp.evdriver.notifyWebPaymentStarted",
+      "ocpp.evdriver.remoteStartTransaction",
+      "ocpp.evdriver.remoteStopTransaction",
+      "ocpp.evdriver.requestStartTransaction",
+      "ocpp.evdriver.requestStopTransaction",
+      "ocpp.evdriver.reserveNow",
+      "ocpp.evdriver.sendLocalList",
+      "ocpp.evdriver.unlockConnector",
+      "ocpp.monitoring.clearVariableMonitoring",
+      "ocpp.monitoring.getVariables",
+      "ocpp.monitoring.setMonitoringBase",
+      "ocpp.monitoring.setMonitoringLevel",
+      "ocpp.monitoring.setVariableMonitoring",
+      "ocpp.monitoring.setVariables",
+      "ocpp.reporting.customerInformation",
+      "ocpp.reporting.getBaseReport",
+      "ocpp.reporting.getDiagnostics",
+      "ocpp.reporting.getLog",
+      "ocpp.reporting.getMonitoringReport",
+      "ocpp.reporting.getReport",
+      "ocpp.smartcharging.clearChargingProfile",
+      "ocpp.smartcharging.getChargingProfiles",
+      "ocpp.smartcharging.getCompositeSchedule",
+      "ocpp.smartcharging.setChargingProfile",
+      "ocpp.transactions.costUpdated",
+      "ocpp.transactions.getTransactionStatus",
+      "ocpp.transactions.setDefaultTariff",
+      "ocpprouter.certificateChain.post",
+      "ocpprouter.connection.delete",
+      "ocpprouter.subscription.delete",
+      "ocpprouter.subscription.get",
+      "ocpprouter.subscription.post",
+      "ocpprouter.tlsReload.post",
+      "ocpprouter.websocketMapping.delete",
+      "ocpprouter.websocketMapping.put",
+      "permissions.get"
+    ]
+  },
+  "user": {
+    "resources": {
+      "Locations": [
+        "create",
+        "edit",
+        "list",
+        "show"
+      ],
+      "ChargingStations": [
+        "access:configuration",
+        "access:ocpp-messages",
+        "access:topology",
+        "create",
+        "edit",
+        "show",
+        "list"
+      ],
+      "Authorizations": [
+        "create",
+        "edit",
+        "list",
+        "show"
+      ],
+      "Transactions": [
+        "access:events",
+        "list",
+        "show"
+      ],
+      "Tariffs": [
+        "create",
+        "edit",
+        "list",
+        "show"
+      ],
+      "TenantPartners": [
+        "create",
+        "edit",
+        "list",
+        "show"
+      ]
+    },
+    "permissions": [
+      "commands.bootConfig.get",
+      "commands.bootConfig.put",
+      "commands.installRootCertificate.put",
+      "commands.localListVersion.get",
+      "commands.provisionStationVariables.put",
+      "commands.regenerateCertificate.post",
+      "commands.setStationPassword.post",
+      "commands.stationNetworkProfile.get",
+      "commands.stationVariables.get",
+      "commands.tariff.get",
+      "commands.tariff.put",
+      "commands.transaction.get",
+      "commands.uploadExistingCertificate.post",
+      "evdriver.webpayment.initiate.post",
+      "ocpp.certificates.certificateSigned",
+      "ocpp.certificates.getInstalledCertificateIds",
+      "ocpp.certificates.installCertificate",
+      "ocpp.configuration.changeAvailability",
+      "ocpp.configuration.changeConfiguration",
+      "ocpp.configuration.clearDisplayMessage",
+      "ocpp.configuration.dataTransfer",
+      "ocpp.configuration.getConfiguration",
+      "ocpp.configuration.getDisplayMessages",
+      "ocpp.configuration.publishFirmware",
+      "ocpp.configuration.reset",
+      "ocpp.configuration.setDisplayMessage",
+      "ocpp.configuration.setNetworkProfile",
+      "ocpp.configuration.signedUpdateFirmware",
+      "ocpp.configuration.triggerMessage",
+      "ocpp.configuration.unpublishFirmware",
+      "ocpp.configuration.updateFirmware",
+      "ocpp.evdriver.cancelReservation",
+      "ocpp.evdriver.clearCache",
+      "ocpp.evdriver.getLocalListVersion",
+      "ocpp.evdriver.notifyWebPaymentStarted",
+      "ocpp.evdriver.remoteStartTransaction",
+      "ocpp.evdriver.remoteStopTransaction",
+      "ocpp.evdriver.requestStartTransaction",
+      "ocpp.evdriver.requestStopTransaction",
+      "ocpp.evdriver.reserveNow",
+      "ocpp.evdriver.sendLocalList",
+      "ocpp.evdriver.unlockConnector",
+      "ocpp.monitoring.clearVariableMonitoring",
+      "ocpp.monitoring.getVariables",
+      "ocpp.monitoring.setMonitoringBase",
+      "ocpp.monitoring.setMonitoringLevel",
+      "ocpp.monitoring.setVariableMonitoring",
+      "ocpp.monitoring.setVariables",
+      "ocpp.reporting.customerInformation",
+      "ocpp.reporting.getBaseReport",
+      "ocpp.reporting.getDiagnostics",
+      "ocpp.reporting.getLog",
+      "ocpp.reporting.getMonitoringReport",
+      "ocpp.reporting.getReport",
+      "ocpp.smartcharging.clearChargingProfile",
+      "ocpp.smartcharging.getChargingProfiles",
+      "ocpp.smartcharging.getCompositeSchedule",
+      "ocpp.smartcharging.setChargingProfile",
+      "ocpp.transactions.costUpdated",
+      "ocpp.transactions.getTransactionStatus",
+      "ocpp.transactions.setDefaultTariff",
+      "ocpprouter.certificateChain.post",
+      "ocpprouter.subscription.get",
+      "ocpprouter.subscription.post",
+      "ocpprouter.tlsReload.post",
+      "ocpprouter.websocketMapping.put",
+      "permissions.get"
+    ]
+  },
+  "partner": {
+    "resources": {
+      "Locations": [
+        "create",
+        "edit",
+        "list",
+        "show"
+      ],
+      "ChargingStations": [
+        "access:configuration",
+        "access:ocpp-messages",
+        "access:topology",
+        "create",
+        "edit",
+        "list",
+        "show"
+      ]
+    },
+    "permissions": [
+      "ocpp.configuration.changeConfiguration",
+      "ocpp.configuration.triggerMessage"
+    ]
+  },
+  "admin_partner": {
+    "resources": {
+      "Authorizations": [
+        "list",
+        "show",
+        "create",
+        "edit",
+        "delete"
+      ],
+      "ChargingStations": [
+        "access:configuration",
+        "access:ocpp-messages",
+        "access:topology",
+        "create",
+        "edit",
+        "list",
+        "show"
+      ],
+      "Locations": [
+        "create",
+        "edit",
+        "list",
+        "show"
+      ]
+    },
+    "permissions": [
+      "commands.localListVersion.get",
+      "ocpp.evdriver.clearCache",
+      "ocpp.evdriver.getLocalListVersion",
+      "ocpp.evdriver.sendLocalList"
+    ]
+  }
+}

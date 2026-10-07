@@ -10,7 +10,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@lib/client/components
 import { cardTabsStyle } from '@lib/client/styles/card';
 import { CanAccess, useTranslate } from '@refinedev/core';
 import { ActionType, ResourceType } from '@lib/utils/access-types';
-import { AccessDeniedFallback } from '@lib/utils/access-denied-fallback';
 import { Table } from '@lib/client/components/table';
 import { DEFAULT_SORTERS } from '@lib/utils/consts';
 import { getPlainToInstanceOptions } from '@lib/utils/tables';
@@ -49,11 +48,7 @@ export const TariffDetailTabsCard = ({ tariff }: { tariff: TariffDto }) => {
           </TabsList>
 
           <TabsContent value="charging-stations" className={cardTabsStyle}>
-            <CanAccess
-              resource={ResourceType.CHARGING_STATIONS}
-              action={ActionType.LIST}
-              fallback={<AccessDeniedFallback />}
-            >
+            <CanAccess resource={ResourceType.CHARGING_STATIONS} action={ActionType.LIST}>
               <Table
                 refineCoreProps={{
                   resource: ResourceType.CHARGING_STATIONS,
@@ -74,11 +69,7 @@ export const TariffDetailTabsCard = ({ tariff }: { tariff: TariffDto }) => {
           </TabsContent>
 
           <TabsContent value="transactions" className={cardTabsStyle}>
-            <CanAccess
-              resource={ResourceType.TRANSACTIONS}
-              action={ActionType.LIST}
-              fallback={<AccessDeniedFallback />}
-            >
+            <CanAccess resource={ResourceType.TRANSACTIONS} action={ActionType.LIST}>
               <Table
                 refineCoreProps={{
                   resource: ResourceType.TRANSACTIONS,

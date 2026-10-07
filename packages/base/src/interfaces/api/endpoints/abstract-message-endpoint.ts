@@ -15,6 +15,7 @@ export interface IMessageEndpointMetadata {
   eventGroup: EventGroup;
   bodySchema: (version: OCPPVersion) => object | undefined;
   optionalQuerystrings?: Record<string, unknown>;
+  permission?: string;
 }
 
 export abstract class AbstractMessageEndpoint {
