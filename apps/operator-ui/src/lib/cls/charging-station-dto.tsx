@@ -19,6 +19,7 @@ import {
   ConnectorStatusEnum,
   LatestStatusNotificationSchema,
   LocationSchema,
+  OCPPVersion,
   TransactionSchema,
 } from '@citrineos/types';
 import { Expose } from 'class-transformer';
@@ -175,14 +176,23 @@ export const getChargingStationStatusCounts = (chargingStation: ChargingStationS
     [ChargingStationStatusEnum.FAULTED]: 0,
   };
   const evses = chargingStation?.evses;
+  // An offline station's last reported status is stale, so none of its EVSEs can be used.
+  if (chargingStation?.isOnline !== true) {
+    counts[ChargingStationStatusEnum.UNAVAILABLE] = evses?.length ?? 0;
+    return counts;
+  }
+  // OCPP 1.6 numbers connectors across the station; 2.x numbers them within their EVSE.
+  const isOcpp16 = chargingStation.protocol === OCPPVersion.OCPP1_6;
   if (evses && evses.length > 0) {
     for (const evse of evses) {
+      const connector = evse.connectors?.[0];
+      const connectorNumber = isOcpp16 ? connector?.connectorId : connector?.evseTypeConnectorId;
       let latestStatusNotificationForEvse: StatusNotificationDto | undefined;
       chargingStation?.statusNotifications?.forEach((statusNotificationForStation) => {
         if (
           statusNotificationForStation.statusNotification?.evseId === evse.evseTypeId &&
-          statusNotificationForStation.statusNotification?.connectorId ===
-            evse.connectors?.[0]?.evseTypeConnectorId
+          connectorNumber != null &&
+          statusNotificationForStation.statusNotification?.connectorId === connectorNumber
         ) {
           latestStatusNotificationForEvse = statusNotificationForStation.statusNotification;
         }
