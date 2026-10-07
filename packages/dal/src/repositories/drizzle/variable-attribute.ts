@@ -4,6 +4,7 @@
 
 import {
   OCPP2_0_1,
+  type AttributeEnumType,
   type ComponentDto,
   type OCPP2_common_types,
   type VariableAttributeDto,
@@ -52,7 +53,7 @@ import {
   type DrizzleWriteContext,
 } from './base.js';
 import type { VariableAttributeQuerystring } from '@dal/interfaces/queries/variable-attribute.js';
-import { and, desc, eq, exists, inArray, isNull, sql, type SQL } from 'drizzle-orm';
+import { and, desc, eq, exists, inArray, isNotNull, isNull, sql, type SQL } from 'drizzle-orm';
 
 // A row of the hydrated read graph.
 interface GraphRow {
@@ -476,6 +477,34 @@ export class DrizzleVariableAttributeRepository
     });
   }
 
+  private toSetVariableDataType(row: GraphRow): OCPP2_common_types.SetVariableDataType {
+    if (!row.attribute.value) {
+      throw new Error(
+        'Value must be present to generate SetVariableDataType from VariableAttribute',
+      );
+    }
+    return {
+      attributeType: row.attribute.type as OCPP2_0_1.AttributeEnumType,
+      attributeValue: row.attribute.value,
+      component: {
+        name: row.component.name ?? '',
+        ...(row.component.instance ? { instance: row.component.instance } : {}),
+        ...(row.evse
+          ? {
+              evse: {
+                id: row.evse.id ?? 0,
+                ...(row.evse.connectorId ? { connectorId: row.evse.connectorId } : {}),
+              },
+            }
+          : {}),
+      },
+      variable: {
+        name: row.variable.name ?? '',
+        ...(row.variable.instance ? { instance: row.variable.instance } : {}),
+      },
+    };
+  }
+
   async updateAllByQueryString(
     query: VariableAttributeQuerystring,
     value: object,
@@ -494,6 +523,77 @@ export class DrizzleVariableAttributeRepository
   }
 
   // ─── IVariableAttributeRepository methods ────────────────────────────────
+
+  async readAllSetVariableByStationId(
+    tenantId: number,
+    ocppConnectionName: string,
+  ): Promise<OCPP2_common_types.SetVariableDataType[]> {
+    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    if (stationId === undefined) {
+      return [];
+    }
+
+    const t = this.graphTables(tenantId);
+    // The EvseType join is LEFT: station-level components have no EVSE and must still
+    // be replayed. Component and Variable are INNER, matching the sequelize includes.
+    const rows = (await this.db
+      .select({
+        attribute: t.attribute,
+        component: t.component,
+        variable: t.variable,
+        evse: t.evse,
+        characteristics: t.characteristics,
+      })
+      .from(t.attribute)
+      .innerJoin(t.component, eq(t.attribute.componentId, t.component.id))
+      .innerJoin(t.variable, eq(t.attribute.variableId, t.variable.id))
+      .leftJoin(t.evse, eq(t.component.evseDatabaseId, t.evse.databaseId))
+      .leftJoin(t.characteristics, eq(t.characteristics.variableId, t.variable.id))
+      .where(
+        and(
+          eq(t.attribute.stationId, stationId),
+          isNotNull(t.attribute.bootConfigId),
+          this.tenantFilter(t.attribute, tenantId),
+        ),
+      )) as GraphRow[];
+
+    return rows.map((row) => this.toSetVariableDataType(row));
+  }
+
+  async findVariableAttributeByComponentAndVariable(
+    tenantId: number,
+    ocppConnectionName: string,
+    attributeType: AttributeEnumType,
+    componentType: OCPP2_common_types.ComponentType,
+    variableType: OCPP2_common_types.VariableType,
+  ): Promise<VariableAttributeDto | undefined> {
+    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    if (stationId === undefined) {
+      return undefined;
+    }
+
+    const t = this.graphTables(tenantId);
+    const rows = (await this.db
+      .select({ attribute: t.attribute })
+      .from(t.attribute)
+      .innerJoin(t.component, eq(t.attribute.componentId, t.component.id))
+      .innerJoin(t.variable, eq(t.attribute.variableId, t.variable.id))
+      .where(
+        and(
+          eq(t.attribute.stationId, stationId),
+          eq(t.attribute.type, attributeType),
+          eq(t.component.name, componentType.name),
+          instanceFilter(t.component.instance, componentType.instance),
+          await this.componentEvseFilter(tenantId, componentType.evse),
+          eq(t.variable.name, variableType.name),
+          instanceFilter(t.variable.instance, variableType.instance),
+          this.tenantFilter(t.attribute, tenantId),
+        ),
+      )
+      .limit(1)) as { attribute: VariableAttributeEntity }[];
+
+    return rows[0] ? this.toDto(rows[0].attribute) : undefined;
+  }
 
   async readAllByQuerystring(
     tenantId: number,

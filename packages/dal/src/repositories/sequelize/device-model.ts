@@ -18,7 +18,11 @@ import { VariableAttribute } from '../../models/device-model/variable-attribute.
 import { VariableCharacteristics } from '../../models/device-model/variable-characteristics.js';
 import { VariableStatus } from '../../models/device-model/variable-status.js';
 import { Variable } from '../../models/device-model/variable.js';
-import { type IDeviceModelRepository } from '../repositories.js';
+import {
+  type IComponentRepository,
+  type IVariableAttributeRepository,
+  type IVariableCharacteristicsRepository,
+} from '../repositories.js';
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './base.js';
 import { resolveStationIdOrThrow, stationIdFilter } from './resolve-station-id.js';
 
@@ -26,7 +30,7 @@ import { resolveStationIdOrThrow, stationIdFilter } from './resolve-station-id.j
 
 export class SequelizeDeviceModelRepository
   extends SequelizeRepository<VariableAttribute>
-  implements IDeviceModelRepository
+  implements IVariableAttributeRepository, IVariableCharacteristicsRepository, IComponentRepository
 {
   variable: CrudRepository<Variable>;
   component: CrudRepository<Component>;

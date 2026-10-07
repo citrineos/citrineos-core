@@ -4,6 +4,7 @@
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  Boot,
   ChargingStation,
   EvseType,
   VariableAttribute,
@@ -1271,5 +1272,145 @@ describe('DrizzleVariableAttributeRepository.createOrUpdateBySetVariablesDataAnd
     // Two new components seed 3 defaults each. TimeOffset is new, but Enabled is
     // already one of SecurityCtrlr's seeded defaults, so it updates rather than inserts.
     expect(await VariableAttribute.count()).toBe(7);
+  });
+});
+
+describe('DrizzleVariableAttributeRepository.readAllSetVariableByStationId', () => {
+  // Only attributes carrying a bootConfigId are replayed, so each needs a Boot row.
+  async function aBootConfig(tenantId: number): Promise<number> {
+    const boot = await Boot.create({
+      stationId: await stationIdFor(tenantId, STATION),
+      status: 'Accepted',
+      tenantId,
+    } as any);
+    return boot.get('id') as number;
+  }
+
+  it('returns only the attributes pinned to a boot config', async () => {
+    const repo = new DrizzleVariableAttributeRepository(attributeDeps());
+    const bootConfigId = await aBootConfig(TENANT);
+    const component = await aComponent(TENANT, 'ClockCtrlr');
+    const variable = await aVariable(TENANT, 'TimeOffset');
+    const other = await aVariable(TENANT, 'TimeSource');
+
+    await anAttribute(TENANT, {
+      componentId: component.id,
+      variableId: variable.id,
+      type: 'Actual',
+      value: '+02:00',
+      bootConfigId,
+    });
+    // No bootConfigId, so it must not be replayed.
+    await anAttribute(TENANT, {
+      componentId: component.id,
+      variableId: other.id,
+      type: 'Actual',
+      value: 'Heartbeat',
+    });
+
+    const data = await repo.readAllSetVariableByStationId(TENANT, STATION);
+
+    expect(data).toHaveLength(1);
+    expect(data[0].attributeValue).toBe('+02:00');
+    expect(data[0].component.name).toBe('ClockCtrlr');
+    expect(data[0].variable.name).toBe('TimeOffset');
+    // A station-level component has no EVSE, so the key is omitted entirely.
+    expect(data[0].component.evse).toBeUndefined();
+  });
+
+  it('carries the evse through for a component that has one', async () => {
+    const repo = new DrizzleVariableAttributeRepository(attributeDeps());
+    const componentRepo = new DrizzleComponentRepository(deps());
+    const bootConfigId = await aBootConfig(TENANT);
+    const connectorId = await aConnectorWithId(TENANT, 1);
+    const component = await componentRepo.findOrCreateEvseAndComponent(TENANT, {
+      name: 'Connector',
+      evse: { id: 1, connectorId },
+    });
+    const variable = await aVariable(TENANT, 'AvailabilityState');
+    await anAttribute(TENANT, {
+      componentId: component.id,
+      variableId: variable.id,
+      type: 'Actual',
+      value: 'Available',
+      bootConfigId,
+    });
+
+    const data = await repo.readAllSetVariableByStationId(TENANT, STATION);
+
+    expect(data).toHaveLength(1);
+    expect(data[0].component.evse).toEqual({ id: 1, connectorId });
+  });
+
+  it('returns nothing for a station that does not exist', async () => {
+    const repo = new DrizzleVariableAttributeRepository(attributeDeps());
+    expect(await repo.readAllSetVariableByStationId(TENANT, 'CS-missing')).toEqual([]);
+  });
+});
+
+describe('DrizzleVariableAttributeRepository.findVariableAttributeByComponentAndVariable', () => {
+  it('resolves the attribute belonging to the requested EVSE', async () => {
+    const repo = new DrizzleVariableAttributeRepository(attributeDeps());
+    await aStation(TENANT);
+    const connectorId = await aConnectorWithId(TENANT, 1);
+
+    const [onEvse1] = await repo.createOrUpdateDeviceModelByStationId(
+      TENANT,
+      {
+        component: { name: 'Connector', evse: { id: 1, connectorId } },
+        variable: { name: 'AvailabilityState' },
+        variableAttribute: [{ type: 'Actual', value: 'Available' }],
+      } as any,
+      STATION,
+      '2026-10-07T12:00:00.000Z',
+    );
+    const [onEvse2] = await repo.createOrUpdateDeviceModelByStationId(
+      TENANT,
+      {
+        component: { name: 'Connector', evse: { id: 2, connectorId } },
+        variable: { name: 'AvailabilityState' },
+        variableAttribute: [{ type: 'Actual', value: 'Occupied' }],
+      } as any,
+      STATION,
+      '2026-10-07T12:00:00.000Z',
+    );
+
+    // Both directions: with limit(1) and no evse filter one of these would return the
+    // other EVSE's row, so asserting only one of them passes by scan order alone.
+    const first = await repo.findVariableAttributeByComponentAndVariable(
+      TENANT,
+      STATION,
+      'Actual' as any,
+      { name: 'Connector', evse: { id: 1, connectorId } },
+      { name: 'AvailabilityState' },
+    );
+    const second = await repo.findVariableAttributeByComponentAndVariable(
+      TENANT,
+      STATION,
+      'Actual' as any,
+      { name: 'Connector', evse: { id: 2, connectorId } },
+      { name: 'AvailabilityState' },
+    );
+
+    expect(onEvse1.id).not.toBe(onEvse2.id);
+    expect(first!.id).toBe(onEvse1.id);
+    expect(first!.value).toBe('Available');
+    expect(second!.id).toBe(onEvse2.id);
+    expect(second!.value).toBe('Occupied');
+  });
+
+  it('returns undefined when nothing matches', async () => {
+    const repo = new DrizzleVariableAttributeRepository(attributeDeps());
+    await aStation(TENANT);
+
+    expect(
+      await repo.findVariableAttributeByComponentAndVariable(
+        TENANT,
+        STATION,
+        'Actual' as any,
+        { name: 'NoSuchComponent' },
+        { name: 'NoSuchVariable' },
+      ),
+    ).toBeUndefined();
   });
 });

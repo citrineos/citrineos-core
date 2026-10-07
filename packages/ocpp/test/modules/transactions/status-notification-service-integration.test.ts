@@ -157,7 +157,7 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
       get: vi.fn().mockResolvedValue(JSON.stringify(websocketConnection)),
     } as unknown as ICache;
 
-    // The service needs ComponentRepository and DeviceModelRepository, but the
+    // The service needs ComponentRepository and VariableAttributeRepository, but the
     // 1.6 path doesn't use them. Stubs are sufficient.
     const service = new StatusNotificationService({
       componentRepository: {

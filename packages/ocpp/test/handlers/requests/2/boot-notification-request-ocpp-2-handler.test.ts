@@ -25,7 +25,7 @@ import {
   ResetEnum,
   SetVariableStatusEnum,
 } from '@citrineos/types';
-import type { IChargingStationRepository, IDeviceModelRepository } from '@citrineos/dal';
+import type { IChargingStationRepository, IVariableAttributeRepository } from '@citrineos/dal';
 import type { BootNotificationService } from '@modules/configuration/boot-notification-service.js';
 import type { DeviceModelService } from '@modules/configuration/device-model-service.js';
 import { BootNotificationRequestOcpp2Handler } from '@handlers/index.js';
@@ -150,7 +150,7 @@ function makeHandler(
       .mockResolvedValue(options.itemsPerMessage ?? null),
   };
 
-  const deviceModelRepository = {
+  const variableAttributeRepository = {
     readAllSetVariableByStationId: vi.fn().mockResolvedValue(options.setVariableData ?? []),
   };
 
@@ -168,7 +168,8 @@ function makeHandler(
     config,
     bootNotificationService: bootService as unknown as BootNotificationService,
     configurationDeviceModelService: deviceModelService as unknown as DeviceModelService,
-    deviceModelRepository: deviceModelRepository as unknown as IDeviceModelRepository,
+    variableAttributeRepository:
+      variableAttributeRepository as unknown as IVariableAttributeRepository,
     chargingStationRepository: chargingStationRepository as unknown as IChargingStationRepository,
   });
 
@@ -179,7 +180,7 @@ function makeHandler(
     cache,
     bootService,
     deviceModelService,
-    deviceModelRepository,
+    variableAttributeRepository,
     chargingStationRepository,
     bootResponse,
   };
