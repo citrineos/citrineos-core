@@ -29,7 +29,7 @@ import {
   SetVariableStatusEnum,
   type SystemConfig,
 } from '@citrineos/types';
-import type { IDeviceModelRepository, IChargingStationRepository } from '@citrineos/dal';
+import type { IVariableAttributeRepository, IChargingStationRepository } from '@citrineos/dal';
 import type { BootNotificationService } from '@modules/configuration/boot-notification-service.js';
 import type { DeviceModelService } from '@modules/configuration/device-model-service.js';
 import { v4 as uuidv4 } from 'uuid';
@@ -41,7 +41,7 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
   protected _config: SystemConfig;
   protected _bootService: BootNotificationService;
   protected _deviceModelService: DeviceModelService;
-  protected _deviceModelRepository: IDeviceModelRepository;
+  protected _variableAttributeRepository: IVariableAttributeRepository;
   protected _chargingStationRepository: IChargingStationRepository;
 
   constructor({
@@ -51,7 +51,7 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
     config,
     bootNotificationService,
     configurationDeviceModelService,
-    deviceModelRepository,
+    variableAttributeRepository,
     chargingStationRepository,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
@@ -59,7 +59,7 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
     config: SystemConfig;
     bootNotificationService: BootNotificationService;
     configurationDeviceModelService: DeviceModelService;
-    deviceModelRepository: IDeviceModelRepository;
+    variableAttributeRepository: IVariableAttributeRepository;
     chargingStationRepository: IChargingStationRepository;
   }) {
     super(logger);
@@ -68,7 +68,7 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
     this._config = config;
     this._bootService = bootNotificationService;
     this._deviceModelService = configurationDeviceModelService;
-    this._deviceModelRepository = deviceModelRepository;
+    this._variableAttributeRepository = variableAttributeRepository;
     this._chargingStationRepository = chargingStationRepository;
   }
 
@@ -228,7 +228,7 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
       bootConfigDbEntity.variablesRejectedOnLastBoot = [];
 
       let setVariableData: OCPP2_common_types.SetVariableDataType[] =
-        await this._deviceModelRepository.readAllSetVariableByStationId(
+        await this._variableAttributeRepository.readAllSetVariableByStationId(
           tenantId,
           ocppConnectionName,
         );

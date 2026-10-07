@@ -115,6 +115,17 @@ export interface IBootRepository {
 }
 
 export interface IVariableAttributeRepository {
+  readAllSetVariableByStationId(
+    tenantId: number,
+    ocppConnectionName: string,
+  ): Promise<OCPP2_common_types.SetVariableDataType[]>;
+  findVariableAttributeByComponentAndVariable(
+    tenantId: number,
+    ocppConnectionName: string,
+    attributeType: AttributeEnumType,
+    componentType: OCPP2_common_types.ComponentType,
+    variableType: OCPP2_common_types.VariableType,
+  ): Promise<VariableAttributeDto | undefined>;
   createOrUpdateDeviceModelByStationId(
     tenantId: number,
     value: OCPP2_common_types.ReportDataType,
@@ -184,23 +195,6 @@ export interface IComponentRepository {
     evseId: number,
     connectorId: number,
   ): Promise<ComponentDto[]>;
-}
-
-export interface IDeviceModelRepository
-  extends IVariableAttributeRepository,
-    IVariableCharacteristicsRepository,
-    IComponentRepository {
-  readAllSetVariableByStationId(
-    tenantId: number,
-    ocppConnectionName: string,
-  ): Promise<OCPP2_common_types.SetVariableDataType[]>;
-  findVariableAttributeByComponentAndVariable(
-    tenantId: number,
-    ocppConnectionName: string,
-    attributeType: AttributeEnumType,
-    componentType: OCPP2_common_types.ComponentType,
-    variableType: OCPP2_common_types.VariableType,
-  ): Promise<VariableAttributeDto | undefined>;
 }
 
 export interface ILocalAuthListRepository extends CrudRepository<LocalListVersion> {

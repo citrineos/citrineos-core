@@ -325,7 +325,6 @@ function registerRepositories(container: AwilixContainer): void {
     deleteCertificateAttemptRepository: asClass(
       SequelizeDeleteCertificateAttemptRepository,
     ).singleton(),
-    deviceModelRepository: asClass(SequelizeDeviceModelRepository).singleton(),
     installCertificateAttemptRepository: asClass(
       SequelizeInstallCertificateAttemptRepository,
     ).singleton(),
@@ -345,24 +344,23 @@ function registerRepositories(container: AwilixContainer): void {
     tariffRepository: asClass(SequelizeTariffRepository).singleton(),
     tenantRepository: asClass(SequelizeTenantRepository).singleton(),
     transactionEventRepository: asClass(SequelizeTransactionEventRepository).singleton(),
+    // The device model aggregate is the instance behind all three narrow tokens.
+    variableAttributeRepository: asClass(SequelizeDeviceModelRepository).singleton(),
     variableMonitoringRepository: asClass(SequelizeVariableMonitoringRepository).singleton(),
     // use asFunction to return an already existing instance
     chargingStationRepository: asFunction(
       ({ locationRepository }) => locationRepository,
     ).singleton(),
     componentRepository: asFunction(
-      ({ deviceModelRepository }) => deviceModelRepository,
+      ({ variableAttributeRepository }) => variableAttributeRepository,
     ).singleton(),
     connectorRepository: asFunction(({ locationRepository }) => locationRepository).singleton(),
     evseRepository: asFunction(({ locationRepository }) => locationRepository).singleton(),
     statusNotificationRepository: asFunction(
       ({ locationRepository }) => locationRepository,
     ).singleton(),
-    variableAttributeRepository: asFunction(
-      ({ deviceModelRepository }) => deviceModelRepository,
-    ).singleton(),
     variableCharacteristicsRepository: asFunction(
-      ({ deviceModelRepository }) => deviceModelRepository,
+      ({ variableAttributeRepository }) => variableAttributeRepository,
     ).singleton(),
   });
 

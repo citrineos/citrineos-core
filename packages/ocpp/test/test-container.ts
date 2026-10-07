@@ -112,7 +112,7 @@ export function createTestContainer(): { container: AwilixContainer; logger: Moc
  *
  * Usage:
  *   service = getTestInstance(container, BasicAuthenticationFilter, {
- *     deviceModelRepository: mockRepo,
+ *     variableAttributeRepository: mockRepo,
  *   });
  */
 export function getTestInstance<T extends AnyClass>(

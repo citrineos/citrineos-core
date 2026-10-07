@@ -5,7 +5,7 @@
 import {
   ChargingNeeds,
   type IChargingProfileRepository,
-  type IDeviceModelRepository,
+  type IVariableAttributeRepository,
   type ITransactionEventRepository,
 } from '@citrineos/dal';
 import type { VariableAttributeDto } from '@citrineos/types';
@@ -106,12 +106,6 @@ export function aCost(override?: Partial<OCPP2_0_1.CostType>): OCPP2_0_1.CostTyp
 }
 
 // Repository mock builders
-export function createMockDeviceModelRepository(): Mocked<IDeviceModelRepository> {
-  return {
-    readAllByQuerystring: vi.fn(),
-  } as any;
-}
-
 export function createMockChargingProfileRepository(): Mocked<IChargingProfileRepository> {
   return {
     findChargingNeedsByEvseDBIdAndTransactionDBId: vi.fn(),

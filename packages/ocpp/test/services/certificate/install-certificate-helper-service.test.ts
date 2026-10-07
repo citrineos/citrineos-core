@@ -7,7 +7,7 @@ import {
   type GenerateCertificateChainRequest,
   type ICertificateRepository,
   type IDeleteCertificateAttemptRepository,
-  type IDeviceModelRepository,
+  type IVariableAttributeRepository,
   type IInstallCertificateAttemptRepository,
   type IInstalledCertificateRepository,
 } from '@citrineos/dal';
@@ -166,7 +166,7 @@ describe('InstallCertificateHelperService', () => {
   let mockInstalledCertificateRepository: IInstalledCertificateRepository;
   let mockInstallCertificateAttemptRepository: IInstallCertificateAttemptRepository;
   let mockDeleteCertificateAttemptRepository: IDeleteCertificateAttemptRepository;
-  let mockDeviceModelRepository: IDeviceModelRepository;
+  let mockVariableAttributeRepository: IVariableAttributeRepository;
   let mockCertificateAuthorityService: CertificateAuthorityService;
 
   const mockHash = 'abc123hash';
@@ -231,7 +231,7 @@ describe('InstallCertificateHelperService', () => {
     // Defaults to an empty result, i.e. AdditionalRootCertificateCheck is unset/disabled,
     // so existing tests that don't care about M05.FR.10 aren't affected by it.
     mockDeviceModelReadAllByQuerystring.mockResolvedValue([]);
-    mockDeviceModelRepository = {
+    mockVariableAttributeRepository = {
       readAllByQuerystring: mockDeviceModelReadAllByQuerystring,
     } as any;
 
@@ -246,7 +246,7 @@ describe('InstallCertificateHelperService', () => {
       installedCertificateRepository: mockInstalledCertificateRepository,
       installCertificateAttemptRepository: mockInstallCertificateAttemptRepository,
       deleteCertificateAttemptRepository: mockDeleteCertificateAttemptRepository,
-      variableAttributeRepository: mockDeviceModelRepository,
+      variableAttributeRepository: mockVariableAttributeRepository,
       certificateAuthorityService: mockCertificateAuthorityService,
       fileStorage: mockFileStorage,
     });

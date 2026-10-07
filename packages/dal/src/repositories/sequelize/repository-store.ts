@@ -18,7 +18,6 @@ import type {
   IConnectorRepository,
   IStatusNotificationRepository,
   IEvseRepository,
-  IDeviceModelRepository,
   IInstallCertificateAttemptRepository,
   IInstalledCertificateRepository,
   ILocalAuthListRepository,
@@ -95,7 +94,6 @@ export class RepositoryStore {
   chargingProfileRepository: IChargingProfileRepository;
   chargingStationSequenceRepository: IChargingStationSequenceRepository;
   componentRepository: IComponentRepository;
-  deviceModelRepository: IDeviceModelRepository;
   localAuthListRepository: ILocalAuthListRepository;
   chargingStationRepository: IChargingStationRepository;
   evseRepository: IEvseRepository;
@@ -131,11 +129,6 @@ export class RepositoryStore {
       sequelizeInstance,
     });
     this.chargingStationSequenceRepository = new SequelizeChargingStationSequenceRepository({
-      config,
-      logger,
-      sequelizeInstance,
-    });
-    this.deviceModelRepository = new SequelizeDeviceModelRepository({
       config,
       logger,
       sequelizeInstance,
@@ -279,10 +272,11 @@ export class RepositoryStore {
       this.evseRepository = locationRepository;
       this.connectorRepository = locationRepository;
       this.statusNotificationRepository = locationRepository;
-      // DeviceModel cluster
-      this.componentRepository = this.deviceModelRepository;
-      this.variableAttributeRepository = this.deviceModelRepository;
-      this.variableCharacteristicsRepository = this.deviceModelRepository;
+      // One Sequelize instance serves the whole DeviceModel cluster
+      const deviceModel = new SequelizeDeviceModelRepository({ config, logger, sequelizeInstance });
+      this.componentRepository = deviceModel;
+      this.variableAttributeRepository = deviceModel;
+      this.variableCharacteristicsRepository = deviceModel;
     }
 
     this.transactionEventRepository = new SequelizeTransactionEventRepository({
