@@ -239,7 +239,7 @@ export const ChargerActivityCard: React.FC = () => {
           {error ? (
             <p>{translate('Overview.errorLoadingData')}</p>
           ) : (
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-3 xl:grid-cols-5 gap-2">
               {[
                 ChargerStatusEnum.CHARGING,
                 ChargerStatusEnum.AVAILABLE,
@@ -249,7 +249,7 @@ export const ChargerActivityCard: React.FC = () => {
               ].map((status) => (
                 <div
                   key={status}
-                  className="flex flex-col items-center cursor-pointer"
+                  className="flex min-w-0 flex-col items-center cursor-pointer"
                   onClick={() => handleGaugeClick(status)}
                 >
                   <PercentageCircle
@@ -258,7 +258,7 @@ export const ChargerActivityCard: React.FC = () => {
                     }
                     color={getStatusColor[status]}
                   />
-                  <span>{status}</span>
+                  <span className="text-center text-xs">{status}</span>
                 </div>
               ))}
             </div>
