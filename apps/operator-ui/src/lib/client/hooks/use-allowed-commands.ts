@@ -5,7 +5,7 @@
 
 import { useAccessPermissions } from './use-access-permissions';
 
-interface CommandLike {
+interface HasPermission {
   permission: string;
 }
 
@@ -14,7 +14,7 @@ export interface AllowedCommands<T> {
   isResolved: boolean;
 }
 
-export function useAllowedCommands<T extends CommandLike>(
+export function useAllowedCommands<T extends HasPermission>(
   registry: Record<string, T>,
 ): AllowedCommands<T> {
   const { permissions, isResolved } = useAccessPermissions();
