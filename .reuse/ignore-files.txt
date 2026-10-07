@@ -8,7 +8,6 @@
 apps/ocpp-server/.sequelizerc
 OCPP_201_Logo_core_and_advanced_security.png
 README.md
-apps/ocpp-server/rbac-rules.json
 apps/ocpp-server/entrypoint.sh
 logo_black.png
 logo_white.png
@@ -95,6 +94,7 @@ apps/ocpp-server/src/assets/certificates/rootCertificate.pem
 apps/ocpp-server/src/assets/certificates/rootKey.pem
 apps/ocpp-server/src/assets/certificates/subCAKey.pem
 apps/ocpp-server/src/assets/websocket-servers.json
+apps/ocpp-server/src/assets/roles-seed.json
 
 # Documentation
 AGENTS.md

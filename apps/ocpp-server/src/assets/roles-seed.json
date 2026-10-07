@@ -1,13 +1,7 @@
 {
   "admin": {
     "resources": {
-      "Locations": [
-        "list",
-        "show",
-        "create",
-        "edit",
-        "delete"
-      ],
+      "Locations": ["list", "show", "create", "edit", "delete"],
       "ChargingStations": [
         "access:configuration",
         "access:ocpp-messages",
@@ -18,33 +12,10 @@
         "list",
         "show"
       ],
-      "Authorizations": [
-        "list",
-        "show",
-        "create",
-        "edit",
-        "delete"
-      ],
-      "Transactions": [
-        "access:events",
-        "edit",
-        "list",
-        "show"
-      ],
-      "Tariffs": [
-        "list",
-        "show",
-        "create",
-        "edit",
-        "delete"
-      ],
-      "TenantPartners": [
-        "list",
-        "show",
-        "create",
-        "edit",
-        "delete"
-      ]
+      "Authorizations": ["list", "show", "create", "edit", "delete"],
+      "Transactions": ["access:events", "edit", "list", "show"],
+      "Tariffs": ["list", "show", "create", "edit", "delete"],
+      "TenantPartners": ["list", "show", "create", "edit", "delete"]
     },
     "permissions": [
       "commands.bootConfig.delete",
@@ -126,12 +97,7 @@
   },
   "user": {
     "resources": {
-      "Locations": [
-        "create",
-        "edit",
-        "list",
-        "show"
-      ],
+      "Locations": ["create", "edit", "list", "show"],
       "ChargingStations": [
         "access:configuration",
         "access:ocpp-messages",
@@ -141,29 +107,10 @@
         "show",
         "list"
       ],
-      "Authorizations": [
-        "create",
-        "edit",
-        "list",
-        "show"
-      ],
-      "Transactions": [
-        "access:events",
-        "list",
-        "show"
-      ],
-      "Tariffs": [
-        "create",
-        "edit",
-        "list",
-        "show"
-      ],
-      "TenantPartners": [
-        "create",
-        "edit",
-        "list",
-        "show"
-      ]
+      "Authorizations": ["create", "edit", "list", "show"],
+      "Transactions": ["access:events", "list", "show"],
+      "Tariffs": ["create", "edit", "list", "show"],
+      "TenantPartners": ["create", "edit", "list", "show"]
     },
     "permissions": [
       "commands.bootConfig.get",
@@ -237,12 +184,7 @@
   },
   "partner": {
     "resources": {
-      "Locations": [
-        "create",
-        "edit",
-        "list",
-        "show"
-      ],
+      "Locations": ["create", "edit", "list", "show"],
       "ChargingStations": [
         "access:configuration",
         "access:ocpp-messages",
@@ -253,20 +195,11 @@
         "show"
       ]
     },
-    "permissions": [
-      "ocpp.configuration.changeConfiguration",
-      "ocpp.configuration.triggerMessage"
-    ]
+    "permissions": ["ocpp.configuration.changeConfiguration", "ocpp.configuration.triggerMessage"]
   },
   "admin_partner": {
     "resources": {
-      "Authorizations": [
-        "list",
-        "show",
-        "create",
-        "edit",
-        "delete"
-      ],
+      "Authorizations": ["list", "show", "create", "edit", "delete"],
       "ChargingStations": [
         "access:configuration",
         "access:ocpp-messages",
@@ -276,12 +209,7 @@
         "list",
         "show"
       ],
-      "Locations": [
-        "create",
-        "edit",
-        "list",
-        "show"
-      ]
+      "Locations": ["create", "edit", "list", "show"]
     },
     "permissions": [
       "commands.localListVersion.get",
