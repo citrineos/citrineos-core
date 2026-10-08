@@ -68,11 +68,7 @@ export { ChangeConfiguration } from '../../models/change-configuration.js';
 export { Tenant } from '../../models/tenant.js';
 export { TenantPartner } from '../../models/tenant-partner.js';
 export type { PaginatedParams } from '../../models/async-job/index.js';
-export {
-  AsyncJobStatus,
-  AsyncJobStatusDTO,
-  AsyncJobRequest,
-} from '../../models/async-job/index.js';
+export { AsyncJobStatus } from '../../models/async-job/index.js';
 export {
   DeleteCertificateAttempt,
   InstallCertificateAttempt,
