@@ -384,6 +384,28 @@ describe('/_mock registration routes against a stub CPO', () => {
     expect(acceptedDuringPost).toBe(true);
   });
 
+  it('POST /_mock/register with a pre-seeded tokenA skips the admin mint and presents it', async () => {
+    ctx.store.domain.registration.status = 'unregistered';
+    const res = await app.inject({
+      method: 'POST',
+      url: '/_mock/register?mode=msp-initiated',
+      payload: { tokenA: 'seeded-token-a' },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().registered).toBe(true);
+    expect(res.json().registration.status).toBe('registered');
+
+    const paths = cpo.requests.map((r) => `${r.method} ${r.path}`);
+    expect(paths).toEqual([
+      'GET /ocpi/versions',
+      'GET /ocpi/versions/2.2.1',
+      'POST /ocpi/2.2.1/credentials',
+    ]);
+    expect(cpo.requests[0]!.headers.authorization).toBe(
+      `Token ${Buffer.from('seeded-token-a').toString('base64')}`,
+    );
+  });
+
   it('msp-initiated: a failed credentials POST puts the previous inbound token back', async () => {
     ctx.store.domain.registration.status = 'unregistered';
     const before = ctx.store.domain.registration.tokenWeAccept;

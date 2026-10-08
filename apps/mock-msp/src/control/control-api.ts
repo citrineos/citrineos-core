@@ -1399,8 +1399,8 @@ export function registerControlApi(
       // ---- CONTROL: registration handshake -------------------------------
       mock.post('/register', async (req, reply) => {
         const q = req.query as Query;
-        const bodyMode = (req.body as { mode?: string } | undefined)?.mode;
-        const mode = (q.mode ?? bodyMode) as 'msp-initiated' | 'cpo-initiated' | undefined;
+        const body = req.body as { mode?: string; tokenA?: string } | undefined;
+        const mode = (q.mode ?? body?.mode) as 'msp-initiated' | 'cpo-initiated' | undefined;
         // If credentials are already established (e.g. via the DB seed), the OCPI
         // handshake has nothing to do — there is no CREDENTIALS_TOKEN_A to generate.
         // Report that plainly instead of surfacing a scary 502 to the operator.
@@ -1409,7 +1409,9 @@ export function registerControlApi(
           return { registered: true, alreadyRegistered: true, registration: current };
         }
         try {
-          const reg = await ctx.client.register(mode ? { mode } : undefined);
+          // A pre-seeded CREDENTIALS_TOKEN_A (a CPO that hands it over out of band) skips the
+          // admin mint and runs the handshake exactly as a real eMSP would.
+          const reg = await ctx.client.register({ mode, tokenA: body?.tokenA });
           return { registered: true, registration: reg };
         } catch (err) {
           return reply.code(502).send(errorBody('register_failed', err));
