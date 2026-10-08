@@ -264,6 +264,7 @@ export const createGenericAuthProvider = (
       }
 
       const chosenRoles: string[] = roles?.length ? roles : ['admin'];
+      // Only returns in localDevMode where the route is registered
       const token = await fetchDevToken(chosenRoles);
       if (token) {
         saveToken(token);

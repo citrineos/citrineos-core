@@ -8,8 +8,8 @@ import config from './config';
 export const DEV_API_PATH = '/dev';
 
 /**
- * The server registers these only when auth.mode is localDev, and excludes them from API auth —
- * minting a token cannot require one. They deliberately bypass BaseRestClient for that reason.
+ * localDev only - 404s in every other mode. This is a real token from a simulated identity
+ * provider and is freely accessible without an auth header.
  */
 const dev = axios.create({
   baseURL: `${config.citrineCoreUrl}${DEV_API_PATH}`,
