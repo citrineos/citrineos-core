@@ -17,7 +17,6 @@ import { chargingStationPath } from '@lib/utils/resource-paths';
 import { MenuSection } from '@lib/client/components/main-menu/main-menu';
 import ProtocolTag from '@lib/client/components/protocol-tag';
 import { ACTIONS_COLUMN } from '@lib/client/hooks/use-column-preferences';
-import { ActionType, ResourceType } from '@lib/utils/access-types';
 import { StationRowActions } from '@lib/client/pages/charging-stations/station-row-actions';
 import { isEmpty } from '@lib/utils/assertion';
 import { EMPTY_VALUE } from '@lib/utils/consts';
@@ -50,18 +49,18 @@ export const getChargingStationsColumns = (
     },
     ...(includeLocation
       ? [
-          {
-            key: ChargingStationDetailsProps.location,
-            header: t('ChargingStations.columns.location', 'Location'),
-            visible: true,
-            cellRender: ({ row }: CellContext<ChargingStationDetailsDto, unknown>) => (
-              <TableCellLink
-                path={`/${MenuSection.LOCATIONS}/${row.original.location?.id}`}
-                value={row.original.location?.name}
-              />
-            ),
-          },
-        ]
+        {
+          key: ChargingStationDetailsProps.location,
+          header: t('ChargingStations.columns.location', 'Location'),
+          visible: true,
+          cellRender: ({ row }: CellContext<ChargingStationDetailsDto, unknown>) => (
+            <TableCellLink
+              path={`/${MenuSection.LOCATIONS}/${row.original.location?.id}`}
+              value={row.original.location?.name}
+            />
+          ),
+        },
+      ]
       : []),
     {
       key: ChargingStationDetailsProps.statusNotifications,
