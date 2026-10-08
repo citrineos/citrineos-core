@@ -48,6 +48,7 @@ export class OcpiServer extends KoaServer {
   private initKoaServer() {
     try {
       this.koa = new Koa();
+      this.koa.proxy = this.ocpiConfig.ocpiServer.trustProxy ?? false;
       const controllers = this._modules.map((module) => (module as OcpiModule).getController());
       const options: RoutingControllersOptions = {
         controllers: [...controllers, HealthController],

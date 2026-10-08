@@ -114,7 +114,7 @@ describe('Asking a station for one of its EVSEs', () => {
     }).handle(
       [ocppConnectionName],
       { duration: 60, evseId },
-      undefined,
+      {},
       DEFAULT_TENANT_ID,
       OCPPVersion.OCPP2_0_1,
     );

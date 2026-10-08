@@ -8,6 +8,7 @@ import {
   type IMessageConfirmation,
   type IMessageEndpointMetadata,
   type IOcppSender,
+  type MessageDelivery,
 } from '@citrineos/base';
 import type { IEvseRepository, IVariableCharacteristicsRepository } from '@citrineos/dal';
 import {
@@ -52,7 +53,7 @@ export class GetCompositeScheduleEndpoint extends AbstractMessageEndpoint {
   async handle(
     identifiers: string[],
     request: OCPP2_request_types.GetCompositeScheduleRequest,
-    callbackUrl: string | undefined,
+    delivery: MessageDelivery,
     tenantId: number = DEFAULT_TENANT_ID,
     version: OCPPVersion,
   ): Promise<IMessageConfirmation[]> {
@@ -96,7 +97,7 @@ export class GetCompositeScheduleEndpoint extends AbstractMessageEndpoint {
           action: OCPP_CallAction.GetCompositeSchedule,
           eventGroup: EventGroup.SmartCharging,
           payload: request,
-          callbackUrl,
+          ...delivery,
         });
       }),
     );

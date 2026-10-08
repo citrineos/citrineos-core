@@ -2,12 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { type IModule } from '@citrineos/base';
-import { type CallAction, type SystemConfig } from '@citrineos/types';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
-import { RabbitMQChannelManager } from './channel-manager.js';
-import { RabbitMqReceiver } from './receiver.js';
+import { type CallAction } from '@citrineos/types';
+import type * as amqplib from 'amqplib';
+import { DeadLetterSource } from '@/transport/metrics.js';
+import { assertDeadLetterExchange, deadLetterExchangeName } from './dead-letter-publisher.js';
+import { RabbitMqReceiver, type RabbitMqReceiverDependencies } from './receiver.js';
 
 /**
  * {@link RabbitMqReceiver} used by the OCPP router.
@@ -22,9 +21,14 @@ import { RabbitMqReceiver } from './receiver.js';
  * `router-<Date.now()>` when not set. This value should be set to a stable, unique identifier
  * per process (e.g. the ECS task hostname or Kubernetes pod name) via the `INSTANCE_IDENTIFIER`
  * environment variable wired into `SystemConfig.messageBroker.amqp.instanceIdentifier`.
+ *
+ * Messages the CSMS sends carry a broker TTL (see {@link toAmqpPublish}). One that expires
+ * on this queue is dead-lettered by the broker, with `x-death` reason `expired`.
  */
 export class RabbitMqRouterReceiver extends RabbitMqReceiver {
   protected static readonly CHANNEL_ID = 'router-receiver';
+
+  protected readonly _source = DeadLetterSource.Router;
 
   protected readonly _instanceQueueName: string;
   protected readonly _prefetch: number;
@@ -32,12 +36,7 @@ export class RabbitMqRouterReceiver extends RabbitMqReceiver {
   protected _instanceConsumerTags: string[] = [];
   protected _instanceBindings = new Map<string, Array<Record<string, string>>>();
 
-  constructor(deps: {
-    config: SystemConfig;
-    channelManager: RabbitMQChannelManager;
-    logger?: Logger<ILogObj>;
-    module?: IModule;
-  }) {
+  constructor(deps: RabbitMqReceiverDependencies) {
     super(deps);
     const id = deps.config.messageBroker.amqp?.instanceIdentifier ?? `router-${Date.now()}`;
     this._instanceQueueName = `rabbit_queue_router_${id}`;
@@ -65,16 +64,27 @@ export class RabbitMqRouterReceiver extends RabbitMqReceiver {
    */
   async initializeInstanceQueue(queueName: string): Promise<void> {
     const channel = await this._channelManager.getChannel(RabbitMqRouterReceiver.CHANNEL_ID);
-    await channel.assertExchange(this.exchange, 'headers', { durable: false });
-    await channel.assertQueue(queueName, {
-      durable: true,
-      autoDelete: true,
-      exclusive: false,
-    });
+    await this._assertInstanceQueue(channel, queueName);
 
     this._instanceConsumerTags.push(await this._consume(channel, queueName, this._prefetch));
 
     this._logger.info(`[instance-queue] Initialized ${queueName} with 1 consumer`);
+  }
+
+  /**
+   * Declares the exchange, the dead-letter exchange and the instance queue. Redeclaring an
+   * existing queue with different arguments fails; this queue is auto-deleted with its last
+   * consumer, so a restarted router always declares it afresh.
+   */
+  protected async _assertInstanceQueue(channel: amqplib.Channel, queueName: string): Promise<void> {
+    await channel.assertExchange(this.exchange, 'headers', { durable: false });
+    await assertDeadLetterExchange(channel, this.exchange);
+    await channel.assertQueue(queueName, {
+      durable: true,
+      autoDelete: true,
+      exclusive: false,
+      arguments: { 'x-dead-letter-exchange': deadLetterExchangeName(this.exchange) },
+    });
   }
 
   /**
@@ -87,13 +97,7 @@ export class RabbitMqRouterReceiver extends RabbitMqReceiver {
 
     const queueName = this._instanceQueueName;
     const channel = await this._channelManager.getChannel(RabbitMqRouterReceiver.CHANNEL_ID);
-
-    await channel.assertExchange(this.exchange, 'headers', { durable: false });
-    await channel.assertQueue(queueName, {
-      durable: true,
-      autoDelete: true,
-      exclusive: false,
-    });
+    await this._assertInstanceQueue(channel, queueName);
 
     // Re-bind all active charger subscriptions (idempotent if queue already has them)
     let reboundCount = 0;
