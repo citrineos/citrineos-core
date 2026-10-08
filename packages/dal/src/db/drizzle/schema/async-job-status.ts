@@ -6,6 +6,7 @@ import type { PaginatedParams } from '@citrineos/types';
 import { TableName } from '@dal/models/table-name.js';
 import { boolean, integer, json, pgSchema, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
+import { v4 as uuidv4 } from 'uuid';
 import { type z } from 'zod';
 
 // Column definitions are a function to ensure fresh objects per table instance,
@@ -14,7 +15,9 @@ function asyncJobStatusColumns() {
   return {
     // String (uuid) primary key. The DB column is "jobId"; exposed as `id` so the
     // shared DrizzleRepository base (which requires an `id` column) can operate on it.
-    id: varchar('jobId', { length: 255 }).primaryKey(),
+    id: varchar('jobId', { length: 255 })
+      .primaryKey()
+      .$defaultFn(() => uuidv4()),
     jobName: varchar('jobName', { length: 255 }).notNull(),
     tenantPartnerId: integer('tenantPartnerId').notNull(),
     finishedAt: timestamp('finishedAt', { withTimezone: true, mode: 'date' }),

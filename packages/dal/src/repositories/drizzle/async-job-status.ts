@@ -4,7 +4,6 @@
 
 import type { AsyncJobCreate, AsyncJobDto } from '@citrineos/types';
 import { and, eq } from 'drizzle-orm';
-import { v4 as uuidv4 } from 'uuid';
 import {
   type AsyncJobStatusEntity,
   asyncJobStatusTable,
@@ -53,7 +52,6 @@ export class DrizzleAsyncJobStatusRepository
 
   async createAsyncJobStatus(tenantId: number, input: AsyncJobCreate): Promise<AsyncJobDto> {
     const values: Omit<AsyncJobStatusInsert, 'tenantId'> = {
-      id: uuidv4(),
       jobName: input.jobName,
       tenantPartnerId: input.tenantPartnerId,
       finishedAt: input.finishedAt,
