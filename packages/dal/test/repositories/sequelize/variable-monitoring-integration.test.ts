@@ -124,9 +124,9 @@ describe('SequelizeVariableMonitoringRepository', () => {
             severity: 3,
           },
         ]),
-        String(component.id),
-        String(variable.id),
         STATION,
+        component.id,
+        variable.id,
       );
 
       expect(created).toHaveLength(2);
@@ -167,9 +167,9 @@ describe('SequelizeVariableMonitoringRepository', () => {
             severity: 5,
           },
         ]),
-        String(component.id),
-        String(variable.id),
         STATION,
+        component.id,
+        variable.id,
       );
 
       const [updated] = await repo.createOrUpdateByMonitoringDataTypeAndStationId(
@@ -183,9 +183,9 @@ describe('SequelizeVariableMonitoringRepository', () => {
             severity: 2,
           },
         ]),
-        String(component.id),
-        String(variable.id),
         STATION,
+        component.id,
+        variable.id,
       );
 
       expect(updated.databaseId).toBe(original.databaseId);
@@ -219,9 +219,9 @@ describe('SequelizeVariableMonitoringRepository', () => {
             severity: 5,
           },
         ]),
-        String(component.id),
-        String(variable.id),
         STATION,
+        component.id,
+        variable.id,
       );
 
       expect(created.stationId).toBe(station.id);
@@ -242,9 +242,9 @@ describe('SequelizeVariableMonitoringRepository', () => {
           component: { name: 'Connector' },
           variable: { name: 'Temperature' },
         },
-        String(component.id),
-        String(variable.id),
         STATION,
+        component.id,
+        variable.id,
       );
 
       const row = (await VariableMonitoring.findByPk(created.databaseId))!;
@@ -274,9 +274,9 @@ describe('SequelizeVariableMonitoringRepository', () => {
           component: { name: 'Connector' },
           variable: { name: 'Temperature' },
         },
-        String(component.id),
-        String(variable.id),
         STATION,
+        component.id,
+        variable.id,
       );
 
       const updated = await repo.createOrUpdateBySetMonitoringDataTypeAndStationId(
@@ -290,9 +290,9 @@ describe('SequelizeVariableMonitoringRepository', () => {
           component: { name: 'Connector' },
           variable: { name: 'Temperature' },
         },
-        String(component.id),
-        String(variable.id),
         STATION,
+        component.id,
+        variable.id,
       );
 
       expect(updated.databaseId).toBe(original.databaseId);
@@ -562,9 +562,9 @@ describe('SequelizeVariableMonitoringRepository', () => {
           techCode: 'T01',
           cleared: false,
         },
-        String(component.id),
-        String(variable.id),
         STATION,
+        component.id,
+        variable.id,
       );
 
       expect(created.eventId).toBe(5);

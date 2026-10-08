@@ -432,7 +432,7 @@ export class TransactionService {
     ocppConnectionName: string,
     evseIdentifier: OCPP2_0_1.EVSEType | number,
   ): Promise<void> {
-    let evseTypeId: number | undefined;
+    let evseId: number | undefined;
 
     if (typeof evseIdentifier === 'number') {
       const connector =
@@ -441,12 +441,17 @@ export class TransactionService {
           ocppConnectionName,
           evseIdentifier,
         );
-      evseTypeId = connector?.evse?.evseTypeId;
+      evseId = connector?.evseId;
     } else {
-      evseTypeId = evseIdentifier.id;
+      const evse = await this._evseRepository.readEvseByStationIdAndOcpp201EvseId(
+        tenantId,
+        ocppConnectionName,
+        evseIdentifier.id,
+      );
+      evseId = evse?.id;
     }
 
-    if (evseTypeId === undefined) {
+    if (evseId === undefined) {
       this._logger.warn(
         `Could not resolve EVSE for station ${ocppConnectionName} with identifier ${JSON.stringify(evseIdentifier)}, skipping deactivation of concurrent transactions`,
       );
@@ -457,13 +462,13 @@ export class TransactionService {
       await this._transactionEventRepository.deactivateActiveTransactionsByStationIdAndEvseId(
         tenantId,
         ocppConnectionName,
-        evseTypeId,
+        evseId,
         transactionId,
       );
 
     if (deactivated.length > 0) {
       this._logger.info(
-        `Deactivated ${deactivated.length} concurrent transaction(s) at station ${ocppConnectionName} EVSE ${evseTypeId}`,
+        `Deactivated ${deactivated.length} concurrent transaction(s) at station ${ocppConnectionName} EVSE ${JSON.stringify(evseIdentifier)}`,
       );
     }
   }

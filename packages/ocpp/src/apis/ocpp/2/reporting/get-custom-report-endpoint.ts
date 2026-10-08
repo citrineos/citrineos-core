@@ -8,6 +8,7 @@ import {
   type IOcppSender,
   AbstractMessageEndpoint,
   DEFAULT_TENANT_ID,
+  type MessageDelivery,
 } from '@citrineos/base';
 import {
   EventGroup,
@@ -46,14 +47,14 @@ export class GetCustomReportEndpoint extends AbstractMessageEndpoint {
   async handle(
     identifiers: string[],
     request: OCPP2_request_types.GetReportRequest,
-    callbackUrl: string | undefined,
+    delivery: MessageDelivery,
     tenantId: number = DEFAULT_TENANT_ID,
     version: OCPPVersion,
   ): Promise<IMessageConfirmation[]> {
     const confirmations: IMessageConfirmation[] = [];
     for (const ocppConnectionName of identifiers) {
       confirmations.push(
-        await this._handleStation(ocppConnectionName, request, callbackUrl, tenantId, version),
+        await this._handleStation(ocppConnectionName, request, delivery, tenantId, version),
       );
     }
     return confirmations;
@@ -62,7 +63,7 @@ export class GetCustomReportEndpoint extends AbstractMessageEndpoint {
   private async _handleStation(
     ocppConnectionName: string,
     request: OCPP2_request_types.GetReportRequest,
-    callbackUrl: string | undefined,
+    delivery: MessageDelivery,
     tenantId: number,
     version: OCPPVersion,
   ): Promise<IMessageConfirmation> {
@@ -83,7 +84,7 @@ export class GetCustomReportEndpoint extends AbstractMessageEndpoint {
     const componentVariables = request.componentVariable ?? [];
 
     if (componentVariables.length === 0) {
-      return this._send(ocppConnectionName, tenantId, version, request, callbackUrl);
+      return this._send(ocppConnectionName, tenantId, version, request, delivery);
     }
 
     const itemsPerMessageGetReport =
@@ -105,7 +106,7 @@ export class GetCustomReportEndpoint extends AbstractMessageEndpoint {
           tenantId,
           version,
           { ...request, componentVariable: batch },
-          callbackUrl,
+          delivery,
         );
         batchConfirmations.push({
           success: batchResult.success,
@@ -129,7 +130,7 @@ export class GetCustomReportEndpoint extends AbstractMessageEndpoint {
     tenantId: number,
     version: OCPPVersion,
     payload: OcppRequest,
-    callbackUrl: string | undefined,
+    delivery: MessageDelivery,
   ): Promise<IMessageConfirmation> {
     return this._ocppSender.sendCall({
       ocppConnectionName,
@@ -138,7 +139,7 @@ export class GetCustomReportEndpoint extends AbstractMessageEndpoint {
       action: OCPP_CallAction.GetReport,
       eventGroup: EventGroup.Reporting,
       payload,
-      callbackUrl,
+      ...delivery,
     });
   }
 }

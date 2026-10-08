@@ -23,6 +23,7 @@ import type {
   ChargingStationDto,
   ChargingStationNetworkProfileDto,
   ChargingStationSequenceTypeEnumType,
+  ComponentDto,
   ConnectorDto,
   DeleteCertificateAttemptCreate,
   DeleteCertificateAttemptDto,
@@ -54,6 +55,7 @@ import type {
   UpdateEnumType,
   VariableAttributeDto,
   VariableCharacteristicsDto,
+  VariableDto,
 } from '@citrineos/types';
 import type { AuthorizationQuerystring } from '../interfaces/queries/authorization.js';
 import type { TariffQueryString } from '../interfaces/queries/tariff.js';
@@ -72,8 +74,6 @@ import type {
 } from '../models/charging-profile/index.js';
 import type { ChargingStationSecurityInfo } from '../models/charging-station-security-info.js';
 import type { ChargingStationSequence } from '../models/charging-station-sequence/charging-station-sequence.js';
-import type { Component } from '../models/device-model/component.js';
-import type { Variable } from '../models/device-model/variable.js';
 import type { ChargingStationNetworkProfile } from '../models/location/charging-station-network-profile.js';
 import type {
   MeterValue,
@@ -153,9 +153,38 @@ export interface IVariableCharacteristicsRepository {
   ): Promise<VariableCharacteristicsDto | undefined>;
 }
 
+export type VariableWithCharacteristics = VariableDto & {
+  variableCharacteristics?: VariableCharacteristicsDto;
+};
+
+export interface IComponentRepository {
+  findComponentAndVariable(
+    tenantId: number,
+    componentType: OCPP2_common_types.ComponentType,
+    variableType: OCPP2_common_types.VariableType,
+  ): Promise<[ComponentDto | undefined, VariableWithCharacteristics | undefined]>;
+  findOrCreateEvseAndComponentAndVariable(
+    tenantId: number,
+    componentType: OCPP2_common_types.ComponentType,
+    variableType: OCPP2_common_types.VariableType,
+    ocppConnectionName?: string,
+  ): Promise<[ComponentDto, VariableDto]>;
+  findOrCreateEvseAndComponent(
+    tenantId: number,
+    componentType: OCPP2_common_types.ComponentType,
+    ocppConnectionName?: string,
+  ): Promise<ComponentDto>;
+  findConnectorComponentsForAvailabilityState(
+    tenantId: number,
+    evseId: number,
+    connectorId: number,
+  ): Promise<ComponentDto[]>;
+}
+
 export interface IDeviceModelRepository
   extends IVariableAttributeRepository,
-    IVariableCharacteristicsRepository {
+    IVariableCharacteristicsRepository,
+    IComponentRepository {
   createOrUpdateDeviceModelByStationId(
     tenantId: number,
     value: OCPP2_common_types.ReportDataType,
@@ -192,21 +221,6 @@ export interface IDeviceModelRepository
     componentType: OCPP2_common_types.ComponentType,
     variableType: OCPP2_common_types.VariableType,
   ): Promise<VariableAttributeDto | undefined>;
-  findComponentAndVariable(
-    tenantId: number,
-    componentType: OCPP2_common_types.ComponentType,
-    variableType: OCPP2_common_types.VariableType,
-  ): Promise<[Component | undefined, Variable | undefined]>;
-  findOrCreateEvseAndComponentAndVariable(
-    tenantId: number,
-    componentType: OCPP2_common_types.ComponentType,
-    variableType: OCPP2_common_types.VariableType,
-  ): Promise<[Component, Variable]>;
-  findOrCreateEvseAndComponent(
-    tenantId: number,
-    componentType: OCPP2_common_types.ComponentType,
-    ocppConnectionName: string,
-  ): Promise<Component>;
 }
 
 export interface ILocalAuthListRepository extends CrudRepository<LocalListVersion> {
@@ -467,16 +481,16 @@ export interface IVariableMonitoringRepository extends CrudRepository<VariableMo
   createOrUpdateByMonitoringDataTypeAndStationId(
     tenantId: number,
     value: OCPP2_common_types.MonitoringDataType,
-    componentId: string,
-    variableId: string,
     ocppConnectionName: string,
+    componentId?: number,
+    variableId?: number,
   ): Promise<VariableMonitoring[]>;
   createOrUpdateBySetMonitoringDataTypeAndStationId(
     tenantId: number,
     value: OCPP2_common_types.SetMonitoringDataType,
-    componentId: string,
-    variableId: string,
     ocppConnectionName: string,
+    componentId?: number,
+    variableId?: number,
   ): Promise<VariableMonitoring>;
   rejectAllVariableMonitoringsByStationId(
     tenantId: number,
@@ -497,9 +511,9 @@ export interface IVariableMonitoringRepository extends CrudRepository<VariableMo
   createEventDatumByComponentIdAndVariableIdAndStationId(
     tenantId: number,
     event: OCPP2_common_types.EventDataType,
-    componentId: string,
-    variableId: string,
     ocppConnectionName: string,
+    componentId?: number,
+    variableId?: number,
   ): Promise<EventData>;
 }
 

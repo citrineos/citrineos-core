@@ -8,6 +8,7 @@ import {
   type IOcppSender,
   AbstractMessageEndpoint,
   DEFAULT_TENANT_ID,
+  type MessageDelivery,
 } from '@citrineos/base';
 import { EventGroup, OCPP1_6, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
 
@@ -33,7 +34,7 @@ export class TriggerMessageEndpoint extends AbstractMessageEndpoint {
   async handle(
     identifiers: string[],
     request: OCPP1_6.TriggerMessageRequest,
-    callbackUrl: string | undefined,
+    delivery: MessageDelivery,
     tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     const connectorId = request.connectorId;
@@ -52,7 +53,7 @@ export class TriggerMessageEndpoint extends AbstractMessageEndpoint {
           action: OCPP_CallAction.TriggerMessage,
           eventGroup: EventGroup.Configuration,
           payload: request,
-          callbackUrl,
+          ...delivery,
         }),
       ),
     );

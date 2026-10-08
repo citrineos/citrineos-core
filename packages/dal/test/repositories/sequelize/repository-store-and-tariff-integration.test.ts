@@ -12,6 +12,7 @@ import {
   DrizzleCertificateRepository,
   DrizzleChangeConfigurationRepository,
   DrizzleChargingStationRepository,
+  DrizzleComponentRepository,
   DrizzleConnectorRepository,
   DrizzleDeleteCertificateAttemptRepository,
   DrizzleEvseRepository,
@@ -33,7 +34,6 @@ import {
   SequelizeChangeConfigurationRepository,
   SequelizeChargingProfileRepository,
   SequelizeChargingStationSequenceRepository,
-  SequelizeComponentRepository,
   SequelizeDeleteCertificateAttemptRepository,
   SequelizeDeviceModelRepository,
   SequelizeInstallCertificateAttemptRepository,
@@ -163,7 +163,8 @@ describe('RepositoryStore', () => {
     expect(store.chargingStationSequenceRepository).toBeInstanceOf(
       SequelizeChargingStationSequenceRepository,
     );
-    expect(store.componentRepository).toBeInstanceOf(SequelizeComponentRepository);
+    expect(store.componentRepository).toBeInstanceOf(SequelizeDeviceModelRepository);
+    expect(store.componentRepository).toBe(store.deviceModelRepository);
     expect(store.deviceModelRepository).toBeInstanceOf(SequelizeDeviceModelRepository);
     expect(store.localAuthListRepository).toBeInstanceOf(SequelizeLocalAuthListRepository);
     expect(store.ocppMessageRepository).toBeInstanceOf(SequelizeOCPPMessageRepository);
@@ -229,6 +230,7 @@ describe('RepositoryStore', () => {
         DrizzleChangeConfigurationRepository,
       );
       expect(store.chargingStationRepository).toBeInstanceOf(DrizzleChargingStationRepository);
+      expect(store.componentRepository).toBeInstanceOf(DrizzleComponentRepository);
       expect(store.connectorRepository).toBeInstanceOf(DrizzleConnectorRepository);
       expect(store.deleteCertificateAttemptRepository).toBeInstanceOf(
         DrizzleDeleteCertificateAttemptRepository,
@@ -260,7 +262,6 @@ describe('RepositoryStore', () => {
       expect(store.transactionEventRepository).toBeInstanceOf(SequelizeTransactionEventRepository);
       expect(store.deviceModelRepository).toBeInstanceOf(SequelizeDeviceModelRepository);
       expect(store.chargingProfileRepository).toBeInstanceOf(SequelizeChargingProfileRepository);
-      expect(store.componentRepository).toBeInstanceOf(SequelizeComponentRepository);
       expect(store.localAuthListRepository).toBeInstanceOf(SequelizeLocalAuthListRepository);
       expect(store.ocppMessageRepository).toBeInstanceOf(SequelizeOCPPMessageRepository);
       expect(store.variableMonitoringRepository).toBeInstanceOf(

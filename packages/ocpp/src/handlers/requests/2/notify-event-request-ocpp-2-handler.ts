@@ -16,27 +16,35 @@ import {
   OCPP2_request_types,
   OCPP2_response_types,
 } from '@citrineos/types';
-import type { IDeviceModelRepository, IVariableMonitoringRepository } from '@citrineos/dal';
+import type {
+  IComponentRepository,
+  IDeviceModelRepository,
+  IVariableMonitoringRepository,
+} from '@citrineos/dal';
 
 @AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.NotifyEvent)
 export class NotifyEventRequestOcpp2Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
+  protected _componentRepository: IComponentRepository;
   protected _deviceModelRepository: IDeviceModelRepository;
   protected _variableMonitoringRepository: IVariableMonitoringRepository;
 
   constructor({
     logger,
     ocppSender,
+    componentRepository,
     deviceModelRepository,
     variableMonitoringRepository,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
+    componentRepository: IComponentRepository;
     deviceModelRepository: IDeviceModelRepository;
     variableMonitoringRepository: IVariableMonitoringRepository;
   }) {
     super(logger);
 
     this._ocppSender = ocppSender;
+    this._componentRepository = componentRepository;
     this._deviceModelRepository = deviceModelRepository;
     this._variableMonitoringRepository = variableMonitoringRepository;
   }
@@ -51,7 +59,7 @@ export class NotifyEventRequestOcpp2Handler extends AbstractHandler {
     const events = message.payload.eventData as OCPP2_common_types.EventDataType[];
     for (const event of events) {
       const [component, variable] =
-        await this._deviceModelRepository.findOrCreateEvseAndComponentAndVariable(
+        await this._componentRepository.findOrCreateEvseAndComponentAndVariable(
           message.context.tenantId,
           event.component,
           event.variable,
@@ -59,9 +67,9 @@ export class NotifyEventRequestOcpp2Handler extends AbstractHandler {
       await this._variableMonitoringRepository.createEventDatumByComponentIdAndVariableIdAndStationId(
         message.context.tenantId,
         event,
+        ocppConnectionName,
         component?.id,
         variable?.id,
-        ocppConnectionName,
       );
       const reportDataType: OCPP2_common_types.ReportDataType = {
         component,

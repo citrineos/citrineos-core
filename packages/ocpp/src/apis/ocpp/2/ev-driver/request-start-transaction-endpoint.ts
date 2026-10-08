@@ -10,6 +10,7 @@ import {
   AbstractMessageEndpoint,
   CacheNamespace,
   DEFAULT_TENANT_ID,
+  type MessageDelivery,
 } from '@citrineos/base';
 import {
   ChargingProfilePurposeEnum,
@@ -71,7 +72,7 @@ export class RequestStartTransactionEndpoint extends AbstractMessageEndpoint {
   async handle(
     identifiers: string[],
     request: OCPP2_request_types.RequestStartTransactionRequest,
-    callbackUrl: string | undefined,
+    delivery: MessageDelivery,
     tenantId: number = DEFAULT_TENANT_ID,
     version: OCPPVersion,
   ): Promise<IMessageConfirmation[]> {
@@ -159,7 +160,7 @@ export class RequestStartTransactionEndpoint extends AbstractMessageEndpoint {
           action: OCPP_CallAction.RequestStartTransaction,
           eventGroup: EventGroup.EVDriver,
           payload: request,
-          callbackUrl,
+          ...delivery,
         });
 
         results.push(payloadMessage ? { success: true, payload: payloadMessage } : confirmation);

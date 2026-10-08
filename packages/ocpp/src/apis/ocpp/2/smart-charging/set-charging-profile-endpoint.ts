@@ -8,6 +8,7 @@ import {
   type IOcppSender,
   AbstractMessageEndpoint,
   DEFAULT_TENANT_ID,
+  type MessageDelivery,
 } from '@citrineos/base';
 import {
   AttributeEnum,
@@ -77,7 +78,7 @@ export class SetChargingProfileEndpoint extends AbstractMessageEndpoint {
   async handle(
     identifiers: string[],
     request: SetChargingProfileRequest,
-    callbackUrl: string | undefined,
+    delivery: MessageDelivery,
     tenantId: number = DEFAULT_TENANT_ID,
     version: OCPPVersion,
   ): Promise<IMessageConfirmation[]> {
@@ -135,7 +136,7 @@ export class SetChargingProfileEndpoint extends AbstractMessageEndpoint {
           action: OCPP_CallAction.SetChargingProfile,
           eventGroup: EventGroup.SmartCharging,
           payload: request,
-          callbackUrl,
+          ...delivery,
         });
       }),
     );
