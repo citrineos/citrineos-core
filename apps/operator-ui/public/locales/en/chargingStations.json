@@ -24,7 +24,7 @@
     "refreshMessages": "Refresh Messages",
     "noDataFound": "No charging station found with id {id}.",
     "unsupportedProtocol": "Unsupported protocol version: {protocol}",
-    "noCommandsAvailable": "No commands are available to you for this charging station.",
+    "noAdditionalCommands": "No additional commands are available to you for this charging station.",
     "noCommandPermissions": "No command permissions",
     "fieldRequired": "{field} is required",
     "exportToCsvError": "Could export to CSV due to error: {error}",

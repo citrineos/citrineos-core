@@ -24,7 +24,7 @@
     "refreshMessages": "Atualizar Mensagens",
     "noDataFound": "Nenhuma estação de recarga encontrada com o id {id}.",
     "unsupportedProtocol": "Versão de protocolo não suportada: {protocol}",
-    "noCommandsAvailable": "Nenhum comando está disponível para você nesta estação de recarga.",
+    "noAdditionalCommands": "Nenhum comando adicional está disponível para você nesta estação de recarga.",
     "noCommandPermissions": "Sem permissões de comando",
     "fieldRequired": "{field} é obrigatório",
     "exportToCsvError": "Não foi possível exportar para CSV devido a um erro: {error}",

@@ -38,7 +38,7 @@ export const OCPP1_6_Commands = ({ station }: OCPP1_6_CommandsProps) => {
   if (isResolved && permittedCommands.length === 0) {
     return (
       <div className="p-4 text-sm text-muted-foreground">
-        {translate('ChargingStations.noCommandsAvailable')}
+        {translate('ChargingStations.noAdditionalCommands')}
       </div>
     );
   }
