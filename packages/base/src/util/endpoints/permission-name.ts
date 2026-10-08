@@ -4,6 +4,10 @@
 import type { ICommandEndpointMetadata } from '@interfaces/api/endpoints/endpoint-metadata.js';
 import type { IMessageEndpointMetadata } from '@interfaces/api/endpoints/abstract-message-endpoint.js';
 
+/**
+ * Purpose of this helper file: Derives each endpoint's permission name from its route. Commands
+ * become `<prefix>.<path>.<method>`, messages `ocpp.<eventGroup>.<action>`.
+ */
 const segments = (value: string): string[] => value.split('/').filter(Boolean);
 
 const lowerFirst = (value: string): string => value.charAt(0).toLowerCase() + value.slice(1);

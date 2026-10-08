@@ -16,8 +16,8 @@ interface HasResource {
 }
 
 /**
- * Keeps the entries whose resource the signed-in user may take `action` on. Entries without a
- * resource always pass.
+ * User access to permission-gated items in a list, sometimes also contains items without permissions
+ * which are automatically included.
  */
 export function useCanAccessList<T extends HasResource>(
   items: T[],

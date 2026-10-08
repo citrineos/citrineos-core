@@ -178,8 +178,7 @@
       "ocpprouter.subscription.get",
       "ocpprouter.subscription.post",
       "ocpprouter.tlsReload.post",
-      "ocpprouter.websocketMapping.put",
-      "permissions.get"
+      "ocpprouter.websocketMapping.put"
     ]
   },
   "partner": {
