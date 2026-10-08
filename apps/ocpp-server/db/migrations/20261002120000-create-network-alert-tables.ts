@@ -118,6 +118,11 @@ export default {
         where: { status: { [Op.ne]: 'Resolved' } },
         transaction,
       });
+      await queryInterface.addIndex('NetworkAlerts', ['type'], {
+        name: 'network_alerts_open_by_type',
+        where: { status: { [Op.ne]: 'Resolved' } },
+        transaction,
+      });
 
       await queryInterface.createTable(
         'NetworkAlertOccurrences',

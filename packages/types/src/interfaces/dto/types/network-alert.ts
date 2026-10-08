@@ -40,6 +40,8 @@ export const StationConnectivityRulesSchema = z.object({
     seconds: z.number().int().positive(),
     severity: NetworkAlertSeveritySchema,
   }),
+  // A station that has missed this many heartbeats is not reachable, whatever isOnline says.
+  missedHeartbeats: z.number().int().positive(),
 });
 
 export const ConnectorStatusRulesSchema = z.object({
@@ -50,6 +52,9 @@ export const OcppCallFailuresRulesSchema = z.object({
   severityByReason: z.record(OcppCallFailureReasonSchema, NetworkAlertSeveritySchema),
   criticalActions: z.array(z.string()),
   slowThresholdMs: z.number().int().positive(),
+  // The sweep averages each station's latest responses in samples of this many; a full sample whose
+  // average exceeds slowThresholdMs is one Slow occurrence.
+  slowSampleSize: z.number().int().positive(),
   quietPeriodSeconds: z.number().int().positive(),
 });
 

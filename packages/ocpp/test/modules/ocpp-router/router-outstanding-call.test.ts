@@ -9,7 +9,10 @@ import {
 } from '@citrineos/base';
 import type { IChargingStationRepository } from '@citrineos/dal';
 import {
+  type CallEvent,
+  CallEventOutcome,
   ErrorCode,
+  isCallEvent,
   EventGroup,
   MessageOrigin,
   MessageTypeId,
@@ -30,7 +33,7 @@ import {
   type MockDeadLetterPublisher,
   type MockReemitter,
 } from '../../providers/rabbit-mq-provider.js';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 
 const TENANT_ID = 1;
 const STATION_ID = 'CS001';
@@ -44,6 +47,7 @@ describe('MessageRouterImpl with a MemoryCache', () => {
   let networkHook: ReturnType<typeof vi.fn>;
   let reemitter: MockReemitter;
   let deadLetterPublisher: MockDeadLetterPublisher;
+  let messagesExchangeSink: { record: Mock<MessagesExchangeSink['record']> };
   let router: MessageRouterImpl;
 
   function aRouter(timeouts: Partial<SystemConfig['timeouts']> = {}): MessageRouterImpl {
@@ -69,9 +73,7 @@ describe('MessageRouterImpl with a MemoryCache', () => {
         unsubscribe: vi.fn().mockResolvedValue(true),
         shutdown: vi.fn().mockResolvedValue(undefined),
       } as unknown as IMessageHandler,
-      messagesExchangeSink: {
-        record: vi.fn().mockResolvedValue({ delivered: true }),
-      } as unknown as MessagesExchangeSink,
+      messagesExchangeSink,
       callbackUrlNotifier: {
         notify: vi.fn().mockResolvedValue(undefined),
       } as unknown as CallbackUrlNotifier,
@@ -91,6 +93,7 @@ describe('MessageRouterImpl with a MemoryCache', () => {
     networkHook = vi.fn().mockResolvedValue(undefined);
     reemitter = aMockReemitter();
     deadLetterPublisher = aMockDeadLetterPublisher();
+    messagesExchangeSink = { record: vi.fn().mockResolvedValue({ delivered: true }) };
     router = aRouter();
     vi.spyOn(router as any, '_validateCallResult').mockReturnValue({ isValid: true });
   });
@@ -149,6 +152,116 @@ describe('MessageRouterImpl with a MemoryCache', () => {
     await sendCall('call-2');
 
     expect(networkHook).toHaveBeenCalledTimes(2);
+  });
+
+  // The station has maxCallLengthSeconds (30 here) to answer a Call before it is reported as timed out.
+  describe('Call outcome events', () => {
+    function callEvents(): CallEvent[] {
+      return messagesExchangeSink.record.mock.calls.map(([event]) => event).filter(isCallEvent);
+    }
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    it('publishes a timeout once the station leaves a sent Call unanswered', async () => {
+      await sendCall('call-1');
+
+      await vi.advanceTimersByTimeAsync(29_999);
+      expect(callEvents()).toEqual([]);
+
+      await vi.advanceTimersByTimeAsync(1);
+      expect(callEvents()).toEqual([
+        {
+          kind: 'call',
+          tenantId: TENANT_ID,
+          ocppConnectionName: STATION_ID,
+          outcome: CallEventOutcome.Timeout,
+          correlationId: 'call-1',
+          action: ACTION,
+          protocol: PROTOCOL,
+          timestamp: expect.any(String),
+        },
+      ]);
+    });
+
+    it('waits for the configured maxCallLengthSeconds', async () => {
+      router = aRouter({ maxCallLengthSeconds: 5 });
+
+      await sendCall('call-1');
+      await vi.advanceTimersByTimeAsync(5_000);
+
+      expect(callEvents().map((event) => event.outcome)).toEqual([CallEventOutcome.Timeout]);
+    });
+
+    it('publishes nothing for a Call the station answers with a CallResult in time', async () => {
+      await sendCall('call-1');
+      await router.onMessage(
+        IDENTIFIER,
+        JSON.stringify([MessageTypeId.CallResult, 'call-1', {}]),
+        new Date(),
+        PROTOCOL,
+      );
+
+      await vi.advanceTimersByTimeAsync(60_000);
+
+      expect(callEvents()).toEqual([]);
+    });
+
+    it('publishes nothing for a Call the station answers with a CallError in time', async () => {
+      await sendCall('call-1');
+      await router.onMessage(
+        IDENTIFIER,
+        JSON.stringify([MessageTypeId.CallError, 'call-1', ErrorCode.InternalError, 'boom', {}]),
+        new Date(),
+        PROTOCOL,
+      );
+
+      await vi.advanceTimersByTimeAsync(60_000);
+
+      expect(callEvents()).toEqual([]);
+    });
+
+    it('still times out a Call when the station answers a different one', async () => {
+      await sendCall('call-1');
+      await router.onMessage(
+        IDENTIFIER,
+        JSON.stringify([MessageTypeId.CallResult, 'other', {}]),
+        new Date(),
+        PROTOCOL,
+      );
+
+      await vi.advanceTimersByTimeAsync(30_000);
+
+      expect(callEvents().map((event) => event.correlationId)).toEqual(['call-1']);
+    });
+
+    it('publishes send_failed, and arms no timeout, when the Call could not be written', async () => {
+      networkHook.mockRejectedValueOnce(new Error('connection lost'));
+
+      await sendCall('call-1');
+      await vi.advanceTimersByTimeAsync(60_000);
+
+      expect(callEvents()).toEqual([
+        expect.objectContaining({
+          tenantId: TENANT_ID,
+          ocppConnectionName: STATION_ID,
+          outcome: CallEventOutcome.SendFailed,
+          correlationId: 'call-1',
+          action: ACTION,
+          protocol: PROTOCOL,
+        }),
+      ]);
+    });
+
+    it('publishes no timeout once shut down', async () => {
+      await sendCall('call-1');
+
+      await router.shutdown();
+      await vi.advanceTimersByTimeAsync(60_000);
+
+      expect(callEvents()).toEqual([]);
+    });
   });
 
   // OCPP allows one outstanding CSMS Call per station; the rest wait in the router, in order.

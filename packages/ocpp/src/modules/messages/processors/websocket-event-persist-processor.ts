@@ -55,6 +55,7 @@ export class WebsocketEventPersistProcessor implements IWebsocketLifecycleEventP
       },
     );
     context.persistedId = record.id;
+    context.stationId = record.stationId ?? undefined;
 
     this._logger.debug(
       `Persisted websocket ${event.type} event for ${event.ocppConnectionName ?? 'unknown station'}` +

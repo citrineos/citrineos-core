@@ -5,6 +5,7 @@
 import { z } from 'zod';
 import { BaseSchema } from './types/base-dto.js';
 import { ConnectorErrorCodeEnumSchema, ConnectorStatusEnumSchema } from './types/enums.js';
+import { MessageOriginSchema } from './types/ocpp-message.js';
 import {
   NetworkAlertSeveritySchema,
   NetworkAlertTypeSchema,
@@ -23,10 +24,15 @@ export const ConnectorStatusOccurrenceDetailsSchema = z.object({
 
 export const OcppCallFailuresOccurrenceDetailsSchema = z.object({
   reason: OcppCallFailureReasonSchema,
+  // Sender of the message this occurrence is about: the CallError, the slow response, or the Call
+  // that timed out or was never delivered.
+  origin: MessageOriginSchema,
   action: z.string(),
   correlationId: z.string(),
   errorCode: z.string().nullable().optional(),
   durationMs: z.number().int().nullable().optional(),
+  // Responses averaged into durationMs, for a Slow occurrence.
+  sampleSize: z.number().int().nullable().optional(),
 });
 
 export const NetworkAlertOccurrenceBaseSchema = BaseSchema.extend({

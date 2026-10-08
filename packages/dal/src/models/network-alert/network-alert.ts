@@ -39,6 +39,11 @@ import { NetworkAlertOccurrence } from './network-alert-occurrence.js';
       fields: ['tenantId', 'stationId', 'type'],
       where: { status: { [Op.ne]: 'Resolved' } },
     },
+    {
+      name: 'network_alerts_open_by_type',
+      fields: ['type'],
+      where: { status: { [Op.ne]: 'Resolved' } },
+    },
   ],
 })
 export class NetworkAlert extends Model implements Omit<NetworkAlertDto, 'type' | 'details'> {
@@ -90,7 +95,7 @@ export class NetworkAlert extends Model implements Omit<NetworkAlertDto, 'type' 
   @Column({
     type: DataType.DATE,
     get() {
-      return this.getDataValue('firstSeenAt').toISOString();
+      return this.getDataValue('firstSeenAt')?.toISOString();
     },
     allowNull: false,
   })
@@ -99,7 +104,7 @@ export class NetworkAlert extends Model implements Omit<NetworkAlertDto, 'type' 
   @Column({
     type: DataType.DATE,
     get() {
-      return this.getDataValue('lastSeenAt').toISOString();
+      return this.getDataValue('lastSeenAt')?.toISOString();
     },
     allowNull: false,
   })

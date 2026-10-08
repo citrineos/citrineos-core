@@ -365,7 +365,7 @@ describe('SequelizeLocationRepository', () => {
     it('stores the notification and points the latest entry at it', async () => {
       const { station, connector1 } = await aCommissionedStation();
 
-      await makeRepo().addStatusNotificationToChargingStation(
+      const saved = await makeRepo().addStatusNotificationToChargingStation(
         TENANT_A,
         STATION_NAME,
         aStatusNotification(connector1.id, { connectorStatus: 'Occupied' }),
@@ -373,6 +373,7 @@ describe('SequelizeLocationRepository', () => {
 
       const rows = await StatusNotification.findAll();
       expect(rows).toHaveLength(1);
+      expect(saved.id).toBe(rows[0].id);
       expect(rows[0].stationId).toBe(station.id);
       expect(rows[0].connectorStatus).toBe('Occupied');
       expect(rows[0].evseId).toBe(1);

@@ -55,6 +55,9 @@ export const networkAlertTable = pgTable(
     index('network_alerts_open_lookup')
       .on(t.tenantId, t.stationId, t.type)
       .where(sql`${t.status} <> 'Resolved'`),
+    index('network_alerts_open_by_type')
+      .on(t.type)
+      .where(sql`${t.status} <> 'Resolved'`),
   ],
 );
 

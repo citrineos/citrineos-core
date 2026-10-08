@@ -25,6 +25,7 @@ vi.mock('@/transport/queue/rabbit-mq/messages/messages-metrics.js', async (impor
 const OCPP_DLQ = 'messages.ocpp.dlq';
 const CONNECTIONS_DLQ = 'messages.connections.dlq';
 const WEBSOCKET_DLQ = 'messages.websocket.dlq';
+const CALLS_DLQ = 'messages.calls.dlq';
 
 function aDeadLetter(
   body: unknown,
@@ -102,7 +103,12 @@ describe('MessagesDeadLetterConsumer', () => {
     it('should consume every dead-letter queue', async () => {
       await consumer.start();
 
-      expect(consumer.consumedQueues).toEqual([OCPP_DLQ, CONNECTIONS_DLQ, WEBSOCKET_DLQ]);
+      expect(consumer.consumedQueues).toEqual([
+        OCPP_DLQ,
+        CONNECTIONS_DLQ,
+        WEBSOCKET_DLQ,
+        CALLS_DLQ,
+      ]);
     });
 
     it('should set the configured dead-letter prefetch on each queue before consuming', async () => {
@@ -113,7 +119,7 @@ describe('MessagesDeadLetterConsumer', () => {
 
       await configured.start();
 
-      for (const dlq of [OCPP_DLQ, CONNECTIONS_DLQ, WEBSOCKET_DLQ]) {
+      for (const dlq of [OCPP_DLQ, CONNECTIONS_DLQ, WEBSOCKET_DLQ, CALLS_DLQ]) {
         const channel = channelFor(dlq);
         expect(channel.prefetch).toHaveBeenCalledWith(3);
         expect(vi.mocked(channel.prefetch).mock.invocationCallOrder[0]).toBeLessThan(
@@ -141,6 +147,7 @@ describe('MessagesDeadLetterConsumer', () => {
         `messages-dlq-consumer-${OCPP_DLQ}`,
         `messages-dlq-consumer-${CONNECTIONS_DLQ}`,
         `messages-dlq-consumer-${WEBSOCKET_DLQ}`,
+        `messages-dlq-consumer-${CALLS_DLQ}`,
       ]);
       expect(channelFor(OCPP_DLQ)).not.toBe(channelFor(CONNECTIONS_DLQ));
     });
@@ -181,7 +188,7 @@ describe('MessagesDeadLetterConsumer', () => {
 
       await consumer.start();
 
-      expect(consumer.consumedQueues).toEqual([CONNECTIONS_DLQ, WEBSOCKET_DLQ]);
+      expect(consumer.consumedQueues).toEqual([CONNECTIONS_DLQ, WEBSOCKET_DLQ, CALLS_DLQ]);
       expect(logger.error).toHaveBeenCalled();
     });
 
@@ -199,7 +206,12 @@ describe('MessagesDeadLetterConsumer', () => {
 
       harness.connectionManager.emit('connected');
       await vi.waitFor(() => expect(channelFor(OCPP_DLQ).consume).toHaveBeenCalledTimes(2));
-      expect(consumer.consumedQueues).toEqual([OCPP_DLQ, CONNECTIONS_DLQ, WEBSOCKET_DLQ]);
+      expect(consumer.consumedQueues).toEqual([
+        OCPP_DLQ,
+        CONNECTIONS_DLQ,
+        WEBSOCKET_DLQ,
+        CALLS_DLQ,
+      ]);
     });
 
     it('should ignore a reconnect before it was ever started', () => {

@@ -31,8 +31,11 @@ export {
 export type { HandlerProperties } from './src/interfaces/messages/internal-types.js';
 
 export {
+  CallEventOutcome,
+  CallEventSchema,
   ConnectionEventState,
   FrameDirection,
+  isCallEvent,
   isConnectionEvent,
   isFrameEvent,
   isWebsocketLifecycleEvent,
@@ -48,7 +51,9 @@ export {
   type MessagesEvent,
   type MessagesEventContext,
   type MessagesQueueSpec,
+  type CallEvent,
   type ConnectionEvent,
+  type ICallEventProcessor,
   type FrameEvent,
   type IConnectionEventProcessor,
   type IFrameEventProcessor,

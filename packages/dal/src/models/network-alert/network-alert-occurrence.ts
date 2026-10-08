@@ -58,7 +58,7 @@ export class NetworkAlertOccurrence
   @Column({
     type: DataType.DATE,
     get() {
-      return this.getDataValue('occurredAt').toISOString();
+      return this.getDataValue('occurredAt')?.toISOString();
     },
     allowNull: false,
   })

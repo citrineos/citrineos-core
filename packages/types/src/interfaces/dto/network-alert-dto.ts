@@ -83,7 +83,28 @@ export const NetworkAlertCreateSchema = z.discriminatedUnion('type', [
 
 export type NetworkAlertCreate = z.infer<typeof NetworkAlertCreateSchema>;
 
+export const NetworkAlertUpdateSchema = NetworkAlertBaseSchema.pick({
+  severity: true,
+  status: true,
+  firstSeenAt: true,
+  lastSeenAt: true,
+  occurrenceCount: true,
+  resolvedAt: true,
+  resolvedBy: true,
+})
+  .extend({
+    details: z.union([
+      StationConnectivityDetailsSchema,
+      ConnectorStatusDetailsSchema,
+      OcppCallFailuresDetailsSchema,
+    ]),
+  })
+  .partial();
+
+export type NetworkAlertUpdate = z.infer<typeof NetworkAlertUpdateSchema>;
+
 export const networkAlertSchemas = {
   NetworkAlert: NetworkAlertSchema,
   NetworkAlertCreate: NetworkAlertCreateSchema,
+  NetworkAlertUpdate: NetworkAlertUpdateSchema,
 };

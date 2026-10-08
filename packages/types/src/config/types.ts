@@ -460,6 +460,7 @@ export const configSchema = z.object({
                       severity: NetworkAlertSeveritySchema.default('Critical'),
                     })
                     .prefault({}),
+                  missedHeartbeats: z.number().int().positive().default(2),
                 })
                 .prefault({}),
             })
@@ -493,6 +494,7 @@ export const configSchema = z.object({
                     .array(z.string())
                     .default(['TransactionEvent', 'StartTransaction', 'StopTransaction']),
                   slowThresholdMs: z.number().int().positive().default(5000),
+                  slowSampleSize: z.number().int().positive().default(10),
                   quietPeriodSeconds: z.number().int().positive().default(1800),
                 })
                 .prefault({}),

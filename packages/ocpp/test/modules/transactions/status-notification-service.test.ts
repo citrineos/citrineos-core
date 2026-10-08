@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import { DEFAULT_TENANT_ID, type ICache, type IWebsocketConnection } from '@citrineos/base';
 import {
+  OCPP1_6_Mapper,
+  OCPP2_0_1_Mapper,
   type IChargingStationRepository,
   type IComponentRepository,
   type IConnectorRepository,
@@ -12,6 +14,7 @@ import {
 } from '@citrineos/dal';
 import { StatusNotificationService } from '@modules/transactions/status-notification-service.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
+import { OCPP1_6, OCPP2_0_1 } from '@citrineos/types';
 import { beforeEach, describe, expect, it, type Mocked, vi } from 'vitest';
 import {
   aChargingStation,
@@ -30,13 +33,14 @@ import {
 } from './providers/status-notification.js';
 
 describe('StatusNotificationService', () => {
-  const { container } = createTestContainer();
+  const { container, logger } = createTestContainer();
   let statusNotificationService: StatusNotificationService;
   let componentRepository: Mocked<IComponentRepository>;
   let deviceModelRepository: Mocked<IDeviceModelRepository>;
   // One mock object backs both injected tokens: the service takes station reads from
   // chargingStationRepository and everything else from locationRepository, but the
   // assertions here do not care which token a call arrived through.
+  let networkAlertService: { recordConnectorStatus: ReturnType<typeof vi.fn> };
   let locationRepository: Mocked<
     IChargingStationRepository &
       IConnectorRepository &
@@ -46,6 +50,8 @@ describe('StatusNotificationService', () => {
   let cache: Mocked<ICache>;
 
   beforeEach(() => {
+    logger.error.mockClear();
+    networkAlertService = { recordConnectorStatus: vi.fn() };
     componentRepository = {
       findConnectorComponentsForAvailabilityState: vi.fn(),
     } as unknown as Mocked<IComponentRepository>;
@@ -89,6 +95,7 @@ describe('StatusNotificationService', () => {
       connectorRepository: locationRepository,
       statusNotificationRepository: locationRepository,
       cache,
+      networkAlertService,
     });
   });
 
@@ -692,6 +699,177 @@ describe('StatusNotificationService', () => {
         expect.objectContaining({ connectorId: undefined }),
       );
       expect(locationRepository.createOrUpdateOcpp16Connector).not.toHaveBeenCalled();
+    });
+  });
+  describe('Network alert recording', () => {
+    const STATION_DB_ID = 5;
+    const CONNECTOR_DB_ID = 70;
+    const STATUS_NOTIFICATION_ID = 900;
+    const TIMESTAMP = '2026-03-04T05:06:07.000Z';
+
+    beforeEach(() => {
+      locationRepository.readChargingStationByOcppConnectionName.mockResolvedValue(
+        aChargingStation((cs) => {
+          cs.id = STATION_DB_ID;
+          cs.evses = [
+            aEvse((evse) => {
+              evse.id = 30;
+            }),
+          ];
+        }),
+      );
+      locationRepository.createOrUpdateOcpp2Connector.mockResolvedValue(
+        aConnector((c) => {
+          c.id = CONNECTOR_DB_ID;
+        }),
+      );
+      locationRepository.createOrUpdateOcpp16Connector.mockResolvedValue(
+        aConnector((c) => {
+          c.id = CONNECTOR_DB_ID;
+        }),
+      );
+      locationRepository.addStatusNotificationToChargingStation.mockImplementation(
+        async (_tenantId, _name, statusNotification) => ({
+          ...statusNotification,
+          id: STATUS_NOTIFICATION_ID,
+        }),
+      );
+      componentRepository.findConnectorComponentsForAvailabilityState.mockResolvedValue([]);
+    });
+
+    it('should record the saved 2.0.1 connector status against its connector and EVSE', async () => {
+      await statusNotificationService.processStatusNotification(
+        DEFAULT_TENANT_ID,
+        MOCK_STATION_ID,
+        aStatusNotificationRequest((request) => {
+          request.connectorStatus = OCPP2_0_1.ConnectorStatusEnumType.Faulted;
+          request.timestamp = TIMESTAMP;
+        }),
+      );
+
+      expect(networkAlertService.recordConnectorStatus).toHaveBeenCalledExactlyOnceWith({
+        tenantId: DEFAULT_TENANT_ID,
+        stationId: STATION_DB_ID,
+        evseId: 30,
+        connectorId: CONNECTOR_DB_ID,
+        status: OCPP2_0_1_Mapper.LocationMapper.mapConnectorStatus(
+          OCPP2_0_1.ConnectorStatusEnumType.Faulted,
+        ),
+        occurredAt: TIMESTAMP,
+        statusNotificationId: STATUS_NOTIFICATION_ID,
+      });
+    });
+
+    it('should record the saved 1.6 connector status with its error codes', async () => {
+      await statusNotificationService.processOcpp16StatusNotification(
+        DEFAULT_TENANT_ID,
+        MOCK_STATION_ID,
+        aOcpp16StatusNotificationRequest((req) => {
+          req.connectorId = MOCK_CONNECTOR_ID;
+          req.status = OCPP1_6.StatusNotificationRequestStatus.Faulted;
+          req.errorCode = OCPP1_6.StatusNotificationRequestErrorCode.GroundFailure;
+          req.vendorErrorCode = 'E42';
+          req.timestamp = TIMESTAMP;
+        }),
+      );
+
+      expect(networkAlertService.recordConnectorStatus).toHaveBeenCalledExactlyOnceWith({
+        tenantId: DEFAULT_TENANT_ID,
+        stationId: STATION_DB_ID,
+        evseId: 30,
+        connectorId: CONNECTOR_DB_ID,
+        status: OCPP1_6_Mapper.LocationMapper.mapStatusNotificationRequestStatusToConnectorStatus(
+          OCPP1_6.StatusNotificationRequestStatus.Faulted,
+        ),
+        errorCode:
+          OCPP1_6_Mapper.LocationMapper.mapStatusNotificationRequestErrorCodeToConnectorErrorCode(
+            OCPP1_6.StatusNotificationRequestErrorCode.GroundFailure,
+          ),
+        vendorErrorCode: 'E42',
+        occurredAt: TIMESTAMP,
+        statusNotificationId: STATUS_NOTIFICATION_ID,
+      });
+    });
+
+    it('should not record a 1.6 connector 0 broadcast, which reports on the whole station', async () => {
+      locationRepository.readChargingStationByOcppConnectionName.mockResolvedValue(
+        aChargingStation((cs) => {
+          cs.id = STATION_DB_ID;
+          cs.use16StatusNotification0 = true;
+          cs.evses = [aEvse()];
+        }),
+      );
+
+      await statusNotificationService.processOcpp16StatusNotification(
+        DEFAULT_TENANT_ID,
+        MOCK_STATION_ID,
+        aOcpp16StatusNotificationRequest((req) => {
+          req.connectorId = 0;
+        }),
+      );
+
+      expect(locationRepository.updateAllConnectorsByStationId).toHaveBeenCalled();
+      expect(networkAlertService.recordConnectorStatus).not.toHaveBeenCalled();
+    });
+
+    it('should not record a 2.0.1 status when the connector upsert returned nothing', async () => {
+      locationRepository.createOrUpdateOcpp2Connector.mockResolvedValue(undefined);
+
+      await statusNotificationService.processStatusNotification(
+        DEFAULT_TENANT_ID,
+        MOCK_STATION_ID,
+        aStatusNotificationRequest(),
+      );
+
+      expect(locationRepository.addStatusNotificationToChargingStation).toHaveBeenCalled();
+      expect(networkAlertService.recordConnectorStatus).not.toHaveBeenCalled();
+    });
+
+    it('should not record a 1.6 status when the connector upsert returned nothing', async () => {
+      locationRepository.createOrUpdateOcpp16Connector.mockResolvedValue(undefined);
+
+      await statusNotificationService.processOcpp16StatusNotification(
+        DEFAULT_TENANT_ID,
+        MOCK_STATION_ID,
+        aOcpp16StatusNotificationRequest(),
+      );
+
+      expect(locationRepository.addStatusNotificationToChargingStation).toHaveBeenCalled();
+      expect(networkAlertService.recordConnectorStatus).not.toHaveBeenCalled();
+    });
+
+    it('should finish processing a 2.0.1 status when recording the alert fails', async () => {
+      networkAlertService.recordConnectorStatus.mockRejectedValue(new Error('lock timeout'));
+      componentRepository.findConnectorComponentsForAvailabilityState.mockResolvedValue([
+        aComponent((c) => {
+          c.variables = [aVariable()];
+        }),
+      ]);
+
+      await expect(
+        statusNotificationService.processStatusNotification(
+          DEFAULT_TENANT_ID,
+          MOCK_STATION_ID,
+          aStatusNotificationRequest(),
+        ),
+      ).resolves.toBeUndefined();
+
+      expect(deviceModelRepository.createOrUpdateDeviceModelByStationId).toHaveBeenCalled();
+      expect(logger.error).toHaveBeenCalled();
+    });
+
+    it('should not throw for a 1.6 status when recording the alert fails', async () => {
+      networkAlertService.recordConnectorStatus.mockRejectedValue(new Error('lock timeout'));
+
+      await expect(
+        statusNotificationService.processOcpp16StatusNotification(
+          DEFAULT_TENANT_ID,
+          MOCK_STATION_ID,
+          aOcpp16StatusNotificationRequest(),
+        ),
+      ).resolves.toBeUndefined();
+
+      expect(logger.error).toHaveBeenCalled();
     });
   });
 });

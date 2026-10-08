@@ -34,7 +34,7 @@ export type { ICommandEndpointMetadata } from './src/interfaces/api/endpoints/en
 export { BadRequestError } from './src/interfaces/api/exceptions/bad-request-error.js';
 export { NotFoundError } from './src/interfaces/api/exceptions/not-found-error.js';
 export type { IAuthorizer } from './src/interfaces/authorizer/index.js';
-export type { ICache } from './src/interfaces/cache/cache.js';
+export type { CacheExpiry, ICache } from './src/interfaces/cache/cache.js';
 export { MemoryCache } from './src/cache/memory.js';
 export { RedisCache } from './src/cache/redis.js';
 export { CacheNamespace } from './src/interfaces/cache/types.js';

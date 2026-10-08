@@ -154,7 +154,7 @@ export class SequelizeLocationRepository
     tenantId: number,
     ocppConnectionName: string,
     statusNotification: StatusNotificationDto,
-  ): Promise<void> {
+  ): Promise<StatusNotification> {
     const stationId = await resolveStationId(tenantId, ocppConnectionName);
     const savedStatusNotification = await this.statusNotification.create(
       tenantId,
@@ -176,6 +176,7 @@ export class SequelizeLocationRepository
     } catch (e: any) {
       this.logger.error(`Failed to update latest status notification with error: ${e.message}`, e);
     }
+    return savedStatusNotification;
   }
 
   async updateLatestStatusNotification(
