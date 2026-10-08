@@ -63,10 +63,10 @@ import type { TenantEntity } from '@dal/db/drizzle/schema/tenant.js';
 import type { TenantPartnerEntity } from '@dal/db/drizzle/schema/tenant-partner.js';
 import { type PgHarness, resetDb, startPgHarness } from '../../utils/pg-harness.js';
 
-// Infra-cluster drizzle repositories. DrizzleTenantRepository and
-// DrizzleServerNetworkProfileRepository carry domain methods of their own; the
-// rest (TenantPartner, OCPPMessage, ChargingStationSequence, AsyncJobStatus,
-// SetNetworkProfile, ChargingStationSecurityInfo) are Base-CRUD stubs, so this
+// Infra-cluster drizzle repositories. DrizzleTenantRepository,
+// DrizzleServerNetworkProfileRepository and DrizzleChargingStationSecurityInfoRepository
+// carry domain methods of their own; the rest (TenantPartner, OCPPMessage,
+// ChargingStationSequence, AsyncJobStatus, SetNetworkProfile) are Base-CRUD stubs, so this
 // suite drives the shared findById/findAll/exists/countAll/insert/updateById/
 // deleteById paths from base.ts through them, over the sequelize-created schema.
 // DrizzleTariffRepository is covered on the same base surface only; its
@@ -845,7 +845,7 @@ describe('DrizzleSetNetworkProfileRepository (base CRUD)', () => {
 // the sequelize-created schema. Only the pure mapper is covered above.
 
 describe('DrizzleChargingStationSecurityInfoRepository (base insert)', () => {
-  // Base insert is protected; the stub adds no public create yet.
+  // Base insert is protected; the repository exposes no create taking a row.
   class InsertableSecurityInfoRepository extends DrizzleChargingStationSecurityInfoRepository {
     create(tenantId: number, values: object) {
       return this.insert(tenantId, values);
