@@ -5,7 +5,7 @@
 
 import { useAccessPermissions } from './use-access-permissions';
 
-interface HasPermission {
+export interface HasPermission {
   permission: string;
 }
 
