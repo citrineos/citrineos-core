@@ -37,10 +37,27 @@ import { VariableAttribute } from './variable-attribute.js';
   indexes: [
     {
       unique: true,
+      name: 'components_tenantId_name_evseDatabaseId',
+      fields: ['tenantId', 'name', 'evseDatabaseId'],
+      where: {
+        instance: null,
+      },
+    },
+    {
+      unique: true,
+      name: 'components_tenantId_name_instance',
+      fields: ['tenantId', 'name', 'instance'],
+      where: {
+        evseDatabaseId: null,
+      },
+    },
+    {
+      unique: true,
       name: 'components_tenantId_name',
       fields: ['tenantId', 'name'],
       where: {
         instance: null,
+        evseDatabaseId: null,
       },
     },
   ],
@@ -54,13 +71,13 @@ export class Component extends Model implements OCPP2_0_1.ComponentType, Compone
 
   @Column({
     type: DataType.STRING,
-    unique: 'tenantId_name_instance',
+    unique: 'tenantId_name_instance_evseDatabaseId',
   })
   declare name: string;
 
   @Column({
     type: DataType.STRING,
-    unique: 'tenantId_name_instance',
+    unique: 'tenantId_name_instance_evseDatabaseId',
   })
   declare instance?: string | null;
 
@@ -72,7 +89,10 @@ export class Component extends Model implements OCPP2_0_1.ComponentType, Compone
   declare evse?: EvseType;
 
   @ForeignKey(() => EvseType)
-  @Column(DataType.INTEGER)
+  @Column({
+    type: DataType.INTEGER,
+    unique: 'tenantId_name_instance_evseDatabaseId',
+  })
   declare evseDatabaseId?: number | null;
 
   @BelongsToMany(() => Variable, { through: () => ComponentVariable, foreignKey: 'componentId' })
@@ -97,7 +117,7 @@ export class Component extends Model implements OCPP2_0_1.ComponentType, Compone
   @Column({
     type: DataType.INTEGER,
     allowNull: false,
-    unique: 'tenantId_name_instance',
+    unique: 'tenantId_name_instance_evseDatabaseId',
     onUpdate: 'CASCADE',
     onDelete: 'RESTRICT',
   })

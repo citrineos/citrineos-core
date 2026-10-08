@@ -85,6 +85,10 @@ export {
   type ChargingStationSequenceEntityInsert,
 } from './schema/charging-station-sequence.js';
 export {
+  DrizzleComponentRepository,
+  toComponentDto,
+} from '../../repositories/drizzle/component.js';
+export {
   DrizzleConnectorRepository,
   toConnectorDto,
 } from '../../repositories/drizzle/connector.js';

@@ -51,7 +51,7 @@ describe('Certificates message endpoints', () => {
       await installCertificate.handle(
         [MOCK_CHARGING_STATION_ID],
         mockInstallCertificateRequest,
-        undefined,
+        {},
         tenantId,
         OCPPVersion.OCPP2_0_1,
       );
@@ -90,7 +90,7 @@ describe('Certificates message endpoints', () => {
       const results = await installCertificate.handle(
         identifiers,
         mockInstallCertificateRequest,
-        callbackUrl,
+        { callbackUrl: callbackUrl },
         tenantId,
         OCPPVersion.OCPP2_0_1,
       );
@@ -132,7 +132,7 @@ describe('Certificates message endpoints', () => {
       await installCertificate.handle(
         [MOCK_CHARGING_STATION_ID],
         mockInstallCertificateRequest,
-        undefined,
+        {},
         undefined,
         OCPPVersion.OCPP2_0_1,
       );
@@ -163,7 +163,7 @@ describe('Certificates message endpoints', () => {
       await installCertificate.handle(
         [MOCK_CHARGING_STATION_ID],
         mockInstallCertificateRequest,
-        undefined,
+        {},
         1,
         OCPPVersion.OCPP2_0_1,
       );
@@ -181,7 +181,7 @@ describe('Certificates message endpoints', () => {
       await deleteCertificate.handle(
         [MOCK_CHARGING_STATION_ID],
         mockDeleteCertificateRequest,
-        undefined,
+        {},
         tenantId,
         OCPPVersion.OCPP2_0_1,
       );
@@ -217,7 +217,7 @@ describe('Certificates message endpoints', () => {
       await deleteCertificate.handle(
         [MOCK_CHARGING_STATION_ID],
         mockDeleteCertificateRequest,
-        undefined,
+        {},
         1,
         OCPPVersion.OCPP2_0_1,
       );
@@ -232,7 +232,7 @@ describe('Certificates message endpoints', () => {
       const results = await deleteCertificate.handle(
         identifiers,
         mockDeleteCertificateRequest,
-        undefined,
+        {},
         1,
         OCPPVersion.OCPP2_0_1,
       );
@@ -252,7 +252,7 @@ describe('Certificates message endpoints', () => {
       await deleteCertificate.handle(
         [MOCK_CHARGING_STATION_ID, 'cp002'],
         mockDeleteCertificateRequest,
-        callbackUrl,
+        { callbackUrl: callbackUrl },
         tenantId,
         OCPPVersion.OCPP2_0_1,
       );
@@ -273,7 +273,7 @@ describe('Certificates message endpoints', () => {
       await deleteCertificate.handle(
         [MOCK_CHARGING_STATION_ID],
         mockDeleteCertificateRequest,
-        undefined,
+        {},
         undefined,
         OCPPVersion.OCPP2_0_1,
       );

@@ -192,6 +192,24 @@ describe('OcppSender', () => {
       expect(error.messageId).toMatch(UUID_V4);
     });
 
+    it('carries staleAfterSeconds into the Call context', async () => {
+      const { ocppSender, sender } = anOcppSender();
+
+      await ocppSender.sendCall(aSendCallArgs({ staleAfterSeconds: 90 }));
+
+      const call = sender.sendRequest.mock.calls[0][0] as IMessage<OcppRequest>;
+      expect(call.context.staleAfterSeconds).toBe(90);
+    });
+
+    it('leaves staleAfterSeconds off the Call context when not given', async () => {
+      const { ocppSender, sender } = anOcppSender();
+
+      await ocppSender.sendCall(aSendCallArgs());
+
+      const call = sender.sendRequest.mock.calls[0][0] as IMessage<OcppRequest>;
+      expect(call.context).not.toHaveProperty('staleAfterSeconds');
+    });
+
     it('caches the callback URL under the CALLBACK_URL_ prefix', async () => {
       const { ocppSender, cache, subLogger } = anOcppSender({
         timeouts: { maxCachingSeconds: 99 },

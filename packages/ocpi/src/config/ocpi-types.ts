@@ -27,6 +27,9 @@ export const ocpiConfigInputSchema = z.object({
   ocpiServer: z.object({
     host: z.string().default('0.0.0.0').optional(),
     port: z.number().int().positive().default(8085).optional(),
+    // Behind a reverse proxy (ingress): trust X-Forwarded-Proto/Host so the pagination Link
+    // header and any URL built from the request carry the public scheme and host.
+    trustProxy: z.boolean().optional(),
   }),
 
   // OCPI Module configuration
@@ -196,6 +199,7 @@ export const ocpiConfigSchema = z.object({
   ocpiServer: z.object({
     host: z.string(),
     port: z.number().int().positive(),
+    trustProxy: z.boolean().optional(),
   }),
 
   ocpiModules: z.object({
