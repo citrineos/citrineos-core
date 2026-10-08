@@ -4,10 +4,8 @@
 
 import { ChevronDown } from 'lucide-react';
 import {
-  PERMISSION_REMOTE_START_TRANSACTION,
-  PERMISSION_REMOTE_STOP_TRANSACTION,
-  PERMISSION_REQUEST_START_TRANSACTION,
-  PERMISSION_REQUEST_STOP_TRANSACTION,
+  START_TRANSACTION_PERMISSIONS,
+  STOP_TRANSACTION_PERMISSIONS,
 } from '@lib/utils/permissions';
 import { CanAccess } from '@refinedev/core';
 import type { ConnectorDto, EvseDto } from '@citrineos/types';
@@ -301,10 +299,7 @@ export const EVSESList: React.FC<EVSESListProps> = ({ id }) => {
                               action={ActionType.COMMAND}
                               params={{
                                 id: station.id,
-                                permission: [
-                                  PERMISSION_REMOTE_STOP_TRANSACTION,
-                                  PERMISSION_REQUEST_STOP_TRANSACTION,
-                                ],
+                                permission: STOP_TRANSACTION_PERMISSIONS,
                               }}
                             >
                               <Button
@@ -322,10 +317,7 @@ export const EVSESList: React.FC<EVSESListProps> = ({ id }) => {
                               action={ActionType.COMMAND}
                               params={{
                                 id: station.id,
-                                permission: [
-                                  PERMISSION_REMOTE_START_TRANSACTION,
-                                  PERMISSION_REQUEST_START_TRANSACTION,
-                                ],
+                                permission: START_TRANSACTION_PERMISSIONS,
                               }}
                             >
                               <Button

@@ -18,11 +18,7 @@ import { MenuSection } from '@lib/client/components/main-menu/main-menu';
 import ProtocolTag from '@lib/client/components/protocol-tag';
 import { ACTIONS_COLUMN } from '@lib/client/hooks/use-column-preferences';
 import { ActionType, ResourceType } from '@lib/utils/access-types';
-import { StartTransactionButton } from '@lib/client/pages/charging-stations/start-transaction-button';
-import { StopTransactionButton } from '@lib/client/pages/charging-stations/stop-transaction-button';
-import { getTransactionCommandAvailability } from '@lib/client/pages/charging-stations/transaction-command-availability';
-import { ResetButton } from '@lib/client/pages/charging-stations/reset-button';
-import { CommandsUnavailableText } from '@lib/client/pages/charging-stations/commands-unavailable-text';
+import { StationRowActions } from '@lib/client/pages/charging-stations/station-row-actions';
 import { isEmpty } from '@lib/utils/assertion';
 import { EMPTY_VALUE } from '@lib/utils/consts';
 import { badgeListStyle } from '@lib/client/styles/page';
@@ -196,19 +192,9 @@ export const getChargingStationsColumns = (
       key: ACTIONS_COLUMN,
       header: t('Common.actions', 'Actions'),
       visible: true,
-      cellRender: ({ row }: CellContext<ChargingStationDetailsDto, unknown>) => {
-        const { canStart, canStop } = getTransactionCommandAvailability(row.original);
-
-        return row.original.isOnline ? (
-          <div className="flex gap-4 w-fit" onClick={(e) => e.stopPropagation()}>
-            {canStart && <StartTransactionButton station={row.original} />}
-            {canStop && <StopTransactionButton station={row.original} />}
-            <ResetButton station={row.original} />
-          </div>
-        ) : (
-          <CommandsUnavailableText />
-        );
-      },
+      cellRender: ({ row }: CellContext<ChargingStationDetailsDto, unknown>) => (
+        <StationRowActions station={row.original} />
+      ),
     },
   ];
 };
