@@ -12,6 +12,7 @@ import {
   DrizzleCertificateRepository,
   DrizzleChangeConfigurationRepository,
   DrizzleChargingStationRepository,
+  DrizzleChargingStationSequenceRepository,
   DrizzleComponentRepository,
   DrizzleConnectorRepository,
   DrizzleDeleteCertificateAttemptRepository,
@@ -160,9 +161,6 @@ describe('RepositoryStore', () => {
 
     expect(store.sequelizeInstance).toBe(h.sequelizeInstance);
     expect(store.chargingProfileRepository).toBeInstanceOf(SequelizeChargingProfileRepository);
-    expect(store.chargingStationSequenceRepository).toBeInstanceOf(
-      SequelizeChargingStationSequenceRepository,
-    );
     expect(store.componentRepository).toBeInstanceOf(SequelizeDeviceModelRepository);
     expect(store.componentRepository).toBe(store.deviceModelRepository);
     expect(store.deviceModelRepository).toBeInstanceOf(SequelizeDeviceModelRepository);
@@ -183,6 +181,9 @@ describe('RepositoryStore', () => {
       expect(store.certificateRepository).toBeInstanceOf(SequelizeCertificateRepository);
       expect(store.changeConfigurationRepository).toBeInstanceOf(
         SequelizeChangeConfigurationRepository,
+      );
+      expect(store.chargingStationSequenceRepository).toBeInstanceOf(
+        SequelizeChargingStationSequenceRepository,
       );
       expect(store.deleteCertificateAttemptRepository).toBeInstanceOf(
         SequelizeDeleteCertificateAttemptRepository,
@@ -230,6 +231,9 @@ describe('RepositoryStore', () => {
         DrizzleChangeConfigurationRepository,
       );
       expect(store.chargingStationRepository).toBeInstanceOf(DrizzleChargingStationRepository);
+      expect(store.chargingStationSequenceRepository).toBeInstanceOf(
+        DrizzleChargingStationSequenceRepository,
+      );
       expect(store.componentRepository).toBeInstanceOf(DrizzleComponentRepository);
       expect(store.connectorRepository).toBeInstanceOf(DrizzleConnectorRepository);
       expect(store.deleteCertificateAttemptRepository).toBeInstanceOf(

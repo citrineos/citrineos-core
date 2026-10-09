@@ -28,6 +28,7 @@ import {
   DrizzleCertificateRepository,
   DrizzleChangeConfigurationRepository,
   DrizzleChargingStationRepository,
+  DrizzleChargingStationSequenceRepository,
   DrizzleComponentRepository,
   DrizzleConnectorRepository,
   DrizzleLocationRepository,
@@ -382,6 +383,9 @@ function registerRepositories(container: AwilixContainer): void {
       certificateRepository: asClass(DrizzleCertificateRepository).singleton(),
       changeConfigurationRepository: asClass(DrizzleChangeConfigurationRepository).singleton(),
       chargingStationRepository: asClass(DrizzleChargingStationRepository).singleton(),
+      chargingStationSequenceRepository: asClass(
+        DrizzleChargingStationSequenceRepository,
+      ).singleton(),
       connectorRepository: asClass(DrizzleConnectorRepository).singleton(),
       locationRepository: asClass(DrizzleLocationRepository).singleton(),
       deleteCertificateAttemptRepository: asClass(

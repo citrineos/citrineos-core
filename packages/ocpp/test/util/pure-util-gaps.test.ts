@@ -10,7 +10,6 @@ import {
   OCPPVersion,
   type SystemConfig,
 } from '@citrineos/types';
-import type { IChargingStationSequenceRepository } from '@citrineos/dal';
 import { getAuthorizationTokenFromRequest, getHeaderValue, initSwagger } from '@/apis/swagger.js';
 import { isForeignKeyConstraintError } from '@util/errors.js';
 import { calculateCheckDigit } from '@util/emaid-check-digit-calculator.js';
@@ -31,10 +30,7 @@ import { describe, expect, it, vi } from 'vitest';
 describe('IdGenerator', () => {
   it('delegates generateRequestId to the sequence repository', async () => {
     const repository = { getNextSequenceValue: vi.fn().mockResolvedValue(42) };
-    const generator = new IdGenerator({
-      chargingStationSequenceRepository:
-        repository as unknown as IChargingStationSequenceRepository,
-    });
+    const generator = new IdGenerator({ chargingStationSequenceRepository: repository });
 
     const id = await generator.generateRequestId(
       2,
@@ -51,10 +47,7 @@ describe('IdGenerator', () => {
     const repository = {
       getNextSequenceValue: vi.fn().mockRejectedValue(new Error('sequence unavailable')),
     };
-    const generator = new IdGenerator({
-      chargingStationSequenceRepository:
-        repository as unknown as IChargingStationSequenceRepository,
-    });
+    const generator = new IdGenerator({ chargingStationSequenceRepository: repository });
 
     await expect(
       generator.generateRequestId(2, 'cs-001', ChargingStationSequenceTypeEnum.transactionId),
