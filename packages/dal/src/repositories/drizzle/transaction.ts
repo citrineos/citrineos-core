@@ -11,11 +11,8 @@ import {
 import { DrizzleRepository } from './base.js';
 
 // ─── Mapper ──────────────────────────────────────────────────────────────────
-// Maps a Drizzle entity (DB row) to the external TransactionDto contract.
-// TransactionDto declares a required `station` (and other) relation that cannot be
-// produced from a flat DB row, so the scalar columns are mapped and the object is
-// returned with a pragmatic cast. DECIMAL columns come back as strings and are
-// converted to numbers here.
+// Scalar columns only; every relation on TransactionDto is optional and a flat row
+// carries none of them. DECIMAL columns arrive as strings and are converted here.
 // TODO: map relations (station, location, evse, connector, authorization, tariff,
 // transactionEvents, meterValues, startTransaction, stopTransaction).
 export function toTransactionDto(entity: TransactionEntity): TransactionDto {
@@ -44,7 +41,7 @@ export function toTransactionDto(entity: TransactionEntity): TransactionDto {
     tenantId: entity.tenantId,
     createdAt: entity.createdAt,
     updatedAt: entity.updatedAt,
-  } as TransactionDto;
+  };
 }
 
 export class DrizzleTransactionRepository extends DrizzleRepository<

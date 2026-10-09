@@ -2,9 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import type { ITariffRepository } from '@citrineos/dal';
-import type { TariffDto } from '@citrineos/types';
+import type { TariffDto, TransactionDto } from '@citrineos/types';
 import type { ILogObj, Logger } from 'tslog';
-import { Transaction } from '@citrineos/dal';
 import { baseCalculateTotalCost, childLogger } from '@citrineos/base';
 
 export class CostCalculator {
@@ -29,11 +28,11 @@ export class CostCalculator {
    * Computes the cost based on Tariff of connector and session information.
    *
    * @param tenantId - The tenant ID.
-   * @param transaction - Transaction to calculate for.
+   * @param transaction - TransactionDto to calculate for.
    *
    * @returns A promise that resolves to the total cost.
    */
-  async calculateTotalCost(tenantId: number, transaction: Transaction): Promise<number> {
+  async calculateTotalCost(tenantId: number, transaction: TransactionDto): Promise<number> {
     if (transaction.connectorId == null) {
       this._logger.error('Cannot calculate cost: connectorId is not set on transaction');
       return 0;

@@ -17,7 +17,6 @@ import type {
   ChangeConfigurationDto,
   ChargingLimitSourceEnumType,
   ChargingProfilePurposeEnumType,
-  ChargingStateEnumType,
   ChargingStationDto,
   ChargingStationNetworkProfileDto,
   ChargingStationSequenceTypeEnumType,
@@ -46,10 +45,13 @@ import type {
   ServerNetworkProfileDto,
   SetNetworkProfileDto,
   StatusNotificationDto,
+  StopTransactionDto,
   SubscriptionDto,
   TariffDto,
   TenantDto,
+  TransactionCreate,
   TransactionDto,
+  TransactionEventDto,
   UpdateEnumType,
   VariableAttributeDto,
   VariableCharacteristicsDto,
@@ -75,12 +77,6 @@ import type {
 import type { ChargingStationSecurityInfo } from '../models/charging-station-security-info.js';
 import type { ChargingStationSequence } from '../models/charging-station-sequence/charging-station-sequence.js';
 import type { ChargingStationNetworkProfile } from '../models/location/charging-station-network-profile.js';
-import type {
-  MeterValue,
-  StopTransaction,
-  Transaction,
-} from '../models/transaction-event/index.js';
-import type { TransactionEvent } from '../models/transaction-event/transaction-event.js';
 import type { EventData, VariableMonitoring } from '../models/variable-monitoring/index.js';
 
 export interface IAuthorizationRepository {
@@ -376,24 +372,24 @@ export interface ISubscriptionRepository {
   deleteByKey(tenantId: number, key: string): Promise<SubscriptionDto | undefined>;
 }
 
-export interface ITransactionEventRepository extends CrudRepository<TransactionEvent> {
+export interface ITransactionEventRepository {
   createOrUpdateTransactionByTransactionEventAndStationId(
     tenantId: number,
     value: OCPP2_request_types.TransactionEventRequest,
     ocppConnectionName: string,
-  ): Promise<Transaction>;
+  ): Promise<TransactionDto>;
   createMeterValue(
     tenantId: number,
     value: OCPP2_common_types.MeterValueType,
     transactionDatabaseId?: number | null,
     transactionId?: string | null,
     tariffId?: number | null,
-  ): Promise<MeterValue>;
+  ): Promise<MeterValueDto>;
   createTransactionByStartTransaction(
     tenantId: number,
     request: OCPP1_6.StartTransactionRequest,
     ocppConnectionName: string,
-  ): Promise<Transaction>;
+  ): Promise<TransactionDto>;
   updateTransactionByMeterValues(
     tenantId: number,
     meterValues: MeterValueDto[],
@@ -404,36 +400,26 @@ export interface ITransactionEventRepository extends CrudRepository<TransactionE
     tenantId: number,
     ocppConnectionName: string,
     transactionId: string,
-  ): Promise<TransactionEvent[]>;
+  ): Promise<TransactionEventDto[]>;
   readTransactionByStationIdAndTransactionId(
     tenantId: number,
     ocppConnectionName: string,
     transactionId: string,
-  ): Promise<Transaction | undefined>;
-  readAllTransactionsByStationIdAndEvseAndChargingStates(
-    tenantId: number,
-    ocppConnectionName: string,
-    evse: OCPP2_common_types.EVSEType,
-    chargingStates?: ChargingStateEnumType[],
-  ): Promise<Transaction[]>;
+  ): Promise<TransactionDto | undefined>;
   readAllActiveTransactionsByAuthorizationId(
     tenantId: number,
     authorizationId: number,
-  ): Promise<Transaction[]>;
+  ): Promise<TransactionDto[]>;
   readActiveTransactionsWithTariffAndEvseByStationId(
     tenantId: number,
     ocppConnectionName: string,
     evseTypeId?: number,
   ): Promise<TransactionDto[]>;
-  readAllMeterValuesByTransactionDataBaseId(
-    tenantId: number,
-    transactionDataBaseId: number,
-  ): Promise<MeterValue[]>;
   getActiveTransactionByStationIdAndEvseId(
     tenantId: number,
     ocppConnectionName: string,
     evseId: number,
-  ): Promise<Transaction | undefined>;
+  ): Promise<TransactionDto | undefined>;
   updateTransactionTotalCostById(tenantId: number, totalCost: number, id: number): Promise<void>;
   createStopTransaction(
     tenantId: number,
@@ -444,19 +430,19 @@ export interface ITransactionEventRepository extends CrudRepository<TransactionE
     meterValues: MeterValueDto[],
     reason?: string,
     idTokenDatabaseId?: number,
-  ): Promise<StopTransaction>;
+  ): Promise<StopTransactionDto>;
   updateTransactionByStationIdAndTransactionId(
     tenantId: number,
-    transaction: Partial<Transaction>,
+    transaction: Partial<TransactionCreate>,
     transactionId: string,
     ocppConnectionName: string,
-  ): Promise<Transaction | undefined>;
+  ): Promise<TransactionDto | undefined>;
   deactivateActiveTransactionsByStationIdAndEvseId(
     tenantId: number,
     ocppConnectionName: string,
     evseId: number,
     excludeTransactionId: string,
-  ): Promise<Transaction[]>;
+  ): Promise<TransactionDto[]>;
 }
 
 export interface IVariableMonitoringRepository extends CrudRepository<VariableMonitoring> {
