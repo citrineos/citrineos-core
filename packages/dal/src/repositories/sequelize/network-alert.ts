@@ -43,7 +43,7 @@ function subjectLockKey(subject: NetworkAlertSubject): string {
 type SilentStationRow = {
   stationId: number;
   tenantId: number;
-  latestOcppMessageTimestamp: Date | string;
+  lastHeardAt: Date | string;
 };
 
 type SlowResponseSampleRow = {
@@ -83,14 +83,18 @@ function toResponseLatencySamples(rows: SlowResponseSampleRow[]): ResponseLatenc
 }
 
 // A station's interval is the one its BootNotification was answered with; BootNotificationService
-// falls back to the system default for a missing or zero interval in the same way.
+// falls back to the system default for a missing or zero interval in the same way. Silence is
+// counted from the latest connect too: a station that has just reconnected has had no chance to
+// send anything since. GREATEST ignores nulls.
 const SILENT_STATIONS_SQL = `
-  SELECT cs.id AS "stationId", cs."tenantId", cs."latestOcppMessageTimestamp"
+  SELECT cs.id AS "stationId", cs."tenantId",
+         GREATEST(cs."latestOcppMessageTimestamp", cs."lastConnectedAt") AS "lastHeardAt"
     FROM "ChargingStations" cs
     LEFT JOIN "Boots" b ON b."stationId" = cs.id
    WHERE cs."tenantId" = :tenantId
      AND cs."isOnline" = true
-     AND cs."latestOcppMessageTimestamp" < CAST(:at AS timestamptz) - make_interval(
+     AND GREATEST(cs."latestOcppMessageTimestamp", cs."lastConnectedAt")
+           < CAST(:at AS timestamptz) - make_interval(
            secs => :missedHeartbeats * COALESCE(NULLIF(b."heartbeatInterval", 0), :defaultHeartbeatInterval)
          )`;
 
@@ -285,7 +289,12 @@ export class SequelizeNetworkAlertRepository
   async readOpenByType(type: NetworkAlertType): Promise<OpenNetworkAlert[]> {
     const alerts = await NetworkAlert.findAll({
       where: { type, status: { [Op.ne]: 'Resolved' } },
-      include: [{ model: ChargingStation, attributes: ['isOnline', 'latestOcppMessageTimestamp'] }],
+      include: [
+        {
+          model: ChargingStation,
+          attributes: ['isOnline', 'latestOcppMessageTimestamp', 'lastConnectedAt'],
+        },
+      ],
     });
     const stationIds = alerts.flatMap((alert) => (alert.stationId ? [alert.stationId] : []));
     const boots = stationIds.length
@@ -308,6 +317,9 @@ export class SequelizeNetworkAlertRepository
               latestOcppMessageTimestamp: station.latestOcppMessageTimestamp
                 ? new Date(station.latestOcppMessageTimestamp).toISOString()
                 : null,
+              lastConnectedAt: station.lastConnectedAt
+                ? new Date(station.lastConnectedAt).toISOString()
+                : null,
               heartbeatInterval:
                 (alert.stationId && heartbeatIntervals.get(alert.stationId)) || null,
             }
@@ -329,7 +341,7 @@ export class SequelizeNetworkAlertRepository
     return rows.map((row) => ({
       tenantId: row.tenantId,
       stationId: row.stationId,
-      latestOcppMessageTimestamp: new Date(row.latestOcppMessageTimestamp).toISOString(),
+      lastHeardAt: new Date(row.lastHeardAt).toISOString(),
     }));
   }
 

@@ -47,17 +47,23 @@ type ConnectivityOccurrenceCreate = Extract<
 interface StationOptions {
   isOnline?: boolean;
   latestOcppMessageTimestamp?: string | null;
+  lastConnectedAt?: string | null;
 }
 
 async function aStation(
   tenantId: number,
   ocppConnectionName: string,
-  { isOnline = false, latestOcppMessageTimestamp = null }: StationOptions = {},
+  {
+    isOnline = false,
+    latestOcppMessageTimestamp = null,
+    lastConnectedAt = null,
+  }: StationOptions = {},
 ): Promise<number> {
   const station = await ChargingStation.create({
     ocppConnectionName,
     isOnline,
     latestOcppMessageTimestamp,
+    lastConnectedAt,
     tenantId,
   });
   return station.id;
@@ -567,6 +573,7 @@ export function networkAlertRepositoryContract(
       const stationA = await aStation(TENANT_A, 'cp001', {
         isOnline: true,
         latestOcppMessageTimestamp: T1,
+        lastConnectedAt: T0,
       });
       const stationB = await aStation(TENANT_B, 'cp001');
       await aBoot(TENANT_A, stationA, 300);
@@ -596,11 +603,21 @@ export function networkAlertRepositoryContract(
       );
       expect(byId.get(activeA.id)).toMatchObject({
         alert: { type: 'StationConnectivity', status: 'Active', tenantId: TENANT_A },
-        station: { isOnline: true, latestOcppMessageTimestamp: T1, heartbeatInterval: 300 },
+        station: {
+          isOnline: true,
+          latestOcppMessageTimestamp: T1,
+          lastConnectedAt: T0,
+          heartbeatInterval: 300,
+        },
       });
       expect(byId.get(acknowledgedB.id)).toMatchObject({
         alert: { status: 'Acknowledged', tenantId: TENANT_B },
-        station: { isOnline: false, latestOcppMessageTimestamp: null, heartbeatInterval: null },
+        station: {
+          isOnline: false,
+          latestOcppMessageTimestamp: null,
+          lastConnectedAt: null,
+          heartbeatInterval: null,
+        },
       });
       expect(byId.get(stationless.id)?.station).toBeNull();
     });
@@ -640,11 +657,35 @@ export function networkAlertRepositoryContract(
       const silentB = await repo.readSilentStations(TENANT_B, T3, 60, 2);
 
       expect(silentA.sort((a, b) => a.stationId - b.stationId)).toEqual([
-        { tenantId: TENANT_A, stationId: defaultInterval, latestOcppMessageTimestamp: T2 },
-        { tenantId: TENANT_A, stationId: zeroInterval, latestOcppMessageTimestamp: T2 },
+        { tenantId: TENANT_A, stationId: defaultInterval, lastHeardAt: T2 },
+        { tenantId: TENANT_A, stationId: zeroInterval, lastHeardAt: T2 },
       ]);
-      expect(silentB).toEqual([
-        { tenantId: TENANT_B, stationId: shortInterval, latestOcppMessageTimestamp: T2 },
+      expect(silentB).toEqual([{ tenantId: TENANT_B, stationId: shortInterval, lastHeardAt: T2 }]);
+    });
+
+    it('counts silence from the later of the latest message and the latest connect', async () => {
+      const recent = '2026-10-01T10:14:00.000Z';
+      await aStation(TENANT_A, 'reconnected', {
+        isOnline: true,
+        latestOcppMessageTimestamp: T0,
+        lastConnectedAt: recent,
+      });
+      const connectedButSilent = await aStation(TENANT_A, 'connected-silent', {
+        isOnline: true,
+        latestOcppMessageTimestamp: null,
+        lastConnectedAt: T2,
+      });
+      const quietSinceConnect = await aStation(TENANT_A, 'quiet-since-connect', {
+        isOnline: true,
+        latestOcppMessageTimestamp: T2,
+        lastConnectedAt: T0,
+      });
+
+      const silent = await makeRepo().readSilentStations(TENANT_A, T3, 60, 2);
+
+      expect(silent.sort((a, b) => a.stationId - b.stationId)).toEqual([
+        { tenantId: TENANT_A, stationId: connectedButSilent, lastHeardAt: T2 },
+        { tenantId: TENANT_A, stationId: quietSinceConnect, lastHeardAt: T2 },
       ]);
     });
   });

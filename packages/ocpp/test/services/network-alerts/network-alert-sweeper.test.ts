@@ -36,6 +36,7 @@ describe('NetworkAlertSweeper', () => {
     isOnline: boolean,
     latestOcppMessageTimestamp: string | null,
     heartbeatInterval: number | null = null,
+    lastConnectedAt: string | null = null,
   ): void {
     repository.stations = [
       {
@@ -43,6 +44,7 @@ describe('NetworkAlertSweeper', () => {
         stationId: STATION,
         isOnline,
         latestOcppMessageTimestamp,
+        lastConnectedAt,
         heartbeatInterval,
       },
     ];
@@ -135,6 +137,23 @@ describe('NetworkAlertSweeper', () => {
       expect(repository.occurrences[0].details).toEqual({ durationSeconds: 120 });
     });
 
+    it('should count a station that has just reconnected as reachable before it sends anything', async () => {
+      station(true, at(-5), null, at(1000));
+
+      await sweeper.sweep(now(1001));
+
+      expect(repository.alerts[0].severity).toBe('Info');
+    });
+
+    it("should take a reachable station's connect as its reconnect when no open was seen", async () => {
+      station(true, at(-5), null, at(120));
+
+      await sweeper.sweep(now(150));
+
+      expect(repository.alerts[0].details).toEqual({ offlineSince: null });
+      expect(repository.occurrences[0].details).toEqual({ durationSeconds: 120 });
+    });
+
     it('should do nothing while another instance holds the sweep lock', async () => {
       station(false, at(-5));
       repository.sweepLocked = true;
@@ -153,6 +172,24 @@ describe('NetworkAlertSweeper', () => {
 
       expect(repository.alertsOf('StationConnectivity')).toEqual([
         expect.objectContaining({ severity: 'Info', details: { offlineSince: at(0) } }),
+      ]);
+    });
+
+    it('should not call a station silent that reconnected after its last message', async () => {
+      station(true, at(-86400), null, at(0));
+
+      await sweeper.sweep(now(5));
+
+      expect(repository.alerts).toEqual([]);
+    });
+
+    it('should treat a station silent since it connected as disconnected since its connect', async () => {
+      station(true, null, null, at(0));
+
+      await sweeper.sweep(now(121));
+
+      expect(repository.alertsOf('StationConnectivity')).toEqual([
+        expect.objectContaining({ details: { offlineSince: at(0) } }),
       ]);
     });
 

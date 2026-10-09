@@ -675,6 +675,7 @@ describe('location cluster row-to-DTO mappers', () => {
         isOnline: null,
         protocol: 'ocpp1.6',
         latestOcppMessageTimestamp: new Date(TS),
+        lastConnectedAt: null,
         chargePointVendor: 'ACME',
         chargePointModel: null,
         chargePointSerialNumber: null,

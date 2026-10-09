@@ -15,6 +15,7 @@ export interface NetworkAlertSubject {
 export interface NetworkAlertStationState {
   isOnline: boolean;
   latestOcppMessageTimestamp: string | null;
+  lastConnectedAt: string | null;
   /** From the station's Boot record; null when it has none, or none set. */
   heartbeatInterval: number | null;
 }
@@ -27,7 +28,8 @@ export interface OpenNetworkAlert {
 export interface SilentStation {
   tenantId: number;
   stationId: number;
-  latestOcppMessageTimestamp: string;
+  /** The later of its latest OCPP message and its latest connect. */
+  lastHeardAt: string;
 }
 
 /** The average latency of a station's latest responses, sent by one side of the connection. */

@@ -16,6 +16,18 @@ import type { NetworkAlertConfigResolver } from './network-alert-config-resolver
 import { isAlertOfType, type NetworkAlertService } from './network-alert-service.js';
 import { isMoreSevere } from './severity.js';
 
+function lastHeardAt({
+  latestOcppMessageTimestamp,
+  lastConnectedAt,
+}: NetworkAlertStationState): string | null {
+  if (latestOcppMessageTimestamp === null || lastConnectedAt === null) {
+    return latestOcppMessageTimestamp ?? lastConnectedAt;
+  }
+  return Date.parse(latestOcppMessageTimestamp) >= Date.parse(lastConnectedAt)
+    ? latestOcppMessageTimestamp
+    : lastConnectedAt;
+}
+
 /**
  * Applies the alert rules that are judged over time rather than on a single event: a station
  * offline too long, a station that went silent without a close, stations answering slowly, and
@@ -106,7 +118,7 @@ export class NetworkAlertSweeper {
             await this._service.recordSilentStation({
               tenantId,
               stationId: station.stationId,
-              lastHeardAt: station.latestOcppMessageTimestamp,
+              lastHeardAt: station.lastHeardAt,
               severity: config.rules.disconnectSeverity,
             });
           } catch (error) {
@@ -145,16 +157,17 @@ export class NetworkAlertSweeper {
         }
 
         // A station can come back without an Open the transport saw, e.g. after being found
-        // silent; its own traffic is then the evidence that it reconnected.
+        // silent; its own traffic or connect is then the evidence that it reconnected.
+        const heardAt = lastHeardAt(station);
         if (
           alert.details.offlineSince &&
-          station.latestOcppMessageTimestamp &&
-          Date.parse(station.latestOcppMessageTimestamp) > Date.parse(alert.details.offlineSince)
+          heardAt &&
+          Date.parse(heardAt) > Date.parse(alert.details.offlineSince)
         ) {
           await this._service.recordReconnect({
             tenantId: subject.tenantId,
             stationId: subject.stationId,
-            occurredAt: station.latestOcppMessageTimestamp,
+            occurredAt: heardAt,
           });
         }
         if (
@@ -225,14 +238,12 @@ export class NetworkAlertSweeper {
     if (!station.isOnline) {
       return false;
     }
-    if (station.latestOcppMessageTimestamp === null) {
+    const heardAt = lastHeardAt(station);
+    if (heardAt === null) {
       return true;
     }
     const heartbeatMs = (station.heartbeatInterval ?? this._defaultHeartbeatInterval) * 1000;
-    return (
-      now.getTime() - Date.parse(station.latestOcppMessageTimestamp) <=
-      missedHeartbeats * heartbeatMs
-    );
+    return now.getTime() - Date.parse(heardAt) <= missedHeartbeats * heartbeatMs;
   }
 
   /** One alert's failure is logged and skipped, so it cannot stall the rest of the sweep. */

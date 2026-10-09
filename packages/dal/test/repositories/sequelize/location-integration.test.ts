@@ -325,6 +325,42 @@ describe('SequelizeLocationRepository', () => {
       expect(result!.protocol ?? null).toBeNull();
       expect(await ChargingStation.count()).toBe(1);
     });
+
+    it('records when the station connected, and keeps it when the station goes offline', async () => {
+      const earlier = '2026-10-01T10:00:00.000Z';
+      await aStation({ lastConnectedAt: earlier });
+      const repo = makeRepo();
+      const before = Date.now();
+
+      await repo.setChargingStationIsOnlineAndOCPPVersion(
+        TENANT_A,
+        STATION_NAME,
+        true,
+        OCPPVersion.OCPP2_0_1,
+      );
+      const online = await ChargingStation.findOne({ where: { ocppConnectionName: STATION_NAME } });
+      const connectedAt = new Date(online!.lastConnectedAt!).getTime();
+      expect(connectedAt).toBeGreaterThanOrEqual(before);
+
+      await repo.setChargingStationIsOnlineAndOCPPVersion(TENANT_A, STATION_NAME, false, null);
+      const offline = await ChargingStation.findOne({
+        where: { ocppConnectionName: STATION_NAME },
+      });
+      expect(new Date(offline!.lastConnectedAt!).getTime()).toBe(connectedAt);
+    });
+
+    it('records when a station created by its first connect connected', async () => {
+      const before = Date.now();
+
+      const result = await makeRepo().setChargingStationIsOnlineAndOCPPVersion(
+        TENANT_A,
+        'CS-NEW',
+        true,
+        OCPPVersion.OCPP2_0_1,
+      );
+
+      expect(new Date(result!.lastConnectedAt!).getTime()).toBeGreaterThanOrEqual(before);
+    });
   });
 
   describe('doesChargingStationExistByOcppConnectionName', () => {

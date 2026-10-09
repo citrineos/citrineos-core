@@ -47,7 +47,7 @@ function subjectLockKey(subject: NetworkAlertSubject): string {
 type SilentStationRow = {
   stationId: number;
   tenantId: number;
-  latestOcppMessageTimestamp: Date | string;
+  lastHeardAt: Date | string;
 };
 
 type SlowResponseSampleRow = {
@@ -283,6 +283,7 @@ export class DrizzleNetworkAlertRepository
         stationRowId: chargingStationTable.id,
         isOnline: chargingStationTable.isOnline,
         latestOcppMessageTimestamp: chargingStationTable.latestOcppMessageTimestamp,
+        lastConnectedAt: chargingStationTable.lastConnectedAt,
         heartbeatInterval: bootTable.heartbeatInterval,
       })
       .from(networkAlertTable)
@@ -297,6 +298,7 @@ export class DrizzleNetworkAlertRepository
           : {
               isOnline: row.isOnline ?? false,
               latestOcppMessageTimestamp: row.latestOcppMessageTimestamp?.toISOString() ?? null,
+              lastConnectedAt: row.lastConnectedAt?.toISOString() ?? null,
               heartbeatInterval: row.heartbeatInterval || null,
             },
     }));
@@ -309,20 +311,24 @@ export class DrizzleNetworkAlertRepository
     missedHeartbeats: number,
   ): Promise<SilentStation[]> {
     // A station's interval is the one its BootNotification was answered with; BootNotificationService
-    // falls back to the system default for a missing or zero interval in the same way.
+    // falls back to the system default for a missing or zero interval in the same way. Silence is
+    // counted from the latest connect too: a station that has just reconnected has had no chance to
+    // send anything since. GREATEST ignores nulls.
     const result = await this.db.execute<SilentStationRow>(sql`
-      SELECT cs.id AS "stationId", cs."tenantId", cs."latestOcppMessageTimestamp"
+      SELECT cs.id AS "stationId", cs."tenantId",
+             GREATEST(cs."latestOcppMessageTimestamp", cs."lastConnectedAt") AS "lastHeardAt"
         FROM "ChargingStations" cs
         LEFT JOIN "Boots" b ON b."stationId" = cs.id
        WHERE cs."tenantId" = ${tenantId}
          AND cs."isOnline" = true
-         AND cs."latestOcppMessageTimestamp" < CAST(${at} AS timestamptz) - make_interval(
+         AND GREATEST(cs."latestOcppMessageTimestamp", cs."lastConnectedAt")
+               < CAST(${at} AS timestamptz) - make_interval(
                secs => ${missedHeartbeats} * COALESCE(NULLIF(b."heartbeatInterval", 0), ${defaultHeartbeatInterval})
              )`);
     return result.rows.map((row) => ({
       tenantId: row.tenantId,
       stationId: row.stationId,
-      latestOcppMessageTimestamp: new Date(row.latestOcppMessageTimestamp).toISOString(),
+      lastHeardAt: new Date(row.lastHeardAt).toISOString(),
     }));
   }
 

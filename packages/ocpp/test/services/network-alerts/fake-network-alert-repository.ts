@@ -26,7 +26,15 @@ export interface FakeStation {
   stationId: number;
   isOnline: boolean;
   latestOcppMessageTimestamp: string | null;
+  lastConnectedAt?: string | null;
   heartbeatInterval?: number | null;
+}
+
+function lastHeardAt(station: FakeStation): string | null {
+  const heard = [station.latestOcppMessageTimestamp, station.lastConnectedAt ?? null].filter(
+    (at): at is string => at !== null,
+  );
+  return heard.length ? heard.reduce((a, b) => (Date.parse(a) >= Date.parse(b) ? a : b)) : null;
 }
 
 /**
@@ -98,6 +106,7 @@ export class FakeNetworkAlertRepository implements INetworkAlertRepository {
             ? {
                 isOnline: station.isOnline,
                 latestOcppMessageTimestamp: station.latestOcppMessageTimestamp,
+                lastConnectedAt: station.lastConnectedAt ?? null,
                 heartbeatInterval: station.heartbeatInterval || null,
               }
             : null,
@@ -111,22 +120,17 @@ export class FakeNetworkAlertRepository implements INetworkAlertRepository {
     defaultHeartbeatInterval: number,
     missedHeartbeats: number,
   ): Promise<SilentStation[]> {
-    return this.stations.flatMap((station) =>
-      station.tenantId === tenantId &&
-      station.isOnline &&
-      station.latestOcppMessageTimestamp !== null &&
-      Date.parse(station.latestOcppMessageTimestamp) <
-        Date.parse(at) -
-          missedHeartbeats * (station.heartbeatInterval || defaultHeartbeatInterval) * 1000
-        ? [
-            {
-              tenantId: station.tenantId,
-              stationId: station.stationId,
-              latestOcppMessageTimestamp: station.latestOcppMessageTimestamp,
-            },
-          ]
-        : [],
-    );
+    return this.stations.flatMap((station) => {
+      const heardAt = lastHeardAt(station);
+      return station.tenantId === tenantId &&
+        station.isOnline &&
+        heardAt !== null &&
+        Date.parse(heardAt) <
+          Date.parse(at) -
+            missedHeartbeats * (station.heartbeatInterval || defaultHeartbeatInterval) * 1000
+        ? [{ tenantId: station.tenantId, stationId: station.stationId, lastHeardAt: heardAt }]
+        : [];
+    });
   }
 
   async readTenantIds(): Promise<number[]> {

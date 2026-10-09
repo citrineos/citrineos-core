@@ -128,6 +128,7 @@ export class SequelizeLocationRepository
         isOnline,
         protocol: ocppVersion,
         connectedWebsocketServerConfigId: connectedWebsocketServerConfigId ?? null,
+        lastConnectedAt: new Date().toISOString(),
       });
     }
 
@@ -135,6 +136,7 @@ export class SequelizeLocationRepository
       isOnline,
       protocol: ocppVersion,
       connectedWebsocketServerConfigId: connectedWebsocketServerConfigId ?? null,
+      ...(isOnline && { lastConnectedAt: new Date().toISOString() }),
     });
     return station;
   }
