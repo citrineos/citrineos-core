@@ -977,20 +977,20 @@ export class WebsocketNetworkConnection implements INetworkConnection {
       recordWsActiveConnectionsDelta(-1);
     }
     recordWsConnectionClosed(code);
-  
-    // Unregister client
-    const connectionStringPromise = this._cache
+
+    // Deregistered before the slot is released. Until then no other instance can claim the
+    // station, so its messages are never bound to two instances at once.
+    const deregistered =
+      (await this._router
+        .deregisterConnection(closedTenantId, getStationIdFromIdentifier(identifier))
+        .catch((err) => {
+          connLogger.error(`Failed to deregister connection ${identifier} from router`, err);
+        })) === true;
+    const connectionString = await this._cache
       .remove<string>(identifier, CacheNamespace.Connections)
       .catch((err) => {
         connLogger.error(`Failed to remove connection string ${identifier} from cache`, err);
       });
-    const deregisterPromise = this._router
-      .deregisterConnection(closedTenantId, getStationIdFromIdentifier(identifier))
-      .catch((err) => {
-        connLogger.error(`Failed to deregister connection ${identifier} from router`, err);
-      });
-      
-    const connectionString = await connectionStringPromise;
     let timeConnected: number | undefined;
     if (connectionString) {
       const connection: IWebsocketConnection = JSON.parse(connectionString);
@@ -999,8 +999,6 @@ export class WebsocketNetworkConnection implements INetworkConnection {
         `Connection ${identifier} closed after being connected for ${timeConnected} ms with code ${code} and reason ${reason}`,
       );
     }
-
-    const deregistered = (await deregisterPromise) === true;
 
     connLogger.info(
       `Connection closed for ${identifier} live connections: ${this._identifierConnections.size}`,

@@ -84,6 +84,7 @@ describe('WebsocketNetworkConnection', () => {
           cache,
           authenticator: { authenticate: vi.fn().mockResolvedValue({ identifier: STATION_ID }) },
           doesChargingStationExistByOcppConnectionName: vi.fn().mockResolvedValue(true),
+          messagesExchangeSink: { record: vi.fn().mockResolvedValue({ delivered: true }) },
         }),
       );
       return networkConnection;
