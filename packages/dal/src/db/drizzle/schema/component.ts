@@ -37,12 +37,23 @@ function componentColumns() {
 
 // Row-level tenancy (current approach): single public schema, tenantId column filter on every query
 export const componentTable = pgTable(TableName.Components, componentColumns(), (t) => [
-  // Partial unique index from the @Table decorator (unique on tenantId+name where instance is null)
+  // Partial unique index from the @Table decorator
+  uniqueIndex('components_tenantId_name_evseDatabaseId')
+    .on(t.tenantId, t.name, t.evseDatabaseId)
+    .where(sql`${t.instance} is null`),
+  uniqueIndex('components_tenantId_name_instance')
+    .on(t.tenantId, t.name, t.instance)
+    .where(sql`${t.evseDatabaseId} is null`),
   uniqueIndex('components_tenantId_name')
     .on(t.tenantId, t.name)
-    .where(sql`${t.instance} is null`),
-  // Composite unique constraint from the column-level `unique: 'tenantId_name_instance'` option
-  uniqueIndex('components_tenantId_name_instance').on(t.tenantId, t.name, t.instance),
+    .where(sql`${t.instance} is null and ${t.evseDatabaseId} is null`),
+  // Composite unique constraint from the column-level `unique: 'tenantId_name_instance_evseDatabaseId'` option
+  uniqueIndex('components_tenantId_name_instance_evseDatabaseId').on(
+    t.tenantId,
+    t.name,
+    t.instance,
+    t.evseDatabaseId,
+  ),
 ]);
 
 // Schema-per-tenant (future approach): one Postgres schema per tenant, no tenantId filter needed

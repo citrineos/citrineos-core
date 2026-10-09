@@ -47,6 +47,7 @@ import { MessageInfo } from '../../models/message-info/message-info.js';
 import { OCPPMessage } from '../../models/ocpp-message.js';
 import { Reservation } from '../../models/reservation.js';
 import { SecurityEvent } from '../../models/security-event.js';
+import { WebsocketEvent } from '../../models/websocket-event.js';
 import { Subscription } from '../../models/subscription/subscription.js';
 import { Tariff } from '../../models/tariff/tariffs.js';
 import { Tenant } from '../../models/tenant.js';
@@ -195,6 +196,7 @@ export class DefaultSequelizeInstance {
         VariableMonitoringStatus,
         VariableStatus,
         Variable,
+        WebsocketEvent,
         LocalListAuthorization,
         LocalListVersion,
         LocalListVersionAuthorization,

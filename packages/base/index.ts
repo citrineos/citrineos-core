@@ -17,6 +17,7 @@ export { AbstractMessageEndpoint } from './src/interfaces/api/endpoints/abstract
 export type {
   AbstractMessageEndpointDependencies,
   IMessageEndpointMetadata,
+  MessageDelivery,
 } from './src/interfaces/api/endpoints/abstract-message-endpoint.js';
 export { AbstractMessageEndpointApi } from './src/interfaces/api/endpoints/abstract-message-endpoint-api.js';
 export type {
@@ -114,10 +115,11 @@ export {
   MASKED_LOG_KEYS,
   MeterValueUtils,
   notNull,
+  outboundDeadline,
   RequestBuilder,
   serializeError,
 } from './src/util/index.js';
-export type { RedactionRule } from './src/util/index.js';
+export type { OutboundMessage, RedactionRule } from './src/util/index.js';
 
 export {
   OCPP1_6_CALL_RESULT_SCHEMA_RECORD,

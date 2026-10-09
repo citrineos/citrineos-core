@@ -1,15 +1,10 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import { DEFAULT_TENANT_ID, type ICache, type IWebsocketConnection } from '@citrineos/base';
 import {
-  CrudRepository,
-  DEFAULT_TENANT_ID,
-  type ICache,
-  type IWebsocketConnection,
-} from '@citrineos/base';
-import {
-  Component,
   type IChargingStationRepository,
+  type IComponentRepository,
   type IConnectorRepository,
   type IDeviceModelRepository,
   type IEvseRepository,
@@ -37,7 +32,7 @@ import {
 describe('StatusNotificationService', () => {
   const { container } = createTestContainer();
   let statusNotificationService: StatusNotificationService;
-  let componentRepository: Mocked<CrudRepository<Component>>;
+  let componentRepository: Mocked<IComponentRepository>;
   let deviceModelRepository: Mocked<IDeviceModelRepository>;
   // One mock object backs both injected tokens: the service takes station reads from
   // chargingStationRepository and everything else from locationRepository, but the
@@ -52,8 +47,8 @@ describe('StatusNotificationService', () => {
 
   beforeEach(() => {
     componentRepository = {
-      readAllByQuery: vi.fn(),
-    } as unknown as Mocked<CrudRepository<Component>>;
+      findConnectorComponentsForAvailabilityState: vi.fn(),
+    } as unknown as Mocked<IComponentRepository>;
 
     deviceModelRepository = {
       createOrUpdateDeviceModelByStationId: vi.fn(),
@@ -101,7 +96,7 @@ describe('StatusNotificationService', () => {
     locationRepository.readChargingStationByOcppConnectionName.mockResolvedValue(
       aChargingStation(),
     );
-    componentRepository.readAllByQuery.mockResolvedValue([]);
+    componentRepository.findConnectorComponentsForAvailabilityState.mockResolvedValue([]);
 
     await statusNotificationService.processStatusNotification(
       DEFAULT_TENANT_ID,
@@ -128,7 +123,7 @@ describe('StatusNotificationService', () => {
     locationRepository.readChargingStationByOcppConnectionName.mockResolvedValue(
       aChargingStation(),
     );
-    componentRepository.readAllByQuery.mockResolvedValue([
+    componentRepository.findConnectorComponentsForAvailabilityState.mockResolvedValue([
       aComponent((c) => {
         c.name = 'Connector';
         c.evse = anEvse();
@@ -150,7 +145,7 @@ describe('StatusNotificationService', () => {
   });
 
   it('should not save Component and Variable ReportData because Station doesnt exist', async () => {
-    componentRepository.readAllByQuery.mockResolvedValue([
+    componentRepository.findConnectorComponentsForAvailabilityState.mockResolvedValue([
       aComponent((c) => {
         c.name = 'Connector';
         c.evse = anEvse();
@@ -173,7 +168,7 @@ describe('StatusNotificationService', () => {
 
   describe('Component or Variable does not exist', () => {
     it('should not save Component and Variable ReportData because Component does not exist', async () => {
-      componentRepository.readAllByQuery.mockResolvedValue([]);
+      componentRepository.findConnectorComponentsForAvailabilityState.mockResolvedValue([]);
 
       await statusNotificationService.processStatusNotification(
         DEFAULT_TENANT_ID,
@@ -185,7 +180,9 @@ describe('StatusNotificationService', () => {
     });
 
     it('should not save Component and Variable ReportData because Variable does not exist', async () => {
-      componentRepository.readAllByQuery.mockResolvedValue([aComponent()]);
+      componentRepository.findConnectorComponentsForAvailabilityState.mockResolvedValue([
+        aComponent(),
+      ]);
 
       await statusNotificationService.processStatusNotification(
         DEFAULT_TENANT_ID,
@@ -235,7 +232,7 @@ describe('StatusNotificationService', () => {
       locationRepository.readChargingStationByOcppConnectionName.mockResolvedValue(
         aTwoEvseChargingStation(),
       );
-      componentRepository.readAllByQuery.mockResolvedValue([]);
+      componentRepository.findConnectorComponentsForAvailabilityState.mockResolvedValue([]);
     });
 
     it('should update the second EVSE when it reports its connector 1', async () => {
@@ -292,7 +289,7 @@ describe('StatusNotificationService', () => {
 
   describe('Test process OCPP 2.0.1 StatusNotification for an unknown connector', () => {
     beforeEach(() => {
-      componentRepository.readAllByQuery.mockResolvedValue([]);
+      componentRepository.findConnectorComponentsForAvailabilityState.mockResolvedValue([]);
     });
 
     it('should commission an EVSE and synthesize the connector when neither exists and allowUnknownChargingStations is true', async () => {
@@ -481,7 +478,9 @@ describe('StatusNotificationService', () => {
     });
 
     it('should not save StatusNotification or connector when Charging Station does not exist', async () => {
-      componentRepository.readAllByQuery.mockResolvedValue([aComponent()]);
+      componentRepository.findConnectorComponentsForAvailabilityState.mockResolvedValue([
+        aComponent(),
+      ]);
 
       await statusNotificationService.processStatusNotification(
         DEFAULT_TENANT_ID,

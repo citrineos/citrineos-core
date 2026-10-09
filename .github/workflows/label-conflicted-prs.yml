@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Sweep open pull requests
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const WARN_DAYS = 14;

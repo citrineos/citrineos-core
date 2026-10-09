@@ -217,8 +217,24 @@ export const configSchema = z.object({
             .object({
               router: z.number().int().min(0).default(100),
               module: z.number().int().min(0).default(10),
+              // Consumer on a module's catch-up queue, which takes Calls that outlived
+              // maxCallLengthSeconds before a module got to them.
+              moduleStale: z.number().int().min(0).default(1),
               messages: z.number().int().min(0).default(50),
               messagesDeadLetter: z.number().int().min(0).default(10),
+            })
+            .prefault({}),
+          // How long the router keeps re-emitting a message for a station no router holds
+          // before dead-lettering it as unroutable.
+          reemitMaxRetrySeconds: z.number().int().min(1).default(300),
+          deadLetterQueue: z
+            .object({
+              maxLength: z.number().int().min(1).default(100_000),
+              maxLengthBytes: z
+                .number()
+                .int()
+                .min(1)
+                .default(512 * 1024 * 1024),
             })
             .prefault({}),
         })
@@ -351,7 +367,7 @@ export const configSchema = z.object({
     .object({
       maxCallLengthSeconds: z.number().int().min(1).default(20),
       maxCachingSeconds: z.number().int().min(1).default(30),
-      staleCallMaxAgeSeconds: z.number().int().min(1).optional(),
+      staleCallMaxAgeSeconds: z.number().int().min(0).default(40),
       shutdownGracePeriodSeconds: z.number().int().min(1).default(30),
       realTimeAuthDefaultTimeoutSeconds: z.number().int().min(1).default(15),
       realTimeAuthRequestTimeoutSeconds: z.number().int().min(1).default(10),
@@ -376,6 +392,7 @@ export const configSchema = z.object({
       getBaseReportOnPending: z.boolean().default(true),
       bootWithRejectedVariables: z.boolean().default(false),
       autoAccept: z.boolean().default(true),
+      maxPendingCallsPerStation: z.number().int().min(1).default(5),
     })
     .prefault({}),
 

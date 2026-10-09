@@ -61,11 +61,16 @@ export class DeviceModelService {
           attributeType: variableAttribute.type,
           attributeStatus: SetVariableStatusEnum.Accepted,
           attributeStatusInfo: { reasonCode: 'SetOnCharger' },
-          component: variableAttribute.component,
-          variable: variableAttribute.variable,
+          component: reportData.component,
+          variable: reportData.variable,
         } as OCPP2_common_types.SetVariableResultType,
         ocppConnectionName,
         timestamp,
+        withDefaultedMutability.variableAttribute.find(
+          (attribute) =>
+            (attribute.type ?? AttributeEnum.Actual) ===
+            (variableAttribute.type ?? AttributeEnum.Actual),
+        )?.value ?? undefined,
       );
       acceptedAttributes.push(variableAttribute);
     }

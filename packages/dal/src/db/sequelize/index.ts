@@ -28,6 +28,7 @@ export {
   MeterValue,
 } from '../../models/transaction-event/index.js';
 export { SecurityEvent } from '../../models/security-event.js';
+export { WebsocketEvent } from '../../models/websocket-event.js';
 export {
   VariableMonitoring,
   EventData,
@@ -85,12 +86,12 @@ export {
 } from '../../repositories/sequelize/base.js';
 export { SequelizeAuthorizationRepository } from '../../repositories/sequelize/authorization.js';
 export { SequelizeBootRepository } from '../../repositories/sequelize/boot.js';
-export { SequelizeComponentRepository } from '../../repositories/sequelize/component.js';
 export { SequelizeDeviceModelRepository } from '../../repositories/sequelize/device-model.js';
 export { SequelizeLocalAuthListRepository } from '../../repositories/sequelize/local-auth-list.js';
 export { SequelizeLocationRepository } from '../../repositories/sequelize/location.js';
 export { SequelizeTransactionEventRepository } from '../../repositories/sequelize/transaction-event.js';
 export { SequelizeSecurityEventRepository } from '../../repositories/sequelize/security-event.js';
+export { SequelizeWebsocketEventRepository } from '../../repositories/sequelize/websocket-event.js';
 export { SequelizeVariableMonitoringRepository } from '../../repositories/sequelize/variable-monitoring.js';
 export { SequelizeMessageInfoRepository } from '../../repositories/sequelize/message-info.js';
 export { SequelizeTariffRepository } from '../../repositories/sequelize/tariff.js';
