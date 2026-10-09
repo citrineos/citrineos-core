@@ -26,7 +26,7 @@ export class SequelizeChargingStationSecurityInfoRepository
     const existingInfo = await this.readOnlyOneByQuery(tenantId, {
       where: { stationId },
     });
-    return existingInfo ? existingInfo.publicKeyFileId : '';
+    return existingInfo?.publicKeyFileId ?? '';
   }
 
   async readOrCreateChargingStationInfo(

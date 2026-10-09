@@ -72,7 +72,6 @@ import type {
   ChargingProfile,
   CompositeSchedule,
 } from '../models/charging-profile/index.js';
-import type { ChargingStationSecurityInfo } from '../models/charging-station-security-info.js';
 import type { ChargingStationSequence } from '../models/charging-station-sequence/charging-station-sequence.js';
 import type { ChargingStationNetworkProfile } from '../models/location/charging-station-network-profile.js';
 import type {
@@ -711,8 +710,7 @@ export interface IWebsocketEventRepository {
   ): Promise<WebsocketEventDto>;
 }
 
-export interface IChargingStationSecurityInfoRepository
-  extends CrudRepository<ChargingStationSecurityInfo> {
+export interface IChargingStationSecurityInfoRepository {
   readChargingStationPublicKeyFileId(tenantId: number, ocppConnectionName: string): Promise<string>;
   readOrCreateChargingStationInfo(
     tenantId: number,

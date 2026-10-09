@@ -73,6 +73,18 @@ export {
   type ChargingStationEntityInsert,
 } from './schema/charging-station.js';
 export {
+  DrizzleChargingStationSecurityInfoRepository,
+  toChargingStationSecurityInfoDto,
+} from '../../repositories/drizzle/charging-station-security-info.js';
+export {
+  chargingStationSecurityInfoTable,
+  tenantChargingStationSecurityInfoTable,
+  ChargingStationSecurityInfoEntitySchema,
+  ChargingStationSecurityInfoEntityInsertSchema,
+  type ChargingStationSecurityInfoEntity,
+  type ChargingStationSecurityInfoEntityInsert,
+} from './schema/charging-station-security-info.js';
+export {
   DrizzleComponentRepository,
   toComponentDto,
 } from '../../repositories/drizzle/component.js';
