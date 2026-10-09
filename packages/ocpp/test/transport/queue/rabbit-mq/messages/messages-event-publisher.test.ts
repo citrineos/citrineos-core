@@ -19,6 +19,7 @@ import {
   aConnectionEvent,
   aFrameEvent,
   anEmittingConnectionManager,
+  aWebsocketLifecycleEvent,
 } from '@test/providers/messages-event-provider.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
 import type { RabbitMQChannelManager } from '@/transport/queue/rabbit-mq/channel-manager.js';
@@ -226,6 +227,30 @@ describe('MessagesEventPublisher', () => {
         tenantId: '1',
         state: ConnectionEventState.Closed,
       });
+    });
+
+    it('should expose the type and source headers for a websocket lifecycle event', async () => {
+      await publisher.publish(
+        aWebsocketLifecycleEvent({ type: 'ConnectionRejected', source: 'unknown_station' }),
+      );
+
+      expect(optionsOf().headers).toEqual({
+        kind: 'websocket',
+        tenantId: '1',
+        type: 'ConnectionRejected',
+        source: 'unknown_station',
+      });
+    });
+
+    it('should route a websocket lifecycle event by its type', async () => {
+      await publisher.publish(aWebsocketLifecycleEvent({ type: 'Close' }));
+
+      expect(channel.publish).toHaveBeenCalledWith(
+        MESSAGES_EXCHANGE,
+        'websocket.Close',
+        expect.any(Buffer),
+        expect.anything(),
+      );
     });
 
     it('should report backpressure without treating it as a loss', async () => {

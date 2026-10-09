@@ -45,6 +45,7 @@ describe('WebsocketNetworkConnection', () => {
         router: {},
         authenticator: { authenticate: vi.fn().mockResolvedValue({ identifier: STATION_ID }) },
         doesChargingStationExistByOcppConnectionName: vi.fn().mockResolvedValue(false),
+        messagesExchangeSink: { record: vi.fn().mockResolvedValue({ delivered: true }) },
       }),
     );
     await networkConnection.addWebsocketServer(config);
@@ -83,6 +84,7 @@ describe('WebsocketNetworkConnection', () => {
           logger,
           router: {},
           fileStorage: { exists: vi.fn().mockResolvedValue(false), getFile: vi.fn() },
+          messagesExchangeSink: { record: vi.fn().mockResolvedValue({ delivered: true }) },
         }),
       );
       const config = aWebsocketServerConfig({
@@ -141,6 +143,7 @@ describe('WebsocketNetworkConnection', () => {
           cache,
           authenticator: { authenticate: vi.fn().mockResolvedValue({ identifier: STATION_ID }) },
           doesChargingStationExistByOcppConnectionName: vi.fn().mockResolvedValue(true),
+          messagesExchangeSink: { record: vi.fn().mockResolvedValue({ delivered: true }) },
         }),
       );
       return networkConnection;
