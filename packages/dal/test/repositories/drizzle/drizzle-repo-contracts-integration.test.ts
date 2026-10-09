@@ -7,8 +7,11 @@ import {
   Boot,
   Certificate,
   ChargingStation,
+  ChargingStationNetworkProfile,
   DeleteCertificateAttempt,
   InstalledCertificate,
+  ServerNetworkProfile,
+  SetNetworkProfile,
 } from '@dal/db/sequelize/index.js';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
@@ -18,15 +21,19 @@ import {
   DeleteCertificateStatusEnum,
   HashAlgorithmEnum,
   InstallCertificateStatusEnum,
+  OCPP2_0_1,
+  OCPPVersion,
 } from '@citrineos/types';
 import {
   type IBootRepository,
   type ICertificateRepository,
+  type IChargingStationNetworkProfileRepository,
   type IDeleteCertificateAttemptRepository,
   type IInstallCertificateAttemptRepository,
   type IInstalledCertificateRepository,
   SequelizeBootRepository,
   SequelizeCertificateRepository,
+  SequelizeChargingStationNetworkProfileRepository,
   SequelizeDeleteCertificateAttemptRepository,
   SequelizeInstallCertificateAttemptRepository,
   SequelizeInstalledCertificateRepository,
@@ -48,6 +55,7 @@ import {
   DrizzleInstalledCertificateRepository,
   toInstalledCertificateDto,
 } from '@dal/repositories/drizzle/installed-certificate.js';
+import { DrizzleChargingStationNetworkProfileRepository } from '@dal/repositories/drizzle/charging-station-network-profile.js';
 import { DrizzleVariableAttributeRepository } from '@dal/repositories/drizzle/variable-attribute.js';
 import type { BootEntity } from '@dal/db/drizzle/schema/boot.js';
 import type { CertificateEntity } from '@dal/db/drizzle/schema/certificate.js';
@@ -148,6 +156,18 @@ function deleteAttemptRepo(kind: Kind): IDeleteCertificateAttemptRepository {
         sequelizeInstance: h.sequelizeInstance,
       })
     : new DrizzleDeleteCertificateAttemptRepository({ config: h.config, drizzleInstance: db });
+}
+
+function chargingStationNetworkProfileRepo(kind: Kind): IChargingStationNetworkProfileRepository {
+  return kind === 'sequelize'
+    ? new SequelizeChargingStationNetworkProfileRepository({
+        config: h.config,
+        sequelizeInstance: h.sequelizeInstance,
+      })
+    : new DrizzleChargingStationNetworkProfileRepository({
+        config: h.config,
+        drizzleInstance: db,
+      });
 }
 
 async function aStation(tenantId: number, ocppConnectionName = STATION): Promise<{ id: number }> {
@@ -720,6 +740,181 @@ describe.each(kinds)('DeleteCertificateAttempt repository (%s)', (kind) => {
     );
     expect(updated!.status).toBe('NotFound');
     expect(await repo.findPendingByStation(TENANT, STATION)).toBeUndefined();
+  });
+});
+
+describe.each(kinds)('ChargingStationNetworkProfile repository (%s)', (kind) => {
+  // The sync-built schema keys this through table on (stationId, websocketServerConfigId) and
+  // leaves a single-column unique on configurationSlot, so every row below gets its own server
+  // profile and a slot no other row uses.
+  async function aServerProfile(id: string, tenantId = TENANT, securityProfile = 1) {
+    await ServerNetworkProfile.create({
+      id,
+      host: 'localhost',
+      port: 8080,
+      pingInterval: 60,
+      protocols: [OCPPVersion.OCPP2_0_1],
+      messageTimeout: 30,
+      securityProfile,
+      allowUnknownChargingStations: false,
+      dynamicTenantResolution: false,
+      tenantId,
+    } as any);
+  }
+
+  async function aSetProfile(
+    stationId: number,
+    configurationSlot: number,
+    websocketServerConfigId: string,
+    tenantId = TENANT,
+  ): Promise<{ id: number }> {
+    const row = await SetNetworkProfile.create({
+      stationId,
+      correlationId: `corr-${stationId}-${configurationSlot}`,
+      websocketServerConfigId,
+      configurationSlot,
+      ocppVersion: OCPP2_0_1.OCPPVersionEnumType.OCPP20,
+      ocppTransport: OCPP2_0_1.OCPPTransportEnumType.JSON,
+      ocppCsmsUrl: 'ws://csms.example:8080',
+      messageTimeout: 30,
+      securityProfile: 1,
+      ocppInterface: OCPP2_0_1.OCPPInterfaceEnumType.Wired0,
+      tenantId,
+    } as any);
+    return row as unknown as { id: number };
+  }
+
+  async function aSlotRow(
+    stationId: number,
+    configurationSlot: number,
+    websocketServerConfigId: string,
+    tenantId = TENANT,
+  ): Promise<{ id: number }> {
+    await aServerProfile(websocketServerConfigId, tenantId);
+    const setNetworkProfile = await aSetProfile(
+      stationId,
+      configurationSlot,
+      websocketServerConfigId,
+      tenantId,
+    );
+    await ChargingStationNetworkProfile.create({
+      stationId,
+      configurationSlot,
+      websocketServerConfigId,
+      setNetworkProfileId: setNetworkProfile.id,
+      tenantId,
+    } as any);
+    return setNetworkProfile;
+  }
+
+  it('readAllByStationIdWithProfiles returns the station rows with both relations', async () => {
+    const station = await aStation(TENANT);
+    const other = await aStation(TENANT, 'CS-OTHER');
+    const setNetworkProfile = await aSlotRow(station.id, 1, 'ws-1');
+    await aSlotRow(other.id, 2, 'ws-2');
+
+    const rows = await chargingStationNetworkProfileRepo(kind).readAllByStationIdWithProfiles(
+      TENANT,
+      STATION,
+    );
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0].stationId).toBe(station.id);
+    expect(rows[0].configurationSlot).toBe(1);
+    expect(rows[0].setNetworkProfileId).toBe(setNetworkProfile.id);
+    expect(rows[0].websocketServerConfigId).toBe('ws-1');
+    expect(rows[0].tenantId).toBe(TENANT);
+    expect(rows[0].setNetworkProfile.id).toBe(setNetworkProfile.id);
+    expect(rows[0].setNetworkProfile.ocppCsmsUrl).toBe('ws://csms.example:8080');
+    expect(rows[0].websocketServerConfig?.id).toBe('ws-1');
+    expect(rows[0].websocketServerConfig?.securityProfile).toBe(1);
+  });
+
+  it('readAllByStationIdWithProfiles is scoped to the tenant and an unknown station is empty', async () => {
+    const station = await aStation(TENANT);
+    await aStation(OTHER_TENANT);
+    await aSlotRow(station.id, 1, 'ws-1');
+    const repo = chargingStationNetworkProfileRepo(kind);
+
+    expect(await repo.readAllByStationIdWithProfiles(OTHER_TENANT, STATION)).toEqual([]);
+    expect(await repo.readAllByStationIdWithProfiles(TENANT, 'CS-MISSING')).toEqual([]);
+  });
+
+  it('deleteAllByStationIdAndConfigurationSlots removes only the listed slots of that station', async () => {
+    const station = await aStation(TENANT);
+    const other = await aStation(TENANT, 'CS-OTHER');
+    await aSlotRow(station.id, 1, 'ws-1');
+    await aSlotRow(station.id, 2, 'ws-2');
+    await aSlotRow(station.id, 3, 'ws-3');
+    await aSlotRow(other.id, 9, 'ws-9');
+
+    const deleted = await chargingStationNetworkProfileRepo(
+      kind,
+    ).deleteAllByStationIdAndConfigurationSlots(TENANT, STATION, [1, 3, 9]);
+
+    expect(deleted.map((r) => r.configurationSlot).sort()).toEqual([1, 3]);
+    expect(deleted.every((r) => r.setNetworkProfile !== undefined)).toBe(true);
+    const remaining = await ChargingStationNetworkProfile.findAll();
+    expect(remaining.map((r) => [r.stationId, r.configurationSlot]).sort()).toEqual(
+      [
+        [station.id, 2],
+        [other.id, 9],
+      ].sort(),
+    );
+  });
+
+  it('deleteAllByStationIdAndConfigurationSlots under another tenant deletes nothing', async () => {
+    const station = await aStation(TENANT);
+    await aStation(OTHER_TENANT);
+    await aSlotRow(station.id, 1, 'ws-1');
+
+    const deleted = await chargingStationNetworkProfileRepo(
+      kind,
+    ).deleteAllByStationIdAndConfigurationSlots(OTHER_TENANT, STATION, [1]);
+
+    expect(deleted).toEqual([]);
+    expect(await ChargingStationNetworkProfile.count()).toBe(1);
+  });
+
+  it('readByConfigurationSlot finds the slot and misses an unknown one', async () => {
+    const station = await aStation(TENANT);
+    await aSlotRow(station.id, 1, 'ws-1');
+    const repo = chargingStationNetworkProfileRepo(kind);
+
+    const hit = await repo.readByConfigurationSlot(TENANT, STATION, 1);
+    expect(hit?.websocketServerConfigId).toBe('ws-1');
+    expect(hit?.stationId).toBe(station.id);
+
+    expect(await repo.readByConfigurationSlot(TENANT, STATION, 2)).toBeUndefined();
+    expect(await repo.readByConfigurationSlot(TENANT, 'CS-MISSING', 1)).toBeUndefined();
+    expect(await repo.readByConfigurationSlot(OTHER_TENANT, STATION, 1)).toBeUndefined();
+  });
+
+  it('upsertByConfigurationSlot inserts, then overwrites the same slot in place', async () => {
+    const station = await aStation(TENANT);
+    await aServerProfile('ws-1');
+    await aServerProfile('ws-2');
+    const first = await aSetProfile(station.id, 4, 'ws-1');
+    const second = await aSetProfile(station.id, 5, 'ws-2');
+    const repo = chargingStationNetworkProfileRepo(kind);
+
+    const inserted = await repo.upsertByConfigurationSlot(TENANT, station.id, 4, first.id, 'ws-1');
+    expect(inserted.stationId).toBe(station.id);
+    expect(inserted.configurationSlot).toBe(4);
+    expect(inserted.setNetworkProfileId).toBe(first.id);
+    expect(inserted.websocketServerConfigId).toBe('ws-1');
+    expect(inserted.tenantId).toBe(TENANT);
+    expect(inserted.setNetworkProfile.id).toBe(first.id);
+
+    const updated = await repo.upsertByConfigurationSlot(TENANT, station.id, 4, second.id, 'ws-2');
+    expect(updated.setNetworkProfileId).toBe(second.id);
+    expect(updated.websocketServerConfigId).toBe('ws-2');
+    expect(updated.websocketServerConfig?.id).toBe('ws-2');
+
+    const rows = await ChargingStationNetworkProfile.findAll();
+    expect(rows).toHaveLength(1);
+    expect(rows[0].configurationSlot).toBe(4);
+    expect(rows[0].setNetworkProfileId).toBe(second.id);
   });
 });
 

@@ -73,6 +73,20 @@ export {
   type ChargingStationEntityInsert,
 } from './schema/charging-station.js';
 export {
+  DrizzleChargingStationNetworkProfileRepository,
+  toChargingStationNetworkProfileDto,
+  toChargingStationNetworkProfileRow,
+  type ChargingStationNetworkProfileRow,
+} from '../../repositories/drizzle/charging-station-network-profile.js';
+export {
+  chargingStationNetworkProfileTable,
+  tenantChargingStationNetworkProfileTable,
+  ChargingStationNetworkProfileEntitySchema,
+  ChargingStationNetworkProfileEntityInsertSchema,
+  type ChargingStationNetworkProfileEntity,
+  type ChargingStationNetworkProfileEntityInsert,
+} from './schema/charging-station-network-profile.js';
+export {
   DrizzleComponentRepository,
   toComponentDto,
 } from '../../repositories/drizzle/component.js';

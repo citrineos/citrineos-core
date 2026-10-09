@@ -3,8 +3,11 @@
 // SPDX-License-Identifier: Apache-2.0
 import type { AuthenticationOptions } from '@citrineos/base';
 import { OCPP2_0_1 } from '@citrineos/types';
-import type { IVariableAttributeRepository, IServerNetworkProfileRepository } from '@citrineos/dal';
-import { ChargingStationNetworkProfile, resolveStationId } from '@citrineos/dal';
+import type {
+  IChargingStationNetworkProfileRepository,
+  IServerNetworkProfileRepository,
+  IVariableAttributeRepository,
+} from '@citrineos/dal';
 import { IncomingMessage } from 'http';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
@@ -17,19 +20,23 @@ import { UpgradeAuthenticationError } from './errors/authentication-error.js';
 export class NetworkProfileFilter extends AuthenticatorFilter {
   private _variableAttributeRepository: IVariableAttributeRepository;
   private _serverNetworkProfileRepository: IServerNetworkProfileRepository;
+  private _chargingStationNetworkProfileRepository: IChargingStationNetworkProfileRepository;
 
   constructor({
     variableAttributeRepository,
     serverNetworkProfileRepository,
+    chargingStationNetworkProfileRepository,
     logger,
   }: {
     variableAttributeRepository: IVariableAttributeRepository;
     serverNetworkProfileRepository: IServerNetworkProfileRepository;
+    chargingStationNetworkProfileRepository: IChargingStationNetworkProfileRepository;
     logger: Logger<ILogObj>;
   }) {
     super(logger);
     this._variableAttributeRepository = variableAttributeRepository;
     this._serverNetworkProfileRepository = serverNetworkProfileRepository;
+    this._chargingStationNetworkProfileRepository = chargingStationNetworkProfileRepository;
   }
 
   protected shouldFilter(_options: AuthenticationOptions): boolean {
@@ -91,18 +98,13 @@ export class NetworkProfileFilter extends AuthenticatorFilter {
           return true;
         } else {
           let securityProfileAllowed = false;
-          const stationId = await resolveStationId(tenantId, identifier);
           for (const configurationSlot of configurationSlotsArray) {
             const chargingStationNetworkProfile =
-              stationId === undefined
-                ? null
-                : await ChargingStationNetworkProfile.findOne({
-                    where: {
-                      tenantId,
-                      stationId,
-                      configurationSlot: configurationSlot,
-                    },
-                  });
+              await this._chargingStationNetworkProfileRepository.readByConfigurationSlot(
+                tenantId,
+                identifier,
+                configurationSlot,
+              );
             if (chargingStationNetworkProfile) {
               const websocketServerConfigId = chargingStationNetworkProfile.websocketServerConfigId;
               const serverNetworkProfile = websocketServerConfigId

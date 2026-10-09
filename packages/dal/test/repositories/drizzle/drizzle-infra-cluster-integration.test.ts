@@ -24,7 +24,7 @@ import {
   DrizzleAsyncJobStatusRepository,
   toAsyncJobStatusDto,
 } from '@dal/repositories/drizzle/async-job-status.js';
-import { toChargingStationNetworkProfileDto } from '@dal/repositories/drizzle/charging-station-network-profile.js';
+import { toChargingStationNetworkProfileRow } from '@dal/repositories/drizzle/charging-station-network-profile.js';
 import {
   DrizzleChargingStationSecurityInfoRepository,
   toChargingStationSecurityInfoDto,
@@ -71,9 +71,9 @@ import { type PgHarness, resetDb, startPgHarness } from '../../utils/pg-harness.
 // deleteById paths from base.ts through them, over the sequelize-created schema.
 // DrizzleTariffRepository is covered on the same base surface only; its
 // ITariffRepository methods are not yet covered anywhere.
-// ChargingStationNetworkProfile gets mapper coverage only — see the note at the
-// bottom. The sequelize twins have their own suites under
-// test/repositories/sequelize.
+// ChargingStationNetworkProfile gets mapper coverage only here; its repository
+// methods run on both layers in drizzle-repo-contracts-integration.test.ts. The
+// sequelize twins have their own suites under test/repositories/sequelize.
 
 const TENANT = 1;
 const OTHER_TENANT = 2;
@@ -351,8 +351,8 @@ describe('drizzle row-to-DTO mappers', () => {
     expect(dto.apn).toBeUndefined();
   });
 
-  it('toChargingStationNetworkProfileDto zero-fills the slot and FK columns', () => {
-    const dto = toChargingStationNetworkProfileDto(
+  it('toChargingStationNetworkProfileRow zero-fills the slot and FK columns', () => {
+    const dto = toChargingStationNetworkProfileRow(
       preMigrationRow<ChargingStationNetworkProfileEntity>({
         stationId: 12,
         configurationSlot: null,
@@ -835,14 +835,6 @@ describe('DrizzleSetNetworkProfileRepository (base CRUD)', () => {
     expect((await repo.findById(TENANT, seeded.id))!.configurationSlot).toBe(1);
   });
 });
-
-// DrizzleChargingStationNetworkProfileRepository has no DB-backed tests here:
-// the sequelize layer defines ChargingStationNetworkProfile as the BelongsToMany
-// through-model of ChargingStation<->ServerNetworkProfile, so the real table has
-// a composite PK (stationId, websocketServerConfigId) and NO id column, while
-// the drizzle schema declares `serial('id')`. Every Base-CRUD method on the
-// drizzle repository fails with `column "id" does not exist` (42703) against
-// the sequelize-created schema. Only the pure mapper is covered above.
 
 describe('DrizzleChargingStationSecurityInfoRepository (base insert)', () => {
   // Base insert is protected; the stub adds no public create yet.
