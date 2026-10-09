@@ -9,10 +9,9 @@ import {
   type CommandDefinition,
 } from '@lib/client/components/modals/1.6/commands-registry';
 import { Button } from '@lib/client/components/ui/button';
-import type { ListCanReturnType } from '@lib/utils/access-types';
-import { ActionType, ResourceType } from '@lib/utils/access-types';
 import { closeModal, openModal } from '@lib/utils/store/modal-slice';
-import { useCan, useTranslate } from '@refinedev/core';
+import { useTranslate } from '@refinedev/core';
+import { useAllowedCommands } from '@lib/client/hooks/use-allowed-commands';
 import { instanceToPlain } from 'class-transformer';
 import { useDispatch } from 'react-redux';
 
@@ -34,40 +33,29 @@ export const OCPP1_6_Commands = ({ station }: OCPP1_6_CommandsProps) => {
     );
   };
 
-  const commandsToExclude: string[] = [];
+  const { commands: permittedCommands, isResolved } = useAllowedCommands(OCPP1_6_COMMANDS_REGISTRY);
 
-  const { data } = useCan({
-    resource: ResourceType.CHARGING_STATIONS,
-    action: ActionType.COMMAND,
-    params: {
-      id: station.ocppConnectionName,
-      commandType: 'otherCommands',
-    },
-  });
-
-  const listData = data as ListCanReturnType;
-  if (!data?.can) {
-    return null;
-  } else if (listData?.meta?.exceptions) {
-    for (const exception of listData.meta.exceptions) {
-      if (exception.param === 'commandType') {
-        commandsToExclude.push(...exception.values);
-      }
-    }
+  if (isResolved && permittedCommands.length === 0) {
+    return (
+      <div className="p-4 text-sm text-muted-foreground">
+        {translate('ChargingStations.noAdditionalCommands')}
+      </div>
+    );
   }
 
   return (
     <div className="space-y-4">
-      {Object.entries(OCPP1_6_COMMANDS_REGISTRY).map(([commandKey, commandDef]) => (
-        <Button
-          key={commandKey}
-          variant="outline"
-          className="w-full"
-          onClick={() => handleCommandClick(commandDef)}
-        >
-          {translate(commandDef.displayNameKey)}
-        </Button>
-      ))}
+      {isResolved &&
+        permittedCommands.map(([commandKey, commandDef]) => (
+          <Button
+            key={commandKey}
+            variant="outline"
+            className="w-full"
+            onClick={() => handleCommandClick(commandDef)}
+          >
+            {translate(commandDef.displayNameKey)}
+          </Button>
+        ))}
     </div>
   );
 };

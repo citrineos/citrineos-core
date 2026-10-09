@@ -6,7 +6,6 @@
 import React from 'react';
 import { TRANSACTION_SUCCESS_RATE_QUERY } from '@lib/queries/transactions';
 import { ActionType, ResourceType } from '@lib/utils/access-types';
-import { AccessDeniedFallbackCard } from '@lib/client/components/access-denied-fallback-card';
 import { CanAccess, useCustom, useTranslate } from '@refinedev/core';
 import { Card, CardContent, CardHeader } from '@lib/client/components/ui/card';
 import { heading2Style } from '@lib/client/styles/page';
@@ -31,11 +30,7 @@ export const PluginSuccessRateCard = () => {
   if (isLoading) return <OverviewCardSkeleton />;
 
   return (
-    <CanAccess
-      resource={ResourceType.TRANSACTIONS}
-      action={ActionType.LIST}
-      fallback={<AccessDeniedFallbackCard />}
-    >
+    <CanAccess resource={ResourceType.TRANSACTIONS} action={ActionType.LIST}>
       <Card>
         <CardHeader>
           <h2 className={heading2Style}>{translate('Overview.plugInSuccessRate')}</h2>

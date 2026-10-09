@@ -26,7 +26,7 @@ import { openModal } from '@lib/utils/store/modal-slice';
 import { getPlainToInstanceOptions } from '@lib/utils/tables';
 import { CanAccess, Link, useDelete, useOne, useTranslate } from '@refinedev/core';
 import { instanceToPlain } from 'class-transformer';
-import { ChevronLeft, Edit, Info, MoreHorizontal, RefreshCw, Trash2 } from 'lucide-react';
+import { ChevronLeft, Edit, Info, RefreshCw, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import React, { useCallback, useState } from 'react';
 import { useDispatch } from 'react-redux';
@@ -34,6 +34,7 @@ import { Card, CardContent, CardHeader } from '@lib/client/components/ui/card';
 import { cardGridStyle, cardHeaderFlex } from '@lib/client/styles/card';
 import { badgeListStyle, clickableLinkStyle, heading2Style } from '@lib/client/styles/page';
 import { buttonIconSize } from '@lib/client/styles/icon';
+import { OtherCommandsButton } from '@lib/client/components/modals/other-commands/other-commands-button';
 import { KeyValueDisplay } from '@lib/client/components/key-value-display';
 import { Badge } from '@lib/client/components/ui/badge';
 import Image from 'next/image';
@@ -41,7 +42,7 @@ import { isGcp } from '@lib/server/clients/file/is-gcp';
 import { StartTransactionButton } from '@lib/client/pages/charging-stations/start-transaction-button';
 import { StopTransactionButton } from '@lib/client/pages/charging-stations/stop-transaction-button';
 import { getTransactionCommandAvailability } from '@lib/client/pages/charging-stations/transaction-command-availability';
-import { CommandsUnavailableText } from '@lib/client/pages/charging-stations/commands-unavailable-text';
+import { InlineNotice, InlineNoticeText } from '@lib/client/components/inline-notice';
 import { ResetButton } from '@lib/client/pages/charging-stations/reset-button';
 import { ForceDisconnectButton } from '@lib/client/pages/charging-stations/force-disconnect-button';
 import { Skeleton } from '@lib/client/components/ui/skeleton';
@@ -109,18 +110,6 @@ export const ChargingStationDetailCard = ({
     },
     [dispatch, translate],
   );
-
-  const showOtherCommandsModal = useCallback(() => {
-    if (!station) return;
-
-    dispatch(
-      openModal({
-        title: translate('ChargingStations.otherCommands'),
-        modalComponentType: ModalComponentType.otherCommands,
-        modalComponentProps: { station: instanceToPlain(station) },
-      }),
-    );
-  }, [dispatch, station, translate]);
 
   const showToggleOnlineModal = useCallback(() => {
     if (!station) return;
@@ -442,32 +431,21 @@ export const ChargingStationDetailCard = ({
 
         {/* Command Buttons */}
         <div className="mt-6">
-          <CanAccess
-            resource={ResourceType.CHARGING_STATIONS}
-            action={ActionType.COMMAND}
-            params={{ id: station.id }}
-          >
-            <div className="flex flex-col gap-2">
-              {!station.isOnline && <CommandsUnavailableText />}
-              <div className="flex gap-4 flex-wrap">
-                <ForceDisconnectButton
-                  id={station.id}
-                  onClickAction={() => showForceDisconnectModal(station)}
-                />
-                {canStart && (
-                  <StartTransactionButton station={station} disabled={!station.isOnline} />
-                )}
-                {canStop && (
-                  <StopTransactionButton station={station} disabled={!station.isOnline} />
-                )}
-                <ResetButton station={station} disabled={!station.isOnline} />
-                <Button onClick={showOtherCommandsModal} disabled={!station.isOnline}>
-                  <MoreHorizontal className={buttonIconSize} />
-                  {translate('ChargingStations.otherCommands')}
-                </Button>
-              </div>
+          <div className="flex flex-col gap-2">
+            {!station.isOnline && <InlineNotice text={InlineNoticeText.COMMANDS_UNAVAILABLE} />}
+            <div className="flex gap-4 flex-wrap">
+              <ForceDisconnectButton
+                id={station.id}
+                onClickAction={() => showForceDisconnectModal(station)}
+              />
+              {canStart && (
+                <StartTransactionButton station={station} disabled={!station.isOnline} />
+              )}
+              {canStop && <StopTransactionButton station={station} disabled={!station.isOnline} />}
+              <ResetButton station={station} disabled={!station.isOnline} />
+              <OtherCommandsButton station={station} disabled={!station.isOnline} />
             </div>
-          </CanAccess>
+          </div>
         </div>
       </CardContent>
     </Card>

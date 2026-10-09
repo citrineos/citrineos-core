@@ -4,6 +4,7 @@
 'use client';
 
 import { CanAccess, useTranslate } from '@refinedev/core';
+import { START_TRANSACTION_PERMISSIONS } from '@lib/utils/permissions';
 import { ActionType, CommandType, ResourceType } from '@lib/utils/access-types';
 import { Button } from '@lib/client/components/ui/button';
 import type { ChargingStationDto } from '@citrineos/types';
@@ -31,7 +32,7 @@ export const StartTransactionButton = ({
       action={ActionType.COMMAND}
       params={{
         id: station.id,
-        commandType: CommandType.START_TRANSACTION,
+        permission: START_TRANSACTION_PERMISSIONS,
       }}
     >
       <Button

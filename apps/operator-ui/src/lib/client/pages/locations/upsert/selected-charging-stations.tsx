@@ -9,7 +9,6 @@ import { MenuSection } from '@lib/client/components/main-menu/main-menu';
 import { Button } from '@lib/client/components/ui/button';
 import { CHARGING_STATIONS_LIST_QUERY } from '@lib/queries/charging-stations';
 import { ActionType, ResourceType } from '@lib/utils/access-types';
-import { AccessDeniedFallback } from '@lib/utils/access-denied-fallback';
 import { useSelect, useTranslate } from '@refinedev/core';
 import { CanAccess } from '@refinedev/core';
 import { Plus } from 'lucide-react';
@@ -66,20 +65,12 @@ export const SelectedChargingStations = ({ form, params }: SelectedChargingStati
   });
 
   return (
-    <CanAccess
-      resource={ResourceType.CHARGING_STATIONS}
-      action={ActionType.LIST}
-      fallback={<AccessDeniedFallback />}
-    >
+    <CanAccess resource={ResourceType.CHARGING_STATIONS} action={ActionType.LIST}>
       <Card>
         <CardHeader>
           <div className={cardHeaderFlex}>
             <h3 className={heading3Style}>{translate('ChargingStations.ChargingStations')}</h3>
-            <CanAccess
-              resource={ResourceType.CHARGING_STATIONS}
-              action={ActionType.CREATE}
-              fallback={<AccessDeniedFallback />}
-            >
+            <CanAccess resource={ResourceType.CHARGING_STATIONS} action={ActionType.CREATE}>
               <Button
                 type="button"
                 variant="success"

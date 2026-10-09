@@ -3,6 +3,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { ChevronDown } from 'lucide-react';
+import {
+  START_TRANSACTION_PERMISSIONS,
+  STOP_TRANSACTION_PERMISSIONS,
+} from '@lib/utils/permissions';
 import { CanAccess } from '@refinedev/core';
 import type { ConnectorDto, EvseDto } from '@citrineos/types';
 import { Button } from '@lib/client/components/ui/button';
@@ -295,7 +299,7 @@ export const EVSESList: React.FC<EVSESListProps> = ({ id }) => {
                               action={ActionType.COMMAND}
                               params={{
                                 id: station.id,
-                                commandType: CommandType.STOP_TRANSACTION,
+                                permission: STOP_TRANSACTION_PERMISSIONS,
                               }}
                             >
                               <Button
@@ -313,7 +317,7 @@ export const EVSESList: React.FC<EVSESListProps> = ({ id }) => {
                               action={ActionType.COMMAND}
                               params={{
                                 id: station.id,
-                                commandType: CommandType.START_TRANSACTION,
+                                permission: START_TRANSACTION_PERMISSIONS,
                               }}
                             >
                               <Button

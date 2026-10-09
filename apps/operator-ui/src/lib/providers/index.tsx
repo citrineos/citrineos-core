@@ -34,15 +34,6 @@ export function Providers({
     setMounted(true);
   }, []);
 
-  const accessControlProvider = useMemo(
-    () =>
-      createAccessProvider({
-        getPermissions: authProvider.getPermissions!,
-        getUserRole: authProvider.getUserRole!,
-      }),
-    [],
-  );
-
   const queryClient: QueryClient = useMemo(() => {
     return new QueryClient({
       defaultOptions: {
@@ -53,6 +44,8 @@ export function Providers({
       },
     });
   }, []);
+
+  const accessControlProvider = useMemo(() => createAccessProvider(queryClient), [queryClient]);
 
   const t = useTranslations();
 

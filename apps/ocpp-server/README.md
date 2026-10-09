@@ -340,7 +340,7 @@ host/port form.
 ### File access
 
 `fileAccess` is the storage the server reads its runtime files through — the websocket servers file, TLS material, the
-ACME account key, RBAC rules. Keys inside it resolve against the configured root.
+ACME account key, role definitions. Keys inside it resolve against the configured root.
 
 | Variable                    | Default                               |
 | --------------------------- | ------------------------------------- |
@@ -425,14 +425,69 @@ block: `CITRINEOS_TRANSACTIONS_SIGNEDMETERVALUES_PUBLICKEYFILEID`, `..._SIGNINGM
 
 ### API authentication
 
-`auth.localBypass` defaults to `true`, which accepts every request and is intended for development only. For OIDC,
-set `CITRINEOS_AUTH_LOCALBYPASS=false` and the OIDC block:
+`CITRINEOS_AUTH_MODE` selects how the API authenticates callers.
 
-- `CITRINEOS_AUTH_OIDC_JWKSURI`, `CITRINEOS_AUTH_OIDC_ISSUER`, `CITRINEOS_AUTH_OIDC_AUDIENCE`
-- `CITRINEOS_AUTH_OIDC_CACHETIMESECONDS`, `CITRINEOS_AUTH_OIDC_RATELIMIT` (optional)
+| Mode                   | Identity                                              | Enforced |
+| ---------------------- | ----------------------------------------------------- | -------- |
+| `jwt`                  | Bearer token verified against the issuer's JWKS       | yes      |
+| `localDev` _(default)_ | Token minted by this server from an ephemeral keypair | yes      |
+| `localBypass`          | None — every request is accepted                      | no       |
 
-Either the OIDC block or `localBypass` must be present. Role rules are loaded from a file under `fileAccess`:
-`CITRINEOS_RBAC_RULESFILENAME` (default `rbac-rules.json`) and `CITRINEOS_RBAC_RULESDIR`.
+`jwt` takes a block of its own. `jwksUri` and `issuer` are required; the claim paths default to `roles` and
+`tenant_id`, which most providers will need overridden. Values here are illustrative.
+
+```shell
+CITRINEOS_AUTH_MODE=jwt
+CITRINEOS_AUTH_JWT_JWKSURI=https://id.example.test/realms/acme/protocol/openid-connect/certs
+CITRINEOS_AUTH_JWT_ISSUER=https://id.example.test/realms/acme
+CITRINEOS_AUTH_JWT_ROLESCLAIM=resource_access.acme-portal.roles
+CITRINEOS_AUTH_JWT_TENANTCLAIM=tenant_id
+CITRINEOS_AUTH_JWT_AUDIENCE=acme-portal      # optional
+CITRINEOS_AUTH_JWT_CACHETIMESECONDS=3600     # optional
+CITRINEOS_AUTH_JWT_RATELIMIT=true            # optional, default true
+```
+
+- `issuer` must equal the token's `iss` exactly. `jwksUri` only has to be reachable from the server, so the two may
+  name different hosts — an internal service address for the fetch, the public URL for the comparison.
+- Keys are fetched on demand and cached by `kid`, so key rotation needs no restart.
+- The claim settings take dotted paths, e.g. `resource_access.<client>.roles`, and handle the well-known claim
+  structures.
+- `audience` is optional. Leaving it unset accepts any validly signed token from the issuer, including one minted
+  for a different client of the same issuer; the server warns about this at startup.
+- Verification is restricted to the algorithms the signing key can produce, so a token naming `HS*` or `none` is
+  refused whatever its header claims.
+
+`localDev` mints its own tokens from a keypair generated at startup and verifies them through the same path as
+`jwt`. `POST /dev/token` returns a token for the requested roles. It is refused when `env` is `production`, and it
+requires flat claim paths, since a nested path cannot be minted locally.
+
+### Roles
+
+Role definitions are read through `fileAccess`, so the file can sit on a mounted path or in a bucket.
+
+| Variable                                 | Default                | Meaning                                    |
+| ---------------------------------------- | ---------------------- | ------------------------------------------ |
+| `CITRINEOS_ROLES_SEEDFILE`               | `roles-seed.json`      | Key resolved against the `fileAccess` root |
+| `CITRINEOS_ROLES_REFRESHINTERVALSECONDS` | `60`                   | How often the file is re-read              |
+| `CITRINEOS_ROLES_COMMON`                 | `permissions.user.get` | Granted to every authenticated caller      |
+
+The file is re-read on the interval, so adding a role or changing its grants takes effect without a restart. A
+failed re-read keeps the last good policy. A failed _first_ load is fatal under `jwt` and `localDev` — the server
+refuses to start rather than serve while denying everything.
+
+Each role lists the actions it holds per resource and the API permissions it may call:
+
+```json
+{
+  "dispatcher": {
+    "resources": { "Locations": ["list", "show"] },
+    "permissions": ["ocpp.configuration.triggerMessage"]
+  }
+}
+```
+
+Permission names are derived from the endpoints themselves; `GET /permissions` returns every name this build
+exposes. A granted name that is not in that list is logged as having no effect.
 
 ### Certificate authorities
 

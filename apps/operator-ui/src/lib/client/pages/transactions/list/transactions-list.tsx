@@ -11,7 +11,6 @@ import {
 import { TransactionClass } from '@lib/cls/transaction-dto';
 import { TRANSACTION_LIST_QUERY } from '@lib/queries/transactions';
 import { ActionType, ResourceType } from '@lib/utils/access-types';
-import { AccessDeniedFallback } from '@lib/utils/access-denied-fallback';
 import { DEFAULT_SORTERS, EMPTY_FILTER } from '@lib/utils/consts';
 import { getPlainToInstanceOptions } from '@lib/utils/tables';
 import { CanAccess, useTranslate } from '@refinedev/core';
@@ -57,11 +56,7 @@ export const TransactionsList = () => {
           </CanAccess>
         </div>
       </div>
-      <CanAccess
-        resource={ResourceType.TRANSACTIONS}
-        action={ActionType.LIST}
-        fallback={<AccessDeniedFallback />}
-      >
+      <CanAccess resource={ResourceType.TRANSACTIONS} action={ActionType.LIST}>
         <Table
           refineCoreProps={{
             resource: ResourceType.TRANSACTIONS,

@@ -64,13 +64,15 @@ export {
   HUBJECT_DEFAULT_TOKENURL,
   logRedactionSchema,
   OCPP_VERSION_LIST,
-  RbacRulesSchema,
+  RoleDefinitionSchema,
+  RoleDefinitionsSchema,
   signedMeterValuesSigningMethods,
   websocketServersConfigSchema,
 } from './src/config/types.js';
 export type {
   LogRedactionConfig,
-  RbacRules,
+  RoleDefinition,
+  RoleDefinitions,
   SystemConfig,
   SystemConfigInput,
   WebsocketServerConfig,
