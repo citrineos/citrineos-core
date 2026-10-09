@@ -9,20 +9,16 @@ import {
   type OCPP2_common_types,
   type VariableAttributeDto,
 } from '@citrineos/types';
-import type { IDeviceModelRepository, IVariableAttributeRepository } from '@citrineos/dal';
+import type { IVariableAttributeRepository } from '@citrineos/dal';
 
 export class DeviceModelService {
-  protected _deviceModelRepository: IDeviceModelRepository;
   protected _variableAttributeRepository: IVariableAttributeRepository;
 
   constructor({
-    deviceModelRepository,
     variableAttributeRepository,
   }: {
-    deviceModelRepository: IDeviceModelRepository;
     variableAttributeRepository: IVariableAttributeRepository;
   }) {
-    this._deviceModelRepository = deviceModelRepository;
     this._variableAttributeRepository = variableAttributeRepository;
   }
 
@@ -42,7 +38,7 @@ export class DeviceModelService {
     } as OCPP2_common_types.ReportDataType;
 
     const variableAttributes =
-      await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
+      await this._variableAttributeRepository.createOrUpdateDeviceModelByStationId(
         tenantId,
         withDefaultedMutability,
         ocppConnectionName,
@@ -55,7 +51,7 @@ export class DeviceModelService {
 
     const acceptedAttributes: VariableAttributeDto[] = [];
     for (const variableAttribute of variableAttributes) {
-      await this._deviceModelRepository.updateResultByStationId(
+      await this._variableAttributeRepository.updateResultByStationId(
         tenantId,
         {
           attributeType: variableAttribute.type,

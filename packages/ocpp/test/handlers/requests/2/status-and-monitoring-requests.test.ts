@@ -158,7 +158,7 @@ describe('NotifyEventRequestOcpp2Handler', () => {
   let componentRepository: {
     findOrCreateEvseAndComponentAndVariable: ReturnType<typeof vi.fn>;
   };
-  let deviceModelRepository: {
+  let variableAttributeRepository: {
     createOrUpdateDeviceModelByStationId: ReturnType<typeof vi.fn>;
   };
   let variableMonitoringRepository: {
@@ -172,7 +172,7 @@ describe('NotifyEventRequestOcpp2Handler', () => {
     componentRepository = {
       findOrCreateEvseAndComponentAndVariable: vi.fn().mockResolvedValue([{ id: 3 }, { id: 9 }]),
     };
-    deviceModelRepository = {
+    variableAttributeRepository = {
       createOrUpdateDeviceModelByStationId: vi.fn().mockResolvedValue(undefined),
     };
     variableMonitoringRepository = {
@@ -183,7 +183,7 @@ describe('NotifyEventRequestOcpp2Handler', () => {
         logger,
         ocppSender,
         componentRepository,
-        deviceModelRepository,
+        variableAttributeRepository,
         variableMonitoringRepository,
       }),
     );
@@ -227,8 +227,8 @@ describe('NotifyEventRequestOcpp2Handler', () => {
     expect(
       variableMonitoringRepository.createEventDatumByComponentIdAndVariableIdAndStationId,
     ).toHaveBeenCalledWith(DEFAULT_TENANT_ID, event, STATION_ID, 3, 9);
-    expect(deviceModelRepository.createOrUpdateDeviceModelByStationId).toHaveBeenCalledOnce();
-    expect(deviceModelRepository.createOrUpdateDeviceModelByStationId).toHaveBeenCalledWith(
+    expect(variableAttributeRepository.createOrUpdateDeviceModelByStationId).toHaveBeenCalledOnce();
+    expect(variableAttributeRepository.createOrUpdateDeviceModelByStationId).toHaveBeenCalledWith(
       DEFAULT_TENANT_ID,
       {
         component: { id: 3 },
@@ -255,9 +255,11 @@ describe('NotifyEventRequestOcpp2Handler', () => {
     expect(
       variableMonitoringRepository.createEventDatumByComponentIdAndVariableIdAndStationId,
     ).toHaveBeenNthCalledWith(2, DEFAULT_TENANT_ID, second, STATION_ID, 3, 9);
-    expect(deviceModelRepository.createOrUpdateDeviceModelByStationId).toHaveBeenCalledTimes(2);
+    expect(variableAttributeRepository.createOrUpdateDeviceModelByStationId).toHaveBeenCalledTimes(
+      2,
+    );
     expect(
-      deviceModelRepository.createOrUpdateDeviceModelByStationId.mock.calls[1][1],
+      variableAttributeRepository.createOrUpdateDeviceModelByStationId.mock.calls[1][1],
     ).toMatchObject({ variableAttribute: [{ value: 'Available' }] });
   });
 
@@ -268,7 +270,7 @@ describe('NotifyEventRequestOcpp2Handler', () => {
 
     await expect(handler.handle(aMessage(anEvent(1, 'Faulted')))).rejects.toThrow('db down');
 
-    expect(deviceModelRepository.createOrUpdateDeviceModelByStationId).not.toHaveBeenCalled();
+    expect(variableAttributeRepository.createOrUpdateDeviceModelByStationId).not.toHaveBeenCalled();
     expect(ocppSender.sendCallResultWithMessage).not.toHaveBeenCalled();
   });
 });

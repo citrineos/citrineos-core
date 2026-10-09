@@ -115,6 +115,31 @@ export interface IBootRepository {
 }
 
 export interface IVariableAttributeRepository {
+  createOrUpdateDeviceModelByStationId(
+    tenantId: number,
+    value: OCPP2_common_types.ReportDataType,
+    ocppConnectionName: string,
+    isoTimestamp: string,
+  ): Promise<VariableAttributeDto[]>;
+  createOrUpdateByGetVariablesResultAndStationId(
+    tenantId: number,
+    getVariablesResult: OCPP2_common_types.GetVariableResultType[],
+    ocppConnectionName: string,
+    isoTimestamp: string,
+  ): Promise<VariableAttributeDto[]>;
+  createOrUpdateBySetVariablesDataAndStationId(
+    tenantId: number,
+    setVariablesData: OCPP2_common_types.SetVariableDataType[],
+    ocppConnectionName: string,
+    isoTimestamp: string,
+  ): Promise<VariableAttributeDto[]>;
+  updateResultByStationId(
+    tenantId: number,
+    result: OCPP2_common_types.SetVariableResultType,
+    ocppConnectionName: string,
+    isoTimestamp: string,
+    acceptedValue?: string,
+  ): Promise<VariableAttributeDto | undefined>;
   readAllByQuerystring(
     tenantId: number,
     query: VariableAttributeQuerystring,
@@ -165,31 +190,6 @@ export interface IDeviceModelRepository
   extends IVariableAttributeRepository,
     IVariableCharacteristicsRepository,
     IComponentRepository {
-  createOrUpdateDeviceModelByStationId(
-    tenantId: number,
-    value: OCPP2_common_types.ReportDataType,
-    ocppConnectionName: string,
-    isoTimestamp: string,
-  ): Promise<VariableAttributeDto[]>;
-  createOrUpdateByGetVariablesResultAndStationId(
-    tenantId: number,
-    getVariablesResult: OCPP2_common_types.GetVariableResultType[],
-    ocppConnectionName: string,
-    isoTimestamp: string,
-  ): Promise<VariableAttributeDto[]>;
-  createOrUpdateBySetVariablesDataAndStationId(
-    tenantId: number,
-    setVariablesData: OCPP2_common_types.SetVariableDataType[],
-    ocppConnectionName: string,
-    isoTimestamp: string,
-  ): Promise<VariableAttributeDto[]>;
-  updateResultByStationId(
-    tenantId: number,
-    result: OCPP2_common_types.SetVariableResultType,
-    ocppConnectionName: string,
-    isoTimestamp: string,
-    acceptedValue?: string,
-  ): Promise<VariableAttributeDto | undefined>;
   readAllSetVariableByStationId(
     tenantId: number,
     ocppConnectionName: string,

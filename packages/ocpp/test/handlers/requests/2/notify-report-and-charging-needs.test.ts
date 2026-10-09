@@ -55,7 +55,7 @@ function aMessage<T extends OcppRequest>(
 describe('NotifyReportRequestOcpp2Handler', () => {
   const { logger } = createTestContainer();
   let handler: NotifyReportRequestOcpp2Handler;
-  let deviceModelRepository: {
+  let variableAttributeRepository: {
     createOrUpdateDeviceModelByStationId: ReturnType<typeof vi.fn>;
     updateResultByStationId: ReturnType<typeof vi.fn>;
   };
@@ -94,7 +94,7 @@ describe('NotifyReportRequestOcpp2Handler', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    deviceModelRepository = {
+    variableAttributeRepository = {
       createOrUpdateDeviceModelByStationId: vi.fn().mockResolvedValue([]),
       updateResultByStationId: vi.fn().mockResolvedValue(undefined),
     };
@@ -107,7 +107,7 @@ describe('NotifyReportRequestOcpp2Handler', () => {
         ocppSender,
         cache,
         config: aSystemConfig({ timeouts: { maxCachingSeconds: MAX_CACHING_SECONDS } }),
-        deviceModelRepository,
+        variableAttributeRepository,
       }),
     );
   });
@@ -115,7 +115,7 @@ describe('NotifyReportRequestOcpp2Handler', () => {
   it('persists each report entry, records an Accepted set-result, and acknowledges with an empty response', async () => {
     const reportData = aReportData();
     const row = anAttributeRow();
-    deviceModelRepository.createOrUpdateDeviceModelByStationId.mockResolvedValue([row]);
+    variableAttributeRepository.createOrUpdateDeviceModelByStationId.mockResolvedValue([row]);
 
     const message = aNotifyReportMessage({
       requestId: REQUEST_ID,
@@ -126,15 +126,15 @@ describe('NotifyReportRequestOcpp2Handler', () => {
 
     await handler.handle(message);
 
-    expect(deviceModelRepository.createOrUpdateDeviceModelByStationId).toHaveBeenCalledOnce();
-    expect(deviceModelRepository.createOrUpdateDeviceModelByStationId).toHaveBeenCalledWith(
+    expect(variableAttributeRepository.createOrUpdateDeviceModelByStationId).toHaveBeenCalledOnce();
+    expect(variableAttributeRepository.createOrUpdateDeviceModelByStationId).toHaveBeenCalledWith(
       DEFAULT_TENANT_ID,
       reportData,
       STATION_ID,
       GENERATED_AT,
     );
-    expect(deviceModelRepository.updateResultByStationId).toHaveBeenCalledOnce();
-    expect(deviceModelRepository.updateResultByStationId).toHaveBeenCalledWith(
+    expect(variableAttributeRepository.updateResultByStationId).toHaveBeenCalledOnce();
+    expect(variableAttributeRepository.updateResultByStationId).toHaveBeenCalledWith(
       DEFAULT_TENANT_ID,
       {
         attributeType: 'Actual',
@@ -159,7 +159,7 @@ describe('NotifyReportRequestOcpp2Handler', () => {
       }),
     );
 
-    expect(deviceModelRepository.createOrUpdateDeviceModelByStationId).not.toHaveBeenCalled();
+    expect(variableAttributeRepository.createOrUpdateDeviceModelByStationId).not.toHaveBeenCalled();
     expect(cache.set).toHaveBeenCalledOnce();
     // no expiry argument: the complete marker is not time-bounded
     expect(cache.set).toHaveBeenCalledWith(
@@ -194,7 +194,7 @@ describe('NotifyReportRequestOcpp2Handler', () => {
   it('answers a foreign-key violation with a PropertyConstraintViolation call error and skips the cache', async () => {
     const fkError = new Error('insert or update violates foreign key constraint');
     fkError.name = 'SequelizeForeignKeyConstraintError';
-    deviceModelRepository.createOrUpdateDeviceModelByStationId.mockRejectedValue(fkError);
+    variableAttributeRepository.createOrUpdateDeviceModelByStationId.mockRejectedValue(fkError);
 
     await handler.handle(
       aNotifyReportMessage({
@@ -216,7 +216,7 @@ describe('NotifyReportRequestOcpp2Handler', () => {
   });
 
   it('rethrows a non-foreign-key persistence error without sending anything', async () => {
-    deviceModelRepository.createOrUpdateDeviceModelByStationId.mockRejectedValue(
+    variableAttributeRepository.createOrUpdateDeviceModelByStationId.mockRejectedValue(
       new Error('db down'),
     );
 

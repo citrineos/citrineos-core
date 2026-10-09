@@ -157,9 +157,12 @@ export class RepositoryStore {
     });
     if (process.env.CITRINEOS_USE_DRIZZLE === 'true') {
       this.authorizationRepository = new DrizzleAuthorizationRepository({ config, logger });
+      // Order matters: component -> variableAttribute -> boot, each injected into the next.
+      this.componentRepository = new DrizzleComponentRepository({ config, logger });
       this.variableAttributeRepository = new DrizzleVariableAttributeRepository({
         config,
         logger,
+        componentRepository: this.componentRepository as DrizzleComponentRepository,
       });
       this.bootRepository = new DrizzleBootRepository({
         config,
@@ -173,7 +176,6 @@ export class RepositoryStore {
         logger,
       });
       this.chargingStationRepository = new DrizzleChargingStationRepository({ config, logger });
-      this.componentRepository = new DrizzleComponentRepository({ config, logger });
       this.connectorRepository = new DrizzleConnectorRepository({ config, logger });
       this.deleteCertificateAttemptRepository = new DrizzleDeleteCertificateAttemptRepository({
         config,

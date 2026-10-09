@@ -48,6 +48,7 @@ import {
   DrizzleInstalledCertificateRepository,
   toInstalledCertificateDto,
 } from '@dal/repositories/drizzle/installed-certificate.js';
+import { DrizzleComponentRepository } from '@dal/repositories/drizzle/component.js';
 import { DrizzleVariableAttributeRepository } from '@dal/repositories/drizzle/variable-attribute.js';
 import type { BootEntity } from '@dal/db/drizzle/schema/boot.js';
 import type { CertificateEntity } from '@dal/db/drizzle/schema/certificate.js';
@@ -110,6 +111,10 @@ function bootRepo(kind: Kind): IBootRepository {
     variableAttributeRepository: new DrizzleVariableAttributeRepository({
       config: h.config,
       drizzleInstance: db,
+      componentRepository: new DrizzleComponentRepository({
+        config: h.config,
+        drizzleInstance: db,
+      }),
     }),
   });
 }

@@ -71,7 +71,7 @@ export function toComponentDto(entity: ComponentEntity): ComponentDto {
   return dto;
 }
 
-function instanceFilter(column: PgColumn, instance?: string | null): SQL {
+export function instanceFilter(column: PgColumn, instance?: string | null): SQL {
   return instance ? eq(column, instance) : isNull(column);
 }
 

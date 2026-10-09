@@ -2,7 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { VariableAttributeDto } from '@citrineos/types';
+import {
+  OCPP2_0_1,
+  type ComponentDto,
+  type OCPP2_common_types,
+  type VariableAttributeDto,
+  type VariableDto,
+} from '@citrineos/types';
 import {
   tenantVariableAttributeTable,
   type VariableAttributeEntity,
@@ -34,15 +40,19 @@ import {
   type VariableStatusEntity,
   variableStatusTable,
 } from '../../db/drizzle/schema/variable-status.js';
-import { toComponentDto } from './component.js';
+import { DrizzleComponentRepository, instanceFilter, toComponentDto } from './component.js';
 import { toVariableDto } from './variable.js';
 import { toEvseTypeDto } from './evse-type.js';
 import { toVariableCharacteristicsDto } from './variable-characteristics.js';
 import { toVariableStatusDto } from './variable-status.js';
 import type { IVariableAttributeRepository } from '@dal/repositories/repositories.js';
-import { DrizzleRepository } from './base.js';
+import {
+  DrizzleRepository,
+  type DrizzleRepositoryDependencies,
+  type DrizzleWriteContext,
+} from './base.js';
 import type { VariableAttributeQuerystring } from '@dal/interfaces/queries/variable-attribute.js';
-import { and, eq, exists, inArray, isNull, sql, type SQL } from 'drizzle-orm';
+import { and, desc, eq, exists, inArray, isNull, sql, type SQL } from 'drizzle-orm';
 
 // A row of the hydrated read graph.
 interface GraphRow {
@@ -85,6 +95,21 @@ export class DrizzleVariableAttributeRepository
   extends DrizzleRepository<typeof variableAttributeTable, VariableAttributeDto>
   implements IVariableAttributeRepository
 {
+  private _componentRepository: DrizzleComponentRepository;
+
+  constructor({
+    config,
+    logger,
+    drizzleInstance,
+    componentRepository,
+  }: DrizzleRepositoryDependencies & {
+    componentRepository: DrizzleComponentRepository;
+  }) {
+    super({ config, logger, drizzleInstance });
+
+    this._componentRepository = componentRepository;
+  }
+
   protected getTable(tenantId: number): typeof variableAttributeTable {
     return this.useTenantSchema ? tenantVariableAttributeTable(tenantId) : variableAttributeTable;
   }
@@ -284,6 +309,173 @@ export class DrizzleVariableAttributeRepository
     return byAttribute;
   }
 
+  private async componentEvseFilter(
+    tenantId: number,
+    evseType: OCPP2_common_types.EVSEType | undefined | null,
+  ): Promise<SQL> {
+    const t = this.graphTables(tenantId);
+    if (!evseType) {
+      return isNull(t.component.evseDatabaseId);
+    }
+    const rows = (await this.db
+      .select()
+      .from(t.evse)
+      .where(
+        and(
+          eq(t.evse.id, evseType.id),
+          evseType.connectorId
+            ? eq(t.evse.connectorId, evseType.connectorId)
+            : isNull(t.evse.connectorId),
+          this.tenantFilter(t.evse, tenantId),
+        ),
+      )
+      .limit(1)) as EvseTypeEntity[];
+
+    return rows[0] ? eq(t.component.evseDatabaseId, rows[0].databaseId) : sql`false`;
+  }
+
+  private hydrateAttributeOnly(
+    attribute: VariableAttributeEntity,
+    statuses: VariableStatusEntity[],
+  ): VariableAttributeDto {
+    return {
+      ...toVariableAttributeDto(attribute),
+      statuses: statuses.map(toVariableStatusDto),
+    } as VariableAttributeDto;
+  }
+
+  // VariableCharacteristics is keyed on variableId,
+  // so the upsert is a lookup plus one write.
+  private async upsertVariableCharacteristics(
+    tenantId: number,
+    variableId: number,
+    characteristics: OCPP2_0_1.VariableCharacteristicsType,
+    ctx: DrizzleWriteContext,
+  ): Promise<void> {
+    const t = this.graphTables(tenantId);
+    const values = {
+      tenantId,
+      unit: characteristics.unit ?? null,
+      dataType: characteristics.dataType,
+      minLimit: characteristics.minLimit != null ? String(characteristics.minLimit) : null,
+      maxLimit: characteristics.maxLimit != null ? String(characteristics.maxLimit) : null,
+      valuesList: characteristics.valuesList ?? null,
+      supportsMonitoring: characteristics.supportsMonitoring,
+      variableId,
+    };
+
+    const existing = (await ctx.db
+      .select()
+      .from(t.characteristics)
+      .where(
+        and(
+          eq(t.characteristics.variableId, variableId),
+          this.tenantFilter(t.characteristics, tenantId),
+        ),
+      )
+      .limit(1)) as VariableCharacteristicsEntity[];
+
+    if (existing[0]) {
+      await ctx.db
+        .update(t.characteristics)
+        .set({ ...values, updatedAt: new Date() })
+        .where(eq(t.characteristics.id, existing[0].id));
+      return;
+    }
+    await ctx.db.insert(t.characteristics).values(values);
+  }
+
+  private async writeReportedAttribute(
+    tenantId: number,
+    stationId: number,
+    component: ComponentDto,
+    variable: VariableDto,
+    dataType: OCPP2_0_1.DataEnumType | null,
+    reported: OCPP2_common_types.VariableAttributeType,
+    isoTimestamp: string,
+    ctx: DrizzleWriteContext,
+  ): Promise<VariableAttributeDto> {
+    const table = this.getTable(tenantId);
+    const type = reported.type ?? OCPP2_0_1.AttributeEnumType.Actual;
+    const generatedAt = new Date(isoTimestamp);
+
+    const existing = (await ctx.db
+      .select()
+      .from(table)
+      .where(
+        and(
+          eq(table.stationId, stationId),
+          eq(table.variableId, variable.id!),
+          eq(table.componentId, component.id!),
+          eq(table.type, type),
+          this.tenantFilter(table, tenantId),
+        ),
+      )
+      .limit(1)) as VariableAttributeEntity[];
+
+    if (!existing[0]) {
+      return await this.insert(
+        tenantId,
+        {
+          stationId,
+          variableId: variable.id,
+          componentId: component.id,
+          evseDatabaseId: component.evseDatabaseId ?? null,
+          type,
+          dataType,
+          value: reported.value ?? null,
+          generatedAt,
+          mutability: reported.mutability ?? OCPP2_0_1.MutabilityEnumType.ReadWrite,
+          persistent: reported.persistent ?? false,
+          constant: reported.constant ?? false,
+        },
+        ctx,
+      );
+    }
+
+    const mutability = reported.mutability ?? existing[0].mutability;
+    const updated = await this.updateById(
+      tenantId,
+      existing[0].id,
+      {
+        evseDatabaseId: component.evseDatabaseId ?? null,
+        dataType: dataType ?? existing[0].dataType,
+        type,
+        // B08.FR.03: the station omits the value of WriteOnly variables, so the stored
+        // one must survive rather than be overwritten with nothing.
+        value:
+          mutability === OCPP2_0_1.MutabilityEnumType.WriteOnly
+            ? existing[0].value
+            : (reported.value ?? null),
+        mutability,
+        persistent: reported.persistent ?? false,
+        constant: reported.constant ?? false,
+        generatedAt,
+        updatedAt: new Date(),
+      },
+      ctx,
+    );
+    return updated ?? this.toDto(existing[0]);
+  }
+
+  private async insertStatus(
+    tenantId: number,
+    variableAttributeId: number,
+    value: string | null | undefined,
+    status: string,
+    statusInfo: unknown,
+    ctx: DrizzleWriteContext,
+  ): Promise<void> {
+    const t = this.graphTables(tenantId);
+    await ctx.db.insert(t.status).values({
+      tenantId,
+      value: value ?? null,
+      status,
+      statusInfo: statusInfo as never,
+      variableAttributeId,
+    });
+  }
+
   async updateAllByQueryString(
     query: VariableAttributeQuerystring,
     value: object,
@@ -335,5 +527,258 @@ export class DrizzleVariableAttributeRepository
     const dtos = rows.map((row) => this.hydrate(row, []));
     this.emit('deleted', dtos);
     return dtos;
+  }
+
+  async updateResultByStationId(
+    tenantId: number,
+    result: OCPP2_common_types.SetVariableResultType,
+    ocppConnectionName: string,
+    isoTimestamp: string,
+    acceptedValue?: string,
+  ): Promise<VariableAttributeDto | undefined> {
+    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    const t = this.graphTables(tenantId);
+
+    const found =
+      stationId === undefined
+        ? []
+        : ((await this.db
+            .select({ attribute: t.attribute })
+            .from(t.attribute)
+            .innerJoin(t.component, eq(t.attribute.componentId, t.component.id))
+            .innerJoin(t.variable, eq(t.attribute.variableId, t.variable.id))
+            .where(
+              and(
+                eq(t.attribute.stationId, stationId),
+                eq(t.attribute.type, result.attributeType ?? OCPP2_0_1.AttributeEnumType.Actual),
+                eq(t.component.name, result.component.name),
+                instanceFilter(t.component.instance, result.component.instance),
+                await this.componentEvseFilter(tenantId, result.component.evse),
+                eq(t.variable.name, result.variable.name),
+                instanceFilter(t.variable.instance, result.variable.instance),
+                this.tenantFilter(t.attribute, tenantId),
+              ),
+            )
+            .limit(1)) as { attribute: VariableAttributeEntity }[]);
+
+    if (!found[0]) {
+      throw new Error('Unable to update variable attribute status...');
+    }
+    const attribute = found[0].attribute;
+    const accepted = result.attributeStatus === OCPP2_0_1.SetVariableStatusEnumType.Accepted;
+
+    return await this.withAtomicWrite(async (ctx) => {
+      const recordedValue =
+        accepted && acceptedValue !== undefined ? acceptedValue : attribute.value;
+      await ctx.db.insert(t.status).values({
+        tenantId,
+        value: recordedValue,
+        status: result.attributeStatus,
+        statusInfo: result.attributeStatusInfo,
+        variableAttributeId: attribute.id,
+      });
+
+      let value = recordedValue;
+      if (!accepted) {
+        const lastAccepted = (await ctx.db
+          .select()
+          .from(t.status)
+          .where(
+            and(
+              eq(t.status.variableAttributeId, attribute.id),
+              eq(t.status.status, OCPP2_0_1.SetVariableStatusEnumType.Accepted),
+              this.tenantFilter(t.status, tenantId),
+            ),
+          )
+          .orderBy(desc(t.status.createdAt))
+          .limit(1)) as VariableStatusEntity[];
+        value = lastAccepted[0]?.value ?? null;
+      }
+
+      await this.updateById(
+        tenantId,
+        attribute.id,
+        { value, generatedAt: new Date(isoTimestamp), updatedAt: new Date() },
+        ctx,
+      );
+
+      const statuses = await this.readStatusesByAttributeId(tenantId, [attribute.id]);
+      return this.hydrateAttributeOnly(
+        { ...attribute, value, generatedAt: new Date(isoTimestamp) },
+        statuses.get(attribute.id) ?? [],
+      );
+    });
+  }
+
+  async createOrUpdateDeviceModelByStationId(
+    tenantId: number,
+    value: OCPP2_common_types.ReportDataType,
+    ocppConnectionName: string,
+    isoTimestamp: string,
+  ): Promise<VariableAttributeDto[]> {
+    // Checked before anything is written, so an invalid report creates no rows.
+    const types = value.variableAttribute.map(
+      (attribute) => attribute.type ?? OCPP2_0_1.AttributeEnumType.Actual,
+    );
+    if (types.length !== new Set(types).size) {
+      throw new Error('All variable attributes in ReportData must have different types.');
+    }
+
+    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    if (stationId === undefined) {
+      throw new Error(
+        `Cannot record device model data: no charging station named ` +
+          `'${ocppConnectionName}' exists in tenant ${tenantId}.`,
+      );
+    }
+
+    // Outside the transaction below, matching the sequelize twin: the component and
+    // variable are resolved by their own repository and committed independently.
+    const [component, variable] =
+      await this._componentRepository.findOrCreateEvseAndComponentAndVariable(
+        tenantId,
+        value.component,
+        value.variable,
+        ocppConnectionName,
+      );
+
+    const dataType = value.variableCharacteristics?.dataType ?? null;
+
+    const saved = await this.withAtomicWrite(async (ctx) => {
+      if (value.variableCharacteristics) {
+        await this.upsertVariableCharacteristics(
+          tenantId,
+          variable.id!,
+          value.variableCharacteristics,
+          ctx,
+        );
+      }
+
+      const written: VariableAttributeDto[] = [];
+      for (const reported of value.variableAttribute) {
+        written.push(
+          await this.writeReportedAttribute(
+            tenantId,
+            stationId,
+            component,
+            variable,
+            dataType,
+            reported,
+            isoTimestamp,
+            ctx,
+          ),
+        );
+      }
+      return written;
+    });
+
+    // Hydrated so callers get the resolved relations without a reload.
+    return saved.map((dto) => ({ ...dto, component, variable }) as VariableAttributeDto);
+  }
+
+  async createOrUpdateByGetVariablesResultAndStationId(
+    tenantId: number,
+    getVariablesResult: OCPP2_common_types.GetVariableResultType[],
+    ocppConnectionName: string,
+    isoTimestamp: string,
+  ): Promise<VariableAttributeDto[]> {
+    const saved: VariableAttributeDto[] = [];
+
+    for (const result of getVariablesResult) {
+      const accepted = result.attributeStatus === OCPP2_0_1.GetVariableStatusEnumType.Accepted;
+
+      if (accepted) {
+        const attribute = (
+          await this.createOrUpdateDeviceModelByStationId(
+            tenantId,
+            {
+              component: { ...result.component },
+              variable: { ...result.variable },
+              variableAttribute: [{ type: result.attributeType, value: result.attributeValue }],
+            },
+            ocppConnectionName,
+            isoTimestamp,
+          )
+        )[0];
+
+        await this.withAtomicWrite((ctx) =>
+          this.insertStatus(
+            tenantId,
+            attribute.id!,
+            result.attributeValue,
+            result.attributeStatus,
+            result.attributeStatusInfo,
+            ctx,
+          ),
+        );
+        saved.push(attribute);
+        continue;
+      }
+
+      const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+      if (stationId === undefined) {
+        throw new Error(
+          `Cannot record variable result: no charging station named ` +
+            `'${ocppConnectionName}' exists in tenant ${tenantId}.`,
+        );
+      }
+      const [component, variable] =
+        await this._componentRepository.findOrCreateEvseAndComponentAndVariable(
+          tenantId,
+          result.component,
+          result.variable,
+          ocppConnectionName,
+        );
+
+      await this.withAtomicWrite(async (ctx) => {
+        const attribute = await this.writeReportedAttribute(
+          tenantId,
+          stationId,
+          component,
+          variable,
+          null,
+          { type: result.attributeType, value: null },
+          isoTimestamp,
+          ctx,
+        );
+        await this.insertStatus(
+          tenantId,
+          attribute.id!,
+          result.attributeValue,
+          result.attributeStatus,
+          result.attributeStatusInfo,
+          ctx,
+        );
+      });
+    }
+
+    return saved;
+  }
+
+  async createOrUpdateBySetVariablesDataAndStationId(
+    tenantId: number,
+    setVariablesData: OCPP2_common_types.SetVariableDataType[],
+    ocppConnectionName: string,
+    isoTimestamp: string,
+  ): Promise<VariableAttributeDto[]> {
+    const saved: VariableAttributeDto[] = [];
+
+    for (const data of setVariablesData) {
+      const attribute = (
+        await this.createOrUpdateDeviceModelByStationId(
+          tenantId,
+          {
+            component: { ...data.component },
+            variable: { ...data.variable },
+            variableAttribute: [{ type: data.attributeType, value: data.attributeValue }],
+          },
+          ocppConnectionName,
+          isoTimestamp,
+        )
+      )[0];
+      saved.push(attribute);
+    }
+
+    return saved;
   }
 }

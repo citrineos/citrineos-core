@@ -6,7 +6,7 @@ import {
   type IChargingStationRepository,
   type IComponentRepository,
   type IConnectorRepository,
-  type IDeviceModelRepository,
+  type IVariableAttributeRepository,
   type IEvseRepository,
   type IStatusNotificationRepository,
 } from '@citrineos/dal';
@@ -33,7 +33,7 @@ describe('StatusNotificationService', () => {
   const { container } = createTestContainer();
   let statusNotificationService: StatusNotificationService;
   let componentRepository: Mocked<IComponentRepository>;
-  let deviceModelRepository: Mocked<IDeviceModelRepository>;
+  let variableAttributeRepository: Mocked<IVariableAttributeRepository>;
   // One mock object backs both injected tokens: the service takes station reads from
   // chargingStationRepository and everything else from locationRepository, but the
   // assertions here do not care which token a call arrived through.
@@ -50,9 +50,9 @@ describe('StatusNotificationService', () => {
       findConnectorComponentsForAvailabilityState: vi.fn(),
     } as unknown as Mocked<IComponentRepository>;
 
-    deviceModelRepository = {
+    variableAttributeRepository = {
       createOrUpdateDeviceModelByStationId: vi.fn(),
-    } as unknown as Mocked<IDeviceModelRepository>;
+    } as unknown as Mocked<IVariableAttributeRepository>;
 
     locationRepository = {
       addStatusNotificationToChargingStation: vi.fn(),
@@ -83,7 +83,7 @@ describe('StatusNotificationService', () => {
 
     statusNotificationService = getTestInstance(container, StatusNotificationService, {
       componentRepository,
-      deviceModelRepository,
+      variableAttributeRepository,
       chargingStationRepository: locationRepository,
       evseRepository: locationRepository,
       connectorRepository: locationRepository,
@@ -141,7 +141,7 @@ describe('StatusNotificationService', () => {
       aStatusNotificationRequest(),
     );
 
-    expect(deviceModelRepository.createOrUpdateDeviceModelByStationId).toHaveBeenCalled();
+    expect(variableAttributeRepository.createOrUpdateDeviceModelByStationId).toHaveBeenCalled();
   });
 
   it('should not save Component and Variable ReportData because Station doesnt exist', async () => {
@@ -163,7 +163,7 @@ describe('StatusNotificationService', () => {
       aStatusNotificationRequest(),
     );
 
-    expect(deviceModelRepository.createOrUpdateDeviceModelByStationId).not.toHaveBeenCalled();
+    expect(variableAttributeRepository.createOrUpdateDeviceModelByStationId).not.toHaveBeenCalled();
   });
 
   describe('Component or Variable does not exist', () => {
@@ -176,7 +176,9 @@ describe('StatusNotificationService', () => {
         aStatusNotificationRequest(),
       );
 
-      expect(deviceModelRepository.createOrUpdateDeviceModelByStationId).not.toHaveBeenCalled();
+      expect(
+        variableAttributeRepository.createOrUpdateDeviceModelByStationId,
+      ).not.toHaveBeenCalled();
     });
 
     it('should not save Component and Variable ReportData because Variable does not exist', async () => {
@@ -190,7 +192,9 @@ describe('StatusNotificationService', () => {
         aStatusNotificationRequest(),
       );
 
-      expect(deviceModelRepository.createOrUpdateDeviceModelByStationId).not.toHaveBeenCalled();
+      expect(
+        variableAttributeRepository.createOrUpdateDeviceModelByStationId,
+      ).not.toHaveBeenCalled();
     });
   });
 
@@ -455,7 +459,9 @@ describe('StatusNotificationService', () => {
       expect(locationRepository.addStatusNotificationToChargingStation).not.toHaveBeenCalled();
       expect(locationRepository.createOrUpdateEvse).not.toHaveBeenCalled();
       expect(locationRepository.createOrUpdateOcpp2Connector).not.toHaveBeenCalled();
-      expect(deviceModelRepository.createOrUpdateDeviceModelByStationId).not.toHaveBeenCalled();
+      expect(
+        variableAttributeRepository.createOrUpdateDeviceModelByStationId,
+      ).not.toHaveBeenCalled();
     });
   });
 
