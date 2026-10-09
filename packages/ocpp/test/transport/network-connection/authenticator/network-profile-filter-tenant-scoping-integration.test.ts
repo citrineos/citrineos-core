@@ -6,9 +6,10 @@ import type { AuthenticationOptions } from '@citrineos/base';
 import { OCPP2_0_1, OCPPVersion, type SystemConfig } from '@citrineos/types';
 import type { IVariableAttributeRepository } from '@citrineos/dal';
 import {
-  ChargingStationNetworkProfile,
   DefaultSequelizeInstance,
   type ITenantRepository,
+  sequelize,
+  SequelizeChargingStationNetworkProfileRepository,
   SequelizeLocationRepository,
   SequelizeServerNetworkProfileRepository,
   SequelizeSetNetworkProfileRepository,
@@ -122,9 +123,17 @@ function aFilter(): TestNetworkProfileFilter {
     sequelizeInstance,
   } as never);
 
+  const chargingStationNetworkProfileRepository =
+    new SequelizeChargingStationNetworkProfileRepository({
+      config,
+      logger: undefined,
+      sequelizeInstance,
+    } as never);
+
   return new TestNetworkProfileFilter({
     variableAttributeRepository,
     serverNetworkProfileRepository,
+    chargingStationNetworkProfileRepository,
     logger: new Logger({ type: 'hidden' }),
   });
 }
@@ -174,7 +183,7 @@ describe('NetworkProfileFilter tenant scoping', () => {
     });
 
     // Tenant A's station names it anyway. Nothing validates the reference on the way in.
-    await ChargingStationNetworkProfile.create({
+    await sequelize.ChargingStationNetworkProfile.create({
       stationId,
       configurationSlot: CONFIGURATION_SLOT,
       websocketServerConfigId: SHARED_PROFILE_ID,
@@ -202,7 +211,7 @@ describe('NetworkProfileFilter tenant scoping', () => {
       },
       30,
     );
-    await ChargingStationNetworkProfile.update(
+    await sequelize.ChargingStationNetworkProfile.update(
       { websocketServerConfigId: 'websocket-server-a' },
       { where: { tenantId: TENANT_A, stationId } },
     );

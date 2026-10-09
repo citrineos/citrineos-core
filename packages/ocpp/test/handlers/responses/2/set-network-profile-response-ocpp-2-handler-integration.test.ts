@@ -15,9 +15,10 @@ import {
   type SystemConfig,
 } from '@citrineos/types';
 import {
-  ChargingStationNetworkProfile,
   DefaultSequelizeInstance,
   type ITenantRepository,
+  sequelize,
+  SequelizeChargingStationNetworkProfileRepository,
   SequelizeLocationRepository,
   SequelizeServerNetworkProfileRepository,
   SequelizeSetNetworkProfileRepository,
@@ -193,11 +194,14 @@ describe('SetNetworkProfileResponseOcpp2Handler with a batched correlation id', 
         logger: undefined,
         sequelizeInstance,
       } as never),
+      chargingStationNetworkProfileRepository: new SequelizeChargingStationNetworkProfileRepository(
+        { config, logger: undefined, sequelizeInstance } as never,
+      ),
     });
 
     await handler.handle(aResponse(STATION_B));
 
-    const stored = await ChargingStationNetworkProfile.findOne({
+    const stored = await sequelize.ChargingStationNetworkProfile.findOne({
       where: { tenantId: DEFAULT_TENANT_ID, stationId: stationBId },
     });
     const ownRow = await setNetworkProfileRepository.readByCorrelationId(
