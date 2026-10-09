@@ -4,13 +4,15 @@
 import { CrudRepository, MeterValueUtils } from '@citrineos/base';
 import {
   type MeterValueDto,
+  type StopTransactionDto,
+  type TransactionCreate,
   type TransactionDto,
+  type TransactionEventDto,
   ChargingStationSequenceTypeEnum,
   OCPP1_6,
   OCPP2_0_1,
   type OCPP2_request_types,
 } from '@citrineos/types';
-import type { WhereOptions } from 'sequelize';
 import { Op } from 'sequelize';
 import type {
   IChargingStationSequenceRepository,
@@ -143,7 +145,7 @@ export class SequelizeTransactionEventRepository
     tenantId: number,
     value: OCPP2_request_types.TransactionEventRequest,
     ocppConnectionName: string,
-  ): Promise<Transaction> {
+  ): Promise<TransactionDto> {
     // In OCPP 2.1, transactionEventRequest contains tariffId
     const { tariffId: infoTariffId, ...transactionInfo } =
       value.transactionInfo as typeof value.transactionInfo & { tariffId?: string | null };
@@ -432,7 +434,7 @@ export class SequelizeTransactionEventRepository
     tenantId: number,
     ocppConnectionName: string,
     transactionId: string,
-  ): Promise<TransactionEvent[]> {
+  ): Promise<TransactionEventDto[]> {
     return await super
       .readAllByQuery(tenantId, {
         where: { ocppConnectionName: ocppConnectionName },
@@ -450,47 +452,16 @@ export class SequelizeTransactionEventRepository
     tenantId: number,
     ocppConnectionName: string,
     transactionId: string,
-  ): Promise<Transaction | undefined> {
+  ): Promise<TransactionDto | undefined> {
     return await this.transaction.readOnlyOneByQuery(tenantId, {
       where: { stationId: await stationIdFilter(tenantId, ocppConnectionName), transactionId },
     });
   }
 
-  async readAllTransactionsByStationIdAndEvseAndChargingStates(
-    tenantId: number,
-    ocppConnectionName: string,
-    evse?: OCPP2_0_1.EVSEType,
-    chargingStates?: OCPP2_0_1.ChargingStateEnumType[] | undefined,
-  ): Promise<Transaction[]> {
-    const includeObj: any = evse
-      ? [
-          {
-            model: Evse,
-            where: { evseTypeId: evse.id },
-          },
-        ]
-      : [];
-    if (evse?.connectorId) {
-      includeObj.push({
-        model: Connector,
-        where: { evseTypeConnectorId: evse.connectorId },
-      });
-    }
-    return await this.transaction
-      .readAllByQuery(tenantId, {
-        where: {
-          stationId: await stationIdFilter(tenantId, ocppConnectionName),
-          ...(chargingStates ? { chargingState: { [Op.in]: chargingStates } } : {}),
-        },
-        include: includeObj,
-      })
-      .then((row) => row as Transaction[]);
-  }
-
   async readAllActiveTransactionsByAuthorizationId(
     tenantId: number,
     authorizationId: number,
-  ): Promise<Transaction[]> {
+  ): Promise<TransactionDto[]> {
     return await this.transaction.readAllByQuery(tenantId, {
       where: { isActive: true, authorizationId },
     });
@@ -532,21 +503,10 @@ export class SequelizeTransactionEventRepository
     return rows as unknown as TransactionDto[];
   }
 
-  async readAllMeterValuesByTransactionDataBaseId(
-    tenantId: number,
-    transactionDataBaseId: number,
-  ): Promise<MeterValue[]> {
-    return this.meterValue
-      .readAllByQuery(tenantId, {
-        where: { transactionDatabaseId: transactionDataBaseId },
-      })
-      .then((row) => row as MeterValue[]);
-  }
-
   async findByTransactionId(
     tenantId: number,
     transactionId: string,
-  ): Promise<Transaction | undefined> {
+  ): Promise<TransactionDto | undefined> {
     return this.transaction.readOnlyOneByQuery(tenantId, {
       where: { transactionId },
       include: [
@@ -556,91 +516,11 @@ export class SequelizeTransactionEventRepository
     });
   }
 
-  async getTransactions(
-    tenantId: number,
-    dateFrom?: Date,
-    dateTo?: Date,
-    offset?: number,
-    limit?: number,
-  ): Promise<Transaction[]> {
-    const queryOptions: any = {
-      where: {},
-      include: [
-        { model: TransactionEvent, as: Transaction.TRANSACTION_EVENTS_ALIAS, include: [EvseType] },
-        MeterValue,
-      ],
-    };
-
-    if (dateFrom) {
-      queryOptions.where.updatedAt = queryOptions.where.updatedAt || {};
-      queryOptions.where.updatedAt[Op.gte] = dateFrom;
-    }
-
-    if (dateTo) {
-      queryOptions.where.updatedAt = queryOptions.where.updatedAt || {};
-      queryOptions.where.updatedAt[Op.lt] = dateTo;
-    }
-
-    if (offset) {
-      queryOptions.offset = offset;
-    }
-
-    if (limit) {
-      queryOptions.limit = limit;
-    }
-
-    return this.transaction.readAllByQuery(tenantId, queryOptions);
-  }
-
-  async getTransactionsCount(tenantId: number, dateFrom?: Date, dateTo?: Date): Promise<number> {
-    const queryOptions: WhereOptions<any> = {
-      where: { tenantId },
-    };
-
-    if (dateFrom) {
-      queryOptions.where.updatedAt = queryOptions.where.updatedAt || {};
-      queryOptions.where.updatedAt[Op.gte] = dateFrom;
-    }
-
-    if (dateTo) {
-      queryOptions.where.updatedAt = queryOptions.where.updatedAt || {};
-      queryOptions.where.updatedAt[Op.lt] = dateTo;
-    }
-
-    return Transaction.count(queryOptions);
-  }
-
-  async readAllTransactionsByQuery(tenantId: number, query: object): Promise<Transaction[]> {
-    return await this.transaction.readAllByQuery(tenantId, query);
-  }
-
-  async getEvseIdsWithActiveTransactionByStationId(
-    tenantId: number,
-    ocppConnectionName: string,
-  ): Promise<number[]> {
-    const activeTransactions = await this.transaction.readAllByQuery(tenantId, {
-      where: {
-        stationId: await stationIdFilter(tenantId, ocppConnectionName),
-        isActive: true,
-      },
-      include: [Evse],
-    });
-
-    const evseIds: number[] = [];
-    activeTransactions.forEach((transaction) => {
-      const evseId = transaction.evse?.evseTypeId;
-      if (evseId) {
-        evseIds.push(evseId);
-      }
-    });
-    return evseIds;
-  }
-
   async getActiveTransactionByStationIdAndEvseId(
     tenantId: number,
     ocppConnectionName: string,
     evseId: number,
-  ): Promise<Transaction | undefined> {
+  ): Promise<TransactionDto | undefined> {
     return await this.transaction
       .readAllByQuery(tenantId, {
         where: {
@@ -672,7 +552,7 @@ export class SequelizeTransactionEventRepository
     transactionId?: string | null,
     tariffId?: number | null,
     transactionCreatedAt?: Date,
-  ): Promise<MeterValue> {
+  ): Promise<MeterValueDto> {
     const meterValueType = MeterValueMapper.fromMeterValueType(meterValue);
     const savedMeterValue = await MeterValue.create({
       tenantId,
@@ -706,12 +586,13 @@ export class SequelizeTransactionEventRepository
       ocppConnectionName,
       transactionId.toString(),
     );
-    if (!transaction) {
+    if (!transaction?.id) {
       this.logger.error(
         `Transaction ${transactionId} on station ${ocppConnectionName} does not exist.`,
       );
       return;
     }
+    const transactionDatabaseId = transaction.id;
 
     // Store meter values
     await Promise.all(
@@ -728,24 +609,32 @@ export class SequelizeTransactionEventRepository
 
     if (transaction.meterStart === null || transaction.meterStart === undefined) {
       const meterStart = MeterValueUtils.getMeterStart(meterValues);
-      await transaction.update({
-        totalKwh: MeterValueUtils.getTotalKwh(
-          meterValues,
-          transaction.totalKwh ?? 0,
-          meterStart ?? undefined,
-        ),
-        meterStart: meterStart,
-        timeSpentCharging: elapsedSecondsSinceStart(transaction.startTime, meterValues),
-      });
+      await this.transaction.updateByKey(
+        tenantId,
+        {
+          totalKwh: MeterValueUtils.getTotalKwh(
+            meterValues,
+            transaction.totalKwh ?? 0,
+            meterStart ?? undefined,
+          ),
+          meterStart: meterStart,
+          timeSpentCharging: elapsedSecondsSinceStart(transaction.startTime, meterValues),
+        },
+        transactionDatabaseId.toString(),
+      );
     } else {
-      await transaction.update({
-        totalKwh: MeterValueUtils.getTotalKwh(
-          meterValues,
-          transaction.totalKwh ?? 0,
-          transaction.meterStart ?? undefined,
-        ),
-        timeSpentCharging: elapsedSecondsSinceStart(transaction.startTime, meterValues),
-      });
+      await this.transaction.updateByKey(
+        tenantId,
+        {
+          totalKwh: MeterValueUtils.getTotalKwh(
+            meterValues,
+            transaction.totalKwh ?? 0,
+            transaction.meterStart ?? undefined,
+          ),
+          timeSpentCharging: elapsedSecondsSinceStart(transaction.startTime, meterValues),
+        },
+        transactionDatabaseId.toString(),
+      );
     }
   }
 
@@ -753,7 +642,7 @@ export class SequelizeTransactionEventRepository
     tenantId: number,
     request: OCPP1_6.StartTransactionRequest,
     ocppConnectionName: string,
-  ): Promise<Transaction> {
+  ): Promise<TransactionDto> {
     const stationId = await resolveStationIdOrThrow(
       tenantId,
       ocppConnectionName,
@@ -853,7 +742,7 @@ export class SequelizeTransactionEventRepository
     timestamp: Date,
     meterValues: MeterValueDto[],
     reason?: string,
-  ): Promise<StopTransaction> {
+  ): Promise<StopTransactionDto> {
     const transaction = await this.transaction.readOnlyOneByQuery(tenantId, {
       where: { id: transactionDatabaseId },
       include: [StartTransaction],
@@ -899,10 +788,10 @@ export class SequelizeTransactionEventRepository
 
   async updateTransactionByStationIdAndTransactionId(
     tenantId: number,
-    transaction: Partial<Transaction>,
+    transaction: Partial<TransactionCreate>,
     transactionId: string,
     ocppConnectionName: string,
-  ): Promise<Transaction | undefined> {
+  ): Promise<TransactionDto | undefined> {
     const transactions = await this.transaction.updateAllByQuery(tenantId, transaction, {
       where: {
         // unique constraint
@@ -918,7 +807,7 @@ export class SequelizeTransactionEventRepository
     ocppConnectionName: string,
     evseId: number,
     excludeTransactionId: string,
-  ): Promise<Transaction[]> {
+  ): Promise<TransactionDto[]> {
     if (!excludeTransactionId || excludeTransactionId === '0') {
       return [];
     }
