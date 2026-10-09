@@ -63,7 +63,13 @@ export class VariableMonitoring extends Model implements VariableMonitoringDto {
   @Column(DataType.BOOLEAN)
   declare transaction: boolean;
 
-  @Column(DataType.INTEGER)
+  @Column({
+    type: DataType.DECIMAL,
+    get(this: VariableMonitoring) {
+      const value = this.getDataValue('value');
+      return value == null ? value : parseFloat(value);
+    },
+  })
   declare value: number;
 
   @Column(DataType.STRING)

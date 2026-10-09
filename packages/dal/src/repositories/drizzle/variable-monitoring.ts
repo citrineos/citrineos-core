@@ -22,7 +22,7 @@ export function toVariableMonitoringDto(entity: VariableMonitoringEntity): Varia
     id: entity.id,
     stationId: entity.stationId,
     transaction: entity.transaction,
-    value: entity.value,
+    value: entity.value == null ? entity.value : Number(entity.value),
     type: entity.type,
     severity: entity.severity,
     eventNotificationType: entity.eventNotificationType,
