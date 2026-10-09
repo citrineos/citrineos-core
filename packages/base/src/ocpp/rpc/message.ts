@@ -337,6 +337,7 @@ const OCPP_CallActions = new Set<string>([
   OCPP_CallAction.GetDiagnostics,
   OCPP_CallAction.RemoteStartTransaction,
   OCPP_CallAction.RemoteStopTransaction,
+  OCPP_CallAction.SecurityEventNotification,
   OCPP_CallAction.StartTransaction,
   OCPP_CallAction.StopTransaction,
 ]);

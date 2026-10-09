@@ -21,6 +21,7 @@ import {
   NotifyCustomerInformationRequestOcpp2Handler,
   NotifyMonitoringReportRequestOcpp2Handler,
   NotifyReportRequestOcpp2Handler,
+  SecurityEventNotificationRequestOcpp16Handler,
   SecurityEventNotificationRequestOcpp2Handler,
 } from '@handlers/index.js';
 
@@ -38,6 +39,7 @@ const REPORTING_HANDLERS = [
   NotifyCustomerInformationRequestOcpp2Handler,
   NotifyMonitoringReportRequestOcpp2Handler,
   NotifyReportRequestOcpp2Handler,
+  SecurityEventNotificationRequestOcpp16Handler,
   SecurityEventNotificationRequestOcpp2Handler,
   CustomerInformationResponseOcpp2Handler,
   GetBaseReportResponseOcpp2Handler,
