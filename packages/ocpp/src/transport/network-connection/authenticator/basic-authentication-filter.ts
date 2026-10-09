@@ -8,7 +8,7 @@ import type { VariableAttributeQuerystring } from '@citrineos/dal';
 import { IncomingMessage } from 'http';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import { extractBasicCredentials } from '@/apis/request-operations.js';
+import { extractBasicCredentials } from '../util.js';
 import { AuthenticatorFilter } from './authenticator-filter.js';
 import { UpgradeAuthenticationError } from './errors/authentication-error.js';
 
