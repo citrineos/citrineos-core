@@ -252,6 +252,46 @@ describe('OCPPValidator', () => {
         expect(result.isValid).toBe(false);
         expect(result.errors).toBeDefined();
       });
+
+      it('accepts a security event on OCPP 1.6', () => {
+        const result = validator.validateOCPPRequest(
+          OCPP_CallAction.SecurityEventNotification,
+          {
+            type: 'StartupOfTheDevice',
+            timestamp: '2026-06-10T13:42:56.340Z',
+            techInfo: 'boot',
+          },
+          OCPPVersion.OCPP1_6,
+        );
+
+        expect(result.isValid).toBe(true);
+      });
+
+      it('rejects a field the OCPP 1.6 schema does not define', () => {
+        const result = validator.validateOCPPRequest(
+          OCPP_CallAction.SecurityEventNotification,
+          {
+            type: 'StartupOfTheDevice',
+            timestamp: '2026-06-10T13:42:56.340Z',
+            customData: { vendorId: 'x' },
+          },
+          OCPPVersion.OCPP1_6,
+        );
+
+        expect(result.isValid).toBe(false);
+        expect(result.errors).toBeDefined();
+      });
+
+      it('rejects an OCPP 1.6 event without a timestamp', () => {
+        const result = validator.validateOCPPRequest(
+          OCPP_CallAction.SecurityEventNotification,
+          { type: 'StartupOfTheDevice' },
+          OCPPVersion.OCPP1_6,
+        );
+
+        expect(result.isValid).toBe(false);
+        expect(result.errors).toBeDefined();
+      });
     });
 
     describe('OCPP 2.0.1', () => {
