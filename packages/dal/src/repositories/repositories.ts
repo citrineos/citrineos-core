@@ -4,6 +4,8 @@
 
 import type { CrudRepository } from '@citrineos/base';
 import type {
+  AsyncJobCreate,
+  AsyncJobDto,
   AttributeEnumType,
   AuthorizationCreate,
   AuthorizationDto,
@@ -80,6 +82,24 @@ import type {
 } from '../models/transaction-event/index.js';
 import type { TransactionEvent } from '../models/transaction-event/transaction-event.js';
 import type { EventData, VariableMonitoring } from '../models/variable-monitoring/index.js';
+
+export type AsyncJobStatusUpdate = Partial<
+  Pick<
+    AsyncJobDto,
+    'paginatedParams' | 'totalObjects' | 'finishedAt' | 'stoppedAt' | 'stopScheduled' | 'isFailed'
+  >
+>;
+
+export interface IAsyncJobStatusRepository {
+  createAsyncJobStatus(tenantId: number, input: AsyncJobCreate): Promise<AsyncJobDto>;
+  readByJobId(tenantId: number, jobId: string): Promise<AsyncJobDto | undefined>;
+  updateAsyncJobStatus(
+    tenantId: number,
+    jobId: string,
+    data: AsyncJobStatusUpdate,
+  ): Promise<AsyncJobDto>;
+  deleteByJobId(tenantId: number, jobId: string): Promise<AsyncJobDto | undefined>;
+}
 
 export interface IAuthorizationRepository {
   readAllByQuerystring: (
