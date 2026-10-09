@@ -84,6 +84,7 @@ describe('WebsocketNetworkConnection', () => {
           logger,
           router: {},
           fileStorage: { exists: vi.fn().mockResolvedValue(false), getFile: vi.fn() },
+          messagesExchangeSink: { record: vi.fn().mockResolvedValue({ delivered: true }) },
         }),
       );
       const config = aWebsocketServerConfig({
