@@ -15,6 +15,7 @@ import {
   Home,
   MapPin,
   Receipt,
+  TriangleAlert,
   Users,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -31,6 +32,7 @@ export enum MenuSection {
   OVERVIEW = 'overview',
   LOCATIONS = 'locations',
   CHARGING_STATIONS = 'charging-stations',
+  NETWORK_ALERTS = 'network-alerts',
   AUTHORIZATIONS = 'authorizations',
   TRANSACTIONS = 'transactions',
   TARIFFS = 'tariffs',
@@ -78,6 +80,11 @@ export const MainMenu = ({ activeSection }: MainMenuProps) => {
       key: `/${MenuSection.CHARGING_STATIONS}`,
       label: translate('ChargingStations.ChargingStations'),
       icon: <EvCharger className={sidebarIconSize} />,
+    },
+    {
+      key: `/${MenuSection.NETWORK_ALERTS}`,
+      label: translate('NetworkAlerts.NetworkAlerts'),
+      icon: <TriangleAlert className={sidebarIconSize} />,
     },
     {
       key: `/${MenuSection.AUTHORIZATIONS}`,

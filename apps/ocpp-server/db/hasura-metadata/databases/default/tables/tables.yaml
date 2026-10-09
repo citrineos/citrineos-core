@@ -30,6 +30,8 @@
 - '!include public_Locations.yaml'
 - '!include public_MessageInfos.yaml'
 - '!include public_MeterValues.yaml'
+- '!include public_NetworkAlertOccurrences.yaml'
+- '!include public_NetworkAlerts.yaml'
 - '!include public_OCPPMessages.yaml'
 - '!include public_Reservations.yaml'
 - '!include public_SalesTariffs.yaml'
