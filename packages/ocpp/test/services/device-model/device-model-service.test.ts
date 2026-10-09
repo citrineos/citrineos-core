@@ -92,6 +92,46 @@ describe('DeviceModelService.provisionVariableAttributes', () => {
     });
   });
 
+  it('passes the provisioned value as the accepted value so it replaces a write-only value', async () => {
+    await service.provisionVariableAttributes(
+      tenantId,
+      ocppConnectionName,
+      aReportData([
+        {
+          type: OCPP2_0_1.AttributeEnumType.Actual,
+          value: 'SecondPassword_00002',
+          mutability: OCPP2_0_1.MutabilityEnumType.WriteOnly,
+        },
+      ]),
+      true,
+    );
+
+    const [, , , , acceptedValue] = updateResultByStationId.mock.calls[0];
+    expect(acceptedValue).toBe('SecondPassword_00002');
+  });
+
+  it('matches each persisted attribute to the provisioned value of its own type', async () => {
+    createOrUpdateDeviceModelByStationId.mockResolvedValue([
+      { ...aPersistedAttribute(), type: AttributeEnum.Actual },
+      { ...aPersistedAttribute(), type: AttributeEnum.Target },
+    ]);
+
+    await service.provisionVariableAttributes(
+      tenantId,
+      ocppConnectionName,
+      aReportData([
+        { type: OCPP2_0_1.AttributeEnumType.Actual, value: 'actual-value' },
+        { type: OCPP2_0_1.AttributeEnumType.Target, value: 'target-value' },
+      ]),
+      true,
+    );
+
+    expect(updateResultByStationId.mock.calls.map((call) => call[4])).toEqual([
+      'actual-value',
+      'target-value',
+    ]);
+  });
+
   it('defaults mutability to ReadWrite when the caller omits it', async () => {
     await service.provisionVariableAttributes(
       tenantId,

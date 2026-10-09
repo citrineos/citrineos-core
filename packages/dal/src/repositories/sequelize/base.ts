@@ -168,24 +168,22 @@ export class SequelizeRepository<T extends Model<any, any>> extends CrudReposito
     namespace: string = this.namespace,
   ): Promise<T[]> {
     const model = this.s.models[namespace] as ModelStatic<T>;
-
-    const where: WhereOptions<any> = {
-      ...(query as any).where,
-      tenantId,
-    };
+    const { where, transaction, ...rest } = query as FindOptions<any>;
+    const scopedWhere: WhereOptions<any> = { ...where, tenantId };
 
     const rows = await model.findAll({
-      ...(query as any),
-      where,
+      ...rest,
+      where: scopedWhere,
+      transaction,
     });
 
     if (rows.length === 0) return [];
 
     for (const row of rows) {
-      await row.update(value);
+      await row.update(value, { transaction });
     }
 
-    return Promise.all(rows.map((r) => r.reload()));
+    return Promise.all(rows.map((r) => r.reload({ transaction })));
   }
 
   protected async _deleteByKey(

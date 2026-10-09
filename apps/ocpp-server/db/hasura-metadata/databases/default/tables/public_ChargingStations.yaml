@@ -127,6 +127,13 @@ array_relationships:
         table:
           name: VariableMonitorings
           schema: public
+  - name: WebsocketEvents
+    using:
+      foreign_key_constraint_on:
+        column: stationId
+        table:
+          name: WebsocketEvents
+          schema: public
 insert_permissions:
   - role: user
     permission:

@@ -2,7 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { IConnectionEventProcessor, IFrameEventProcessor } from '@citrineos/types';
+import type {
+  IConnectionEventProcessor,
+  IFrameEventProcessor,
+  IWebsocketLifecycleEventProcessor,
+} from '@citrineos/types';
 import { asClass, asFunction, type AwilixContainer } from 'awilix';
 import {
   MessagesDeadLetterConsumer,
@@ -15,6 +19,7 @@ import { ConnectionWebhookProcessor } from '@modules/messages/processors/connect
 import { FrameWebhookProcessor } from '@modules/messages/processors/frame-webhook-processor.js';
 import { LatestOcppMessageTimestampProcessor } from '@modules/messages/processors/latest-ocpp-message-timestamp-processor.js';
 import { OcppMessagePersistProcessor } from '@modules/messages/processors/ocpp-message-persist-processor.js';
+import { WebsocketEventPersistProcessor } from '@modules/messages/processors/websocket-event-persist-processor.js';
 import { WebhookDispatcher } from './webhook-dispatcher.js';
 
 /** The processors this registrar resolves out of the container. */
@@ -23,6 +28,7 @@ interface MessagesCradle {
   frameWebhookProcessor: FrameWebhookProcessor;
   latestOcppMessageTimestampProcessor: LatestOcppMessageTimestampProcessor;
   connectionWebhookProcessor: ConnectionWebhookProcessor;
+  websocketEventPersistProcessor: WebsocketEventPersistProcessor;
 }
 
 /**
@@ -41,10 +47,17 @@ export function registerMessagesServices(container: AwilixContainer): void {
       cradle.connectionWebhookProcessor,
     ]).singleton(),
 
+    websocketLifecycleEventProcessors: asFunction(
+      (cradle: MessagesCradle): IWebsocketLifecycleEventProcessor[] => [
+        cradle.websocketEventPersistProcessor,
+      ],
+    ).singleton(),
+
     ocppMessagePersistProcessor: asClass(OcppMessagePersistProcessor).singleton(),
     frameWebhookProcessor: asClass(FrameWebhookProcessor).singleton(),
     latestOcppMessageTimestampProcessor: asClass(LatestOcppMessageTimestampProcessor).singleton(),
     connectionWebhookProcessor: asClass(ConnectionWebhookProcessor).singleton(),
+    websocketEventPersistProcessor: asClass(WebsocketEventPersistProcessor).singleton(),
     webhookDispatcher: asClass(WebhookDispatcher).singleton(),
 
     messagesEventConsumer: asClass(MessagesEventConsumer).singleton(),
