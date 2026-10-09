@@ -8,6 +8,7 @@ import {
   type IOcppSender,
   AbstractMessageEndpoint,
   DEFAULT_TENANT_ID,
+  type MessageDelivery,
 } from '@citrineos/base';
 import {
   EventGroup,
@@ -40,7 +41,7 @@ export class SetDisplayMessageEndpoint extends AbstractMessageEndpoint {
   async handle(
     identifiers: string[],
     request: OCPP2_request_types.SetDisplayMessageRequest,
-    callbackUrl: string | undefined,
+    delivery: MessageDelivery,
     tenantId: number = DEFAULT_TENANT_ID,
     version: OCPPVersion,
   ): Promise<IMessageConfirmation[]> {
@@ -67,7 +68,7 @@ export class SetDisplayMessageEndpoint extends AbstractMessageEndpoint {
           action: OCPP_CallAction.SetDisplayMessage,
           eventGroup: EventGroup.Configuration,
           payload: request,
-          callbackUrl,
+          ...delivery,
         }),
       ),
     );

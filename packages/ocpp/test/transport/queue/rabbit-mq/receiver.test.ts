@@ -4,7 +4,7 @@
 
 import { RabbitMqModuleReceiver } from '@/transport/queue/rabbit-mq/module-receiver.js';
 import { type RabbitMqReceiver } from '@/transport/queue/rabbit-mq/receiver.js';
-import { OCPP_CallAction, RetryMessageError } from '@citrineos/types';
+import { OCPP_CallAction } from '@citrineos/types';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -12,7 +12,9 @@ import {
   aConsumeMessageWithPrefixedFields,
   aMockAmqpChannel,
   aMockChannelManager,
+  aMockDeadLetterPublisher,
   aSystemConfigWithAmqp,
+  type MockDeadLetterPublisher,
 } from '../../../providers/rabbit-mq-provider.js';
 
 describe('RabbitMqReceiver', () => {
@@ -22,12 +24,15 @@ describe('RabbitMqReceiver', () => {
   describe('_onMessage', () => {
     let receiver: RabbitMqReceiver;
     let mockChannel: ReturnType<typeof aMockAmqpChannel>;
+    let deadLetterPublisher: MockDeadLetterPublisher;
 
     beforeEach(() => {
       mockChannel = aMockAmqpChannel();
+      deadLetterPublisher = aMockDeadLetterPublisher();
       receiver = getTestInstance(container, RabbitMqModuleReceiver, {
         config: aSystemConfigWithAmqp(),
         channelManager: aMockChannelManager(mockChannel),
+        deadLetterPublisher,
         module: undefined,
       });
       // Prevent handle() from throwing due to no registered handlers
@@ -66,93 +71,48 @@ describe('RabbitMqReceiver', () => {
       expect(mockChannel.ack).toHaveBeenCalled();
     });
 
-    it('should republish with the retry counter started when handle throws RetryMessageError', async () => {
-      vi.spyOn(receiver, 'handle').mockRejectedValueOnce(new RetryMessageError('call in progress'));
-      vi.spyOn(receiver as any, '_backoff').mockReturnValue(0); // don't sleep for real
-      const msg = aConsumeMessage();
-
-      await (receiver as any)._onMessage(msg, mockChannel, 'test-queue');
-
-      expect(mockChannel.sendToQueue).toHaveBeenCalledWith(
-        'test-queue',
-        msg.content,
-        expect.objectContaining({ headers: expect.objectContaining({ 'x-retries': 1 }) }),
-      );
-      // The original delivery is acked, not nacked: the republish above is the requeue.
-      expect(mockChannel.ack).toHaveBeenCalledWith(msg);
-      expect(mockChannel.nack).not.toHaveBeenCalled();
-    });
-
-    it('should increment the retry counter carried on the redelivered message', async () => {
-      vi.spyOn(receiver, 'handle').mockRejectedValueOnce(new RetryMessageError('call in progress'));
-      vi.spyOn(receiver as any, '_backoff').mockReturnValue(0); // don't sleep for real
-      const msg = aConsumeMessage({ headers: { 'x-retries': 3 } });
-
-      await (receiver as any)._onMessage(msg, mockChannel, 'test-queue');
-
-      expect(mockChannel.sendToQueue).toHaveBeenCalledWith(
-        'test-queue',
-        msg.content,
-        expect.objectContaining({ headers: expect.objectContaining({ 'x-retries': 4 }) }),
-      );
-    });
-
-    it('should preserve the original headers and content when republishing a retry', async () => {
-      vi.spyOn(receiver, 'handle').mockRejectedValueOnce(new RetryMessageError('call in progress'));
-      vi.spyOn(receiver as any, '_backoff').mockReturnValue(0); // don't sleep for real
-      const msg = aConsumeMessage({ headers: { action: 'BootNotification', tenantId: '1' } });
-
-      await (receiver as any)._onMessage(msg, mockChannel, 'test-queue');
-
-      const [, content, props] = (mockChannel.sendToQueue as any).mock.calls[0];
-      expect(content).toBe(msg.content);
-      expect(props.headers).toMatchObject({
-        action: 'BootNotification',
-        tenantId: '1',
-        'x-retries': 1,
-      });
-    });
-
-    it('should back off for longer as the retry count grows', () => {
-      const backoff = (attempt: number) => (receiver as any)._backoff(attempt);
-      // Jitter is ±25%, so compare attempts far enough apart to clear the overlap.
-      expect(backoff(0)).toBeLessThan(backoff(3));
-      expect(backoff(3)).toBeLessThan(backoff(6));
-      expect(backoff(20)).toBeLessThanOrEqual(1000 * 1.25); // capped
-    });
-
-    it('should drop the message once retrying would push it past the max age', async () => {
-      vi.spyOn(receiver, 'handle').mockRejectedValueOnce(new RetryMessageError('call in progress'));
-      const errorSpy = vi.spyOn((receiver as any)._logger, 'error');
-      // maxCallLengthSeconds defaults to 20 in the test config.
-      const msg = aConsumeMessage({
-        context: {
-          correlationId: 'test-correlation-id',
-          ocppConnectionName: 'CS001',
-          tenantId: '1',
-          timestamp: new Date(Date.now() - 30_000).toISOString(),
-        },
-        headers: { 'x-retries': 12 },
-      });
-
-      await (receiver as any)._onMessage(msg, mockChannel, 'test-queue');
-
-      expect(mockChannel.sendToQueue).not.toHaveBeenCalled();
-      expect(mockChannel.nack).toHaveBeenCalledWith(msg, false, false);
-      expect(mockChannel.ack).not.toHaveBeenCalled();
-      expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('test-correlation-id'));
-    });
-
-    it('should log the error and still ack when handle throws a non-retryable error', async () => {
+    it('should dead-letter a handler failure as handler_error and ack it without retrying', async () => {
       vi.spyOn(receiver, 'handle').mockRejectedValueOnce(new Error('unexpected failure'));
       const errorSpy = vi.spyOn((receiver as any)._logger, 'error');
-      const msg = aConsumeMessage();
+      const msg = aConsumeMessage({ headers: { action: 'Heartbeat', tenantId: '1' } });
 
       await (receiver as any)._onMessage(msg, mockChannel, 'test-queue');
 
       expect(errorSpy).toHaveBeenCalled();
+      expect(deadLetterPublisher.publishRaw).toHaveBeenCalledWith(
+        msg.content,
+        { action: 'Heartbeat', tenantId: '1' },
+        'handler_error',
+        'module',
+        { queue: 'test-queue', error: new Error('unexpected failure') },
+      );
+      expect(receiver.handle).toHaveBeenCalledTimes(1);
+      expect(mockChannel.sendToQueue).not.toHaveBeenCalled();
       expect(mockChannel.ack).toHaveBeenCalledWith(msg);
       expect(mockChannel.nack).not.toHaveBeenCalled();
+    });
+
+    it('should dead-letter a body that is not JSON as poison, without handling it', async () => {
+      const msg = aConsumeMessage();
+      msg.content = Buffer.from('not json');
+
+      await (receiver as any)._onMessage(msg, mockChannel, 'test-queue');
+
+      expect(receiver.handle).not.toHaveBeenCalled();
+      expect(deadLetterPublisher.publishRaw).toHaveBeenCalledWith(
+        msg.content,
+        {},
+        'poison',
+        'module',
+        expect.objectContaining({ queue: 'test-queue' }),
+      );
+      expect(mockChannel.ack).toHaveBeenCalledWith(msg);
+    });
+
+    it('should not dead-letter a message that was handled', async () => {
+      await (receiver as any)._onMessage(aConsumeMessage(), mockChannel, 'test-queue');
+
+      expect(deadLetterPublisher.publishRaw).not.toHaveBeenCalled();
     });
   });
 });

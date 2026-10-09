@@ -108,13 +108,14 @@ export abstract class AbstractMessageEndpointApi {
     const handler = async (
       request: FastifyRequest<MessageRoute>,
     ): Promise<IMessageConfirmation[]> => {
-      const { identifier, tenantId, callbackUrl, ...extraQueries } = request.query;
+      const { identifier, tenantId, callbackUrl, staleAfterSeconds, ...extraQueries } =
+        request.query;
       const identifiers = Array.isArray(identifier) ? identifier : [identifier];
 
       return endpoint.handle(
         identifiers,
         request.body,
-        callbackUrl,
+        { callbackUrl, staleAfterSeconds },
         tenantId,
         version,
         Object.keys(extraQueries).length > 0 ? extraQueries : undefined,

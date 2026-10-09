@@ -33,9 +33,13 @@ export class PaginatedMiddleware extends BaseMiddleware implements KoaMiddleware
   }
 
   private createLink(context: Context, paginatedResponse: PaginatedResponse<any>) {
-    const url = new URL(
-      `${context.request.protocol}://${context.request.host}${context.request.url}`,
-    );
+    let url: URL;
+    try {
+      url = new URL(`${context.request.protocol}://${context.request.host}${context.request.url}`);
+    } catch {
+      // A malformed (e.g. forwarded) host must not turn the caller's page into a 500.
+      return undefined;
+    }
     const currentOffset = paginatedResponse.offset || DEFAULT_OFFSET;
     const limit = paginatedResponse.limit || DEFAULT_LIMIT;
     const total = paginatedResponse.total || 0;

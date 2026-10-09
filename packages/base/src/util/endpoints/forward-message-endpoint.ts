@@ -6,6 +6,7 @@ import {
   AbstractMessageEndpoint,
   type AbstractMessageEndpointDependencies,
   type IMessageEndpointMetadata,
+  type MessageDelivery,
 } from '@interfaces/api/endpoints/abstract-message-endpoint.js';
 import type { MessageEndpointClass } from '@interfaces/api/endpoints/build-message-endpoints.js';
 import type { IOcppSender } from '@interfaces/handlers/i-ocpp-sender.js';
@@ -35,7 +36,7 @@ export function forwardMessageEndpoint(route: IMessageEndpointMetadata): Message
     async handle(
       identifiers: string[],
       request: OcppRequest,
-      callbackUrl: string | undefined,
+      delivery: MessageDelivery,
       tenantId: number | undefined,
       version: OCPPVersion,
     ): Promise<IMessageConfirmation[]> {
@@ -48,7 +49,7 @@ export function forwardMessageEndpoint(route: IMessageEndpointMetadata): Message
             action: route.action,
             eventGroup: route.eventGroup,
             payload: request,
-            callbackUrl,
+            ...delivery,
           }),
         ),
       );

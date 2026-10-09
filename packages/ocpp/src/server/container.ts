@@ -28,6 +28,7 @@ import {
   DrizzleCertificateRepository,
   DrizzleChangeConfigurationRepository,
   DrizzleChargingStationRepository,
+  DrizzleComponentRepository,
   DrizzleConnectorRepository,
   DrizzleLocationRepository,
   DrizzleStatusNotificationRepository,
@@ -54,7 +55,6 @@ import {
   SequelizeChargingStationNetworkProfileRepository,
   SequelizeChargingStationSecurityInfoRepository,
   SequelizeChargingStationSequenceRepository,
-  SequelizeComponentRepository,
   SequelizeDeleteCertificateAttemptRepository,
   SequelizeDeviceModelRepository,
   SequelizeInstallCertificateAttemptRepository,
@@ -115,7 +115,9 @@ import {
   NetworkProfileFilter,
   RabbitMQChannelManager,
   RabbitMQConnectionManager,
+  RabbitMqDeadLetterPublisher,
   RabbitMqModuleReceiver,
+  RabbitMqReemitter,
   RabbitMqRouterReceiver,
   RabbitMqSender,
   UnknownStationFilter,
@@ -230,14 +232,31 @@ function registerMessaging(container: AwilixContainer): void {
   container.register({
     connectionManager: asClass(RabbitMQConnectionManager).singleton(),
     channelManager: asClass(RabbitMQChannelManager).singleton(),
+    deadLetterPublisher: asClass(RabbitMqDeadLetterPublisher).singleton(),
+    reemitter: asClass(RabbitMqReemitter).singleton(),
   });
 
   // This is the message bus per module. Set to be scoped to each specific instance.
   container.register({
     sender: asFunction(
-      ({ exchange, connectionManager, channelManager, logger, maxCallLengthSeconds }) =>
+      ({
+        exchange,
+        config,
+        connectionManager,
+        channelManager,
+        deadLetterPublisher,
+        logger,
+        maxCallLengthSeconds,
+      }) =>
         new BrokerAwareMessageSender(
-          new RabbitMqSender(exchange, connectionManager, channelManager, logger),
+          new RabbitMqSender(
+            exchange,
+            connectionManager,
+            channelManager,
+            config.timeouts,
+            deadLetterPublisher,
+            logger,
+          ),
           connectionManager,
           maxCallLengthSeconds,
           logger,
@@ -245,25 +264,40 @@ function registerMessaging(container: AwilixContainer): void {
     ).scoped(),
 
     handler: asFunction(
-      ({ config, channelManager, logger }) =>
-        new RabbitMqModuleReceiver({ config, channelManager, logger }),
+      ({ config, channelManager, deadLetterPublisher, logger }) =>
+        new RabbitMqModuleReceiver({ config, channelManager, deadLetterPublisher, logger }),
     ).scoped(),
   });
 
   // This is the routing messenger between the charging stations and the message bus
   container.register({
     routerSender: asFunction(
-      ({ exchange, connectionManager, channelManager, logger, maxCallLengthSeconds }) =>
+      ({
+        exchange,
+        config,
+        connectionManager,
+        channelManager,
+        deadLetterPublisher,
+        logger,
+        maxCallLengthSeconds,
+      }) =>
         new BrokerAwareMessageSender(
-          new RabbitMqSender(exchange, connectionManager, channelManager, logger),
+          new RabbitMqSender(
+            exchange,
+            connectionManager,
+            channelManager,
+            config.timeouts,
+            deadLetterPublisher,
+            logger,
+          ),
           connectionManager,
           maxCallLengthSeconds,
           logger,
         ),
     ).singleton(),
     routerHandler: asFunction(
-      ({ config, channelManager, logger }) =>
-        new RabbitMqRouterReceiver({ config, channelManager, logger }),
+      ({ config, channelManager, deadLetterPublisher, logger }) =>
+        new RabbitMqRouterReceiver({ config, channelManager, deadLetterPublisher, logger }),
     ).singleton(),
   });
 }
@@ -312,10 +346,12 @@ function registerRepositories(container: AwilixContainer): void {
     tenantRepository: asClass(SequelizeTenantRepository).singleton(),
     transactionEventRepository: asClass(SequelizeTransactionEventRepository).singleton(),
     variableMonitoringRepository: asClass(SequelizeVariableMonitoringRepository).singleton(),
-    componentRepository: asClass(SequelizeComponentRepository).singleton(),
     // use asFunction to return an already existing instance
     chargingStationRepository: asFunction(
       ({ locationRepository }) => locationRepository,
+    ).singleton(),
+    componentRepository: asFunction(
+      ({ deviceModelRepository }) => deviceModelRepository,
     ).singleton(),
     connectorRepository: asFunction(({ locationRepository }) => locationRepository).singleton(),
     evseRepository: asFunction(({ locationRepository }) => locationRepository).singleton(),
@@ -362,6 +398,7 @@ function registerRepositories(container: AwilixContainer): void {
       serverNetworkProfileRepository: asClass(DrizzleServerNetworkProfileRepository).singleton(),
       tariffRepository: asClass(DrizzleTariffRepository).singleton(),
       tenantRepository: asClass(DrizzleTenantRepository).singleton(),
+      componentRepository: asClass(DrizzleComponentRepository).singleton(),
       variableAttributeRepository: asClass(DrizzleVariableAttributeRepository).singleton(),
       variableCharacteristicsRepository: asClass(
         DrizzleVariableCharacteristicsRepository,

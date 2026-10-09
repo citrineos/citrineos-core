@@ -74,6 +74,7 @@ export class OcppSender implements IOcppSender {
     payload,
     callbackUrl,
     correlationId,
+    staleAfterSeconds,
     origin = MessageOrigin.ChargingStationManagementSystem,
   }: SendCallArgs): Promise<IMessageConfirmation> {
     const identifier = createIdentifier(tenantId, ocppConnectionName);
@@ -127,18 +128,20 @@ export class OcppSender implements IOcppSender {
             payload: `Requested protocol: '${protocol}', connection protocol: '${websocketConnection.protocol}' for identifier: '${identifier}'`,
           });
         }
-        return this._sender.sendRequest(
-          RequestBuilder.buildCall(
-            ocppConnectionName,
-            _correlationId,
-            tenantId,
-            action,
-            payload,
-            eventGroup,
-            origin,
-            protocol,
-          ),
+        const call = RequestBuilder.buildCall(
+          ocppConnectionName,
+          _correlationId,
+          tenantId,
+          action,
+          payload,
+          eventGroup,
+          origin,
+          protocol,
         );
+        if (staleAfterSeconds !== undefined) {
+          call.context.staleAfterSeconds = staleAfterSeconds;
+        }
+        return this._sender.sendRequest(call);
       } else {
         this._logger.error('Failed sending call. No connection found for identifier: ', identifier);
         return Promise.resolve({

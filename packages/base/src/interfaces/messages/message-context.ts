@@ -12,4 +12,9 @@ export interface IMessageContext {
   tenantId: number;
   ocppConnectionName: string;
   timestamp: string; // Iso Timestamp
+  /**
+   * Overrides the configured age, from `timestamp`, after which the CSMS drops this Call.
+   * 0 never drops it.
+   */
+  staleAfterSeconds?: number;
 }

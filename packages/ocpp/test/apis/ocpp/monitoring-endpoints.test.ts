@@ -55,7 +55,7 @@ describe('monitoring message endpoints', () => {
       });
 
     const handle = (request: OCPP2_0_1.SetVariablesRequest) =>
-      build().handle([STATION], request, undefined, DEFAULT_TENANT_ID, OCPPVersion.OCPP2_0_1);
+      build().handle([STATION], request, {}, DEFAULT_TENANT_ID, OCPPVersion.OCPP2_0_1);
 
     it('persists the requested values before sending', async () => {
       const request: OCPP2_0_1.SetVariablesRequest = {
@@ -90,6 +90,23 @@ describe('monitoring message endpoints', () => {
         action: OCPP_CallAction.SetVariables,
         eventGroup: EventGroup.Monitoring,
       });
+    });
+
+    it('sends every batch with the callback url and staleAfterSeconds', async () => {
+      getItemsPerMessage.mockResolvedValue(1);
+
+      await build().handle(
+        [STATION],
+        { setVariableData: [aSetVariableData('A'), aSetVariableData('B')] },
+        { callbackUrl: 'http://cb', staleAfterSeconds: 90 },
+        DEFAULT_TENANT_ID,
+        OCPPVersion.OCPP2_0_1,
+      );
+
+      for (const [args] of sendCall.mock.calls) {
+        expect(args).toMatchObject({ callbackUrl: 'http://cb', staleAfterSeconds: 90 });
+      }
+      expect(sendCall).toHaveBeenCalledTimes(2);
     });
 
     it('labels each confirmation with its batch start index', async () => {
@@ -155,7 +172,7 @@ describe('monitoring message endpoints', () => {
       });
 
     const handle = (request: OCPP2_0_1.GetVariablesRequest) =>
-      build().handle([STATION], request, undefined, DEFAULT_TENANT_ID, OCPPVersion.OCPP2_0_1);
+      build().handle([STATION], request, {}, DEFAULT_TENANT_ID, OCPPVersion.OCPP2_0_1);
 
     it('sends the requested variables', async () => {
       await handle({ getVariableData: [aVariableData('A')] });
@@ -212,7 +229,7 @@ describe('monitoring message endpoints', () => {
       getTestInstance(container, SetVariableMonitoringEndpoint, {
         ocppSender: { sendCall },
         deviceModelService: deviceModelService(),
-        deviceModelRepository: { findComponentAndVariable },
+        componentRepository: { findComponentAndVariable },
         variableMonitoringRepository: { createOrUpdateBySetMonitoringDataTypeAndStationId },
       });
 
@@ -228,7 +245,7 @@ describe('monitoring message endpoints', () => {
     });
 
     const handle = (request: OCPP2_0_1.SetVariableMonitoringRequest) =>
-      build().handle([STATION], request, undefined, DEFAULT_TENANT_ID, OCPPVersion.OCPP2_0_1);
+      build().handle([STATION], request, {}, DEFAULT_TENANT_ID, OCPPVersion.OCPP2_0_1);
 
     it('persists each monitor before sending', async () => {
       await handle({ setMonitoringData: [aMonitor()] });
@@ -306,7 +323,7 @@ describe('monitoring message endpoints', () => {
       });
 
     const handle = (request: OCPP2_0_1.ClearVariableMonitoringRequest) =>
-      build().handle([STATION], request, undefined, DEFAULT_TENANT_ID, OCPPVersion.OCPP2_0_1);
+      build().handle([STATION], request, {}, DEFAULT_TENANT_ID, OCPPVersion.OCPP2_0_1);
 
     it('sends the ids to clear', async () => {
       await handle({ id: [1, 2] });
