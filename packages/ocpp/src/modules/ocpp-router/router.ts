@@ -174,16 +174,6 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     protocol: OCPPVersion,
     connectedWebsocketServerConfigId?: string,
   ): Promise<boolean> {
-    const connectionEvent = this._messagesExchangeSink.record(
-      buildConnectionEvent({
-        tenantId,
-        ocppConnectionName,
-        state: ConnectionEventState.Connected,
-        timestamp: new Date().toISOString(),
-        protocol,
-      }),
-    );
-
     const connectionIdentifier = createIdentifier(tenantId, ocppConnectionName);
     const requestSubscription = this._handler.subscribe(connectionIdentifier, undefined, {
       tenantId: tenantId.toString(),
@@ -207,12 +197,76 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       connectedWebsocketServerConfigId,
     );
 
-    return Promise.all([connectionEvent, requestSubscription, responseSubscription, onlineCharger])
-      .then((resolvedArray) => resolvedArray[1] && resolvedArray[2])
-      .catch((error) => {
-        this._logger.error(`Error registering connection for ${connectionIdentifier}: ${error}`);
-        return false;
+    const [request, response, online] = await Promise.allSettled([
+      requestSubscription,
+      responseSubscription,
+      onlineCharger,
+    ]);
+    const subscribed = [request, response].map(
+      (result) => result.status === 'fulfilled' && result.value,
+    );
+
+    if (subscribed.every(Boolean) && online.status === 'fulfilled') {
+      await this._messagesExchangeSink.record(
+        buildConnectionEvent({
+          tenantId,
+          ocppConnectionName,
+          state: ConnectionEventState.Connected,
+          timestamp: new Date().toISOString(),
+          protocol,
+        }),
+      );
+      return true;
+    }
+
+    const errors = [request, response, online].flatMap((result) =>
+      result.status === 'rejected' ? [result.reason] : [],
+    );
+    this._logger.error(`Error registering connection for ${connectionIdentifier}`, ...errors);
+    await this._rollBackRegistration(
+      tenantId,
+      ocppConnectionName,
+      protocol,
+      subscribed.some(Boolean),
+      online.status === 'fulfilled',
+    );
+    return false;
+  }
+
+  /**
+   * Undoes the steps of a registration that did succeed. Nothing else would: the network
+   * connection only deregisters connections whose close listener is attached, which happens after
+   * registration.
+   */
+  private async _rollBackRegistration(
+    tenantId: number,
+    ocppConnectionName: string,
+    protocol: OCPPVersion,
+    anySubscribed: boolean,
+    markedOnline: boolean,
+  ): Promise<void> {
+    const connectionIdentifier = createIdentifier(tenantId, ocppConnectionName);
+    if (anySubscribed) {
+      await this._handler.unsubscribe(connectionIdentifier).catch((error) => {
+        this._logger.error(`Failed to unsubscribe ${connectionIdentifier} after rollback`, error);
       });
+    }
+    if (markedOnline) {
+      await this._chargingStationRepository
+        .setChargingStationIsOnlineAndOCPPVersion(
+          tenantId,
+          ocppConnectionName,
+          false,
+          protocol,
+          null,
+        )
+        .catch((error) => {
+          this._logger.error(
+            `Failed to mark ${connectionIdentifier} offline after rollback; it stays online until its next disconnect`,
+            error,
+          );
+        });
+    }
   }
 
   async deregisterConnection(tenantId: number, ocppConnectionName: string): Promise<boolean> {

@@ -9,7 +9,11 @@ import type {
   MessagesEventContext,
 } from '@citrineos/types';
 import { MessagesEventPipeline } from '@/transport/index.js';
-import { aConnectionEvent, aFrameEvent } from '@test/providers/messages-event-provider.js';
+import {
+  aConnectionEvent,
+  aFrameEvent,
+  aWebsocketLifecycleEvent,
+} from '@test/providers/messages-event-provider.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -47,18 +51,21 @@ describe('MessagesEventPipeline', () => {
   const { container, logger } = createTestContainer();
   let frameEventProcessors: SpyProcessor[];
   let connectionEventProcessors: SpyProcessor[];
+  let websocketLifecycleEventProcessors: SpyProcessor[];
 
   function buildPipeline(): MessagesEventPipeline {
     return getTestInstance(container, MessagesEventPipeline, {
       frameEventProcessors: frameEventProcessors as unknown as IFrameEventProcessor[],
       connectionEventProcessors:
         connectionEventProcessors as unknown as IConnectionEventProcessor[],
+      websocketLifecycleEventProcessors,
     });
   }
 
   beforeEach(() => {
     frameEventProcessors = [aProcessor('frame-a'), aProcessor('frame-b')];
     connectionEventProcessors = [aProcessor('connection-a')];
+    websocketLifecycleEventProcessors = [aProcessor('websocket-a')];
   });
 
   afterEach(() => {
@@ -85,6 +92,22 @@ describe('MessagesEventPipeline', () => {
       await buildPipeline().run(event);
 
       expect(connectionEventProcessors[0].process).toHaveBeenCalledWith(event, expect.any(Object));
+      for (const processor of frameEventProcessors) {
+        expect(processor.process).not.toHaveBeenCalled();
+      }
+      expect(websocketLifecycleEventProcessors[0].process).not.toHaveBeenCalled();
+    });
+
+    it('should run only the websocket processors for a websocket lifecycle event', async () => {
+      const event = aWebsocketLifecycleEvent();
+
+      await buildPipeline().run(event);
+
+      expect(websocketLifecycleEventProcessors[0].process).toHaveBeenCalledWith(
+        event,
+        expect.any(Object),
+      );
+      expect(connectionEventProcessors[0].process).not.toHaveBeenCalled();
       for (const processor of frameEventProcessors) {
         expect(processor.process).not.toHaveBeenCalled();
       }
@@ -264,6 +287,7 @@ describe('MessagesEventPipeline', () => {
       expect(buildPipeline().processorNames).toEqual({
         frame: ['frame-a', 'frame-b'],
         connection: ['connection-a'],
+        websocket: ['websocket-a'],
       });
     });
   });

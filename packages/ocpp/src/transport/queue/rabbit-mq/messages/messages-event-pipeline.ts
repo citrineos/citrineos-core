@@ -6,9 +6,10 @@ import {
   type IConnectionEventProcessor,
   type IFrameEventProcessor,
   type IMessagesEventProcessor,
-  isFrameEvent,
+  type IWebsocketLifecycleEventProcessor,
   type MessagesEvent,
   type MessagesEventContext,
+  MessagesEventKind,
 } from '@citrineos/types';
 import { childLogger } from '@citrineos/base';
 import type { ILogObj, Logger } from 'tslog';
@@ -21,28 +22,37 @@ import {
 export class MessagesEventPipeline {
   private readonly _frameProcessors: IFrameEventProcessor[];
   private readonly _connectionProcessors: IConnectionEventProcessor[];
+  private readonly _websocketProcessors: IWebsocketLifecycleEventProcessor[];
   private readonly _logger: Logger<ILogObj>;
 
   constructor({
     frameEventProcessors,
     connectionEventProcessors,
+    websocketLifecycleEventProcessors,
     logger,
   }: {
     frameEventProcessors: IFrameEventProcessor[];
     connectionEventProcessors: IConnectionEventProcessor[];
+    websocketLifecycleEventProcessors: IWebsocketLifecycleEventProcessor[];
     logger?: Logger<ILogObj>;
   }) {
     this._frameProcessors = frameEventProcessors;
     this._connectionProcessors = connectionEventProcessors;
+    this._websocketProcessors = websocketLifecycleEventProcessors;
     this._logger = childLogger(logger, this.constructor.name);
-    initMessagesProcessorMetrics([...frameEventProcessors, ...connectionEventProcessors]);
+    initMessagesProcessorMetrics([
+      ...frameEventProcessors,
+      ...connectionEventProcessors,
+      ...websocketLifecycleEventProcessors,
+    ]);
   }
 
   /** For startup logging: which processors serve which kind. */
-  get processorNames(): { frame: string[]; connection: string[] } {
+  get processorNames(): { frame: string[]; connection: string[]; websocket: string[] } {
     return {
       frame: this._frameProcessors.map((p) => p.name),
       connection: this._connectionProcessors.map((p) => p.name),
+      websocket: this._websocketProcessors.map((p) => p.name),
     };
   }
 
@@ -53,10 +63,16 @@ export class MessagesEventPipeline {
   async run(event: MessagesEvent): Promise<MessagesEventContext> {
     const context: MessagesEventContext = {};
 
-    if (isFrameEvent(event)) {
-      await this._runAll(this._frameProcessors, event, context);
-    } else {
-      await this._runAll(this._connectionProcessors, event, context);
+    switch (event.kind) {
+      case MessagesEventKind.Frame:
+        await this._runAll(this._frameProcessors, event, context);
+        break;
+      case MessagesEventKind.Connection:
+        await this._runAll(this._connectionProcessors, event, context);
+        break;
+      case MessagesEventKind.Websocket:
+        await this._runAll(this._websocketProcessors, event, context);
+        break;
     }
 
     return context;

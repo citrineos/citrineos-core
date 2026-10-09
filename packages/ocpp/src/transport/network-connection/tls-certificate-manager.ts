@@ -92,6 +92,10 @@ export class TlsCredentialManager {
     return creds;
   }
 
+  getCredentials(): Promise<{ key: Buffer; cert: Buffer; ca?: Buffer }> {
+    return this._credentialsPromise;
+  }
+
   async getServerOptions(config: WebsocketServerConfig): Promise<https.ServerOptions> {
     const credentials = await this._credentialsPromise;
     return {
