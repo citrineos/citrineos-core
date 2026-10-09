@@ -66,6 +66,11 @@ export class DeviceModelService {
         } as OCPP2_common_types.SetVariableResultType,
         ocppConnectionName,
         timestamp,
+        withDefaultedMutability.variableAttribute.find(
+          (attribute) =>
+            (attribute.type ?? AttributeEnum.Actual) ===
+            (variableAttribute.type ?? AttributeEnum.Actual),
+        )?.value ?? undefined,
       );
       acceptedAttributes.push(variableAttribute);
     }

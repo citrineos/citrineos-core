@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import * as http from 'http';
 import * as net from 'net';
+import * as path from 'path';
 import type { AddressInfo } from 'net';
 import { hostname } from 'node:os';
 import {
@@ -95,6 +96,7 @@ describe('WebsocketNetworkConnection lifecycle events', () => {
         },
         doesChargingStationExistByOcppConnectionName: stationExists,
         messagesExchangeSink: { record },
+        fileStorage: { exists: vi.fn().mockResolvedValue(false), getFile: vi.fn() },
       }),
     );
     await networkConnection.addWebsocketServer(config);
@@ -417,7 +419,14 @@ describe('WebsocketNetworkConnection lifecycle events', () => {
     });
 
     it('reports a failed TLS handshake, before any station identifier is known', async () => {
-      const port = await startServer(aWebsocketServerConfig({ securityProfile: 2 }));
+      const resource = (name: string) => path.resolve(__dirname, `../../resources/${name}`);
+      const port = await startServer(
+        aWebsocketServerConfig({
+          securityProfile: 2,
+          tlsKeyFilePath: resource('LeafKeySample.pem'),
+          tlsCertificateChainFilePath: resource('LeafCertificateSample.pem'),
+        }),
+      );
 
       const socket = net.connect(port, '127.0.0.1', () => socket.write('GET / HTTP/1.1\r\n\r\n'));
       socket.on('error', () => {});

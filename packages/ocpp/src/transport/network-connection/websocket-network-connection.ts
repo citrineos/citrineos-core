@@ -160,14 +160,6 @@ export class WebsocketNetworkConnection implements INetworkConnection {
     for (const websocketServerConfig of this._websocketServers) {
       const _httpServer = await this._createAndStartWebsocketServer(websocketServerConfig);
       this._httpServersMap.set(websocketServerConfig.id, _httpServer);
-      if (websocketServerConfig.securityProfile > 1) {
-        const certManager = new TlsCredentialManager(
-          websocketServerConfig,
-          this._fileStorage,
-          this._logger,
-        );
-        this._certManagersMap.set(websocketServerConfig.id, certManager);
-      }
     }
   }
 
@@ -199,6 +191,11 @@ export class WebsocketNetworkConnection implements INetworkConnection {
     const certManager = this._certManagersMap.get(serverId);
     if (certManager) {
       await certManager.reload();
+      const httpsServer = this._httpServersMap.get(serverId);
+      if (httpsServer instanceof https.Server) {
+        const { key, cert, ca } = await certManager.getCredentials();
+        httpsServer.setSecureContext({ key, cert, ca });
+      }
     } else {
       this._logger.error(`No TLS Credential Manager found for server ${serverId}`);
       throw new Error(`No TLS Credential Manager found for server ${serverId}`);
@@ -977,20 +974,20 @@ export class WebsocketNetworkConnection implements INetworkConnection {
       recordWsActiveConnectionsDelta(-1);
     }
     recordWsConnectionClosed(code);
-  
-    // Unregister client
-    const connectionStringPromise = this._cache
+
+    // Deregistered before the slot is released. Until then no other instance can claim the
+    // station, so its messages are never bound to two instances at once.
+    const deregistered =
+      (await this._router
+        .deregisterConnection(closedTenantId, getStationIdFromIdentifier(identifier))
+        .catch((err) => {
+          connLogger.error(`Failed to deregister connection ${identifier} from router`, err);
+        })) === true;
+    const connectionString = await this._cache
       .remove<string>(identifier, CacheNamespace.Connections)
       .catch((err) => {
         connLogger.error(`Failed to remove connection string ${identifier} from cache`, err);
       });
-    const deregisterPromise = this._router
-      .deregisterConnection(closedTenantId, getStationIdFromIdentifier(identifier))
-      .catch((err) => {
-        connLogger.error(`Failed to deregister connection ${identifier} from router`, err);
-      });
-      
-    const connectionString = await connectionStringPromise;
     let timeConnected: number | undefined;
     if (connectionString) {
       const connection: IWebsocketConnection = JSON.parse(connectionString);
@@ -999,8 +996,6 @@ export class WebsocketNetworkConnection implements INetworkConnection {
         `Connection ${identifier} closed after being connected for ${timeConnected} ms with code ${code} and reason ${reason}`,
       );
     }
-
-    const deregistered = (await deregisterPromise) === true;
 
     connLogger.info(
       `Connection closed for ${identifier} live connections: ${this._identifierConnections.size}`,
@@ -1293,15 +1288,19 @@ export class WebsocketNetworkConnection implements INetworkConnection {
   private async _generateServerOptions(
     config: WebsocketServerConfig,
   ): Promise<https.ServerOptions> {
+    let certManager = this._certManagersMap.get(config.id);
+    if (!certManager) {
+      certManager = new TlsCredentialManager(config, this._fileStorage, this._logger);
+      this._certManagersMap.set(config.id, certManager);
+    }
+    const { key, cert } = await certManager.getServerOptions(config);
     const serverOptions: https.ServerOptions = {
-      SNICallback:
-        config.securityProfile > 1
-          ? async (serverName, cb) => {
-              const opts = await this._certManagersMap.get(config.id)!.getServerOptions(config);
-              const ctx = tls.createSecureContext(opts);
-              cb(null, ctx);
-            }
-          : undefined,
+      key,
+      cert,
+      SNICallback: async (serverName, cb) => {
+        const opts = await certManager.getServerOptions(config);
+        cb(null, tls.createSecureContext(opts));
+      },
       ca:
         config.securityProfile > 2 && config.rootCACertificateFilePath
           ? (await this._fileStorage.getFile(config.rootCACertificateFilePath, undefined, {
