@@ -19,15 +19,15 @@ import {
   OCPP2_common_types,
   OCPP2_request_types,
   OCPP2_response_types,
+  type TransactionDto,
 } from '@citrineos/types';
-import { Transaction } from '@citrineos/dal';
 import type {
   IChargingProfileRepository,
   IVariableAttributeRepository,
   ITransactionEventRepository,
 } from '@citrineos/dal';
 import type { ISmartCharging } from '@modules/smart-charging/smart-charging.js';
-import { generateChargingProfileId } from '@util/index.js';
+import { generateChargingProfileId, requireTransactionDatabaseId } from '@util/index.js';
 
 @AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.NotifyEVChargingSchedule)
 export class NotifyEVChargingScheduleRequestOcpp2Handler extends AbstractHandler {
@@ -133,13 +133,14 @@ export class NotifyEVChargingScheduleRequestOcpp2Handler extends AbstractHandler
    *
    * @param request - The `NotifyEVChargingScheduleRequest` containing EV's charging schedule.
    * @param transaction - The transaction associated with the charging profile.
+   * @param tenantId - The identifier of the tenant.
    * @param ocppConnectionName - The connection name of the charging station
    *
    * @returns A `SetChargingProfileRequest` with a generated charging profile.
    */
   private async _generateSetChargingProfileRequest(
     request: OCPP2_request_types.NotifyEVChargingScheduleRequest,
-    transaction: Transaction,
+    transaction: TransactionDto,
     tenantId: number,
     ocppConnectionName: string,
   ): Promise<OCPP2_request_types.SetChargingProfileRequest> {
@@ -167,7 +168,7 @@ export class NotifyEVChargingScheduleRequestOcpp2Handler extends AbstractHandler
       stackLevel: await this._chargingProfileRepository.getNextStackLevel(
         tenantId,
         ocppConnectionName,
-        transaction.id,
+        requireTransactionDatabaseId(transaction),
         purpose,
       ),
       chargingProfilePurpose: purpose,

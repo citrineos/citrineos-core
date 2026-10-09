@@ -17,8 +17,9 @@ import {
   OCPP_2_VER_LIST,
   OCPP_CallAction,
   type SystemConfig,
+  type TransactionDto,
 } from '@citrineos/types';
-import { type ITransactionEventRepository, Transaction } from '@citrineos/dal';
+import type { ITransactionEventRepository } from '@citrineos/dal';
 import type { CostNotifier } from '@modules/transactions/cost-notifier.js';
 import type { TransactionService } from '@modules/transactions/transaction-service.js';
 import type { SignedMeterValuesUtil } from '@services/index.js';
@@ -78,7 +79,7 @@ export class MeterValuesRequestOcpp2Handler extends AbstractHandler {
 
     // When evseId is 0, the MeterValuesRequest message SHALL be associated with the entire Charging Station.
     if (evseId !== 0) {
-      const activeTransaction: Transaction | undefined =
+      const activeTransaction: TransactionDto | undefined =
         await this._transactionEventRepository.getActiveTransactionByStationIdAndEvseId(
           tenantId,
           ocppConnectionName,
@@ -101,7 +102,12 @@ export class MeterValuesRequestOcpp2Handler extends AbstractHandler {
       );
 
       if (activeTransaction) {
-        await this._transactionService.recalculateTotalKwh(activeTransaction, meterValuesCreated);
+        await this._transactionService.recalculateTotalKwh(
+          tenantId,
+          ocppConnectionName,
+          activeTransaction,
+          meterValuesCreated,
+        );
         if (this._sendCostUpdatedOnMeterValue) {
           await this._costNotifier.calculateCostAndNotify(
             activeTransaction,

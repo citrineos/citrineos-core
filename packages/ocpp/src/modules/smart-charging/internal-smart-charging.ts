@@ -2,11 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import type { ISmartCharging } from './smart-charging.js';
-import { ChargingProfilePurposeEnum, OCPP2_0_1 } from '@citrineos/types';
+import { ChargingProfilePurposeEnum, OCPP2_0_1, type TransactionDto } from '@citrineos/types';
 import type { IChargingProfileRepository, IVariableAttributeRepository } from '@citrineos/dal';
 import { ChargingProfile, ChargingSchedule } from '@citrineos/dal';
-import { Transaction } from '@citrineos/dal';
-import { generateChargingProfileId } from '@util/index.js';
+import { generateChargingProfileId, requireTransactionDatabaseId } from '@util/index.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 
@@ -37,6 +36,7 @@ export class InternalSmartCharging implements ISmartCharging {
    *
    * @param request - The `NotifyEVChargingNeedsRequest` containing details about the EV's charging requirements.
    * @param transaction - The ID of the transaction associated with the charging profile.
+   * @param tenantId - The identifier of the tenant.
    * @param ocppConnectionName - The connection name of the charging station
    * @returns A `ChargingProfileType`.
    *
@@ -44,10 +44,11 @@ export class InternalSmartCharging implements ISmartCharging {
    */
   async calculateChargingProfile(
     request: OCPP2_0_1.NotifyEVChargingNeedsRequest,
-    transaction: Transaction,
+    transaction: TransactionDto,
     tenantId: number,
     ocppConnectionName: string,
   ): Promise<OCPP2_0_1.ChargingProfileType> {
+    const transactionDatabaseId = requireTransactionDatabaseId(transaction);
     const { chargingNeeds } = request;
 
     const acParams = chargingNeeds.acChargingParameters;
@@ -66,7 +67,7 @@ export class InternalSmartCharging implements ISmartCharging {
     const stackLevel = await this._chargingProfileRepository.getNextStackLevel(
       tenantId,
       ocppConnectionName,
-      transaction.id,
+      transactionDatabaseId,
       nativePurpose,
     );
 
@@ -116,7 +117,7 @@ export class InternalSmartCharging implements ISmartCharging {
       limit,
       tenantId,
       ocppConnectionName,
-      transaction.id,
+      transactionDatabaseId,
     );
 
     const departureTime = chargingNeeds.departureTime
@@ -166,13 +167,14 @@ export class InternalSmartCharging implements ISmartCharging {
     request: OCPP2_0_1.NotifyEVChargingScheduleRequest,
     tenantId: number,
     ocppConnectionName: string,
-    transaction: Transaction,
+    transaction: TransactionDto,
   ): Promise<void> {
+    const transactionDatabaseId = requireTransactionDatabaseId(transaction);
     const givenChargingPeriods = request.chargingSchedule.chargingSchedulePeriod;
     const existingChargingProfile = await this._findExistingChargingProfileWithHighestStackLevel(
       tenantId,
       ocppConnectionName,
-      transaction.id,
+      transactionDatabaseId,
     );
 
     // Currently, we simply check the limit in each charging period
@@ -215,7 +217,7 @@ export class InternalSmartCharging implements ISmartCharging {
   private async _findExistingChargingProfileWithHighestStackLevel(
     tenantId: number,
     ocppConnectionName: string,
-    transactionDatabaseId: string,
+    transactionDatabaseId: number,
   ): Promise<ChargingProfile | undefined> {
     const existingChargingProfiles = await this._chargingProfileRepository.readAllByQuery(
       tenantId,
@@ -242,7 +244,7 @@ export class InternalSmartCharging implements ISmartCharging {
     limit: number,
     tenantId: number,
     ocppConnectionName: string,
-    transactionDataBaseId: string,
+    transactionDataBaseId: number,
   ): Promise<void> {
     const existingChargingProfile = await this._findExistingChargingProfileWithHighestStackLevel(
       tenantId,

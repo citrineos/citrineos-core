@@ -118,10 +118,9 @@ describe('An OCPP 1.6 StopTransaction on a tenant other than the default', () =>
       'Local',
     );
 
-    const stored = await transactionEventRepository.readAllMeterValuesByTransactionDataBaseId(
-      OTHER_TENANT_ID,
-      transactionDatabaseId,
-    );
+    const stored = await transactionEventRepository.meterValue.readAllByQuery(OTHER_TENANT_ID, {
+      where: { transactionDatabaseId },
+    });
     expect(stored).toHaveLength(1);
   });
 
@@ -136,10 +135,9 @@ describe('An OCPP 1.6 StopTransaction on a tenant other than the default', () =>
       'Local',
     );
 
-    const leaked = await transactionEventRepository.readAllMeterValuesByTransactionDataBaseId(
-      DEFAULT_TENANT_ID,
-      transactionDatabaseId,
-    );
+    const leaked = await transactionEventRepository.meterValue.readAllByQuery(DEFAULT_TENANT_ID, {
+      where: { transactionDatabaseId },
+    });
     expect(leaked).toHaveLength(0);
   });
 });
