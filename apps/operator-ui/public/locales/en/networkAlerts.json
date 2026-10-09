@@ -1,0 +1,49 @@
+{
+  "NetworkAlerts": {
+    "NetworkAlerts": "Network Alerts",
+    "networkAlert": "Network Alert",
+    "noDataFound": "No network alert found with id {id}.",
+    "columns": {
+      "id": "ID",
+      "severity": "Severity",
+      "status": "Status",
+      "type": "Type",
+      "stationId": "Station ID",
+      "evse": "EVSE",
+      "connector": "Connector",
+      "details": "Details",
+      "occurrenceCount": "Occurrences",
+      "firstSeenAt": "First Seen",
+      "lastSeenAt": "Last Seen",
+      "resolvedAt": "Resolved At",
+      "resolvedBy": "Resolved By",
+      "statusNote": "Status Note",
+      "updatedAt": "Updated At"
+    },
+    "detail": {
+      "type": "Type",
+      "stationId": "Station ID",
+      "evse": "EVSE",
+      "connector": "Connector",
+      "firstSeenAt": "First Seen",
+      "lastSeenAt": "Last Seen",
+      "occurrenceCount": "Occurrences",
+      "resolvedAt": "Resolved At",
+      "resolvedBy": "Resolved By",
+      "statusNote": "Status Note",
+      "offlineSince": "Offline Since",
+      "connectorStatus": "Connector Status",
+      "errorCode": "Error Code",
+      "reasons": "Failure Reasons",
+      "actions": "Actions"
+    },
+    "tabs": {
+      "occurrences": "Occurrences"
+    },
+    "occurrences": {
+      "occurredAt": "Occurred At",
+      "severity": "Severity",
+      "details": "Details"
+    }
+  }
+}

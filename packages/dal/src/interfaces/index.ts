@@ -64,6 +64,14 @@ export type {
 
 // Data projection models
 export type { AuthorizationRestrictions } from './projections/authorization-restrictions.js';
+export type {
+  NetworkAlertStationState,
+  NetworkAlertSubject,
+  OpenNetworkAlert,
+  ResponseLatencySample,
+  SilentStation,
+} from './projections/network-alert.js';
+export type { VariableWithCharacteristics } from './projections/variable-with-characteristics.js';
 export { default as AuthorizationRestrictionsSchema } from './projections/schemas/AuthorizationRestrictionsSchema.json' with { type: 'json' };
 export { default as TariffSchema } from './projections/schemas/TariffSchema.json' with { type: 'json' };
 

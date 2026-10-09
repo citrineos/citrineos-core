@@ -1,0 +1,49 @@
+{
+  "NetworkAlerts": {
+    "NetworkAlerts": "Alertas de Rede",
+    "networkAlert": "Alerta de Rede",
+    "noDataFound": "Nenhum alerta de rede encontrado com o id {id}.",
+    "columns": {
+      "id": "ID",
+      "severity": "Severidade",
+      "status": "Status",
+      "type": "Tipo",
+      "stationId": "ID da Estação",
+      "evse": "EVSE",
+      "connector": "Conector",
+      "details": "Detalhes",
+      "occurrenceCount": "Ocorrências",
+      "firstSeenAt": "Visto Primeiro",
+      "lastSeenAt": "Visto por Último",
+      "resolvedAt": "Resolvido em",
+      "resolvedBy": "Resolvido por",
+      "statusNote": "Nota de Status",
+      "updatedAt": "Atualizado em"
+    },
+    "detail": {
+      "type": "Tipo",
+      "stationId": "ID da Estação",
+      "evse": "EVSE",
+      "connector": "Conector",
+      "firstSeenAt": "Visto Primeiro",
+      "lastSeenAt": "Visto por Último",
+      "occurrenceCount": "Ocorrências",
+      "resolvedAt": "Resolvido em",
+      "resolvedBy": "Resolvido por",
+      "statusNote": "Nota de Status",
+      "offlineSince": "Offline Desde",
+      "connectorStatus": "Status do Conector",
+      "errorCode": "Código de Erro",
+      "reasons": "Motivos da Falha",
+      "actions": "Ações"
+    },
+    "tabs": {
+      "occurrences": "Ocorrências"
+    },
+    "occurrences": {
+      "occurredAt": "Ocorrido em",
+      "severity": "Severidade",
+      "details": "Detalhes"
+    }
+  }
+}

@@ -47,6 +47,11 @@ export {
 } from '../../models/location/index.js';
 export { ChargingStationSequence } from '../../models/charging-station-sequence/index.js';
 export { MessageInfo } from '../../models/message-info/index.js';
+export {
+  NetworkAlert,
+  NetworkAlertConfig,
+  NetworkAlertOccurrence,
+} from '../../models/network-alert/index.js';
 export { Tariff } from '../../models/tariff/index.js';
 export { Subscription } from '../../models/subscription/index.js';
 export {
@@ -92,6 +97,8 @@ export { SequelizeLocationRepository } from '../../repositories/sequelize/locati
 export { SequelizeTransactionEventRepository } from '../../repositories/sequelize/transaction-event.js';
 export { SequelizeSecurityEventRepository } from '../../repositories/sequelize/security-event.js';
 export { SequelizeWebsocketEventRepository } from '../../repositories/sequelize/websocket-event.js';
+export { SequelizeNetworkAlertRepository } from '../../repositories/sequelize/network-alert.js';
+export { SequelizeNetworkAlertConfigRepository } from '../../repositories/sequelize/network-alert-config.js';
 export { SequelizeVariableMonitoringRepository } from '../../repositories/sequelize/variable-monitoring.js';
 export { SequelizeMessageInfoRepository } from '../../repositories/sequelize/message-info.js';
 export { SequelizeTariffRepository } from '../../repositories/sequelize/tariff.js';

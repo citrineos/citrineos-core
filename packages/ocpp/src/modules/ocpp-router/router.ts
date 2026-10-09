@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import {
+  buildCallEvent,
   buildConnectionEvent,
   buildFrameEvent,
   ConnectionNotFoundError,
@@ -51,6 +52,7 @@ import {
 import type { IChargingStationRepository } from '@citrineos/dal';
 import {
   type CallAction,
+  CallEventOutcome,
   ConnectionEventState,
   ErrorCode,
   EventGroup,
@@ -104,6 +106,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     { messages: RoutedMessage[]; timer?: ReturnType<typeof setTimeout> }
   >();
   private _draining = new Set<string>();
+  private _isShutDown = false;
 
   /**
    * Constructor for the class.
@@ -524,7 +527,22 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
           correlationId,
           `${action}@${cacheTimestamp.toISOString()}`,
           transactionNamespace,
-          this._config.timeouts.maxCallLengthSeconds,
+          {
+            seconds: this._config.timeouts.maxCallLengthSeconds,
+            // An answer removes the key on whichever instance the station is connected to by then,
+            // so only a Call left unanswered gets here.
+            onExpire: () => {
+              if (!this._isShutDown) {
+                this._recordCallOutcome(
+                  CallEventOutcome.Timeout,
+                  identifier,
+                  protocol,
+                  correlationId,
+                  String(action),
+                );
+              }
+            },
+          },
         );
         const rawMessage = JSON.stringify(message);
         let successTimestamp: Date | undefined;
@@ -555,6 +573,13 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
           );
         } else {
           recordOcppCallSent(String(action), protocol, CallSentOutcome.SendFailed);
+          this._recordCallOutcome(
+            CallEventOutcome.SendFailed,
+            identifier,
+            protocol,
+            correlationId,
+            String(action),
+          );
           const removed = await this._cache.remove(correlationId, transactionNamespace);
           await this._releaseOutstandingCall(identifier);
           this._logger.warn(
@@ -753,6 +778,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   }
 
   async shutdown(): Promise<void> {
+    this._isShutDown = true;
     for (const [identifier, pending] of this._pendingCalls) {
       clearTimeout(pending.timer);
       for (const message of pending.messages) {
@@ -1159,6 +1185,38 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         this._logger.error('Failed to publish outbound frame event', err);
       });
     return sentTimestamp;
+  }
+
+  private _recordCallOutcome(
+    outcome: CallEventOutcome,
+    identifier: string,
+    protocol: OCPPVersionType,
+    correlationId: string,
+    action: string,
+  ): void {
+    // Built inside the chain, so a malformed event is logged rather than thrown into the caller.
+    Promise.resolve()
+      .then(() =>
+        this._messagesExchangeSink.record(
+          buildCallEvent({
+            tenantId: getTenantIdFromIdentifier(identifier),
+            ocppConnectionName: getStationIdFromIdentifier(identifier),
+            outcome,
+            correlationId,
+            action,
+            protocol,
+            timestamp: new Date().toISOString(),
+          }),
+        ),
+      )
+      .catch((err) => {
+        this._logger.error(
+          `Failed to publish call ${outcome} event`,
+          identifier,
+          correlationId,
+          err,
+        );
+      });
   }
 
   private async _releaseOutstandingCall(identifier: string): Promise<void> {

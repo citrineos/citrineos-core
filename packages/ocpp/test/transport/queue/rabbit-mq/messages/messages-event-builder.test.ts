@@ -3,8 +3,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {
+  CallEventOutcome,
   ConnectionEventState,
   FrameDirection,
+  isCallEvent,
   isConnectionEvent,
   isFrameEvent,
   isWebsocketLifecycleEvent,
@@ -20,6 +22,7 @@ import {
   OCPPVersion,
 } from '@citrineos/types';
 import {
+  buildCallEvent,
   buildConnectionEvent,
   buildFrameEvent,
   buildWebsocketLifecycleEvent,
@@ -228,6 +231,44 @@ describe('buildWebsocketLifecycleEvent', () => {
   });
 });
 
+function callInput(outcome: CallEventOutcome = CallEventOutcome.Timeout) {
+  return {
+    tenantId: TENANT_ID,
+    ocppConnectionName: STATION_ID,
+    outcome,
+    correlationId: CORRELATION_ID,
+    action: OCPP_CallAction.GetBaseReport,
+    protocol: OCPPVersion.OCPP2_0_1,
+    timestamp: TIMESTAMP,
+  };
+}
+
+describe('buildCallEvent', () => {
+  it('should build a call event carrying every input field', () => {
+    const event = buildCallEvent({ ...callInput(), meta: { instance: 'pod-a' } });
+
+    expect(event).toEqual({
+      kind: MessagesEventKind.Call,
+      tenantId: TENANT_ID,
+      ocppConnectionName: STATION_ID,
+      outcome: CallEventOutcome.Timeout,
+      correlationId: CORRELATION_ID,
+      action: OCPP_CallAction.GetBaseReport,
+      protocol: OCPPVersion.OCPP2_0_1,
+      timestamp: TIMESTAMP,
+      meta: { instance: 'pod-a' },
+    });
+    expect(isCallEvent(event)).toBe(true);
+    expect(MessagesEventSchema.safeParse(event).success).toBe(true);
+  });
+
+  it('should build a send-failed event', () => {
+    expect(buildCallEvent(callInput(CallEventOutcome.SendFailed)).outcome).toBe(
+      CallEventOutcome.SendFailed,
+    );
+  });
+});
+
 describe('kind discrimination', () => {
   it('should narrow a frame event', () => {
     const event = buildFrameEvent(frameInput());
@@ -320,6 +361,13 @@ describe('messagesEventRoutingKey', () => {
     ).toBe('websocket.ConnectionRejected');
   });
 
+  it.each([
+    [CallEventOutcome.Timeout, 'call.timeout'],
+    [CallEventOutcome.SendFailed, 'call.send_failed'],
+  ])('should key a call event by its outcome %s', (outcome, key) => {
+    expect(messagesEventRoutingKey(buildCallEvent(callInput(outcome)))).toBe(key);
+  });
+
   it('should not encode the tenant, so nothing routes on it', () => {
     const one = messagesEventRoutingKey(buildFrameEvent(frameInput({ tenantId: 1 })));
     const other = messagesEventRoutingKey(buildFrameEvent(frameInput({ tenantId: 99 })));
@@ -348,6 +396,12 @@ describe('messages-plane topology constants', () => {
         queue: 'messages.websocket',
         dlq: 'messages.websocket.dlq',
         binding: 'websocket.#',
+      },
+      {
+        kind: MessagesEventKind.Call,
+        queue: 'messages.calls',
+        dlq: 'messages.calls.dlq',
+        binding: 'call.#',
       },
     ]);
     expect(MESSAGES_EXCHANGE).toBe('messages');
@@ -384,6 +438,11 @@ describe('messages-plane topology constants', () => {
       }),
     );
 
+    for (const outcome of [CallEventOutcome.Timeout, CallEventOutcome.SendFailed]) {
+      expect(messagesEventRoutingKey(buildCallEvent(callInput(outcome))).startsWith('call.')).toBe(
+        true,
+      );
+    }
     for (const event of connections) {
       expect(messagesEventRoutingKey(event).startsWith('connection.')).toBe(true);
     }

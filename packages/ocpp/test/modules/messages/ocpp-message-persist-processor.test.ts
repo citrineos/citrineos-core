@@ -7,6 +7,7 @@ import {
   FrameDirection,
   MessageOrigin,
   MessageState,
+  type MessagesEventContext,
   MessageTypeId,
   OCPP_CallAction,
   OCPPVersion,
@@ -176,6 +177,19 @@ describe('OcppMessagePersistProcessor', () => {
         persistedAction: OCPP_CallAction.BootNotification,
         persistedId: 9,
       });
+    });
+
+    it('should hand the linked station to later processors', async () => {
+      ocppMessageRepository.createOCPPMessage.mockResolvedValue({
+        id: 9,
+        action: OCPP_CallAction.Heartbeat,
+        stationId: 17,
+      });
+      const context: MessagesEventContext = {};
+
+      await processor.process(aFrameEvent(), context);
+
+      expect(context.stationId).toBe(17);
     });
 
     it('should leave the resolved action undefined when correlation found no CALL', async () => {

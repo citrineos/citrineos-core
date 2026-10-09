@@ -282,6 +282,15 @@ export {
   toWebsocketEventDto,
 } from '../../repositories/drizzle/websocket-event.js';
 export {
+  DrizzleNetworkAlertRepository,
+  toNetworkAlertDto,
+  toNetworkAlertOccurrenceDto,
+} from '../../repositories/drizzle/network-alert.js';
+export {
+  DrizzleNetworkAlertConfigRepository,
+  toNetworkAlertConfigDto,
+} from '../../repositories/drizzle/network-alert-config.js';
+export {
   websocketEventTable,
   WebsocketEventEntitySchema,
   WebsocketEventEntityInsertSchema,

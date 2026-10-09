@@ -36,6 +36,8 @@ export enum ResourceType {
   TRANSACTIONS = 'Transactions',
   TRANSACTION_EVENTS = 'TransactionEvents',
   METER_VALUES = 'MeterValues',
+  NETWORK_ALERTS = 'NetworkAlerts',
+  NETWORK_ALERT_OCCURRENCES = 'NetworkAlertOccurrences',
   CHARGING_PROFILES = 'ChargingProfiles',
   MESSAGE_INFOS = 'MessageInfos',
   EVSES = 'Evses',

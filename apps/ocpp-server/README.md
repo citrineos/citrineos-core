@@ -348,6 +348,10 @@ server always agree on which database they are talking to.
 For Redis, set `CITRINEOS_CACHE_TYPE=redis` and `CITRINEOS_CACHE_URL` to a `redis://` or `rediss://` URL. There is no
 host/port form.
 
+The Redis server must publish keyspace and keyevent notifications: run it with `notify-keyspace-events KEg$xe`.
+CitrineOS waits on cache keys through them and learns from them when a Call goes unanswered. A server without them
+raises no error; those waits run to their full timeout, and Call timeouts are never reported.
+
 ### File access
 
 `fileAccess` is the storage the server reads its runtime files through — the websocket servers file, TLS material, the

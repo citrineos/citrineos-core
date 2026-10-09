@@ -3,6 +3,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {
+  type CallEvent,
+  type CallEventOutcome,
+  CallEventSchema,
   type ConnectionEvent,
   ConnectionEventState,
   FrameDirection,
@@ -119,4 +122,22 @@ export function buildWebsocketLifecycleEvent(
   input: BuildWebsocketLifecycleEventInput,
 ): WebsocketLifecycleEvent {
   return { ...input, kind: MessagesEventKind.Websocket };
+}
+
+export interface BuildCallEventInput {
+  tenantId: number;
+  ocppConnectionName: string;
+  outcome: CallEventOutcome;
+  correlationId: string;
+  action: string;
+  protocol: OCPPVersionType;
+  timestamp: string;
+  meta?: Record<string, string>;
+}
+
+/**
+ * A Call the CSMS sent that timed out unanswered, or could not be sent.
+ */
+export function buildCallEvent(input: BuildCallEventInput): CallEvent {
+  return CallEventSchema.parse({ ...input, kind: MessagesEventKind.Call });
 }

@@ -6,13 +6,14 @@
 export { BaseModelWithTenant } from './base-model-with-tenant.js';
 export { Boot } from './boot.js';
 export { ChangeConfiguration } from './change-configuration.js';
+export { ChargingStationSecurityInfo } from './charging-station-security-info.js';
+export { NetworkAlert, NetworkAlertConfig, NetworkAlertOccurrence } from './network-alert/index.js';
 export { OCPPMessage } from './ocpp-message.js';
 export { Reservation } from './reservation.js';
 export { SecurityEvent } from './security-event.js';
-export { WebsocketEvent } from './websocket-event.js';
-export { Tenant } from './tenant.js';
 export { TenantPartner } from './tenant-partner.js';
-export { ChargingStationSecurityInfo } from './charging-station-security-info.js';
+export { Tenant } from './tenant.js';
+export { WebsocketEvent } from './websocket-event.js';
 
 // Domain-specific models - these must be imported directly to avoid circular dependencies
 // NOTE: The following domains have circular dependencies and must be imported directly:

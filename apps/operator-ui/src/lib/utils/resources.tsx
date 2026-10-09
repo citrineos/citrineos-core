@@ -28,6 +28,11 @@ export const resources = [
     edit: '/locations/:id/edit',
   },
   {
+    name: ResourceType.NETWORK_ALERTS,
+    list: '/network-alerts',
+    show: '/network-alerts/:id',
+  },
+  {
     name: ResourceType.PARTNERS,
     list: '/partners',
     create: '/partners/new',

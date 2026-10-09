@@ -33,9 +33,15 @@ describe('MessagesModule', () => {
   };
   let pipeline: {
     run: ReturnType<typeof vi.fn>;
-    processorNames: { frame: string[]; connection: string[]; websocket: string[] };
+    processorNames: {
+      frame: string[];
+      connection: string[];
+      websocket: string[];
+      call: string[];
+    };
   };
   let webhookDispatcher: { shutdown: ReturnType<typeof vi.fn> };
+  let networkAlertSweeper: { start: ReturnType<typeof vi.fn>; stop: ReturnType<typeof vi.fn> };
 
   function buildModule(): MessagesModule {
     return getTestInstance(container, MessagesModule, {
@@ -44,6 +50,7 @@ describe('MessagesModule', () => {
       ocppDeadLetterConsumer: ocppDeadLetterConsumer as unknown as OcppDeadLetterConsumer,
       messagesEventPipeline: pipeline as unknown as MessagesEventPipeline,
       webhookDispatcher: webhookDispatcher as unknown as WebhookDispatcher,
+      networkAlertSweeper,
     });
   }
 
@@ -74,9 +81,11 @@ describe('MessagesModule', () => {
         frame: ['ocpp-message-persist', 'frame-webhook', 'latest-ocpp-message-timestamp'],
         connection: ['connection-webhook'],
         websocket: [],
+        call: [],
       },
     };
     webhookDispatcher = { shutdown: vi.fn() };
+    networkAlertSweeper = { start: vi.fn(), stop: vi.fn() };
   });
 
   // ─── start ─────────────────────────────────────────────────────────────────
@@ -114,7 +123,7 @@ describe('MessagesModule', () => {
     });
 
     it('should warn when it was started with no processors at all', async () => {
-      pipeline.processorNames = { frame: [], connection: [], websocket: [] };
+      pipeline.processorNames = { frame: [], connection: [], websocket: [], call: [] };
 
       await buildModule().start();
 
@@ -122,7 +131,12 @@ describe('MessagesModule', () => {
     });
 
     it('should not warn when at least one kind is served', async () => {
-      pipeline.processorNames = { frame: [], connection: ['connection-webhook'], websocket: [] };
+      pipeline.processorNames = {
+        frame: [],
+        connection: ['connection-webhook'],
+        websocket: [],
+        call: [],
+      };
 
       await buildModule().start();
 

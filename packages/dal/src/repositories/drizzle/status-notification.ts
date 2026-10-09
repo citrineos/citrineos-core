@@ -95,8 +95,8 @@ export class DrizzleStatusNotificationRepository
     tenantId: number,
     ocppConnectionName: string,
     statusNotification: StatusNotificationDto,
-  ): Promise<void> {
-    await this.withAtomicWrite(async (ctx) => {
+  ): Promise<StatusNotificationDto> {
+    return this.withAtomicWrite(async (ctx) => {
       const stationId = await this.resolveStationId(tenantId, ocppConnectionName, ctx);
 
       const saved = await this.insert(
@@ -116,6 +116,7 @@ export class DrizzleStatusNotificationRepository
       );
 
       await this.replaceLatestStatusNotification(tenantId, stationId, saved, ctx);
+      return saved;
     });
   }
 

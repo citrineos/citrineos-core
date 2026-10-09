@@ -52,6 +52,7 @@ describe('MessagesEventPipeline', () => {
   let frameEventProcessors: SpyProcessor[];
   let connectionEventProcessors: SpyProcessor[];
   let websocketLifecycleEventProcessors: SpyProcessor[];
+  let callEventProcessors: SpyProcessor[];
 
   function buildPipeline(): MessagesEventPipeline {
     return getTestInstance(container, MessagesEventPipeline, {
@@ -59,6 +60,7 @@ describe('MessagesEventPipeline', () => {
       connectionEventProcessors:
         connectionEventProcessors as unknown as IConnectionEventProcessor[],
       websocketLifecycleEventProcessors,
+      callEventProcessors,
     });
   }
 
@@ -66,6 +68,7 @@ describe('MessagesEventPipeline', () => {
     frameEventProcessors = [aProcessor('frame-a'), aProcessor('frame-b')];
     connectionEventProcessors = [aProcessor('connection-a')];
     websocketLifecycleEventProcessors = [aProcessor('websocket-a')];
+    callEventProcessors = [aProcessor('call-a')];
   });
 
   afterEach(() => {
@@ -288,6 +291,7 @@ describe('MessagesEventPipeline', () => {
         frame: ['frame-a', 'frame-b'],
         connection: ['connection-a'],
         websocket: ['websocket-a'],
+        call: ['call-a'],
       });
     });
   });

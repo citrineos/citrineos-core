@@ -30,6 +30,8 @@ function facetHeaders(event: MessagesEvent): Record<string, string> {
       return { state: event.state };
     case MessagesEventKind.Websocket:
       return { type: event.type, ...(event.source ? { source: event.source } : {}) };
+    case MessagesEventKind.Call:
+      return { outcome: event.outcome, action: event.action };
   }
 }
 

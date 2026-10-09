@@ -10,6 +10,7 @@ const fallbackLocale = 'en';
 const messageFilenames = [
   'common',
   'chargingStations',
+  'networkAlerts',
   'locations',
   'authorizations',
   'tariffs',

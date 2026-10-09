@@ -8,6 +8,7 @@ export * from './certificate/index.js';
 export { InstallCertificateHelperService } from './certificate/install-certificate-helper-service.js';
 
 export { DeviceModelService } from './device-model/device-model-service.js';
+export * from './network-alerts/index.js';
 export { NetworkProfileService } from './network-profile/network-profile-service.js';
 export type { PersistSetNetworkProfileOptions } from './network-profile/network-profile-service.js';
 export { isValidPassword, generatePassword } from './security/authentication.js';
