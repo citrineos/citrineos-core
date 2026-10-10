@@ -18,6 +18,8 @@ export const CHARGING_STATION_CORE_FIELDS = fieldSet([
 export const CHARGING_STATION_DETAIL_FIELDS = fieldSet([
   'chargePointVendor',
   'chargePointModel',
+  'chargePointSerialNumber',
+  'chargeBoxSerialNumber',
   'firmwareVersion',
   'floorLevel',
   'parkingRestrictions',

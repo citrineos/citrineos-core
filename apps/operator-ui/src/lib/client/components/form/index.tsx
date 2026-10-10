@@ -22,6 +22,7 @@ import {
 } from 'react';
 import { type FieldValues, FormProvider, type UseFormReturn } from 'react-hook-form';
 import { LoadingIcon } from '@lib/client/components/ui/loading';
+import { formErrorMessages } from '@lib/utils/form-errors';
 
 type NativeFormProps = Omit<
   DetailedHTMLProps<FormHTMLAttributes<HTMLFormElement>, HTMLFormElement>,
@@ -83,8 +84,12 @@ export const Form = <
       <form {...formProps} onSubmit={props.handleSubmit(onSubmit)} id={formId}>
         <div className="flex flex-col gap-6 w-full">
           {props.children}
-          {showFormErrors && Object.keys(props.formState.errors).length > 0 && (
-            <div className="text-destructive">{JSON.stringify(props.formState.errors)}</div>
+          {showFormErrors && formErrorMessages(props.formState.errors).length > 0 && (
+            <ul className="text-destructive list-disc pl-5">
+              {formErrorMessages(props.formState.errors).map((message) => (
+                <li key={message}>{message}</li>
+              ))}
+            </ul>
           )}
           <div className="flex items-center justify-end gap-4">
             {loading && <LoadingIcon className="size-6" />}
