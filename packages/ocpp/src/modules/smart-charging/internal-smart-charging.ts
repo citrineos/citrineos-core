@@ -52,7 +52,23 @@ export class InternalSmartCharging implements ISmartCharging {
 
     const acParams = chargingNeeds.acChargingParameters;
     const dcParams = chargingNeeds.dcChargingParameters;
-    const transferMode = chargingNeeds.requestedEnergyTransfer;
+    const requestedTransferMode = chargingNeeds.requestedEnergyTransfer;
+
+    // A 2.1 mode names the same physical connection as its 2.0.1 counterpart
+    // and adds a direction: AC_BPT is AC that may also export, DC_BPT is DC
+    // that may also export. The schedule built below describes the import
+    // side, which is identical for both -- so a bidirectional session is
+    // planned as its base mode rather than rejected as unknown.
+    const BASE_MODE_OF: Record<string, OCPP2_0_1.EnergyTransferModeEnumType> = {
+      AC_BPT: OCPP2_0_1.EnergyTransferModeEnumType.AC_three_phase,
+      AC_BPT_DER: OCPP2_0_1.EnergyTransferModeEnumType.AC_three_phase,
+      AC_DER: OCPP2_0_1.EnergyTransferModeEnumType.AC_three_phase,
+      DC_BPT: OCPP2_0_1.EnergyTransferModeEnumType.DC,
+      DC_ACDP: OCPP2_0_1.EnergyTransferModeEnumType.DC,
+      DC_ACDP_BPT: OCPP2_0_1.EnergyTransferModeEnumType.DC,
+    };
+    const transferMode =
+      BASE_MODE_OF[requestedTransferMode as unknown as string] ?? requestedTransferMode;
 
     // Default values
     const profileId = await generateChargingProfileId(
