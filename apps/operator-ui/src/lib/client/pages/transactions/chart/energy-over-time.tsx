@@ -83,7 +83,10 @@ export const EnergyOverTime = ({ meterValues, validContexts }: EnergyOverTimePro
                 label={getXAxisLabelConfig(translate('Transactions.charts.timeElapsed'))}
               />
               <YAxis
-                domain={[minValue - buffer, maxValue + buffer]}
+                domain={[
+                  minValue >= 0 ? Math.max(0, minValue - buffer) : minValue - buffer,
+                  maxValue + buffer,
+                ]}
                 label={getYAxisLabelConfig(energyAxisLabel)}
               />
               <ChartTooltip content={<ChartTooltipContent />} />

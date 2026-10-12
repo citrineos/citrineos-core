@@ -33,6 +33,9 @@
       "paymentFee": "Taxa de Pagamento",
       "taxRate": "Alíquota de Imposto (%)",
       "tariffAltText": "Texto Alternativo da Tarifa"
+    },
+    "validation": {
+      "currencyCode": "Informe um código de moeda de 3 letras, ex.: BRL"
     }
   }
 }
