@@ -121,12 +121,16 @@ jobs:
       - name: Build @citrineos/operator-ui and its workspace deps
         run: pnpm --filter "@citrineos/operator-ui..." run build
 
+      - name: Resolve Playwright version
+        id: playwright-version
+        working-directory: apps/operator-ui
+        run: echo "version=$(pnpm exec playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
       - name: Cache Playwright browsers
         id: playwright-cache
         uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('apps/operator-ui/package.json') }}
+          key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}
 
       - name: Install Playwright browsers
         if: steps.playwright-cache.outputs.cache-hit != 'true'
@@ -236,12 +240,16 @@ jobs:
       - name: Build @citrineos/operator-ui and its workspace deps
         run: pnpm --filter "@citrineos/operator-ui..." run build
 
+      - name: Resolve Playwright version
+        id: playwright-version
+        working-directory: apps/operator-ui
+        run: echo "version=$(pnpm exec playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
       - name: Cache Playwright browsers
         id: playwright-cache
         uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('apps/operator-ui/package.json') }}
+          key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}
 
       - name: Install Playwright browsers
         if: steps.playwright-cache.outputs.cache-hit != 'true'
