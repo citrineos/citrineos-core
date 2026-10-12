@@ -38,7 +38,6 @@ function localListAuthorizationColumns() {
     groupAuthorizationId: integer('groupAuthorizationId'),
     // FK to the "actual" Authorization (DataType.INTEGER in the sequelize model).
     authorizationId: integer('authorizationId'),
-    customData: jsonb('customData'),
     tenantId: integer('tenantId').notNull(),
     createdAt: timestamp('createdAt', { withTimezone: true, mode: 'date' })
       .notNull()

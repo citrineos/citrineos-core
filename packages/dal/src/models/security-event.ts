@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { DEFAULT_TENANT_ID, OCPP2_Namespace } from '@citrineos/base';
-import { OCPP2_0_1, type SecurityEventDto, type TenantDto } from '@citrineos/types';
+import { type SecurityEventDto, type TenantDto } from '@citrineos/types';
 import {
   BeforeCreate,
   BeforeUpdate,
@@ -41,8 +41,6 @@ export class SecurityEvent extends Model implements SecurityEventDto {
 
   @Column(DataType.STRING)
   declare techInfo?: string | null;
-
-  declare customData?: OCPP2_0_1.CustomDataType | null;
 
   @ForeignKey(() => Tenant)
   @Column({

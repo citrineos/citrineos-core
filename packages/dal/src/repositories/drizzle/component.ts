@@ -62,7 +62,6 @@ export function toComponentDto(entity: ComponentEntity): ComponentDto {
     // Relation fields are not present as scalar columns.
     evse: undefined,
     variables: undefined,
-    customData: undefined,
     tenantId: entity.tenantId,
     tenant: undefined,
     createdAt: entity.createdAt,

@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import {
   type MeterValueDto,
-  OCPP2_0_1,
   type TenantDto,
   type TransactionDto,
   type TransactionEventDto,
@@ -106,8 +105,6 @@ export class TransactionEvent extends Model implements TransactionEventDto {
 
   @Column(DataType.STRING)
   declare idTokenType?: string | null;
-
-  declare customData?: OCPP2_0_1.CustomDataType | null;
 
   @ForeignKey(() => Tenant)
   @Column({

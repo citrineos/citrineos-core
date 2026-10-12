@@ -15,7 +15,6 @@ export const SendLocalListSchema = BaseSchema.extend({
     .array(z.lazy(() => LocalListAuthorizationSchema))
     .nullable()
     .optional(),
-  customData: z.any().nullable().optional(),
 });
 
 export type SendLocalListDto = z.infer<typeof SendLocalListSchema>;

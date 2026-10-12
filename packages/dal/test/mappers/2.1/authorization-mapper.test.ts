@@ -22,7 +22,6 @@ describe('AuthorizationMapper (2.1)', () => {
       const result = AuthorizationMapper.toIdTokenInfo(authorization);
 
       expect(result.groupIdToken).toEqual({
-        customData: group.customData,
         additionalInfo: group.additionalInfo,
         idToken: 'GROUP',
         type: OCPP2_1.IdTokenEnumType.Central,
