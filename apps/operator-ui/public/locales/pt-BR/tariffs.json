@@ -31,7 +31,8 @@
       "pricePerSession": "Preço / sessão",
       "authorizationAmount": "Valor de Autorização",
       "paymentFee": "Taxa de Pagamento",
-      "taxRate": "Alíquota de Imposto (%)"
+      "taxRate": "Alíquota de Imposto (%)",
+      "tariffAltText": "Texto Alternativo da Tarifa"
     }
   }
 }
