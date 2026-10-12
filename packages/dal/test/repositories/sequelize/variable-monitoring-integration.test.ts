@@ -2,10 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { ChargingStation } from '@dal/db/sequelize/index.js';
 import type { SystemConfig } from '@citrineos/types';
 import { OCPP2_0_1, OCPP_CallAction } from '@citrineos/types';
+import { ChargingStation } from '@dal/db/sequelize/index.js';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { Component, SequelizeVariableMonitoringRepository, Variable } from '../../../index.js';
 // Not re-exported from the package barrel.
 import {
@@ -117,9 +117,9 @@ describe('SequelizeVariableMonitoringRepository', () => {
             severity: 5,
           },
         ]),
-        String(component.id),
-        String(variable.id),
         STATION,
+        component.id,
+        variable.id,
       );
 
       expect(created[0].value).toBe(21000.5);
