@@ -13,21 +13,21 @@ import {
   OCPP_CallAction,
   OCPP2_response_types,
 } from '@citrineos/types';
-import type { IDeviceModelRepository } from '@citrineos/dal';
+import type { IVariableAttributeRepository } from '@citrineos/dal';
 
 @AsResponseHandler(OCPP_2_VER_LIST, OCPP_CallAction.GetVariables)
 export class GetVariablesResponseOcpp2Handler extends AbstractHandler {
-  protected _deviceModelRepository: IDeviceModelRepository;
+  protected _variableAttributeRepository: IVariableAttributeRepository;
 
   constructor({
     logger,
-    deviceModelRepository,
+    variableAttributeRepository,
   }: AbstractHandlerDependencies & {
-    deviceModelRepository: IDeviceModelRepository;
+    variableAttributeRepository: IVariableAttributeRepository;
   }) {
     super(logger);
 
-    this._deviceModelRepository = deviceModelRepository;
+    this._variableAttributeRepository = variableAttributeRepository;
   }
 
   async handle(
@@ -39,7 +39,7 @@ export class GetVariablesResponseOcpp2Handler extends AbstractHandler {
       message,
       props,
     );
-    await this._deviceModelRepository.createOrUpdateByGetVariablesResultAndStationId(
+    await this._variableAttributeRepository.createOrUpdateByGetVariablesResultAndStationId(
       message.context.tenantId,
       message.payload.getVariableResult,
       message.context.ocppConnectionName,

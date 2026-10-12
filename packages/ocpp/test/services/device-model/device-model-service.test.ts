@@ -50,11 +50,9 @@ describe('DeviceModelService.provisionVariableAttributes', () => {
     updateResultByStationId = vi.fn().mockResolvedValue(undefined);
 
     service = getTestInstance(container, DeviceModelService, {
-      deviceModelRepository: {
+      variableAttributeRepository: {
         createOrUpdateDeviceModelByStationId,
         updateResultByStationId,
-      },
-      variableAttributeRepository: {
         readAllByQuerystring: vi.fn().mockResolvedValue([]),
       },
     });
