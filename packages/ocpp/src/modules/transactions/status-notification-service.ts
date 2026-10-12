@@ -12,7 +12,7 @@ import type {
   IChargingStationRepository,
   IComponentRepository,
   IConnectorRepository,
-  IDeviceModelRepository,
+  IVariableAttributeRepository,
   IEvseRepository,
   IStatusNotificationRepository,
 } from '@citrineos/dal';
@@ -28,7 +28,7 @@ import type { ILogObj, Logger } from 'tslog';
 
 export class StatusNotificationService {
   protected _componentRepository: IComponentRepository;
-  protected _deviceModelRepository: IDeviceModelRepository;
+  protected _variableAttributeRepository: IVariableAttributeRepository;
   protected _chargingStationRepository: IChargingStationRepository;
   protected _evseRepository: IEvseRepository;
   protected _connectorRepository: IConnectorRepository;
@@ -39,7 +39,7 @@ export class StatusNotificationService {
 
   constructor({
     componentRepository,
-    deviceModelRepository,
+    variableAttributeRepository,
     chargingStationRepository,
     evseRepository,
     connectorRepository,
@@ -49,7 +49,7 @@ export class StatusNotificationService {
     logger,
   }: {
     componentRepository: IComponentRepository;
-    deviceModelRepository: IDeviceModelRepository;
+    variableAttributeRepository: IVariableAttributeRepository;
     chargingStationRepository: IChargingStationRepository;
     evseRepository: IEvseRepository;
     connectorRepository: IConnectorRepository;
@@ -59,7 +59,7 @@ export class StatusNotificationService {
     logger?: Logger<ILogObj>;
   }) {
     this._componentRepository = componentRepository;
-    this._deviceModelRepository = deviceModelRepository;
+    this._variableAttributeRepository = variableAttributeRepository;
     this._chargingStationRepository = chargingStationRepository;
     this._evseRepository = evseRepository;
     this._connectorRepository = connectorRepository;
@@ -187,7 +187,7 @@ export class StatusNotificationService {
           },
         ],
       };
-      await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
+      await this._variableAttributeRepository.createOrUpdateDeviceModelByStationId(
         tenantId,
         reportDataType,
         ocppConnectionName,

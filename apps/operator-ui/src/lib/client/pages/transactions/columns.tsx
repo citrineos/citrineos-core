@@ -136,7 +136,7 @@ export const getTransactionsColumns = (
       visible: true,
       sortable: true,
       cellRender: ({ row }: CellContext<TransactionClass, unknown>) =>
-        row.original.totalKwh ? (
+        row.original.totalKwh != null ? (
           <span>{row.original.totalKwh.toFixed(2)} kWh</span>
         ) : (
           <span>{EMPTY_VALUE}</span>

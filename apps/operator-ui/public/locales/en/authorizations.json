@@ -52,6 +52,9 @@
     "detail": {
       "partner": "Partner",
       "realTimeAuthTimeoutSeconds": "{timeout} seconds"
+    },
+    "validation": {
+      "idTokenRequired": "ID Token is required"
     }
   }
 }

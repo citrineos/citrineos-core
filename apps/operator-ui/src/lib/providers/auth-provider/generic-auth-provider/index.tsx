@@ -247,8 +247,6 @@ export const createGenericAuthProvider = (
     check: async () => {
       const token = await getToken();
 
-      console.log('🔐 Auth check - token exists:', !!token);
-
       if (token) {
         return {
           authenticated: true,
