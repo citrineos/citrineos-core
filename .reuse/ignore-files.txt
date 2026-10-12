@@ -124,6 +124,7 @@ apps/operator-ui/public/locales/en/tariffs.json
 apps/operator-ui/public/locales/en/tenantPartners.json
 apps/operator-ui/public/locales/en/transactions.json
 apps/operator-ui/public/locales/en/overview.json
+apps/operator-ui/public/locales/en/networkAlerts.json
 apps/operator-ui/public/locales/pt-BR/common.json
 apps/operator-ui/public/locales/pt-BR/authorizations.json
 apps/operator-ui/public/locales/pt-BR/chargingStations.json
@@ -132,6 +133,7 @@ apps/operator-ui/public/locales/pt-BR/overview.json
 apps/operator-ui/public/locales/pt-BR/tariffs.json
 apps/operator-ui/public/locales/pt-BR/tenantPartners.json
 apps/operator-ui/public/locales/pt-BR/transactions.json
+apps/operator-ui/public/locales/pt-BR/networkAlerts.json
 apps/operator-ui/public/logo-black.svg
 apps/operator-ui/public/logo-collapsed.svg
 apps/operator-ui/public/logo-white.svg
