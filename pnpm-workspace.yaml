@@ -30,11 +30,11 @@ catalog:
   "@vitest/coverage-v8": 3.2.7
   testcontainers: 11.14.0
   "@faker-js/faker": 10.6.0
-  "@playwright/test": 1.63.0
+  "@playwright/test": 1.64.0
 
   # -- HTTP / Fastify --
   fastify: 5.12.5
-  "@fastify/auth": 5.1.1
+  "@fastify/auth": 5.1.2
   "@fastify/swagger": 9.9.2
   "@fastify/swagger-ui": 5.2.6
   "@fastify/type-provider-json-schema-to-ts": 4.0.1
