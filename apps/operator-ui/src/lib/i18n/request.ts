@@ -4,6 +4,7 @@
 'use server';
 
 import { getUserLocale } from '@lib/server/hooks/get-user-locale';
+import { deepMerge } from '@lib/utils/deep-merge';
 import { getRequestConfig } from 'next-intl/server';
 
 const fallbackLocale = 'en';
@@ -55,6 +56,6 @@ export default getRequestConfig(async () => {
 
   return {
     locale,
-    messages: { ...fallbackMessages, ...messages },
+    messages: deepMerge(fallbackMessages, messages),
   };
 });

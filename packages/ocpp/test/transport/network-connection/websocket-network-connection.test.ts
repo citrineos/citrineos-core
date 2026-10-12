@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import * as path from 'path';
+import * as tls from 'tls';
 import type { AddressInfo } from 'net';
 import { OCPPVersion, type WebsocketServerConfig } from '@citrineos/types';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -43,6 +45,7 @@ describe('WebsocketNetworkConnection', () => {
         router: {},
         authenticator: { authenticate: vi.fn().mockResolvedValue({ identifier: STATION_ID }) },
         doesChargingStationExistByOcppConnectionName: vi.fn().mockResolvedValue(false),
+        messagesExchangeSink: { record: vi.fn().mockResolvedValue({ delivered: true }) },
       }),
     );
     await networkConnection.addWebsocketServer(config);
@@ -72,6 +75,63 @@ describe('WebsocketNetworkConnection', () => {
     expect(extensions).toBe('');
   });
 
+  describe('TLS handshake', () => {
+    const resource = (name: string) => path.resolve(__dirname, `../../resources/${name}`);
+
+    async function startTlsServer(securityProfile: number) {
+      networkConnection = new WebsocketNetworkConnection(
+        mockDeps<typeof WebsocketNetworkConnection>({
+          logger,
+          router: {},
+          fileStorage: { exists: vi.fn().mockResolvedValue(false), getFile: vi.fn() },
+          messagesExchangeSink: { record: vi.fn().mockResolvedValue({ delivered: true }) },
+        }),
+      );
+      const config = aWebsocketServerConfig({
+        securityProfile,
+        tlsKeyFilePath: resource('LeafKeySample.pem'),
+        tlsCertificateChainFilePath: resource('LeafCertificateSample.pem'),
+      });
+      await networkConnection.addWebsocketServer(config);
+      const { port } = networkConnection.getHttpServers().get(config.id)?.address() as AddressInfo;
+      return { config, port };
+    }
+
+    function handshake(port: number, servername?: string): Promise<string> {
+      return new Promise((resolve, reject) => {
+        const socket = tls.connect({
+          host: '127.0.0.1',
+          port,
+          servername: servername ?? '',
+          rejectUnauthorized: false,
+        });
+        socket.once('secureConnect', () => {
+          const subject = String(socket.getPeerCertificate().subject.CN);
+          socket.destroy();
+          resolve(subject);
+        });
+        socket.once('error', reject);
+      });
+    }
+
+    it('serves the configured certificate to a client that sends SNI', async () => {
+      const { port } = await startTlsServer(2);
+      await expect(handshake(port, 'csms.example.com')).resolves.toBeTruthy();
+    });
+
+    it('serves the configured certificate to a client that sends no SNI', async () => {
+      const { port } = await startTlsServer(2);
+      const withSni = await handshake(port, 'csms.example.com');
+      await expect(handshake(port)).resolves.toBe(withSni);
+    });
+
+    it('keeps serving clients without SNI after a certificate reload', async () => {
+      const { config, port } = await startTlsServer(2);
+      await networkConnection!.reloadTlsCertificates(config.id);
+      await expect(handshake(port)).resolves.toBeTruthy();
+    });
+  });
+
   describe('connection lifecycle', () => {
     const IDENTIFIER = `1:${STATION_ID}`;
 
@@ -83,6 +143,7 @@ describe('WebsocketNetworkConnection', () => {
           cache,
           authenticator: { authenticate: vi.fn().mockResolvedValue({ identifier: STATION_ID }) },
           doesChargingStationExistByOcppConnectionName: vi.fn().mockResolvedValue(true),
+          messagesExchangeSink: { record: vi.fn().mockResolvedValue({ delivered: true }) },
         }),
       );
       return networkConnection;

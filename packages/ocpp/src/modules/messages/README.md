@@ -49,18 +49,20 @@ out of the "hot path" and expand to process messages more flexibly without addin
     │                  │ topic exchange "messages" (durable)
     │                  │ frame.<direction>.<action>
     │                  │ connection.<state>
+    │                  │ websocket.<type>
     │                  ▼
     │        ┌──────────────────────────────────────────┐
     │        │   (RabbitMQ exchanges)
     │        │   messages.ocpp         ← frame.#        │
     │        │   messages.connections  ← connection.#   │
-    │        │     both durable, each with a .dlq       │
+    │        │   messages.websocket    ← websocket.#    │
+    │        │     all durable, each with a .dlq        │
     │        └──────────────────┬───────────────────────┘
     │                           │ one channel per queue
     │                           ▼
     │        ┌────────────────────────────────────────────────────────────────────────┐
     │        │   MessagesModule (via MessagesEventConsumer) → MessagesEventPipeline   │
-    │        │      Dispatches by kind (presently frame.# or connection.#)            │
+    │        │      Dispatches by kind (frame.#, connection.# or websocket.#)         │
     │        └────────────────────────────────────────────────────────────────────────┘
     │
     ├──── CallbackUrlNotifier ──► the API caller's callback URL
@@ -70,12 +72,21 @@ out of the "hot path" and expand to process messages more flexibly without addin
 # The "messages" exchange
 
 A new "messages" exchange was added to RabbitMQ handle all "business" messages, and presently
-holds two queues: one for frame events and one for websocket connections.
+holds three queues: one for frame events, one for station connections, and one for websocket
+lifecycle events.
+
+## Example: Websocket lifecycle
+
+`WebsocketNetworkConnection` publishes a `websocket` event for each step of a socket's life it can
+see: a refused upgrade (`UpgradeRejected` — authentication failures, invalid handshakes, failed TLS
+handshakes), a socket closed during connection setup (`ConnectionRejected`), an `Open` and a
+`Close`. Each carries the close codes, the HTTP status, who initiated it and why. These are routed
+to the "websocket" queue, where one processor persists each event to the WebsocketEvents table.
 
 # Dead-letter queues
 
 Each work queue names "messages.dlx" as its dead-letter exchange, and each has its own dead-letter
-queue: "messages.ocpp.dlq" and "messages.connections.dlq". An event lands there when it is poison
+queue: "messages.ocpp.dlq", "messages.connections.dlq" and "messages.websocket.dlq". An event lands there when it is poison
 (a non-JSON body, or an envelope the schema rejects) or when a critical processor fails twice — the
 first failure is requeued once, the second dead-letters.
 

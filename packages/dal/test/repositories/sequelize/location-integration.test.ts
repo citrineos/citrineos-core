@@ -519,6 +519,49 @@ describe('SequelizeLocationRepository', () => {
       expect(await Connector.count()).toBe(2);
       expect((await Connector.findByPk(connector1.id))!.status).toBe('Charging');
     });
+
+    // The default pool holds 5 connections. Each upsert holds one for its transaction, so an
+    // update that took a second connection exhausted the pool once 5 ran at the same time.
+    it('updates existing connectors concurrently without exhausting the pool', async () => {
+      const { station, evse } = await aCommissionedStation();
+      const repo = makeRepo();
+
+      const updated = await Promise.all(
+        Array.from({ length: 10 }, (_, i) =>
+          repo.createOrUpdateOcpp16Connector(TENANT_A, {
+            tenantId: TENANT_A,
+            stationId: station.id,
+            evseId: evse.id,
+            connectorId: (i % 2) + 1,
+            status: 'Occupied',
+            timestamp: TS,
+          }),
+        ),
+      );
+
+      expect(updated.every((c) => c?.status === 'Occupied')).toBe(true);
+      expect(await Connector.count({ where: { status: 'Occupied' } })).toBe(2);
+    }, 20_000);
+  });
+
+  describe('updateAllByQuery', () => {
+    it("runs inside the caller's transaction", async () => {
+      const { connector1 } = await aCommissionedStation();
+      const repo = makeRepo();
+
+      await expect(
+        h.sequelizeInstance.transaction(async (transaction) => {
+          await repo.connector.updateAllByQuery(
+            TENANT_A,
+            { status: 'Faulted' },
+            { where: { id: connector1.id }, transaction },
+          );
+          throw new Error('rollback');
+        }),
+      ).rejects.toThrow('rollback');
+
+      expect((await Connector.findByPk(connector1.id))!.status).toBe('Available');
+    });
   });
 
   describe('createOrUpdateOcpp2Connector', () => {

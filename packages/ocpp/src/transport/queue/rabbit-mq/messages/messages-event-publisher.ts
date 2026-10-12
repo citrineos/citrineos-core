@@ -8,11 +8,30 @@ import {
   MESSAGES_EXCHANGE,
   MESSAGES_QUEUES,
   type MessagesEvent,
+  MessagesEventKind,
   messagesEventRoutingKey,
 } from '@citrineos/types';
 import { childLogger } from '@citrineos/base';
 import type { ILogObj, Logger } from 'tslog';
 import type { RabbitMQChannelManager } from '@/transport/index.js';
+
+/** Each kind's facets as AMQP headers, so a consumer can filter without decoding the body. */
+function facetHeaders(event: MessagesEvent): Record<string, string> {
+  switch (event.kind) {
+    case MessagesEventKind.Frame:
+      return {
+        direction: event.direction,
+        origin: event.origin,
+        parsed: event.parsed.toString(),
+        ...(event.action ? { action: event.action } : {}),
+        ...(event.type !== undefined ? { type: event.type.toString() } : {}),
+      };
+    case MessagesEventKind.Connection:
+      return { state: event.state };
+    case MessagesEventKind.Websocket:
+      return { type: event.type, ...(event.source ? { source: event.source } : {}) };
+  }
+}
 
 /**
  * The actual publisher of messages to the messages exchange.
@@ -64,15 +83,7 @@ export class MessagesEventPublisher {
           headers: {
             kind: event.kind,
             tenantId: event.tenantId.toString(),
-            ...(isFrameEvent(event)
-              ? {
-                  direction: event.direction,
-                  origin: event.origin,
-                  parsed: event.parsed.toString(),
-                  ...(event.action ? { action: event.action } : {}),
-                  ...(event.type !== undefined ? { type: event.type.toString() } : {}),
-                }
-              : { state: event.state }),
+            ...facetHeaders(event),
           },
         },
       );
@@ -95,7 +106,7 @@ export class MessagesEventPublisher {
     }
   }
 
-  /** Declares the exchange, both queues, both dead-letter queues, and the bindings. Idempotent. */
+  /** Declares the exchange, every work queue, every dead-letter queue, and the bindings. Idempotent. */
   private _ensureTopology(): Promise<void> {
     if (!this._topologyReady) {
       this._topologyReady = this._declareTopology().catch((error) => {
