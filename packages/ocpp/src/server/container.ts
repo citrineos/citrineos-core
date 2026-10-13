@@ -51,6 +51,7 @@ import {
   DrizzleSubscriptionRepository,
   DrizzleTariffRepository,
   DrizzleTenantRepository,
+  DrizzleTransactionRepository,
   DrizzleVariableAttributeRepository,
   DrizzleVariableCharacteristicsRepository,
   SequelizeAsyncJobStatusRepository,
@@ -378,6 +379,9 @@ function registerRepositories(container: AwilixContainer): void {
     variableCharacteristicsRepository: asFunction(
       ({ variableAttributeRepository }) => variableAttributeRepository,
     ).singleton(),
+    transactionRepository: asFunction(
+      ({ transactionEventRepository }) => transactionEventRepository,
+    ).singleton(),
   });
 
   if (process.env.CITRINEOS_USE_DRIZZLE === 'true') {
@@ -425,6 +429,7 @@ function registerRepositories(container: AwilixContainer): void {
       serverNetworkProfileRepository: asClass(DrizzleServerNetworkProfileRepository).singleton(),
       tariffRepository: asClass(DrizzleTariffRepository).singleton(),
       tenantRepository: asClass(DrizzleTenantRepository).singleton(),
+      transactionRepository: asClass(DrizzleTransactionRepository).singleton(),
       componentRepository: asClass(DrizzleComponentRepository).singleton(),
       variableAttributeRepository: asClass(DrizzleVariableAttributeRepository).singleton(),
       variableCharacteristicsRepository: asClass(

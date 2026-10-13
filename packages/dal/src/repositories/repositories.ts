@@ -397,7 +397,42 @@ export interface ISubscriptionRepository {
   deleteByKey(tenantId: number, key: string): Promise<SubscriptionDto | undefined>;
 }
 
-export interface ITransactionEventRepository {
+export interface ITransactionRepository {
+  readTransactionByStationIdAndTransactionId(
+    tenantId: number,
+    ocppConnectionName: string,
+    transactionId: string,
+  ): Promise<TransactionDto | undefined>;
+  readAllActiveTransactionsByAuthorizationId(
+    tenantId: number,
+    authorizationId: number,
+  ): Promise<TransactionDto[]>;
+  readActiveTransactionsWithTariffAndEvseByStationId(
+    tenantId: number,
+    ocppConnectionName: string,
+    evseTypeId?: number,
+  ): Promise<TransactionDto[]>;
+  getActiveTransactionByStationIdAndEvseId(
+    tenantId: number,
+    ocppConnectionName: string,
+    evseId: number,
+  ): Promise<TransactionDto | undefined>;
+  updateTransactionTotalCostById(tenantId: number, totalCost: number, id: number): Promise<void>;
+  updateTransactionByStationIdAndTransactionId(
+    tenantId: number,
+    transaction: Partial<TransactionCreate>,
+    transactionId: string,
+    ocppConnectionName: string,
+  ): Promise<TransactionDto | undefined>;
+  deactivateActiveTransactionsByStationIdAndEvseId(
+    tenantId: number,
+    ocppConnectionName: string,
+    evseId: number,
+    excludeTransactionId: string,
+  ): Promise<TransactionDto[]>;
+}
+
+export interface ITransactionEventRepository extends ITransactionRepository {
   createOrUpdateTransactionByTransactionEventAndStationId(
     tenantId: number,
     value: OCPP2_request_types.TransactionEventRequest,
@@ -426,26 +461,6 @@ export interface ITransactionEventRepository {
     ocppConnectionName: string,
     transactionId: string,
   ): Promise<TransactionEventDto[]>;
-  readTransactionByStationIdAndTransactionId(
-    tenantId: number,
-    ocppConnectionName: string,
-    transactionId: string,
-  ): Promise<TransactionDto | undefined>;
-  readAllActiveTransactionsByAuthorizationId(
-    tenantId: number,
-    authorizationId: number,
-  ): Promise<TransactionDto[]>;
-  readActiveTransactionsWithTariffAndEvseByStationId(
-    tenantId: number,
-    ocppConnectionName: string,
-    evseTypeId?: number,
-  ): Promise<TransactionDto[]>;
-  getActiveTransactionByStationIdAndEvseId(
-    tenantId: number,
-    ocppConnectionName: string,
-    evseId: number,
-  ): Promise<TransactionDto | undefined>;
-  updateTransactionTotalCostById(tenantId: number, totalCost: number, id: number): Promise<void>;
   createStopTransaction(
     tenantId: number,
     transactionDatabaseId: number,
@@ -456,18 +471,6 @@ export interface ITransactionEventRepository {
     reason?: string,
     idTokenDatabaseId?: number,
   ): Promise<StopTransactionDto>;
-  updateTransactionByStationIdAndTransactionId(
-    tenantId: number,
-    transaction: Partial<TransactionCreate>,
-    transactionId: string,
-    ocppConnectionName: string,
-  ): Promise<TransactionDto | undefined>;
-  deactivateActiveTransactionsByStationIdAndEvseId(
-    tenantId: number,
-    ocppConnectionName: string,
-    evseId: number,
-    excludeTransactionId: string,
-  ): Promise<TransactionDto[]>;
 }
 
 export interface IVariableMonitoringRepository extends CrudRepository<VariableMonitoring> {

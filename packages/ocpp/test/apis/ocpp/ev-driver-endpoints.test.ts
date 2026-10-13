@@ -261,7 +261,7 @@ describe('evDriver message endpoints', () => {
         cache: { set: cacheSet },
         variableAttributeRepository: { readAllByQuerystring },
         chargingProfileRepository: { createOrUpdateChargingProfile },
-        transactionEventRepository: {},
+        transactionRepository: {},
       });
 
     const aRequest = (

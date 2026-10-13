@@ -71,6 +71,7 @@ describe('TransactionService', () => {
 
     transactionService = getTestInstance(container, TransactionService, {
       transactionEventRepository,
+      transactionRepository: transactionEventRepository,
       authorizationRepository,
       evseRepository: locationRepository,
       connectorRepository: locationRepository,
@@ -449,6 +450,7 @@ describe('TransactionService', () => {
 
       transactionService = getTestInstance(container, TransactionService, {
         transactionEventRepository,
+        transactionRepository: transactionEventRepository,
         authorizationRepository: {} as unknown as IAuthorizationRepository,
         evseRepository: locationRepository,
         connectorRepository: locationRepository,

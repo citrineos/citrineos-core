@@ -28,6 +28,7 @@ import type {
   IEvseRepository,
   IReservationRepository,
   ITransactionEventRepository,
+  ITransactionRepository,
 } from '@citrineos/dal';
 import { OCPP1_6_Mapper } from '@citrineos/dal';
 import { OCPP2_0_1_Mapper } from '@citrineos/dal';
@@ -35,6 +36,7 @@ import type { ILogObj, Logger } from 'tslog';
 
 export class TransactionService {
   private _transactionEventRepository: ITransactionEventRepository;
+  private _transactionRepository: ITransactionRepository;
   private _authorizationRepository: IAuthorizationRepository;
   private _evseRepository: IEvseRepository;
   private _connectorRepository: IConnectorRepository;
@@ -44,6 +46,7 @@ export class TransactionService {
 
   constructor({
     transactionEventRepository,
+    transactionRepository,
     authorizationRepository,
     evseRepository,
     connectorRepository,
@@ -53,6 +56,7 @@ export class TransactionService {
     logger,
   }: {
     transactionEventRepository: ITransactionEventRepository;
+    transactionRepository: ITransactionRepository;
     authorizationRepository: IAuthorizationRepository;
     evseRepository: IEvseRepository;
     connectorRepository: IConnectorRepository;
@@ -62,6 +66,7 @@ export class TransactionService {
     logger: Logger<ILogObj>;
   }) {
     this._transactionEventRepository = transactionEventRepository;
+    this._transactionRepository = transactionRepository;
     this._authorizationRepository = authorizationRepository;
     this._evseRepository = evseRepository;
     this._connectorRepository = connectorRepository;
@@ -85,7 +90,7 @@ export class TransactionService {
       meterStart ?? undefined,
     );
 
-    await this._transactionEventRepository.updateTransactionByStationIdAndTransactionId(
+    await this._transactionRepository.updateTransactionByStationIdAndTransactionId(
       tenantId,
       reportedMeterStart == null ? { meterStart, totalKwh } : { totalKwh },
       transaction.transactionId,
@@ -463,7 +468,7 @@ export class TransactionService {
     }
 
     const deactivated =
-      await this._transactionEventRepository.deactivateActiveTransactionsByStationIdAndEvseId(
+      await this._transactionRepository.deactivateActiveTransactionsByStationIdAndEvseId(
         tenantId,
         ocppConnectionName,
         evseId,
@@ -497,7 +502,7 @@ export class TransactionService {
     }
 
     const updatedTransaction =
-      await this._transactionEventRepository.updateTransactionByStationIdAndTransactionId(
+      await this._transactionRepository.updateTransactionByStationIdAndTransactionId(
         tenantId,
         { isActive: ongoingIndicator },
         transactionId,
@@ -531,7 +536,7 @@ export class TransactionService {
     authorizationId: number,
   ): Promise<boolean> {
     const activeTransactions =
-      await this._transactionEventRepository.readAllActiveTransactionsByAuthorizationId(
+      await this._transactionRepository.readAllActiveTransactionsByAuthorizationId(
         tenantId,
         authorizationId,
       );

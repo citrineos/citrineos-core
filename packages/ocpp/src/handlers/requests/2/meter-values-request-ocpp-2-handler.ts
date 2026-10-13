@@ -19,7 +19,7 @@ import {
   type SystemConfig,
   type TransactionDto,
 } from '@citrineos/types';
-import type { ITransactionEventRepository } from '@citrineos/dal';
+import type { ITransactionRepository } from '@citrineos/dal';
 import type { CostNotifier } from '@modules/transactions/cost-notifier.js';
 import type { TransactionService } from '@modules/transactions/transaction-service.js';
 import type { SignedMeterValuesUtil } from '@services/index.js';
@@ -29,7 +29,7 @@ export class MeterValuesRequestOcpp2Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
   protected _costNotifier: CostNotifier;
   protected _signedMeterValuesUtil: SignedMeterValuesUtil;
-  protected _transactionEventRepository: ITransactionEventRepository;
+  protected _transactionRepository: ITransactionRepository;
   protected _transactionService: TransactionService;
 
   private readonly _sendCostUpdatedOnMeterValue: boolean | undefined;
@@ -40,14 +40,14 @@ export class MeterValuesRequestOcpp2Handler extends AbstractHandler {
     config,
     costNotifier,
     signedMeterValuesUtil,
-    transactionEventRepository,
+    transactionRepository,
     transactionService,
   }: AbstractHandlerDependencies & {
     config: SystemConfig;
     costNotifier: CostNotifier;
     ocppSender: IOcppSender;
     signedMeterValuesUtil: SignedMeterValuesUtil;
-    transactionEventRepository: ITransactionEventRepository;
+    transactionRepository: ITransactionRepository;
     transactionService: TransactionService;
   }) {
     super(logger);
@@ -55,7 +55,7 @@ export class MeterValuesRequestOcpp2Handler extends AbstractHandler {
     this._ocppSender = ocppSender;
     this._costNotifier = costNotifier;
     this._signedMeterValuesUtil = signedMeterValuesUtil;
-    this._transactionEventRepository = transactionEventRepository;
+    this._transactionRepository = transactionRepository;
     this._transactionService = transactionService;
 
     this._sendCostUpdatedOnMeterValue = config.transactions.sendCostUpdatedOnMeterValue;
@@ -80,7 +80,7 @@ export class MeterValuesRequestOcpp2Handler extends AbstractHandler {
     // When evseId is 0, the MeterValuesRequest message SHALL be associated with the entire Charging Station.
     if (evseId !== 0) {
       const activeTransaction: TransactionDto | undefined =
-        await this._transactionEventRepository.getActiveTransactionByStationIdAndEvseId(
+        await this._transactionRepository.getActiveTransactionByStationIdAndEvseId(
           tenantId,
           ocppConnectionName,
           evseId,

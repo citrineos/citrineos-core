@@ -240,7 +240,7 @@ describe('NotifyReportRequestOcpp2Handler', () => {
 describe('NotifyEVChargingNeedsRequestOcpp2Handler', () => {
   const { logger } = createTestContainer();
   let handler: NotifyEVChargingNeedsRequestOcpp2Handler;
-  let transactionEventRepository: {
+  let transactionRepository: {
     getActiveTransactionByStationIdAndEvseId: ReturnType<typeof vi.fn>;
   };
   let chargingProfileRepository: {
@@ -295,7 +295,7 @@ describe('NotifyEVChargingNeedsRequestOcpp2Handler', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    transactionEventRepository = {
+    transactionRepository = {
       getActiveTransactionByStationIdAndEvseId: vi.fn().mockResolvedValue(activeTransaction),
     };
     chargingProfileRepository = {
@@ -309,7 +309,7 @@ describe('NotifyEVChargingNeedsRequestOcpp2Handler', () => {
       mockDeps<typeof NotifyEVChargingNeedsRequestOcpp2Handler>({
         logger,
         ocppSender,
-        transactionEventRepository,
+        transactionRepository,
         chargingProfileRepository,
         smartChargingService,
       }),
@@ -317,18 +317,16 @@ describe('NotifyEVChargingNeedsRequestOcpp2Handler', () => {
   });
 
   it('rejects when no active transaction exists on the evse', async () => {
-    transactionEventRepository.getActiveTransactionByStationIdAndEvseId.mockResolvedValue(
-      undefined,
-    );
+    transactionRepository.getActiveTransactionByStationIdAndEvseId.mockResolvedValue(undefined);
 
     await handler.handle(aChargingNeedsMessage(dcNeeds()));
 
-    expect(
-      transactionEventRepository.getActiveTransactionByStationIdAndEvseId,
-    ).toHaveBeenCalledOnce();
-    expect(
-      transactionEventRepository.getActiveTransactionByStationIdAndEvseId,
-    ).toHaveBeenCalledWith(DEFAULT_TENANT_ID, STATION_ID, EVSE_ID);
+    expect(transactionRepository.getActiveTransactionByStationIdAndEvseId).toHaveBeenCalledOnce();
+    expect(transactionRepository.getActiveTransactionByStationIdAndEvseId).toHaveBeenCalledWith(
+      DEFAULT_TENANT_ID,
+      STATION_ID,
+      EVSE_ID,
+    );
     expect(ocppSender.sendCallResultWithMessage).toHaveBeenCalledOnce();
     expect(ocppSender.sendCallResultWithMessage.mock.calls[0][1]).toEqual({
       status: NotifyEVChargingNeedsStatusEnum.Rejected,

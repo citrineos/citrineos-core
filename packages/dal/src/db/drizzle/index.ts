@@ -125,6 +125,10 @@ export {
 export { DrizzleTariffRepository, toTariffDto } from '../../repositories/drizzle/tariff.js';
 export { DrizzleTenantRepository, toTenantDto } from '../../repositories/drizzle/tenant.js';
 export {
+  DrizzleTransactionRepository,
+  toTransactionDto,
+} from '../../repositories/drizzle/transaction.js';
+export {
   DrizzleVariableAttributeRepository,
   toVariableAttributeDto,
 } from '../../repositories/drizzle/variable-attribute.js';
