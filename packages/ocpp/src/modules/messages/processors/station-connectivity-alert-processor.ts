@@ -8,6 +8,7 @@ import type {
   MessagesEventContext,
   WebsocketLifecycleEvent,
 } from '@citrineos/types';
+import { WebsocketEventTypeEnum } from '@citrineos/types';
 import type { NetworkAlertService } from '@services/network-alerts/index.js';
 
 /**
@@ -41,7 +42,10 @@ export class StationConnectivityAlertProcessor implements IWebsocketLifecycleEve
     if (stationId === undefined) {
       return;
     }
-    if (event.type === 'Close' && !EXPECTED_CLOSE_SOURCES.has(event.source ?? '')) {
+    if (
+      event.type === WebsocketEventTypeEnum.Close &&
+      !EXPECTED_CLOSE_SOURCES.has(event.source ?? '')
+    ) {
       await this._networkAlertService.recordDisconnect({
         tenantId: event.tenantId,
         stationId,
