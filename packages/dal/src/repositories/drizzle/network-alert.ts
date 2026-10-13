@@ -17,9 +17,8 @@ import {
 import { and, count, desc, eq, gte, isNull, ne, sql } from 'drizzle-orm';
 import { bootTable } from '../../db/drizzle/schema/boot.js';
 import { chargingStationTable } from '../../db/drizzle/schema/charging-station.js';
-import { networkAlertTable } from '../../db/drizzle/schema/network-alert.js';
 import { networkAlertOccurrenceTable } from '../../db/drizzle/schema/network-alert-occurrence.js';
-import { tenantTable } from '../../db/drizzle/schema/tenant.js';
+import { networkAlertTable } from '../../db/drizzle/schema/network-alert.js';
 import type {
   NetworkAlertSubject,
   OpenNetworkAlert,
@@ -330,11 +329,6 @@ export class DrizzleNetworkAlertRepository
       stationId: row.stationId,
       lastHeardAt: new Date(row.lastHeardAt).toISOString(),
     }));
-  }
-
-  async readTenantIds(): Promise<number[]> {
-    const rows = await this.db.select({ id: tenantTable.id }).from(tenantTable);
-    return rows.map((row) => row.id);
   }
 
   async readSlowResponseSamples(

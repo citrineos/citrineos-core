@@ -6,6 +6,7 @@ import { UNKNOWN_ACTION } from '@/transport/metrics.js';
 import { childLogger } from '@citrineos/base';
 import type {
   INetworkAlertRepository,
+  ITenantRepository,
   NetworkAlertStationState,
   NetworkAlertSubject,
   OpenNetworkAlert,
@@ -37,6 +38,7 @@ function lastHeardAt({
  */
 export class NetworkAlertSweeper {
   private readonly _repository: INetworkAlertRepository;
+  private readonly _tenantRepository: ITenantRepository;
   private readonly _service: NetworkAlertService;
   private readonly _configResolver: NetworkAlertConfigResolver;
   private readonly _intervalMs: number;
@@ -49,17 +51,20 @@ export class NetworkAlertSweeper {
   constructor({
     config,
     networkAlertRepository,
+    tenantRepository,
     networkAlertService,
     networkAlertConfigResolver,
     logger,
   }: {
     config: SystemConfig;
     networkAlertRepository: INetworkAlertRepository;
+    tenantRepository: ITenantRepository;
     networkAlertService: NetworkAlertService;
     networkAlertConfigResolver: NetworkAlertConfigResolver;
     logger?: Logger<ILogObj>;
   }) {
     this._repository = networkAlertRepository;
+    this._tenantRepository = tenantRepository;
     this._service = networkAlertService;
     this._configResolver = networkAlertConfigResolver;
     this._intervalMs = config.networkAlerts.sweepIntervalSeconds * 1000;
@@ -101,7 +106,7 @@ export class NetworkAlertSweeper {
 
   /** Stations still marked online that have missed their heartbeats are treated as disconnected. */
   private async _sweepSilentStations(now: Date): Promise<void> {
-    for (const tenantId of await this._repository.readTenantIds()) {
+    for (const tenantId of await this._tenantRepository.readTenantIds()) {
       try {
         const { StationConnectivity: config } = await this._configResolver.resolve(tenantId);
         if (!config.enabled) {
@@ -185,7 +190,7 @@ export class NetworkAlertSweeper {
    * a station quiet for that long has no recent responses to judge.
    */
   private async _sweepSlowResponses(now: Date): Promise<void> {
-    for (const tenantId of await this._repository.readTenantIds()) {
+    for (const tenantId of await this._tenantRepository.readTenantIds()) {
       try {
         const { OcppCallFailures: config } = await this._configResolver.resolve(tenantId);
         if (!config.enabled) {

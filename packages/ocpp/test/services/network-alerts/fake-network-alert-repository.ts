@@ -133,10 +133,6 @@ export class FakeNetworkAlertRepository implements INetworkAlertRepository {
     });
   }
 
-  async readTenantIds(): Promise<number[]> {
-    return this.tenantIds;
-  }
-
   async readSlowResponseSamples(
     tenantId: number,
     since: string,

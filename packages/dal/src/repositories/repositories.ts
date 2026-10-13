@@ -35,11 +35,8 @@ import type {
   InstalledCertificateDto,
   LocationDto,
   MessageInfoDto,
-  MeterValueDto,
-  OCPP1_6,
-  OCPP2_common_types,
-  OCPP2_request_types,
   MessageOrigin,
+  MeterValueDto,
   NetworkAlertConfigDto,
   NetworkAlertCreate,
   NetworkAlertDto,
@@ -47,6 +44,9 @@ import type {
   NetworkAlertOccurrenceDto,
   NetworkAlertType,
   NetworkAlertUpdate,
+  OCPP1_6,
+  OCPP2_common_types,
+  OCPP2_request_types,
   OcppCallFailureReason,
   OCPPMessageDto,
   OCPPVersion,
@@ -62,9 +62,9 @@ import type {
   UpdateEnumType,
   VariableAttributeDto,
   VariableCharacteristicsDto,
+  VariableDto,
   WebsocketEventCreate,
   WebsocketEventDto,
-  VariableDto,
 } from '@citrineos/types';
 import type {
   NetworkAlertSubject,
@@ -759,7 +759,6 @@ export interface INetworkAlertRepository {
     defaultHeartbeatInterval: number,
     missedHeartbeats: number,
   ): Promise<SilentStation[]>;
-  readTenantIds(): Promise<number[]>;
   /**
    * For each station and responding side in the tenant, the latest `sampleSize` CallResults stored
    * since `since` that are linked to their Call, when there are that many and their average latency
@@ -869,4 +868,5 @@ export interface ITenantRepository {
   readByWebsocketServerPath(path: string): Promise<TenantDto | undefined>;
   readAllWithWebsocketServerPath(): Promise<TenantDto[]>;
   updateWebsocketServerPath(tenantId: number, path: string | null): Promise<TenantDto | undefined>;
+  readTenantIds(): Promise<number[]>;
 }

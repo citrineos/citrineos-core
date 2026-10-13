@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { describe, expect, it } from 'vitest';
 import {
   MessageOrigin,
   MessageTypeId,
@@ -24,6 +23,7 @@ import type {
   INetworkAlertConfigRepository,
   INetworkAlertRepository,
 } from '@dal/repositories/repositories.js';
+import { describe, expect, it } from 'vitest';
 
 // Behaviour both ORMs' network alert repositories must share, run by each ORM's integration suite
 // against the harness database. Fixtures are written through the sequelize models, which own the
@@ -687,12 +687,6 @@ export function networkAlertRepositoryContract(
         { tenantId: TENANT_A, stationId: connectedButSilent, lastHeardAt: T2 },
         { tenantId: TENANT_A, stationId: quietSinceConnect, lastHeardAt: T2 },
       ]);
-    });
-  });
-
-  describe('readTenantIds', () => {
-    it('returns every tenant', async () => {
-      expect((await makeRepo().readTenantIds()).sort()).toEqual([TENANT_A, TENANT_B]);
     });
   });
 

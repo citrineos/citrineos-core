@@ -15,16 +15,15 @@ import {
   type OcppCallFailureReason,
 } from '@citrineos/types';
 import { Op, QueryTypes, type Transaction } from 'sequelize';
-import { Boot } from '../../models/boot.js';
-import { ChargingStation } from '../../models/location/index.js';
-import { Tenant } from '../../models/tenant.js';
-import { NetworkAlert, NetworkAlertOccurrence } from '../../models/network-alert/index.js';
 import type {
   NetworkAlertSubject,
   OpenNetworkAlert,
   ResponseLatencySample,
   SilentStation,
 } from '../../interfaces/projections/network-alert.js';
+import { Boot } from '../../models/boot.js';
+import { ChargingStation } from '../../models/location/index.js';
+import { NetworkAlert, NetworkAlertOccurrence } from '../../models/network-alert/index.js';
 import type { INetworkAlertRepository, INetworkAlertSession } from '../repositories.js';
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './base.js';
 
@@ -343,11 +342,6 @@ export class SequelizeNetworkAlertRepository
       stationId: row.stationId,
       lastHeardAt: new Date(row.lastHeardAt).toISOString(),
     }));
-  }
-
-  async readTenantIds(): Promise<number[]> {
-    const tenants = await Tenant.findAll({ attributes: ['id'] });
-    return tenants.map((tenant) => tenant.id);
   }
 
   async readSlowResponseSamples(
