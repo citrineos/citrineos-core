@@ -3,13 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
-import {
-  MessageOrigin,
-  MessageTypeId,
-  OCPP2_0_1,
-  OCPPVersion,
-  type SystemConfig,
-} from '@citrineos/types';
+import { OCPP2_0_1, type SystemConfig } from '@citrineos/types';
 import {
   Component,
   DefaultSequelizeInstance,
@@ -17,8 +11,6 @@ import {
   SequelizeLocationRepository,
   SequelizeTenantRepository,
   type ITenantRepository,
-  type IOCPPMessageRepository,
-  SequelizeOCPPMessageRepository,
   Variable,
   VariableStatus,
 } from '@citrineos/dal';
@@ -52,7 +44,6 @@ let sequelizeInstance: Sequelize;
 let handler: SetVariablesResponseOcpp2Handler;
 let locationRepository: SequelizeLocationRepository;
 let tenantRepository: ITenantRepository;
-let ocppMessageRepository: IOCPPMessageRepository;
 
 beforeAll(async () => {
   pgContainer = await new GenericContainer('postgis/postgis:16-3.4-alpine')
@@ -103,11 +94,6 @@ beforeAll(async () => {
     logger: undefined,
     sequelizeInstance,
   } as never);
-  ocppMessageRepository = new SequelizeOCPPMessageRepository({
-    config: dbConfig,
-    logger: undefined,
-    sequelizeInstance,
-  } as never);
 
   // The handler is stateless across tests (each test truncates + seeds the DB and
   // asserts on return values / DB state, not on mocks), so build it once.
@@ -131,20 +117,18 @@ function makeRepos() {
   const config = {} as SystemConfig;
   return {
     deviceModelRepo: new SequelizeDeviceModelRepository({ config, sequelizeInstance }),
-    ocppMessageRepo: new SequelizeOCPPMessageRepository({ config, sequelizeInstance }),
   };
 }
 
 function makeHandler(): SetVariablesResponseOcpp2Handler {
   // SetVariables response handling now lives in SetVariablesResponseOcpp2Handler, not
   // MonitoringModule, so construct that handler directly against the real repos.
-  const { deviceModelRepo, ocppMessageRepo } = makeRepos();
+  const { deviceModelRepo } = makeRepos();
   const { logger } = createTestContainer();
 
   return new SetVariablesResponseOcpp2Handler({
     logger,
     variableAttributeRepository: deviceModelRepo,
-    ocppMessageRepository: ocppMessageRepo,
   });
 }
 
@@ -196,26 +180,17 @@ async function seedVariableStatus(
   return VariableStatus.create({ variableAttributeId, value, status, tenantId: TENANT_ID });
 }
 
-/**
- * Seeds an OCPPMessage as the CSMS-originated SetVariables request.
- * `payload` holds the OCPP payload alone; `raw` holds the full wire frame
- * [messageTypeId, correlationId, action, payload].
- */
-async function seedSetVariablesRequest(
+function aSetVariablesRequest(
   setVariableData: OCPP2_0_1.SetVariableDataType[],
-  correlationId: string = CORRELATION_ID,
+): OCPP2_0_1.SetVariablesRequest {
+  return { setVariableData } as OCPP2_0_1.SetVariablesRequest;
+}
+
+function withRequest(
+  message: ReturnType<typeof aSetVariablesResponseMessage>,
+  request?: OCPP2_0_1.SetVariablesRequest,
 ) {
-  const payload = { setVariableData } as OCPP2_0_1.SetVariablesRequest;
-  return ocppMessageRepository.createOCPPMessage(TENANT_ID, OCPP_CONNECTION_NAME, {
-    correlationId,
-    origin: MessageOrigin.ChargingStationManagementSystem,
-    type: MessageTypeId.Call,
-    protocol: OCPPVersion.OCPP2_0_1,
-    action: 'SetVariables',
-    payload,
-    raw: JSON.stringify([MessageTypeId.Call, correlationId, 'SetVariables', payload]),
-    timestamp: new Date().toISOString(),
-  });
+  return { ...message, request };
 }
 
 // ---------------------------------------------------------------------------
@@ -228,21 +203,13 @@ describe('SetVariablesResponseOcpp2Handler – SetVariables response handling', 
   // -------------------------------------------------------------------------
 
   describe('getSetVariablesDataMapFromOriginalSetVariablesRequest', () => {
-    it('returns an empty map when no OCPPMessage exists for the correlation id', async () => {
-      await seedBase();
-      // No OCPPMessage seeded
-
-      const map = await (handler as any).getSetVariablesDataMapFromOriginalSetVariablesRequest(
-        TENANT_ID,
-        OCPP_CONNECTION_NAME,
-        CORRELATION_ID,
-      );
+    it('returns an empty map when the message has no request', () => {
+      const map = (handler as any).getSetVariablesDataMapFromOriginalSetVariablesRequest(undefined);
 
       expect(map).toEqual({});
     });
 
-    it('builds a keyed map from the SetVariables request stored in the DB', async () => {
-      await seedBase();
+    it('builds a keyed map from the SetVariables request on the message', () => {
       const data1 = aSetVariableData((d) => {
         d.component = { name: 'Connector', instance: null };
         d.variable = { name: 'MaxVoltage', instance: null };
@@ -255,55 +222,29 @@ describe('SetVariablesResponseOcpp2Handler – SetVariables response handling', 
         d.attributeValue = '7200';
         d.attributeType = undefined;
       });
-      await seedSetVariablesRequest([data1, data2]);
 
-      const map = await (handler as any).getSetVariablesDataMapFromOriginalSetVariablesRequest(
-        TENANT_ID,
-        OCPP_CONNECTION_NAME,
-        CORRELATION_ID,
+      const map = (handler as any).getSetVariablesDataMapFromOriginalSetVariablesRequest(
+        aSetVariablesRequest([data1, data2]),
       );
 
       expect(map['Connector-null-MaxVoltage-null']).toEqual(data1);
       expect(map['EVSE-1-Power-A']).toEqual(data2);
     });
 
-    it('treats missing component/variable instance as the "null" string key segment', async () => {
-      await seedBase();
+    it('treats missing component/variable instance as the "null" string key segment', () => {
       const data = aSetVariableData((d) => {
         d.component = { name: 'Clock' };
         d.variable = { name: 'NtpSource' };
         d.attributeValue = 'pool.ntp.org';
         d.attributeType = undefined;
       });
-      await seedSetVariablesRequest([data]);
 
-      const map = await (handler as any).getSetVariablesDataMapFromOriginalSetVariablesRequest(
-        TENANT_ID,
-        OCPP_CONNECTION_NAME,
-        CORRELATION_ID,
+      const map = (handler as any).getSetVariablesDataMapFromOriginalSetVariablesRequest(
+        aSetVariablesRequest([data]),
       );
 
       // undefined instance → falls back to 'null' string segment
       expect(map['Clock-null-NtpSource-null']).toEqual(data);
-    });
-
-    it('only returns entries matching the given correlationId', async () => {
-      await seedBase();
-      const data = aSetVariableData((d) => {
-        d.component = { name: 'Connector' };
-        d.variable = { name: 'MaxVoltage' };
-        d.attributeValue = '240';
-      });
-      await seedSetVariablesRequest([data], 'other-corr-id');
-      // No message seeded for CORRELATION_ID
-
-      const map = await (handler as any).getSetVariablesDataMapFromOriginalSetVariablesRequest(
-        TENANT_ID,
-        OCPP_CONNECTION_NAME,
-        CORRELATION_ID, // different from 'other-corr-id'
-      );
-
-      expect(map).toEqual({});
     });
   });
 
@@ -524,7 +465,7 @@ describe('SetVariablesResponseOcpp2Handler – SetVariables response handling', 
       const variable = await seedVariable('MaxVoltage');
       const varAttr = await seedVariableAttribute(component.id, variable.id, '120');
 
-      await seedSetVariablesRequest([
+      const request = aSetVariablesRequest([
         aSetVariableData((d) => {
           d.component = { name: 'Connector' };
           d.variable = { name: 'MaxVoltage' };
@@ -534,22 +475,25 @@ describe('SetVariablesResponseOcpp2Handler – SetVariables response handling', 
       ]);
 
       await (handler as any).handle(
-        aSetVariablesResponseMessage(
-          aSetVariablesResponse((r) => {
-            r.setVariableResult = [
-              aSetVariableResult((res) => {
-                res.component = { name: 'Connector' };
-                res.variable = { name: 'MaxVoltage' };
-                res.attributeStatus = OCPP2_0_1.SetVariableStatusEnumType.Accepted;
-                res.attributeType = OCPP2_0_1.AttributeEnumType.Actual;
-              }),
-            ];
-          }),
-          {
-            correlationId: CORRELATION_ID,
-            ocppConnectionName: OCPP_CONNECTION_NAME,
-            tenantId: TENANT_ID,
-          },
+        withRequest(
+          aSetVariablesResponseMessage(
+            aSetVariablesResponse((r) => {
+              r.setVariableResult = [
+                aSetVariableResult((res) => {
+                  res.component = { name: 'Connector' };
+                  res.variable = { name: 'MaxVoltage' };
+                  res.attributeStatus = OCPP2_0_1.SetVariableStatusEnumType.Accepted;
+                  res.attributeType = OCPP2_0_1.AttributeEnumType.Actual;
+                }),
+              ];
+            }),
+            {
+              correlationId: CORRELATION_ID,
+              ocppConnectionName: OCPP_CONNECTION_NAME,
+              tenantId: TENANT_ID,
+            },
+          ),
+          request,
         ),
       );
 
@@ -563,7 +507,7 @@ describe('SetVariablesResponseOcpp2Handler – SetVariables response handling', 
       const variable = await seedVariable('MaxVoltage');
       const varAttr = await seedVariableAttribute(component.id, variable.id, '120');
 
-      await seedSetVariablesRequest([
+      const request = aSetVariablesRequest([
         aSetVariableData((d) => {
           d.component = { name: 'Connector' };
           d.variable = { name: 'MaxVoltage' };
@@ -573,22 +517,25 @@ describe('SetVariablesResponseOcpp2Handler – SetVariables response handling', 
       ]);
 
       await (handler as any).handle(
-        aSetVariablesResponseMessage(
-          aSetVariablesResponse((r) => {
-            r.setVariableResult = [
-              aSetVariableResult((res) => {
-                res.component = { name: 'Connector' };
-                res.variable = { name: 'MaxVoltage' };
-                res.attributeStatus = OCPP2_0_1.SetVariableStatusEnumType.Accepted;
-                res.attributeType = OCPP2_0_1.AttributeEnumType.Actual;
-              }),
-            ];
-          }),
-          {
-            correlationId: CORRELATION_ID,
-            ocppConnectionName: OCPP_CONNECTION_NAME,
-            tenantId: TENANT_ID,
-          },
+        withRequest(
+          aSetVariablesResponseMessage(
+            aSetVariablesResponse((r) => {
+              r.setVariableResult = [
+                aSetVariableResult((res) => {
+                  res.component = { name: 'Connector' };
+                  res.variable = { name: 'MaxVoltage' };
+                  res.attributeStatus = OCPP2_0_1.SetVariableStatusEnumType.Accepted;
+                  res.attributeType = OCPP2_0_1.AttributeEnumType.Actual;
+                }),
+              ];
+            }),
+            {
+              correlationId: CORRELATION_ID,
+              ocppConnectionName: OCPP_CONNECTION_NAME,
+              tenantId: TENANT_ID,
+            },
+          ),
+          request,
         ),
       );
 
@@ -605,7 +552,7 @@ describe('SetVariablesResponseOcpp2Handler – SetVariables response handling', 
       const varAttr = await seedVariableAttribute(component.id, variable.id, '120');
       await seedVariableStatus(varAttr.id, '120', OCPP2_0_1.SetVariableStatusEnumType.Accepted);
 
-      await seedSetVariablesRequest([
+      const request = aSetVariablesRequest([
         aSetVariableData((d) => {
           d.component = { name: 'Connector' };
           d.variable = { name: 'MaxVoltage' };
@@ -615,22 +562,25 @@ describe('SetVariablesResponseOcpp2Handler – SetVariables response handling', 
       ]);
 
       await (handler as any).handle(
-        aSetVariablesResponseMessage(
-          aSetVariablesResponse((r) => {
-            r.setVariableResult = [
-              aSetVariableResult((res) => {
-                res.component = { name: 'Connector' };
-                res.variable = { name: 'MaxVoltage' };
-                res.attributeStatus = OCPP2_0_1.SetVariableStatusEnumType.Rejected;
-                res.attributeType = OCPP2_0_1.AttributeEnumType.Actual;
-              }),
-            ];
-          }),
-          {
-            correlationId: CORRELATION_ID,
-            ocppConnectionName: OCPP_CONNECTION_NAME,
-            tenantId: TENANT_ID,
-          },
+        withRequest(
+          aSetVariablesResponseMessage(
+            aSetVariablesResponse((r) => {
+              r.setVariableResult = [
+                aSetVariableResult((res) => {
+                  res.component = { name: 'Connector' };
+                  res.variable = { name: 'MaxVoltage' };
+                  res.attributeStatus = OCPP2_0_1.SetVariableStatusEnumType.Rejected;
+                  res.attributeType = OCPP2_0_1.AttributeEnumType.Actual;
+                }),
+              ];
+            }),
+            {
+              correlationId: CORRELATION_ID,
+              ocppConnectionName: OCPP_CONNECTION_NAME,
+              tenantId: TENANT_ID,
+            },
+          ),
+          request,
         ),
       );
 
@@ -646,12 +596,12 @@ describe('SetVariablesResponseOcpp2Handler – SetVariables response handling', 
       expect(statuses[1].status).toBe(OCPP2_0_1.SetVariableStatusEnumType.Rejected);
     });
 
-    it('leaves VariableAttribute.value unchanged when no OCPP request is found for the correlation id', async () => {
+    it('leaves VariableAttribute.value unchanged when the message has no request', async () => {
       await seedBase();
       const component = await seedComponent('Connector');
       const variable = await seedVariable('MaxVoltage');
       const varAttr = await seedVariableAttribute(component.id, variable.id, '120');
-      // Intentionally do NOT seed an OCPPMessage
+      // Intentionally no request on the message
 
       await (handler as any).handle(
         aSetVariablesResponseMessage(
@@ -683,7 +633,7 @@ describe('SetVariablesResponseOcpp2Handler – SetVariables response handling', 
       await seedBase();
       // No Component, Variable, or VariableAttribute seeded
 
-      await seedSetVariablesRequest([
+      const request = aSetVariablesRequest([
         aSetVariableData((d) => {
           d.component = { name: 'Connector' };
           d.variable = { name: 'MaxVoltage' };
@@ -693,22 +643,25 @@ describe('SetVariablesResponseOcpp2Handler – SetVariables response handling', 
       ]);
 
       await (handler as any).handle(
-        aSetVariablesResponseMessage(
-          aSetVariablesResponse((r) => {
-            r.setVariableResult = [
-              aSetVariableResult((res) => {
-                res.component = { name: 'Connector' };
-                res.variable = { name: 'MaxVoltage' };
-                res.attributeStatus = OCPP2_0_1.SetVariableStatusEnumType.Accepted;
-                res.attributeType = OCPP2_0_1.AttributeEnumType.Actual;
-              }),
-            ];
-          }),
-          {
-            correlationId: CORRELATION_ID,
-            ocppConnectionName: OCPP_CONNECTION_NAME,
-            tenantId: TENANT_ID,
-          },
+        withRequest(
+          aSetVariablesResponseMessage(
+            aSetVariablesResponse((r) => {
+              r.setVariableResult = [
+                aSetVariableResult((res) => {
+                  res.component = { name: 'Connector' };
+                  res.variable = { name: 'MaxVoltage' };
+                  res.attributeStatus = OCPP2_0_1.SetVariableStatusEnumType.Accepted;
+                  res.attributeType = OCPP2_0_1.AttributeEnumType.Actual;
+                }),
+              ];
+            }),
+            {
+              correlationId: CORRELATION_ID,
+              ocppConnectionName: OCPP_CONNECTION_NAME,
+              tenantId: TENANT_ID,
+            },
+          ),
+          request,
         ),
       );
 
@@ -738,7 +691,7 @@ describe('SetVariablesResponseOcpp2Handler – SetVariables response handling', 
       const attrB = await seedVariableAttribute(compB.id, varB.id, 'current-B');
       await seedVariableStatus(attrB.id, 'current-B', OCPP2_0_1.SetVariableStatusEnumType.Accepted);
 
-      await seedSetVariablesRequest([
+      const request = aSetVariablesRequest([
         aSetVariableData((d) => {
           d.component = { name: 'CompA' };
           d.variable = { name: 'VarA' };
@@ -754,28 +707,31 @@ describe('SetVariablesResponseOcpp2Handler – SetVariables response handling', 
       ]);
 
       await (handler as any).handle(
-        aSetVariablesResponseMessage(
-          aSetVariablesResponse((r) => {
-            r.setVariableResult = [
-              aSetVariableResult((res) => {
-                res.component = { name: 'CompA' };
-                res.variable = { name: 'VarA' };
-                res.attributeStatus = OCPP2_0_1.SetVariableStatusEnumType.Accepted;
-                res.attributeType = OCPP2_0_1.AttributeEnumType.Actual;
-              }),
-              aSetVariableResult((res) => {
-                res.component = { name: 'CompB' };
-                res.variable = { name: 'VarB' };
-                res.attributeStatus = OCPP2_0_1.SetVariableStatusEnumType.Rejected;
-                res.attributeType = OCPP2_0_1.AttributeEnumType.Actual;
-              }),
-            ];
-          }),
-          {
-            correlationId: CORRELATION_ID,
-            ocppConnectionName: OCPP_CONNECTION_NAME,
-            tenantId: TENANT_ID,
-          },
+        withRequest(
+          aSetVariablesResponseMessage(
+            aSetVariablesResponse((r) => {
+              r.setVariableResult = [
+                aSetVariableResult((res) => {
+                  res.component = { name: 'CompA' };
+                  res.variable = { name: 'VarA' };
+                  res.attributeStatus = OCPP2_0_1.SetVariableStatusEnumType.Accepted;
+                  res.attributeType = OCPP2_0_1.AttributeEnumType.Actual;
+                }),
+                aSetVariableResult((res) => {
+                  res.component = { name: 'CompB' };
+                  res.variable = { name: 'VarB' };
+                  res.attributeStatus = OCPP2_0_1.SetVariableStatusEnumType.Rejected;
+                  res.attributeType = OCPP2_0_1.AttributeEnumType.Actual;
+                }),
+              ];
+            }),
+            {
+              correlationId: CORRELATION_ID,
+              ocppConnectionName: OCPP_CONNECTION_NAME,
+              tenantId: TENANT_ID,
+            },
+          ),
+          request,
         ),
       );
 

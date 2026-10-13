@@ -15,7 +15,6 @@ import {
 import {
   ChargingProfile,
   DefaultSequelizeInstance,
-  type IOCPPMessageRepository,
   SequelizeChargingProfileRepository,
 } from '@citrineos/dal';
 import { Tenant } from '@dal/db/sequelize/index.js';
@@ -23,7 +22,7 @@ import { SetChargingProfileResponseOcpp16Handler } from '@handlers/index.js';
 import { createTestContainer } from '@test/test-container.js';
 import type { Sequelize } from 'sequelize-typescript';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 const STATION = 'CS-16-SET';
 const OTHER_STATION = 'CS-16-SET-OTHER';
@@ -73,7 +72,8 @@ afterAll(async () => {
 
 function anAcceptedSetResponse(
   ocppConnectionName: string,
-): IMessage<OCPP1_6.SetChargingProfileResponse> {
+  request: OCPP1_6.SetChargingProfileRequest,
+): IMessage<OCPP1_6.SetChargingProfileResponse, OCPP1_6.SetChargingProfileRequest> {
   return {
     context: {
       tenantId: DEFAULT_TENANT_ID,
@@ -87,7 +87,8 @@ function anAcceptedSetResponse(
     action: OCPP_CallAction.SetChargingProfile,
     state: MessageState.Response,
     protocol: OCPPVersion.OCPP1_6,
-  } as unknown as IMessage<OCPP1_6.SetChargingProfileResponse>;
+    request,
+  };
 }
 
 async function activeProfileIds(ocppConnectionName: string = STATION): Promise<number[]> {
@@ -132,11 +133,8 @@ describe('An accepted OCPP 1.6 SetChargingProfile', () => {
         logger: undefined,
         sequelizeInstance,
       } as never),
-      ocppMessageRepository: {
-        readOnlyOneByQuery: vi.fn().mockResolvedValue({ payload: request }),
-      } as unknown as IOCPPMessageRepository,
     } as never);
-    await handler.handle(anAcceptedSetResponse(ocppConnectionName));
+    await handler.handle(anAcceptedSetResponse(ocppConnectionName, request));
   }
 
   it('retires the profile the station replaced with one of the same stackLevel and purpose', async () => {

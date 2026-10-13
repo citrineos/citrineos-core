@@ -6,7 +6,6 @@ import {
   type IAuthorizationRepository,
   type IConnectorRepository,
   type IEvseRepository,
-  type IOCPPMessageRepository,
   type IReservationRepository,
   type ITransactionEventRepository,
 } from '@citrineos/dal';
@@ -27,7 +26,6 @@ describe('C17 - Prepaid Card Authorization', () => {
   let transactionEventRepository: Mocked<ITransactionEventRepository>;
   let locationRepository: Mocked<IConnectorRepository & IEvseRepository>;
   let reservationRepository: Mocked<IReservationRepository>;
-  let ocppMessageRepository: Mocked<IOCPPMessageRepository>;
   let authorizer: Mocked<IAuthorizer>;
   let realTimeAuthorizer: Mocked<IAuthorizer>;
 
@@ -49,8 +47,6 @@ describe('C17 - Prepaid Card Authorization', () => {
 
     reservationRepository = {} as unknown as Mocked<IReservationRepository>;
 
-    ocppMessageRepository = {} as unknown as Mocked<IOCPPMessageRepository>;
-
     authorizer = {
       authorize: vi.fn().mockResolvedValue(AuthorizationStatusEnum.Accepted),
     } as Mocked<IAuthorizer>;
@@ -65,7 +61,6 @@ describe('C17 - Prepaid Card Authorization', () => {
       evseRepository: locationRepository,
       connectorRepository: locationRepository,
       reservationRepository,
-      ocppMessageRepository,
       realTimeAuthorizer,
       authorizers: [authorizer],
     });

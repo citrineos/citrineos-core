@@ -7,36 +7,25 @@ import {
   AsResponseHandler,
   type IMessage,
 } from '@citrineos/base';
-import {
-  type HandlerProperties,
-  MessageOrigin,
-  OCPP1_6,
-  OCPP_CallAction,
-  OCPPVersion,
-} from '@citrineos/types';
-import type { IChangeConfigurationRepository, IOCPPMessageRepository } from '@citrineos/dal';
-import { stationIdFilter } from '@citrineos/dal';
+import { type HandlerProperties, OCPP1_6, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
+import type { IChangeConfigurationRepository } from '@citrineos/dal';
 
 @AsResponseHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.ChangeConfiguration)
 export class ChangeConfigurationResponseOcpp16Handler extends AbstractHandler {
   protected _changeConfigurationRepository: IChangeConfigurationRepository;
-  protected _ocppMessageRepository: IOCPPMessageRepository;
 
   constructor({
     logger,
     changeConfigurationRepository,
-    ocppMessageRepository,
   }: AbstractHandlerDependencies & {
     changeConfigurationRepository: IChangeConfigurationRepository;
-    ocppMessageRepository: IOCPPMessageRepository;
   }) {
     super(logger);
     this._changeConfigurationRepository = changeConfigurationRepository;
-    this._ocppMessageRepository = ocppMessageRepository;
   }
 
   async handle(
-    message: IMessage<OCPP1_6.ChangeConfigurationResponse>,
+    message: IMessage<OCPP1_6.ChangeConfigurationResponse, OCPP1_6.ChangeConfigurationRequest>,
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug(
@@ -49,13 +38,7 @@ export class ChangeConfigurationResponseOcpp16Handler extends AbstractHandler {
     const ocppConnectionName = message.context.ocppConnectionName;
     const correlationId = message.context.correlationId;
 
-    const request = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
-      where: {
-        stationId: await stationIdFilter(tenantId, ocppConnectionName),
-        correlationId,
-        origin: MessageOrigin.ChargingStationManagementSystem,
-      },
-    });
+    const request = message.request;
 
     if (!request) {
       this._logger.error(
@@ -65,8 +48,8 @@ export class ChangeConfigurationResponseOcpp16Handler extends AbstractHandler {
     }
 
     const status = message.payload.status;
-    const key = request.payload.key;
-    const value = request.payload.value;
+    const key = request.key;
+    const value = request.value;
 
     if (
       status == OCPP1_6.ChangeConfigurationResponseStatus.Rejected ||

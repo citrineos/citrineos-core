@@ -11,34 +11,31 @@ import {
 import {
   ChargingLimitSourceEnum,
   type HandlerProperties,
-  MessageOrigin,
   OCPP1_6,
   OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/types';
-import type { IChargingProfileRepository, IOCPPMessageRepository } from '@citrineos/dal';
-import { stationIdFilter } from '@citrineos/dal';
+import type { IChargingProfileRepository } from '@citrineos/dal';
 
 @AsResponseHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.RemoteStartTransaction)
 export class RemoteStartTransactionResponseOcpp16Handler extends AbstractHandler {
-  protected _ocppMessageRepository: IOCPPMessageRepository;
   protected _chargingProfileRepository: IChargingProfileRepository;
 
   constructor({
     logger,
-    ocppMessageRepository,
     chargingProfileRepository,
   }: AbstractHandlerDependencies & {
-    ocppMessageRepository: IOCPPMessageRepository;
     chargingProfileRepository: IChargingProfileRepository;
   }) {
     super(logger);
-    this._ocppMessageRepository = ocppMessageRepository;
     this._chargingProfileRepository = chargingProfileRepository;
   }
 
   async handle(
-    message: IMessage<OCPP1_6.RemoteStartTransactionResponse>,
+    message: IMessage<
+      OCPP1_6.RemoteStartTransactionResponse,
+      OCPP1_6.RemoteStartTransactionRequest
+    >,
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.info(
@@ -51,18 +48,9 @@ export class RemoteStartTransactionResponseOcpp16Handler extends AbstractHandler
     const ocppConnectionName: string = message.context.ocppConnectionName;
 
     if (message.payload.status === OCPP1_6.RemoteStartTransactionResponseStatus.Accepted) {
-      const originalMessage = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
-        where: {
-          tenantId: tenantId,
-          stationId: await stationIdFilter(tenantId, ocppConnectionName),
-          correlationId: message.context.correlationId,
-          origin: MessageOrigin.ChargingStationManagementSystem,
-        },
-      });
+      const originalRequest = message.request;
 
-      if (originalMessage) {
-        const originalRequest = originalMessage.payload as OCPP1_6.RemoteStartTransactionRequest;
-
+      if (originalRequest) {
         if (originalRequest.chargingProfile) {
           const mapped = OCPP1_6_Mapper.ChargingProfileMapper.fromRemoteStartChargingProfile(
             originalRequest.chargingProfile,
