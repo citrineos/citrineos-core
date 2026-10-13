@@ -64,8 +64,6 @@ export const TransactionDetailCard = ({ transaction }: TransactionDetailCardProp
     );
   }, [dispatch, transaction, translate]);
 
-  console.log(transaction);
-
   return (
     <Card>
       <CardHeader>

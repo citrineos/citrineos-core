@@ -6,7 +6,8 @@ import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import type { VariableAttributeDto } from '@citrineos/types';
 import {
   type IChangeConfigurationRepository,
-  type IDeviceModelRepository,
+  type IVariableAttributeRepository,
+  type IVariableCharacteristicsRepository,
   type ILocalAuthListRepository,
   LocalListVersion,
   SendLocalList,
@@ -19,7 +20,9 @@ import { createTestContainer, getTestInstance } from '@test/test-container.js';
 describe('LocalAuthListService', () => {
   const { container } = createTestContainer();
   let mockLocalAuthListRepository: Mocked<ILocalAuthListRepository>;
-  let mockDeviceModelRepository: Mocked<IDeviceModelRepository>;
+  let mockVariableAttributeRepository: Mocked<
+    IVariableAttributeRepository & IVariableCharacteristicsRepository
+  >;
   let mockChangeConfigurationRepository: Mocked<IChangeConfigurationRepository>;
   let localAuthListService: LocalAuthListService;
 
@@ -41,10 +44,10 @@ describe('LocalAuthListService', () => {
       createSendLocalListFromRequestData: vi.fn(),
     } as unknown as Mocked<ILocalAuthListRepository>;
 
-    mockDeviceModelRepository = {
+    mockVariableAttributeRepository = {
       findVariableCharacteristicsByVariableNameAndVariableInstance: vi.fn(),
       readAllByQuerystring: vi.fn(),
-    } as unknown as Mocked<IDeviceModelRepository>;
+    } as unknown as Mocked<IVariableAttributeRepository & IVariableCharacteristicsRepository>;
 
     // Only the OCPP 1.6 path reads configuration keys; these specs all exercise 2.0.1.
     mockChangeConfigurationRepository = {
@@ -53,7 +56,7 @@ describe('LocalAuthListService', () => {
 
     localAuthListService = getTestInstance(container, LocalAuthListService, {
       localAuthListRepository: mockLocalAuthListRepository,
-      variableAttributeRepository: mockDeviceModelRepository,
+      variableAttributeRepository: mockVariableAttributeRepository,
       changeConfigurationRepository: mockChangeConfigurationRepository,
     });
   });
@@ -90,10 +93,10 @@ describe('LocalAuthListService', () => {
     mockLocalAuthListRepository.createSendLocalListFromRequestData.mockResolvedValue(
       mockSendLocalList,
     );
-    mockDeviceModelRepository.findVariableCharacteristicsByVariableNameAndVariableInstance.mockResolvedValue(
+    mockVariableAttributeRepository.findVariableCharacteristicsByVariableNameAndVariableInstance.mockResolvedValue(
       testMockVariableCharacteristics as never,
     );
-    mockDeviceModelRepository.readAllByQuerystring.mockResolvedValue([]);
+    mockVariableAttributeRepository.readAllByQuerystring.mockResolvedValue([]);
 
     const result =
       await localAuthListService.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(
@@ -249,7 +252,7 @@ describe('LocalAuthListService', () => {
     mockLocalAuthListRepository.createSendLocalListFromRequestData.mockResolvedValue(
       mockSendLocalList,
     );
-    mockDeviceModelRepository.readAllByQuerystring.mockResolvedValue([mockEntriesAttribute]);
+    mockVariableAttributeRepository.readAllByQuerystring.mockResolvedValue([mockEntriesAttribute]);
 
     await expect(
       localAuthListService.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(
@@ -282,7 +285,7 @@ describe('LocalAuthListService', () => {
     mockLocalAuthListRepository.createSendLocalListFromRequestData.mockResolvedValue(
       mockSendLocalList,
     );
-    mockDeviceModelRepository.readAllByQuerystring.mockResolvedValue([]); // No Entries variable reported
+    mockVariableAttributeRepository.readAllByQuerystring.mockResolvedValue([]); // No Entries variable reported
 
     const result =
       await localAuthListService.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(
@@ -318,7 +321,7 @@ describe('LocalAuthListService', () => {
     mockLocalAuthListRepository.createSendLocalListFromRequestData.mockResolvedValue(
       mockSendLocalList,
     );
-    mockDeviceModelRepository.readAllByQuerystring.mockResolvedValue([mockEntriesAttribute]);
+    mockVariableAttributeRepository.readAllByQuerystring.mockResolvedValue([mockEntriesAttribute]);
 
     const result =
       await localAuthListService.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(
@@ -379,10 +382,10 @@ describe('LocalAuthListService', () => {
     mockLocalAuthListRepository.createSendLocalListFromRequestData.mockResolvedValue(
       mockSendLocalList,
     );
-    mockDeviceModelRepository.findVariableCharacteristicsByVariableNameAndVariableInstance.mockResolvedValue(
+    mockVariableAttributeRepository.findVariableCharacteristicsByVariableNameAndVariableInstance.mockResolvedValue(
       testMockVariableCharacteristics as never,
     );
-    mockDeviceModelRepository.readAllByQuerystring.mockResolvedValue([mockVariableAttribute]);
+    mockVariableAttributeRepository.readAllByQuerystring.mockResolvedValue([mockVariableAttribute]);
 
     await expect(
       localAuthListService.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(
@@ -444,10 +447,10 @@ describe('LocalAuthListService', () => {
     mockLocalAuthListRepository.createSendLocalListFromRequestData.mockResolvedValue(
       mockSendLocalList,
     );
-    mockDeviceModelRepository.findVariableCharacteristicsByVariableNameAndVariableInstance.mockResolvedValue(
+    mockVariableAttributeRepository.findVariableCharacteristicsByVariableNameAndVariableInstance.mockResolvedValue(
       testMockVariableCharacteristics as never,
     );
-    mockDeviceModelRepository.readAllByQuerystring.mockResolvedValue([mockVariableAttribute]);
+    mockVariableAttributeRepository.readAllByQuerystring.mockResolvedValue([mockVariableAttribute]);
 
     const result =
       await localAuthListService.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(
@@ -499,7 +502,7 @@ describe('LocalAuthListService', () => {
     mockLocalAuthListRepository.createSendLocalListFromRequestData.mockResolvedValue(
       mockSendLocalList,
     );
-    mockDeviceModelRepository.readAllByQuerystring.mockResolvedValue([mockEntriesAttribute]);
+    mockVariableAttributeRepository.readAllByQuerystring.mockResolvedValue([mockEntriesAttribute]);
 
     const result =
       await localAuthListService.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(

@@ -162,8 +162,8 @@ describe('RepositoryStore', () => {
     expect(store.sequelizeInstance).toBe(h.sequelizeInstance);
     expect(store.chargingProfileRepository).toBeInstanceOf(SequelizeChargingProfileRepository);
     expect(store.componentRepository).toBeInstanceOf(SequelizeDeviceModelRepository);
-    expect(store.componentRepository).toBe(store.deviceModelRepository);
-    expect(store.deviceModelRepository).toBeInstanceOf(SequelizeDeviceModelRepository);
+    expect(store.variableAttributeRepository).toBe(store.componentRepository);
+    expect(store.variableCharacteristicsRepository).toBe(store.componentRepository);
     expect(store.localAuthListRepository).toBeInstanceOf(SequelizeLocalAuthListRepository);
     expect(store.ocppMessageRepository).toBeInstanceOf(SequelizeOCPPMessageRepository);
     expect(store.transactionEventRepository).toBeInstanceOf(SequelizeTransactionEventRepository);
@@ -264,7 +264,6 @@ describe('RepositoryStore', () => {
       );
       // Non-switchable repositories stay on sequelize even in drizzle mode.
       expect(store.transactionEventRepository).toBeInstanceOf(SequelizeTransactionEventRepository);
-      expect(store.deviceModelRepository).toBeInstanceOf(SequelizeDeviceModelRepository);
       expect(store.chargingProfileRepository).toBeInstanceOf(SequelizeChargingProfileRepository);
       expect(store.localAuthListRepository).toBeInstanceOf(SequelizeLocalAuthListRepository);
       expect(store.ocppMessageRepository).toBeInstanceOf(SequelizeOCPPMessageRepository);

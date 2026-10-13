@@ -6,6 +6,8 @@ import { Duplex } from 'stream';
 import type { IUpgradeError } from './i-upgrade-error.js';
 
 export class UpgradeUnknownError extends Error implements IUpgradeError {
+  readonly statusCode = 404;
+
   constructor(message: string) {
     super(message);
     this.name = 'UpgradeUnknownError';

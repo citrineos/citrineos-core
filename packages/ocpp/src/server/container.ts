@@ -40,6 +40,7 @@ import {
   DrizzleMessageInfoRepository,
   DrizzleReservationRepository,
   DrizzleSecurityEventRepository,
+  DrizzleWebsocketEventRepository,
   DrizzleServerNetworkProfileRepository,
   DrizzleSetNetworkProfileRepository,
   DrizzleSubscriptionRepository,
@@ -66,6 +67,7 @@ import {
   SequelizeOCPPMessageRepository,
   SequelizeReservationRepository,
   SequelizeSecurityEventRepository,
+  SequelizeWebsocketEventRepository,
   SequelizeServerNetworkProfileRepository,
   SequelizeSetNetworkProfileRepository,
   SequelizeSubscriptionRepository,
@@ -326,7 +328,6 @@ function registerRepositories(container: AwilixContainer): void {
     deleteCertificateAttemptRepository: asClass(
       SequelizeDeleteCertificateAttemptRepository,
     ).singleton(),
-    deviceModelRepository: asClass(SequelizeDeviceModelRepository).singleton(),
     installCertificateAttemptRepository: asClass(
       SequelizeInstallCertificateAttemptRepository,
     ).singleton(),
@@ -337,6 +338,7 @@ function registerRepositories(container: AwilixContainer): void {
     ocppMessageRepository: asClass(SequelizeOCPPMessageRepository).singleton(),
     reservationRepository: asClass(SequelizeReservationRepository).singleton(),
     securityEventRepository: asClass(SequelizeSecurityEventRepository).singleton(),
+    websocketEventRepository: asClass(SequelizeWebsocketEventRepository).singleton(),
     chargingStationNetworkProfileRepository: asClass(
       SequelizeChargingStationNetworkProfileRepository,
     ).singleton(),
@@ -346,24 +348,23 @@ function registerRepositories(container: AwilixContainer): void {
     tariffRepository: asClass(SequelizeTariffRepository).singleton(),
     tenantRepository: asClass(SequelizeTenantRepository).singleton(),
     transactionEventRepository: asClass(SequelizeTransactionEventRepository).singleton(),
+    // The device model aggregate is the instance behind all three narrow tokens.
+    variableAttributeRepository: asClass(SequelizeDeviceModelRepository).singleton(),
     variableMonitoringRepository: asClass(SequelizeVariableMonitoringRepository).singleton(),
     // use asFunction to return an already existing instance
     chargingStationRepository: asFunction(
       ({ locationRepository }) => locationRepository,
     ).singleton(),
     componentRepository: asFunction(
-      ({ deviceModelRepository }) => deviceModelRepository,
+      ({ variableAttributeRepository }) => variableAttributeRepository,
     ).singleton(),
     connectorRepository: asFunction(({ locationRepository }) => locationRepository).singleton(),
     evseRepository: asFunction(({ locationRepository }) => locationRepository).singleton(),
     statusNotificationRepository: asFunction(
       ({ locationRepository }) => locationRepository,
     ).singleton(),
-    variableAttributeRepository: asFunction(
-      ({ deviceModelRepository }) => deviceModelRepository,
-    ).singleton(),
     variableCharacteristicsRepository: asFunction(
-      ({ deviceModelRepository }) => deviceModelRepository,
+      ({ variableAttributeRepository }) => variableAttributeRepository,
     ).singleton(),
   });
 
@@ -396,6 +397,7 @@ function registerRepositories(container: AwilixContainer): void {
       messageInfoRepository: asClass(DrizzleMessageInfoRepository).singleton(),
       reservationRepository: asClass(DrizzleReservationRepository).singleton(),
       securityEventRepository: asClass(DrizzleSecurityEventRepository).singleton(),
+      websocketEventRepository: asClass(DrizzleWebsocketEventRepository).singleton(),
       setNetworkProfileRepository: asClass(DrizzleSetNetworkProfileRepository).singleton(),
       statusNotificationRepository: asClass(DrizzleStatusNotificationRepository).singleton(),
       subscriptionRepository: asClass(DrizzleSubscriptionRepository).singleton(),

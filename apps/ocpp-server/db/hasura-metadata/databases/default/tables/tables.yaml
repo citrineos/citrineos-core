@@ -54,6 +54,7 @@
 - '!include public_VariableMonitorings.yaml'
 - '!include public_VariableStatuses.yaml'
 - '!include public_Variables.yaml'
+- '!include public_WebsocketEvents.yaml'
 - '!include public_geography_columns.yaml'
 - '!include public_geometry_columns.yaml'
 - '!include public_spatial_ref_sys.yaml'

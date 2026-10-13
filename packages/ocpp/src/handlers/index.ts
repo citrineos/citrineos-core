@@ -36,6 +36,7 @@ export { ReportChargingProfilesRequestOcpp2Handler } from './requests/2/report-c
 export { ReservationStatusUpdateRequestOcpp2Handler } from './requests/2/reservation-status-update-request-ocpp-2-handler.js';
 export { SecurityEventNotificationRequestOcpp2Handler } from './requests/2/security-event-notification-request-ocpp-2-handler.js';
 export { SignCertificateRequestOcpp2Handler } from './requests/2/sign-certificate-request-ocpp-2-handler.js';
+export { SecurityEventNotificationRequestOcpp16Handler } from './requests/1.6/security-event-notification-request-ocpp-16-handler.js';
 export { StartTransactionRequestOcpp16Handler } from './requests/1.6/start-transaction-request-ocpp-16-handler.js';
 export { StatusNotificationRequestOcpp16Handler } from './requests/1.6/status-notification-request-ocpp-16-handler.js';
 export { StatusNotificationRequestOcpp2Handler } from './requests/2/status-notification-request-ocpp-2-handler.js';

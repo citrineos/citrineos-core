@@ -289,3 +289,14 @@ export {
   type VariableCharacteristicsEntity,
   type VariableCharacteristicsEntityInsert,
 } from './schema/variable-characteristics.js';
+export {
+  DrizzleWebsocketEventRepository,
+  toWebsocketEventDto,
+} from '../../repositories/drizzle/websocket-event.js';
+export {
+  websocketEventTable,
+  WebsocketEventEntitySchema,
+  WebsocketEventEntityInsertSchema,
+  type WebsocketEventEntity,
+  type WebsocketEventEntityInsert,
+} from './schema/websocket-event.js';

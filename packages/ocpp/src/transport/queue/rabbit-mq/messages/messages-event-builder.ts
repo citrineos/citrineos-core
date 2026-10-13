@@ -11,6 +11,7 @@ import {
   MessagesEventKind,
   MessageTypeId,
   type OCPPVersionType,
+  type WebsocketLifecycleEvent,
 } from '@citrineos/types';
 
 /**
@@ -107,4 +108,15 @@ export function buildConnectionEvent(input: BuildConnectionEventInput): Connecti
     protocol: input.protocol,
     meta: input.meta,
   } as ConnectionEvent;
+}
+
+export type BuildWebsocketLifecycleEventInput = Omit<WebsocketLifecycleEvent, 'kind'>;
+
+/**
+ * One step in a socket's lifecycle, as the transport saw it.
+ */
+export function buildWebsocketLifecycleEvent(
+  input: BuildWebsocketLifecycleEventInput,
+): WebsocketLifecycleEvent {
+  return { ...input, kind: MessagesEventKind.Websocket };
 }

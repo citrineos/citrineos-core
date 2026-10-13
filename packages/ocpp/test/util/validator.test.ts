@@ -34,7 +34,7 @@ import {
   aTransactionEvent,
   aVariableAttribute,
   createMockChargingProfileRepository,
-  createMockDeviceModelRepository,
+  createMockVariableAttributeRepository,
   createMockLogger,
   createMockTransactionEventRepository,
   generateValidIdentifierString,
@@ -283,7 +283,7 @@ describe('validateIdToken', () => {
 });
 
 describe('validateChargingProfileType', () => {
-  let mockDeviceModelRepo: Mocked<any>;
+  let mockVariableAttributeRepo: Mocked<any>;
   let mockChargingProfileRepo: Mocked<any>;
   let mockTransactionEventRepo: Mocked<any>;
   let mockLogger: Mocked<any>;
@@ -292,13 +292,13 @@ describe('validateChargingProfileType', () => {
   const testStationId = 'STATION001';
 
   beforeEach(() => {
-    mockDeviceModelRepo = createMockDeviceModelRepository();
+    mockVariableAttributeRepo = createMockVariableAttributeRepository();
     mockChargingProfileRepo = createMockChargingProfileRepository();
     mockTransactionEventRepo = createMockTransactionEventRepository();
     mockLogger = createMockLogger();
 
     // Default mock returns
-    mockDeviceModelRepo.readAllByQuerystring.mockResolvedValue([]);
+    mockVariableAttributeRepo.readAllByQuerystring.mockResolvedValue([]);
     mockChargingProfileRepo.findChargingNeedsByEvseDBIdAndTransactionDBId.mockResolvedValue(null);
     mockTransactionEventRepo.readTransactionByStationIdAndTransactionId.mockResolvedValue(null);
   });
@@ -318,7 +318,7 @@ describe('validateChargingProfileType', () => {
           chargingProfile,
           testTenantId,
           testStationId,
-          mockDeviceModelRepo,
+          mockVariableAttributeRepo,
           mockChargingProfileRepo,
           mockTransactionEventRepo,
           mockLogger,
@@ -336,7 +336,7 @@ describe('validateChargingProfileType', () => {
           chargingProfile,
           testTenantId,
           testStationId,
-          mockDeviceModelRepo,
+          mockVariableAttributeRepo,
           mockChargingProfileRepo,
           mockTransactionEventRepo,
           mockLogger,
@@ -356,7 +356,7 @@ describe('validateChargingProfileType', () => {
           chargingProfile,
           testTenantId,
           testStationId,
-          mockDeviceModelRepo,
+          mockVariableAttributeRepo,
           mockChargingProfileRepo,
           mockTransactionEventRepo,
           mockLogger,
@@ -377,7 +377,7 @@ describe('validateChargingProfileType', () => {
           chargingProfile,
           testTenantId,
           testStationId,
-          mockDeviceModelRepo,
+          mockVariableAttributeRepo,
           mockChargingProfileRepo,
           mockTransactionEventRepo,
           mockLogger,
@@ -400,7 +400,7 @@ describe('validateChargingProfileType', () => {
           chargingProfile,
           testTenantId,
           testStationId,
-          mockDeviceModelRepo,
+          mockVariableAttributeRepo,
           mockChargingProfileRepo,
           mockTransactionEventRepo,
           mockLogger,
@@ -424,7 +424,7 @@ describe('validateChargingProfileType', () => {
           chargingProfile,
           testTenantId,
           testStationId,
-          mockDeviceModelRepo,
+          mockVariableAttributeRepo,
           mockChargingProfileRepo,
           mockTransactionEventRepo,
           mockLogger,
@@ -455,7 +455,7 @@ describe('validateChargingProfileType', () => {
         chargingProfile,
         testTenantId,
         testStationId,
-        mockDeviceModelRepo,
+        mockVariableAttributeRepo,
         mockChargingProfileRepo,
         mockTransactionEventRepo,
         mockLogger,
@@ -485,7 +485,7 @@ describe('validateChargingProfileType', () => {
         ],
       });
 
-      mockDeviceModelRepo.readAllByQuerystring.mockResolvedValue([
+      mockVariableAttributeRepo.readAllByQuerystring.mockResolvedValue([
         aVariableAttribute({
           type: OCPP2_0_1.AttributeEnumType.Actual,
           value: periodsLimit.toString(),
@@ -497,7 +497,7 @@ describe('validateChargingProfileType', () => {
           chargingProfile,
           testTenantId,
           testStationId,
-          mockDeviceModelRepo,
+          mockVariableAttributeRepo,
           mockChargingProfileRepo,
           mockTransactionEventRepo,
           mockLogger,
@@ -524,7 +524,7 @@ describe('validateChargingProfileType', () => {
           chargingProfile,
           testTenantId,
           testStationId,
-          mockDeviceModelRepo,
+          mockVariableAttributeRepo,
           mockChargingProfileRepo,
           mockTransactionEventRepo,
           mockLogger,
@@ -553,7 +553,7 @@ describe('validateChargingProfileType', () => {
           chargingProfile,
           testTenantId,
           testStationId,
-          mockDeviceModelRepo,
+          mockVariableAttributeRepo,
           mockChargingProfileRepo,
           mockTransactionEventRepo,
           mockLogger,
@@ -582,7 +582,7 @@ describe('validateChargingProfileType', () => {
           chargingProfile,
           testTenantId,
           testStationId,
-          mockDeviceModelRepo,
+          mockVariableAttributeRepo,
           mockChargingProfileRepo,
           mockTransactionEventRepo,
           mockLogger,
@@ -634,7 +634,7 @@ describe('validateChargingProfileType', () => {
           chargingProfile,
           testTenantId,
           testStationId,
-          mockDeviceModelRepo,
+          mockVariableAttributeRepo,
           mockChargingProfileRepo,
           mockTransactionEventRepo,
           mockLogger,
@@ -674,7 +674,7 @@ describe('validateChargingProfileType', () => {
           chargingProfile,
           testTenantId,
           testStationId,
-          mockDeviceModelRepo,
+          mockVariableAttributeRepo,
           mockChargingProfileRepo,
           mockTransactionEventRepo,
           mockLogger,
@@ -712,7 +712,7 @@ describe('validateChargingProfileType', () => {
             chargingProfile,
             testTenantId,
             testStationId,
-            mockDeviceModelRepo,
+            mockVariableAttributeRepo,
             mockChargingProfileRepo,
             mockTransactionEventRepo,
             mockLogger,
@@ -768,7 +768,7 @@ describe('validateChargingProfileType', () => {
         chargingProfile,
         testTenantId,
         testStationId,
-        mockDeviceModelRepo,
+        mockVariableAttributeRepo,
         mockChargingProfileRepo,
         mockTransactionEventRepo,
         mockLogger,
@@ -823,7 +823,7 @@ describe('validateChargingProfileType', () => {
         chargingProfile,
         testTenantId,
         testStationId,
-        mockDeviceModelRepo,
+        mockVariableAttributeRepo,
         mockChargingProfileRepo,
         mockTransactionEventRepo,
         mockLogger,
