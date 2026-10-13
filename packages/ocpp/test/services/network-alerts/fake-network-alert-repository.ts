@@ -45,7 +45,6 @@ export class FakeNetworkAlertRepository implements INetworkAlertRepository {
   alerts: NetworkAlertDto[] = [];
   occurrences: NetworkAlertOccurrenceDto[] = [];
   stations: FakeStation[] = [];
-  tenantIds: number[] = [1];
   slowSamples: Array<ResponseLatencySample & { tenantId: number }> = [];
   sweepLocked = false;
 

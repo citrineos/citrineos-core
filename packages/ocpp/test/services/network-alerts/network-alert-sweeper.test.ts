@@ -12,6 +12,7 @@ import { aSystemConfig } from '@test/providers/system-config.js';
 import { createTestContainer } from '@test/test-container.js';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FakeNetworkAlertRepository } from './fake-network-alert-repository.js';
+import { FakeTenantRepository } from './fake-tenant-repository.js';
 
 const TENANT = 1;
 const STATION = 10;
@@ -68,6 +69,7 @@ describe('NetworkAlertSweeper', () => {
     sweeper = new NetworkAlertSweeper({
       config,
       networkAlertRepository: repository,
+      tenantRepository: new FakeTenantRepository(),
       networkAlertService: service,
       networkAlertConfigResolver,
       logger,
