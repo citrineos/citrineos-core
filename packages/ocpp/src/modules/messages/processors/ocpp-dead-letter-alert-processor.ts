@@ -11,11 +11,6 @@ import type { IChargingStationRepository } from '@citrineos/dal';
 import { MessageOrigin } from '@citrineos/types';
 import type { NetworkAlertService } from '@services/network-alerts/index.js';
 
-/**
- * Reasons a message the CSMS meant for a station never reached it. The others are not about the
- * station: a poison body names no reliable station, and a handler error is a failure on our side
- * processing what the station sent.
- */
 const UNDELIVERED_REASONS: ReadonlySet<string> = new Set([
   DeadLetterReason.Stale,
   DeadLetterReason.Expired,
