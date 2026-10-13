@@ -860,7 +860,7 @@ describe('StatusNotificationService', () => {
         ),
       ).resolves.toBeUndefined();
 
-      expect(deviceModelRepository.createOrUpdateDeviceModelByStationId).toHaveBeenCalled();
+      expect(variableAttributeRepository.createOrUpdateDeviceModelByStationId).toHaveBeenCalled();
       expect(logger.error).toHaveBeenCalled();
     });
 
