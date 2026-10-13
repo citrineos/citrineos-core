@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
+#
+# SPDX-License-Identifier: Apache-2.0
+table:
+  name: NetworkAlerts
+  schema: public
+object_relationships:
+  - name: ChargingStation
+    using:
+      foreign_key_constraint_on: stationId
+  - name: Connector
+    using:
+      foreign_key_constraint_on: connectorId
+  - name: Evse
+    using:
+      foreign_key_constraint_on: evseId
+  - name: Tenant
+    using:
+      foreign_key_constraint_on: tenantId
+array_relationships:
+  - name: NetworkAlertOccurrences
+    using:
+      foreign_key_constraint_on:
+        column: alertId
+        table:
+          name: NetworkAlertOccurrences
+          schema: public
+select_permissions:
+  - role: user
+    permission:
+      columns: '*'
+      filter:
+        tenantId:
+          _eq: x-hasura-tenant-id
+      allow_aggregations: true
+    comment: ''

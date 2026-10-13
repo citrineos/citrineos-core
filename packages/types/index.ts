@@ -31,8 +31,11 @@ export {
 export type { HandlerProperties } from './src/interfaces/messages/internal-types.js';
 
 export {
+  CallEventOutcome,
+  CallEventSchema,
   ConnectionEventState,
   FrameDirection,
+  isCallEvent,
   isConnectionEvent,
   isFrameEvent,
   isWebsocketLifecycleEvent,
@@ -48,7 +51,9 @@ export {
   type MessagesEvent,
   type MessagesEventContext,
   type MessagesQueueSpec,
+  type CallEvent,
   type ConnectionEvent,
+  type ICallEventProcessor,
   type FrameEvent,
   type IConnectionEventProcessor,
   type IFrameEventProcessor,
@@ -115,6 +120,9 @@ export * from './src/interfaces/dto/local-list-version-dto.js';
 export * from './src/interfaces/dto/location-dto.js';
 export * from './src/interfaces/dto/message-info-dto.js';
 export * from './src/interfaces/dto/meter-value-dto.js';
+export * from './src/interfaces/dto/network-alert-config-dto.js';
+export * from './src/interfaces/dto/network-alert-dto.js';
+export * from './src/interfaces/dto/network-alert-occurrence-dto.js';
 export * from './src/interfaces/dto/ocpp-message-dto.js';
 export * from './src/interfaces/dto/real-time-authorization.js';
 export * from './src/interfaces/dto/reservation-dto.js';
@@ -139,6 +147,7 @@ export * from './src/interfaces/dto/types/enums.js';
 export * from './src/interfaces/dto/types/hours.js';
 export * from './src/interfaces/dto/types/location.js';
 export * from './src/interfaces/dto/types/message-info.js';
+export * from './src/interfaces/dto/types/network-alert.js';
 export * from './src/interfaces/dto/types/ocpi-registration.js';
 export * from './src/interfaces/dto/types/sales-tariff.js';
 export * from './src/interfaces/dto/types/sampled-value-dto.js';

@@ -172,6 +172,7 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
       connectorRepository: locationRepository,
       statusNotificationRepository: locationRepository,
       cache,
+      networkAlertService: { recordConnectorStatus: vi.fn() },
     });
 
     await expect(
@@ -237,6 +238,7 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
       connectorRepository: locationRepository,
       statusNotificationRepository: locationRepository,
       cache,
+      networkAlertService: { recordConnectorStatus: vi.fn() },
     });
 
     for (const status of ['Available', 'Charging']) {
@@ -314,6 +316,7 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
       connectorRepository: locationRepository,
       statusNotificationRepository: locationRepository,
       cache,
+      networkAlertService: { recordConnectorStatus: vi.fn() },
     });
 
     await expect(
@@ -360,6 +363,7 @@ describe('StatusNotificationService.processStatusNotification end-to-end (2.0.1 
       connectorRepository: locationRepository,
       statusNotificationRepository: locationRepository,
       cache,
+      networkAlertService: { recordConnectorStatus: vi.fn() },
     });
   };
 

@@ -17,4 +17,6 @@ export const WebsocketEventTypeSchema = z.enum([
   'Close',
 ]);
 
+export const WebsocketEventTypeEnum = WebsocketEventTypeSchema.enum;
+
 export type WebsocketEventType = z.infer<typeof WebsocketEventTypeSchema>;

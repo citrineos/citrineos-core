@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {
+  type ICallEventProcessor,
   type IConnectionEventProcessor,
   type IFrameEventProcessor,
   type IMessagesEventProcessor,
@@ -23,36 +24,47 @@ export class MessagesEventPipeline {
   private readonly _frameProcessors: IFrameEventProcessor[];
   private readonly _connectionProcessors: IConnectionEventProcessor[];
   private readonly _websocketProcessors: IWebsocketLifecycleEventProcessor[];
+  private readonly _callProcessors: ICallEventProcessor[];
   private readonly _logger: Logger<ILogObj>;
 
   constructor({
     frameEventProcessors,
     connectionEventProcessors,
     websocketLifecycleEventProcessors,
+    callEventProcessors,
     logger,
   }: {
     frameEventProcessors: IFrameEventProcessor[];
     connectionEventProcessors: IConnectionEventProcessor[];
     websocketLifecycleEventProcessors: IWebsocketLifecycleEventProcessor[];
+    callEventProcessors: ICallEventProcessor[];
     logger?: Logger<ILogObj>;
   }) {
     this._frameProcessors = frameEventProcessors;
     this._connectionProcessors = connectionEventProcessors;
     this._websocketProcessors = websocketLifecycleEventProcessors;
+    this._callProcessors = callEventProcessors;
     this._logger = childLogger(logger, this.constructor.name);
     initMessagesProcessorMetrics([
       ...frameEventProcessors,
       ...connectionEventProcessors,
       ...websocketLifecycleEventProcessors,
+      ...callEventProcessors,
     ]);
   }
 
   /** For startup logging: which processors serve which kind. */
-  get processorNames(): { frame: string[]; connection: string[]; websocket: string[] } {
+  get processorNames(): {
+    frame: string[];
+    connection: string[];
+    websocket: string[];
+    call: string[];
+  } {
     return {
       frame: this._frameProcessors.map((p) => p.name),
       connection: this._connectionProcessors.map((p) => p.name),
       websocket: this._websocketProcessors.map((p) => p.name),
+      call: this._callProcessors.map((p) => p.name),
     };
   }
 
@@ -72,6 +84,9 @@ export class MessagesEventPipeline {
         break;
       case MessagesEventKind.Websocket:
         await this._runAll(this._websocketProcessors, event, context);
+        break;
+      case MessagesEventKind.Call:
+        await this._runAll(this._callProcessors, event, context);
         break;
     }
 

@@ -260,6 +260,40 @@ describe('DrizzleChargingStationRepository', () => {
       expect(created!.isOnline).toBe(true);
     });
 
+    it('records when the station connected, and keeps it when the station goes offline', async () => {
+      const before = Date.now();
+
+      const online = await aRepository().setChargingStationIsOnlineAndOCPPVersion(
+        DEFAULT_TENANT_ID,
+        STATION,
+        true,
+        OCPPVersion.OCPP2_0_1,
+      );
+      const connectedAt = Date.parse(online!.lastConnectedAt!);
+      expect(connectedAt).toBeGreaterThanOrEqual(before);
+
+      const offline = await aRepository().setChargingStationIsOnlineAndOCPPVersion(
+        DEFAULT_TENANT_ID,
+        STATION,
+        false,
+        null,
+      );
+      expect(Date.parse(offline!.lastConnectedAt!)).toBe(connectedAt);
+    });
+
+    it('records when a station created by its first connect connected', async () => {
+      const before = Date.now();
+
+      const created = await aRepository().setChargingStationIsOnlineAndOCPPVersion(
+        DEFAULT_TENANT_ID,
+        'brand-new',
+        true,
+        OCPPVersion.OCPP2_0_1,
+      );
+
+      expect(Date.parse(created!.lastConnectedAt!)).toBeGreaterThanOrEqual(before);
+    });
+
     it('does not create a station for an unknown one going offline', async () => {
       const result = await aRepository().setChargingStationIsOnlineAndOCPPVersion(
         DEFAULT_TENANT_ID,
