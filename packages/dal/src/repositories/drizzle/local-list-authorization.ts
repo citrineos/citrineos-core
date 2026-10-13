@@ -38,8 +38,6 @@ export function toLocalListAuthorizationDto(
     authorizationId: entity.authorizationId ?? undefined,
     // Relation, not a scalar column.
     authorization: undefined,
-    // customData is not persisted as a column.
-    customData: undefined,
     tenantId: entity.tenantId,
     tenant: undefined,
     createdAt: entity.createdAt,

@@ -848,7 +848,6 @@ describe('drizzle row-to-DTO mappers', () => {
 
     expect(dto.name).toBe('');
     expect(dto.instance).toBeNull();
-    expect(dto.customData).toBeUndefined();
     expect(dto.tenant).toBeUndefined();
     expect(dto.createdAt).toEqual(timestamps.createdAt);
   });

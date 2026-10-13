@@ -7,7 +7,6 @@ import {
   type DCChargingParametersType,
   type EnergyTransferModeEnumType,
   type EvseDto,
-  OCPP2_0_1,
   type TenantDto,
   type TransactionDto,
 } from '@citrineos/types';
@@ -75,8 +74,6 @@ export class ChargingNeeds extends Model implements ChargingNeedsDto {
 
   @BelongsTo(() => Transaction, 'transactionDatabaseId')
   declare transaction: TransactionDto;
-
-  declare customData?: OCPP2_0_1.CustomDataType | null;
 
   @ForeignKey(() => Tenant)
   @Column({

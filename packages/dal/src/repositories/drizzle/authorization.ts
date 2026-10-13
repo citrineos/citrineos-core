@@ -44,7 +44,6 @@ export function toAuthorizationDto(entity: AuthorizationEntity): AuthorizationDt
     language1: entity.language1,
     language2: entity.language2,
     personalMessage: entity.personalMessage,
-    customData: entity.customData,
     concurrentTransaction: entity.concurrentTransaction ?? undefined,
     isPrepaid: entity.isPrepaid ?? undefined,
     prepaidBalance: entity.prepaidBalance != null ? Number(entity.prepaidBalance) : null,

@@ -9,7 +9,6 @@ export const VariableSchema = BaseSchema.extend({
   id: z.number().int().optional(),
   name: z.string(),
   instance: z.string().nullable().optional(),
-  customData: z.any().nullable().optional(),
 });
 
 export const VariableProps = VariableSchema.keyof().enum;

@@ -114,8 +114,6 @@ export class ChargingProfile extends Model implements ChargingProfileDto {
   @BelongsTo(() => Transaction, 'transactionDatabaseId')
   declare transaction?: TransactionDto;
 
-  declare customData?: object | null;
-
   @ForeignKey(() => Tenant)
   @Column({
     type: DataType.INTEGER,
