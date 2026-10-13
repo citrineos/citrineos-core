@@ -22,7 +22,6 @@ import {
 } from '@citrineos/types';
 import {
   stationIdFilter,
-  type IDeviceModelRepository,
   type IVariableAttributeRepository,
   type IOCPPMessageRepository,
 } from '@citrineos/dal';
@@ -31,23 +30,19 @@ type SetVariableDataMap = { [key: string]: OCPP2_common_types.SetVariableDataTyp
 
 @AsResponseHandler(OCPP_2_VER_LIST, OCPP_CallAction.SetVariables)
 export class SetVariablesResponseOcpp2Handler extends AbstractHandler {
-  protected _deviceModelRepository: IDeviceModelRepository;
   protected _variableAttributeRepository: IVariableAttributeRepository;
   protected _ocppMessageRepository: IOCPPMessageRepository;
 
   constructor({
     logger,
-    deviceModelRepository,
     variableAttributeRepository,
     ocppMessageRepository,
   }: AbstractHandlerDependencies & {
-    deviceModelRepository: IDeviceModelRepository;
     variableAttributeRepository: IVariableAttributeRepository;
     ocppMessageRepository: IOCPPMessageRepository;
   }) {
     super(logger);
 
-    this._deviceModelRepository = deviceModelRepository;
     this._variableAttributeRepository = variableAttributeRepository;
     this._ocppMessageRepository = ocppMessageRepository;
   }
@@ -173,7 +168,7 @@ export class SetVariablesResponseOcpp2Handler extends AbstractHandler {
     attributeType: AttributeEnumType,
   ): Promise<VariableAttributeDto | undefined> {
     let existingVariableAttribute =
-      await this._deviceModelRepository.findVariableAttributeByComponentAndVariable(
+      await this._variableAttributeRepository.findVariableAttributeByComponentAndVariable(
         tenantId,
         ocppConnectionName,
         attributeType,
