@@ -76,7 +76,7 @@ function makeHandler(pendingBootSetVariables: object[]) {
       .mockResolvedValue({ id: 1, getBaseReportOnPending: false, pendingBootSetVariables }),
     updateBoot: vi.fn().mockResolvedValue(undefined),
   };
-  const deviceModelRepository = {
+  const variableAttributeRepository = {
     readAllSetVariableByStationId: vi.fn().mockResolvedValue([SET_VARIABLE_DATA]),
   };
 
@@ -93,14 +93,14 @@ function makeHandler(pendingBootSetVariables: object[]) {
       updateDeviceModel: vi.fn(),
       getItemsPerMessageSetVariablesByStationId: vi.fn().mockResolvedValue(undefined),
     } as any,
-    deviceModelRepository: deviceModelRepository as any,
+    variableAttributeRepository: variableAttributeRepository as any,
     chargingStationRepository: {
       doesChargingStationExistByOcppConnectionName: vi.fn().mockResolvedValue(true),
       createOrUpdateChargingStation: vi.fn().mockResolvedValue(undefined),
     } as any,
   });
 
-  return { handler, ocppSender, deviceModelRepository };
+  return { handler, ocppSender, variableAttributeRepository };
 }
 
 describe('BootNotification 2.x pending boot SetVariables', () => {
@@ -118,11 +118,11 @@ describe('BootNotification 2.x pending boot SetVariables', () => {
   });
 
   it('sends no SetVariables when the boot config has none pending', async () => {
-    const { handler, ocppSender, deviceModelRepository } = makeHandler([]);
+    const { handler, ocppSender, variableAttributeRepository } = makeHandler([]);
 
     await handler.handle(makeMessage());
 
-    expect(deviceModelRepository.readAllSetVariableByStationId).not.toHaveBeenCalled();
+    expect(variableAttributeRepository.readAllSetVariableByStationId).not.toHaveBeenCalled();
     expect(ocppSender.sendCall).not.toHaveBeenCalledWith(
       expect.objectContaining({ action: OCPP_CallAction.SetVariables }),
     );

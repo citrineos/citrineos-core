@@ -3,20 +3,16 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { OCPP2_0_1, type VariableAttributeDto } from '@citrineos/types';
-import type { IDeviceModelRepository, IVariableAttributeRepository } from '@citrineos/dal';
+import type { IVariableAttributeRepository } from '@citrineos/dal';
 
 export class DeviceModelService {
-  protected _deviceModelRepository: IDeviceModelRepository;
   protected _variableAttributeRepository: IVariableAttributeRepository;
 
   constructor({
-    deviceModelRepository,
     variableAttributeRepository,
   }: {
-    deviceModelRepository: IDeviceModelRepository;
     variableAttributeRepository: IVariableAttributeRepository;
   }) {
-    this._deviceModelRepository = deviceModelRepository;
     this._variableAttributeRepository = variableAttributeRepository;
   }
 
@@ -130,7 +126,7 @@ export class DeviceModelService {
     const promises = attributes
       .filter((attr) => attr.value !== undefined)
       .map((attr) =>
-        this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
+        this._variableAttributeRepository.createOrUpdateDeviceModelByStationId(
           tenantId,
           {
             component: { name: attr.component },

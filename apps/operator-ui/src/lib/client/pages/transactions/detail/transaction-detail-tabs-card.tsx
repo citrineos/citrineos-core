@@ -120,6 +120,8 @@ export const TransactionDetailTabsCard = ({ transaction }: { transaction: Transa
                   },
                   queryOptions: {
                     ...getPlainToInstanceOptions(AuthorizationClass),
+                    // The query requires an id; a transaction without an authorization has none.
+                    enabled: authorization?.id !== undefined,
                     select: (data: any) => {
                       return data;
                     },

@@ -116,6 +116,42 @@ export interface IBootRepository {
 }
 
 export interface IVariableAttributeRepository {
+  readAllSetVariableByStationId(
+    tenantId: number,
+    ocppConnectionName: string,
+  ): Promise<OCPP2_common_types.SetVariableDataType[]>;
+  findVariableAttributeByComponentAndVariable(
+    tenantId: number,
+    ocppConnectionName: string,
+    attributeType: AttributeEnumType,
+    componentType: OCPP2_common_types.ComponentType,
+    variableType: OCPP2_common_types.VariableType,
+  ): Promise<VariableAttributeDto | undefined>;
+  createOrUpdateDeviceModelByStationId(
+    tenantId: number,
+    value: OCPP2_common_types.ReportDataType,
+    ocppConnectionName: string,
+    isoTimestamp: string,
+  ): Promise<VariableAttributeDto[]>;
+  createOrUpdateByGetVariablesResultAndStationId(
+    tenantId: number,
+    getVariablesResult: OCPP2_common_types.GetVariableResultType[],
+    ocppConnectionName: string,
+    isoTimestamp: string,
+  ): Promise<VariableAttributeDto[]>;
+  createOrUpdateBySetVariablesDataAndStationId(
+    tenantId: number,
+    setVariablesData: OCPP2_common_types.SetVariableDataType[],
+    ocppConnectionName: string,
+    isoTimestamp: string,
+  ): Promise<VariableAttributeDto[]>;
+  updateResultByStationId(
+    tenantId: number,
+    result: OCPP2_common_types.SetVariableResultType,
+    ocppConnectionName: string,
+    isoTimestamp: string,
+    acceptedValue?: string,
+  ): Promise<VariableAttributeDto | undefined>;
   readAllByQuerystring(
     tenantId: number,
     query: VariableAttributeQuerystring,
@@ -160,48 +196,6 @@ export interface IComponentRepository {
     evseId: number,
     connectorId: number,
   ): Promise<ComponentDto[]>;
-}
-
-export interface IDeviceModelRepository
-  extends IVariableAttributeRepository,
-    IVariableCharacteristicsRepository,
-    IComponentRepository {
-  createOrUpdateDeviceModelByStationId(
-    tenantId: number,
-    value: OCPP2_common_types.ReportDataType,
-    ocppConnectionName: string,
-    isoTimestamp: string,
-  ): Promise<VariableAttributeDto[]>;
-  createOrUpdateByGetVariablesResultAndStationId(
-    tenantId: number,
-    getVariablesResult: OCPP2_common_types.GetVariableResultType[],
-    ocppConnectionName: string,
-    isoTimestamp: string,
-  ): Promise<VariableAttributeDto[]>;
-  createOrUpdateBySetVariablesDataAndStationId(
-    tenantId: number,
-    setVariablesData: OCPP2_common_types.SetVariableDataType[],
-    ocppConnectionName: string,
-    isoTimestamp: string,
-  ): Promise<VariableAttributeDto[]>;
-  updateResultByStationId(
-    tenantId: number,
-    result: OCPP2_common_types.SetVariableResultType,
-    ocppConnectionName: string,
-    isoTimestamp: string,
-    acceptedValue?: string,
-  ): Promise<VariableAttributeDto | undefined>;
-  readAllSetVariableByStationId(
-    tenantId: number,
-    ocppConnectionName: string,
-  ): Promise<OCPP2_common_types.SetVariableDataType[]>;
-  findVariableAttributeByComponentAndVariable(
-    tenantId: number,
-    ocppConnectionName: string,
-    attributeType: AttributeEnumType,
-    componentType: OCPP2_common_types.ComponentType,
-    variableType: OCPP2_common_types.VariableType,
-  ): Promise<VariableAttributeDto | undefined>;
 }
 
 export interface ILocalAuthListRepository extends CrudRepository<LocalListVersion> {

@@ -18,7 +18,6 @@ import type {
   IConnectorRepository,
   IStatusNotificationRepository,
   IEvseRepository,
-  IDeviceModelRepository,
   IInstallCertificateAttemptRepository,
   IInstalledCertificateRepository,
   ILocalAuthListRepository,
@@ -95,7 +94,6 @@ export class RepositoryStore {
   chargingProfileRepository: IChargingProfileRepository;
   chargingStationSequenceRepository: IChargingStationSequenceRepository;
   componentRepository: IComponentRepository;
-  deviceModelRepository: IDeviceModelRepository;
   localAuthListRepository: ILocalAuthListRepository;
   chargingStationRepository: IChargingStationRepository;
   evseRepository: IEvseRepository;
@@ -135,11 +133,6 @@ export class RepositoryStore {
       logger,
       sequelizeInstance,
     });
-    this.deviceModelRepository = new SequelizeDeviceModelRepository({
-      config,
-      logger,
-      sequelizeInstance,
-    });
     this.localAuthListRepository = new SequelizeLocalAuthListRepository({
       config,
       logger,
@@ -157,9 +150,12 @@ export class RepositoryStore {
     });
     if (process.env.CITRINEOS_USE_DRIZZLE === 'true') {
       this.authorizationRepository = new DrizzleAuthorizationRepository({ config, logger });
+      // Order matters: component -> variableAttribute -> boot, each injected into the next.
+      this.componentRepository = new DrizzleComponentRepository({ config, logger });
       this.variableAttributeRepository = new DrizzleVariableAttributeRepository({
         config,
         logger,
+        componentRepository: this.componentRepository as DrizzleComponentRepository,
       });
       this.bootRepository = new DrizzleBootRepository({
         config,
@@ -173,7 +169,6 @@ export class RepositoryStore {
         logger,
       });
       this.chargingStationRepository = new DrizzleChargingStationRepository({ config, logger });
-      this.componentRepository = new DrizzleComponentRepository({ config, logger });
       this.connectorRepository = new DrizzleConnectorRepository({ config, logger });
       this.deleteCertificateAttemptRepository = new DrizzleDeleteCertificateAttemptRepository({
         config,
@@ -277,10 +272,11 @@ export class RepositoryStore {
       this.evseRepository = locationRepository;
       this.connectorRepository = locationRepository;
       this.statusNotificationRepository = locationRepository;
-      // DeviceModel cluster
-      this.componentRepository = this.deviceModelRepository;
-      this.variableAttributeRepository = this.deviceModelRepository;
-      this.variableCharacteristicsRepository = this.deviceModelRepository;
+      // One Sequelize instance serves the whole DeviceModel cluster
+      const deviceModel = new SequelizeDeviceModelRepository({ config, logger, sequelizeInstance });
+      this.componentRepository = deviceModel;
+      this.variableAttributeRepository = deviceModel;
+      this.variableCharacteristicsRepository = deviceModel;
     }
 
     this.transactionEventRepository = new SequelizeTransactionEventRepository({
