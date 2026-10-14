@@ -958,6 +958,9 @@ describe.each(kinds)('ChargingStationSecurityInfo repository (%s)', (kind) => {
     const rowB = await ChargingStationSecurityInfo.findOne({ where: { tenantId: OTHER_TENANT } });
     expect(rowB!.stationId).toBe(stationB.id);
     expect(rowB!.stationId).not.toBe(stationA.id);
+  });
+});
+
 describe.each(kinds)('ChargingStationSequence repository (%s)', (kind) => {
   const { transactionId, getChargingProfiles } = ChargingStationSequenceTypeEnum;
 

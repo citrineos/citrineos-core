@@ -393,6 +393,7 @@ function registerRepositories(container: AwilixContainer): void {
       chargingStationRepository: asClass(DrizzleChargingStationRepository).singleton(),
       chargingStationSecurityInfoRepository: asClass(
         DrizzleChargingStationSecurityInfoRepository,
+      ).singleton(),
       chargingStationSequenceRepository: asClass(
         DrizzleChargingStationSequenceRepository,
       ).singleton(),
