@@ -4,73 +4,9 @@
 
 import { Transaction as SequelizeTransaction } from 'sequelize';
 
-export { SequelizeTransaction };
-export * as sequelize from './src/db/sequelize/index.js';
-export * from './src/interfaces/index.js';
 export * from 'sequelize-typescript';
-export type { PaginatedParams } from './src/db/sequelize/index.js';
 export {
-  ChargingNeeds,
-  ChargingProfile,
-  ChargingSchedule,
-  Component,
-  DefaultSequelizeInstance,
-  MeterValue,
-  StartTransaction,
-  Transaction,
-  EvseType,
-  Variable,
-  VariableStatus,
-  CountryNameEnumType,
-  LocalListAuthorization,
-  LocalListVersion,
-  SendLocalList,
-  ChargingStationNetworkProfile,
-  AsyncJobStatusDTO,
-  SignatureAlgorithmEnumType,
-  SequelizeAuthorizationRepository,
-  SequelizeBootRepository,
-  SequelizeOCPPMessageRepository,
-  SequelizeCertificateRepository,
-  SequelizeInstalledCertificateRepository,
-  SequelizeInstallCertificateAttemptRepository,
-  SequelizeDeleteCertificateAttemptRepository,
-  SequelizeChangeConfigurationRepository,
-  SequelizeChargingProfileRepository,
-  SequelizeChargingStationNetworkProfileRepository,
-  SequelizeChargingStationSecurityInfoRepository,
-  SequelizeDeviceModelRepository,
-  SequelizeLocationRepository,
-  SequelizeMessageInfoRepository,
-  SequelizeRepository,
-  SequelizeReservationRepository,
-  SequelizeSecurityEventRepository,
-  SequelizeSubscriptionRepository,
-  SequelizeTariffRepository,
-  SequelizeTransactionEventRepository,
-  SequelizeVariableMonitoringRepository,
-  SequelizeWebsocketEventRepository,
-  SequelizeNetworkAlertRepository,
-  SequelizeNetworkAlertConfigRepository,
-  SequelizeChargingStationSequenceRepository,
-  SequelizeTenantRepository,
-  SequelizeAsyncJobStatusRepository,
-  SequelizeServerNetworkProfileRepository,
-  SequelizeSetNetworkProfileRepository,
-  SequelizeLocalAuthListRepository,
-  OCPP2_0_1_Mapper,
-  OCPP1_6_Mapper,
-  OCPP2_1_Mapper,
-} from './src/db/sequelize/index.js'; // TODO ensure all needed modules are properly exported
-export type { CompositeScheduleInput } from './src/mappers/2.0.1/charging-profile-mapper.js';
-export type { TariffData } from './src/models/tariff/tariffs.js';
-export { RepositoryStore } from './src/repositories/sequelize/repository-store.js';
-export {
-  resolveStationId,
-  resolveStationIdOrThrow,
-  stationIdFilter,
-} from './src/repositories/sequelize/resolve-station-id.js';
-export {
+  citext,
   DefaultDrizzleInstance,
   DrizzleAsyncJobStatusRepository,
   DrizzleAuthorizationRepository,
@@ -83,13 +19,16 @@ export {
   DrizzleChargingStationSequenceRepository,
   DrizzleComponentRepository,
   DrizzleConnectorRepository,
-  DrizzleEvseRepository,
   DrizzleDeleteCertificateAttemptRepository,
+  DrizzleEvseRepository,
   DrizzleInstallCertificateAttemptRepository,
   DrizzleInstalledCertificateRepository,
   DrizzleLocationRepository,
   DrizzleMessageInfoRepository,
+  DrizzleNetworkAlertConfigRepository,
+  DrizzleNetworkAlertRepository,
   DrizzleReservationRepository,
+  drizzleSchema,
   DrizzleSecurityEventRepository,
   DrizzleServerNetworkProfileRepository,
   DrizzleSetNetworkProfileRepository,
@@ -100,11 +39,19 @@ export {
   DrizzleVariableAttributeRepository,
   DrizzleVariableCharacteristicsRepository,
   DrizzleWebsocketEventRepository,
-  DrizzleNetworkAlertRepository,
-  DrizzleNetworkAlertConfigRepository,
-  citext,
-  registeredTables,
   registeredTableNames,
+  registeredTables,
   type RegisteredTable,
-  drizzleSchema,
 } from './src/db/drizzle/index.js';
+export * as sequelize from './src/db/sequelize/index.js';
+export type { PaginatedParams } from './src/db/sequelize/index.js';
+export * from './src/interfaces/index.js';
+export type { CompositeScheduleInput } from './src/mappers/2.0.1/charging-profile-mapper.js';
+export type { TariffData } from './src/models/tariff/tariffs.js';
+export { RepositoryStore } from './src/repositories/sequelize/repository-store.js';
+export {
+  resolveStationId,
+  resolveStationIdOrThrow,
+  stationIdFilter,
+} from './src/repositories/sequelize/resolve-station-id.js';
+export { SequelizeTransaction };
