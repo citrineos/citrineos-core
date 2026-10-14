@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import { OCPP2_0_1_Mapper } from '@citrineos/dal';
 import {
   type ChargingStationDto,
   type TenantPartnerDto,
