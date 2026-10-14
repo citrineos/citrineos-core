@@ -18,7 +18,7 @@ import {
 } from '@citrineos/types';
 import type {
   IComponentRepository,
-  IDeviceModelRepository,
+  IVariableAttributeRepository,
   IVariableMonitoringRepository,
 } from '@citrineos/dal';
 
@@ -26,26 +26,26 @@ import type {
 export class NotifyEventRequestOcpp2Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
   protected _componentRepository: IComponentRepository;
-  protected _deviceModelRepository: IDeviceModelRepository;
+  protected _variableAttributeRepository: IVariableAttributeRepository;
   protected _variableMonitoringRepository: IVariableMonitoringRepository;
 
   constructor({
     logger,
     ocppSender,
     componentRepository,
-    deviceModelRepository,
+    variableAttributeRepository,
     variableMonitoringRepository,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
     componentRepository: IComponentRepository;
-    deviceModelRepository: IDeviceModelRepository;
+    variableAttributeRepository: IVariableAttributeRepository;
     variableMonitoringRepository: IVariableMonitoringRepository;
   }) {
     super(logger);
 
     this._ocppSender = ocppSender;
     this._componentRepository = componentRepository;
-    this._deviceModelRepository = deviceModelRepository;
+    this._variableAttributeRepository = variableAttributeRepository;
     this._variableMonitoringRepository = variableMonitoringRepository;
   }
 
@@ -80,7 +80,7 @@ export class NotifyEventRequestOcpp2Handler extends AbstractHandler {
           },
         ],
       };
-      await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
+      await this._variableAttributeRepository.createOrUpdateDeviceModelByStationId(
         message.context.tenantId,
         reportDataType,
         ocppConnectionName,

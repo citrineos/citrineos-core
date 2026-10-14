@@ -43,6 +43,8 @@ export { default as ReserveNowRequestSchema } from './schemas/ReserveNowRequest.
 export { default as ReserveNowResponseSchema } from './schemas/ReserveNowResponse.json' with { type: 'json' };
 export { default as ResetRequestSchema } from './schemas/ResetRequest.json' with { type: 'json' };
 export { default as ResetResponseSchema } from './schemas/ResetResponse.json' with { type: 'json' };
+export { default as SecurityEventNotificationRequestSchema } from './schemas/SecurityEventNotificationRequest.json' with { type: 'json' };
+export { default as SecurityEventNotificationResponseSchema } from './schemas/SecurityEventNotificationResponse.json' with { type: 'json' };
 export { default as SendLocalListRequestSchema } from './schemas/SendLocalListRequest.json' with { type: 'json' };
 export { default as SendLocalListResponseSchema } from './schemas/SendLocalListResponse.json' with { type: 'json' };
 export { default as SetChargingProfileRequestSchema } from './schemas/SetChargingProfileRequest.json' with { type: 'json' };
@@ -103,6 +105,8 @@ export type { ReserveNowRequest } from './types/ReserveNowRequest.js';
 export type { ReserveNowResponse } from './types/ReserveNowResponse.js';
 export type { ResetRequest } from './types/ResetRequest.js';
 export type { ResetResponse } from './types/ResetResponse.js';
+export type { SecurityEventNotificationRequest } from './types/SecurityEventNotificationRequest.js';
+export type { SecurityEventNotificationResponse } from './types/SecurityEventNotificationResponse.js';
 export type { SendLocalListRequest } from './types/SendLocalListRequest.js';
 export type { SendLocalListResponse } from './types/SendLocalListResponse.js';
 export type { SetChargingProfileRequest } from './types/SetChargingProfileRequest.js';

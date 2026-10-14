@@ -2,10 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { ChargingStation } from '@dal/db/sequelize/index.js';
 import type { SystemConfig } from '@citrineos/types';
 import { OCPP2_0_1, OCPP_CallAction } from '@citrineos/types';
+import { ChargingStation } from '@dal/db/sequelize/index.js';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { Component, SequelizeVariableMonitoringRepository, Variable } from '../../../index.js';
 // Not re-exported from the package barrel.
 import {
@@ -102,6 +102,31 @@ function monitoringData(
 
 describe('SequelizeVariableMonitoringRepository', () => {
   describe('createOrUpdateByMonitoringDataTypeAndStationId', () => {
+    it('stores a fractional monitor value as sent', async () => {
+      const component = await aComponent('EVSE');
+      const variable = await aVariable('Power');
+
+      const created = await makeRepo().createOrUpdateByMonitoringDataTypeAndStationId(
+        TENANT_A,
+        monitoringData([
+          {
+            id: 9,
+            transaction: false,
+            value: 21000.5,
+            type: OCPP2_0_1.MonitorEnumType.UpperThreshold,
+            severity: 5,
+          },
+        ]),
+        STATION,
+        component.id,
+        variable.id,
+      );
+
+      expect(created[0].value).toBe(21000.5);
+      const reloaded = await VariableMonitoring.findByPk(created[0].databaseId);
+      expect(reloaded?.value).toBe(21000.5);
+    });
+
     it('creates one row per monitor entry plus an Accepted status each', async () => {
       const component = await aComponent('EVSE');
       const variable = await aVariable('Power');

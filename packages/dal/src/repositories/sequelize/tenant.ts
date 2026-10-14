@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { Op } from 'sequelize';
-import { SequelizeRepository, type SequelizeRepositoryDependencies } from './base.js';
-import type { ITenantRepository } from '../repositories.js';
 import { Tenant } from '../../models/tenant.js';
+import type { ITenantRepository } from '../repositories.js';
+import { SequelizeRepository, type SequelizeRepositoryDependencies } from './base.js';
 
 export class SequelizeTenantRepository
   extends SequelizeRepository<Tenant>
@@ -57,6 +57,11 @@ export class SequelizeTenantRepository
     }
     tenant.tenantWebsocketServerPath = path;
     return await tenant.save();
+  }
+
+  async readTenantIds(): Promise<number[]> {
+    const tenants = await Tenant.findAll({ attributes: ['id'] });
+    return tenants.map((tenant) => tenant.id);
   }
 }
 

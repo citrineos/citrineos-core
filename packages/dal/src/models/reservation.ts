@@ -78,8 +78,6 @@ export class Reservation extends Model implements ReservationDto {
   @BelongsTo(() => EvseType, 'evseId')
   declare evse?: EvseTypeDto | null;
 
-  declare customData?: any | null;
-
   @ForeignKey(() => Tenant)
   @Column({
     type: DataType.INTEGER,

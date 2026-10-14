@@ -2,7 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { RegistrationStatusEnum } from '@interfaces/dto/types/enums.js';
+import { ConnectorStatusEnumSchema, RegistrationStatusEnum } from '@interfaces/dto/types/enums.js';
+import {
+  NetworkAlertSeveritySchema,
+  type NetworkAlertType,
+} from '@interfaces/dto/types/network-alert.js';
 import { OCPPVersion, type OCPPVersionType } from '@ocpp/rpc/message.js';
 import { z } from 'zod';
 
@@ -429,6 +433,75 @@ export const configSchema = z.object({
   californiaPricing: z
     .object({
       enabled: z.boolean().default(false),
+    })
+    .prefault({}),
+
+  networkAlerts: z
+    .object({
+      sweepIntervalSeconds: z.number().int().min(1).default(30),
+      defaults: z
+        .object({
+          StationConnectivity: z
+            .object({
+              enabled: z.boolean().default(true),
+              rules: z
+                .object({
+                  disconnectSeverity: NetworkAlertSeveritySchema.default('Info'),
+                  frequentDisconnects: z
+                    .object({
+                      count: z.number().int().positive().default(5),
+                      windowSeconds: z.number().int().positive().default(3600),
+                      severity: NetworkAlertSeveritySchema.default('Warning'),
+                    })
+                    .prefault({}),
+                  offlineTooLong: z
+                    .object({
+                      seconds: z.number().int().positive().default(900),
+                      severity: NetworkAlertSeveritySchema.default('Critical'),
+                    })
+                    .prefault({}),
+                  missedHeartbeats: z.number().int().positive().default(2),
+                })
+                .prefault({}),
+            })
+            .prefault({}),
+          ConnectorStatus: z
+            .object({
+              enabled: z.boolean().default(true),
+              rules: z
+                .object({
+                  severityByStatus: z
+                    .partialRecord(ConnectorStatusEnumSchema, NetworkAlertSeveritySchema)
+                    .default({ Unavailable: 'Warning', Faulted: 'Critical' }),
+                })
+                .prefault({}),
+            })
+            .prefault({}),
+          OcppCallFailures: z
+            .object({
+              enabled: z.boolean().default(true),
+              rules: z
+                .object({
+                  severityByReason: z
+                    .object({
+                      CallError: NetworkAlertSeveritySchema.default('Warning'),
+                      Timeout: NetworkAlertSeveritySchema.default('Warning'),
+                      SendFailed: NetworkAlertSeveritySchema.default('Info'),
+                      Slow: NetworkAlertSeveritySchema.default('Warning'),
+                    })
+                    .prefault({}),
+                  criticalActions: z
+                    .array(z.string())
+                    .default(['TransactionEvent', 'StartTransaction', 'StopTransaction']),
+                  slowThresholdMs: z.number().int().positive().default(5000),
+                  slowSampleSize: z.number().int().positive().default(10),
+                  quietPeriodSeconds: z.number().int().positive().default(1800),
+                })
+                .prefault({}),
+            })
+            .prefault({}),
+        } satisfies Record<NetworkAlertType, z.ZodType>)
+        .prefault({}),
     })
     .prefault({}),
 });

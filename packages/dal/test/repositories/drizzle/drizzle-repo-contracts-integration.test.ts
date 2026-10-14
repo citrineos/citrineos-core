@@ -8,6 +8,7 @@ import {
   Boot,
   Certificate,
   ChargingStation,
+  ChargingStationSequence,
   DeleteCertificateAttempt,
   InstalledCertificate,
   TenantPartner,
@@ -17,6 +18,7 @@ import pg from 'pg';
 import {
   type BootCreate,
   CertificateUseEnum,
+  ChargingStationSequenceTypeEnum,
   DeleteCertificateStatusEnum,
   HashAlgorithmEnum,
   InstallCertificateStatusEnum,
@@ -25,12 +27,14 @@ import {
   type IAsyncJobStatusRepository,
   type IBootRepository,
   type ICertificateRepository,
+  type IChargingStationSequenceRepository,
   type IDeleteCertificateAttemptRepository,
   type IInstallCertificateAttemptRepository,
   type IInstalledCertificateRepository,
   SequelizeAsyncJobStatusRepository,
   SequelizeBootRepository,
   SequelizeCertificateRepository,
+  SequelizeChargingStationSequenceRepository,
   SequelizeDeleteCertificateAttemptRepository,
   SequelizeInstallCertificateAttemptRepository,
   SequelizeInstalledCertificateRepository,
@@ -41,6 +45,7 @@ import {
   DrizzleCertificateRepository,
   toCertificateDto,
 } from '@dal/repositories/drizzle/certificate.js';
+import { DrizzleChargingStationSequenceRepository } from '@dal/repositories/drizzle/charging-station-sequence.js';
 import {
   DrizzleDeleteCertificateAttemptRepository,
   toDeleteCertificateAttemptDto,
@@ -53,6 +58,7 @@ import {
   DrizzleInstalledCertificateRepository,
   toInstalledCertificateDto,
 } from '@dal/repositories/drizzle/installed-certificate.js';
+import { DrizzleComponentRepository } from '@dal/repositories/drizzle/component.js';
 import { DrizzleVariableAttributeRepository } from '@dal/repositories/drizzle/variable-attribute.js';
 import type { BootEntity } from '@dal/db/drizzle/schema/boot.js';
 import type { CertificateEntity } from '@dal/db/drizzle/schema/certificate.js';
@@ -115,6 +121,10 @@ function bootRepo(kind: Kind): IBootRepository {
     variableAttributeRepository: new DrizzleVariableAttributeRepository({
       config: h.config,
       drizzleInstance: db,
+      componentRepository: new DrizzleComponentRepository({
+        config: h.config,
+        drizzleInstance: db,
+      }),
     }),
   });
 }
@@ -153,6 +163,15 @@ function installAttemptRepo(kind: Kind): IInstallCertificateAttemptRepository {
         sequelizeInstance: h.sequelizeInstance,
       })
     : new DrizzleInstallCertificateAttemptRepository({ config: h.config, drizzleInstance: db });
+}
+
+function chargingStationSequenceRepo(kind: Kind): IChargingStationSequenceRepository {
+  return kind === 'sequelize'
+    ? new SequelizeChargingStationSequenceRepository({
+        config: h.config,
+        sequelizeInstance: h.sequelizeInstance,
+      })
+    : new DrizzleChargingStationSequenceRepository({ config: h.config, drizzleInstance: db });
 }
 
 function deleteAttemptRepo(kind: Kind): IDeleteCertificateAttemptRepository {
@@ -972,5 +991,73 @@ describe.each(kinds)('AsyncJobStatus repository (%s)', (kind) => {
     expect(deleted!.jobId).toBe(created.jobId);
     expect(await AsyncJobStatus.count()).toBe(0);
     expect(await repo.deleteByJobId(TENANT, created.jobId)).toBeUndefined();
+  });
+describe.each(kinds)('ChargingStationSequence repository (%s)', (kind) => {
+  const { transactionId, getChargingProfiles } = ChargingStationSequenceTypeEnum;
+
+  it('getNextSequenceValue starts a new sequence at 1 under the resolved station', async () => {
+    const repo = chargingStationSequenceRepo(kind);
+    const station = await aStation(TENANT);
+
+    expect(await repo.getNextSequenceValue(TENANT, STATION, transactionId)).toBe(1);
+
+    const stored = await ChargingStationSequence.findAll();
+    expect(stored).toHaveLength(1);
+    expect(stored[0].stationId).toBe(station.id);
+    expect(stored[0].get('type')).toBe(transactionId);
+    expect(stored[0].tenantId).toBe(TENANT);
+  });
+
+  it('getNextSequenceValue increments an existing sequence and returns a number', async () => {
+    const repo = chargingStationSequenceRepo(kind);
+    await aStation(TENANT);
+
+    await repo.getNextSequenceValue(TENANT, STATION, transactionId);
+    await repo.getNextSequenceValue(TENANT, STATION, transactionId);
+    const third = await repo.getNextSequenceValue(TENANT, STATION, transactionId);
+
+    expect(third).toBe(3);
+    expect(typeof third).toBe('number');
+    expect(await ChargingStationSequence.count()).toBe(1);
+  });
+
+  it('getNextSequenceValue keeps separate sequences per type and per station', async () => {
+    const repo = chargingStationSequenceRepo(kind);
+    await aStation(TENANT);
+    await aStation(TENANT, 'CS-002');
+    await aStation(OTHER_TENANT);
+
+    await repo.getNextSequenceValue(TENANT, STATION, transactionId);
+    await repo.getNextSequenceValue(TENANT, STATION, transactionId);
+
+    expect(await repo.getNextSequenceValue(TENANT, STATION, getChargingProfiles)).toBe(1);
+    expect(await repo.getNextSequenceValue(TENANT, 'CS-002', transactionId)).toBe(1);
+    expect(await repo.getNextSequenceValue(OTHER_TENANT, STATION, transactionId)).toBe(1);
+    expect(await repo.getNextSequenceValue(TENANT, STATION, transactionId)).toBe(3);
+  });
+
+  it('getNextSequenceValue rejects a station that does not exist in the tenant', async () => {
+    const repo = chargingStationSequenceRepo(kind);
+    await aStation(OTHER_TENANT);
+
+    await expect(repo.getNextSequenceValue(TENANT, STATION, transactionId)).rejects.toThrow(
+      `no charging station named '${STATION}' exists in tenant ${TENANT}`,
+    );
+    expect(await ChargingStationSequence.count()).toBe(0);
+  });
+});
+
+describe('DrizzleChargingStationSequenceRepository concurrency', () => {
+  it('getNextSequenceValue hands concurrent callers distinct values', async () => {
+    const repo = chargingStationSequenceRepo('drizzle');
+    await aStation(TENANT);
+
+    const values = await Promise.all(
+      Array.from({ length: 20 }, () =>
+        repo.getNextSequenceValue(TENANT, STATION, ChargingStationSequenceTypeEnum.transactionId),
+      ),
+    );
+
+    expect([...values].sort((a, b) => a - b)).toEqual(Array.from({ length: 20 }, (_, i) => i + 1));
   });
 });

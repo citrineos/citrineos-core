@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import {
+  buildCallEvent,
   buildConnectionEvent,
   buildFrameEvent,
   ConnectionNotFoundError,
@@ -51,6 +52,7 @@ import {
 import type { IChargingStationRepository } from '@citrineos/dal';
 import {
   type CallAction,
+  CallEventOutcome,
   ConnectionEventState,
   ErrorCode,
   EventGroup,
@@ -104,6 +106,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     { messages: RoutedMessage[]; timer?: ReturnType<typeof setTimeout> }
   >();
   private _draining = new Set<string>();
+  private _isShutDown = false;
 
   /**
    * Constructor for the class.
@@ -174,16 +177,6 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     protocol: OCPPVersion,
     connectedWebsocketServerConfigId?: string,
   ): Promise<boolean> {
-    const connectionEvent = this._messagesExchangeSink.record(
-      buildConnectionEvent({
-        tenantId,
-        ocppConnectionName,
-        state: ConnectionEventState.Connected,
-        timestamp: new Date().toISOString(),
-        protocol,
-      }),
-    );
-
     const connectionIdentifier = createIdentifier(tenantId, ocppConnectionName);
     const requestSubscription = this._handler.subscribe(connectionIdentifier, undefined, {
       tenantId: tenantId.toString(),
@@ -207,12 +200,76 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       connectedWebsocketServerConfigId,
     );
 
-    return Promise.all([connectionEvent, requestSubscription, responseSubscription, onlineCharger])
-      .then((resolvedArray) => resolvedArray[1] && resolvedArray[2])
-      .catch((error) => {
-        this._logger.error(`Error registering connection for ${connectionIdentifier}: ${error}`);
-        return false;
+    const [request, response, online] = await Promise.allSettled([
+      requestSubscription,
+      responseSubscription,
+      onlineCharger,
+    ]);
+    const subscribed = [request, response].map(
+      (result) => result.status === 'fulfilled' && result.value,
+    );
+
+    if (subscribed.every(Boolean) && online.status === 'fulfilled') {
+      await this._messagesExchangeSink.record(
+        buildConnectionEvent({
+          tenantId,
+          ocppConnectionName,
+          state: ConnectionEventState.Connected,
+          timestamp: new Date().toISOString(),
+          protocol,
+        }),
+      );
+      return true;
+    }
+
+    const errors = [request, response, online].flatMap((result) =>
+      result.status === 'rejected' ? [result.reason] : [],
+    );
+    this._logger.error(`Error registering connection for ${connectionIdentifier}`, ...errors);
+    await this._rollBackRegistration(
+      tenantId,
+      ocppConnectionName,
+      protocol,
+      subscribed.some(Boolean),
+      online.status === 'fulfilled',
+    );
+    return false;
+  }
+
+  /**
+   * Undoes the steps of a registration that did succeed. Nothing else would: the network
+   * connection only deregisters connections whose close listener is attached, which happens after
+   * registration.
+   */
+  private async _rollBackRegistration(
+    tenantId: number,
+    ocppConnectionName: string,
+    protocol: OCPPVersion,
+    anySubscribed: boolean,
+    markedOnline: boolean,
+  ): Promise<void> {
+    const connectionIdentifier = createIdentifier(tenantId, ocppConnectionName);
+    if (anySubscribed) {
+      await this._handler.unsubscribe(connectionIdentifier).catch((error) => {
+        this._logger.error(`Failed to unsubscribe ${connectionIdentifier} after rollback`, error);
       });
+    }
+    if (markedOnline) {
+      await this._chargingStationRepository
+        .setChargingStationIsOnlineAndOCPPVersion(
+          tenantId,
+          ocppConnectionName,
+          false,
+          protocol,
+          null,
+        )
+        .catch((error) => {
+          this._logger.error(
+            `Failed to mark ${connectionIdentifier} offline after rollback; it stays online until its next disconnect`,
+            error,
+          );
+        });
+    }
   }
 
   async deregisterConnection(tenantId: number, ocppConnectionName: string): Promise<boolean> {
@@ -470,7 +527,22 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
           correlationId,
           `${action}@${cacheTimestamp.toISOString()}`,
           transactionNamespace,
-          this._config.timeouts.maxCallLengthSeconds,
+          {
+            seconds: this._config.timeouts.maxCallLengthSeconds,
+            // An answer removes the key on whichever instance the station is connected to by then,
+            // so only a Call left unanswered gets here.
+            onExpire: () => {
+              if (!this._isShutDown) {
+                this._recordCallOutcome(
+                  CallEventOutcome.Timeout,
+                  identifier,
+                  protocol,
+                  correlationId,
+                  String(action),
+                );
+              }
+            },
+          },
         );
         const rawMessage = JSON.stringify(message);
         let successTimestamp: Date | undefined;
@@ -501,6 +573,13 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
           );
         } else {
           recordOcppCallSent(String(action), protocol, CallSentOutcome.SendFailed);
+          this._recordCallOutcome(
+            CallEventOutcome.SendFailed,
+            identifier,
+            protocol,
+            correlationId,
+            String(action),
+          );
           const removed = await this._cache.remove(correlationId, transactionNamespace);
           await this._releaseOutstandingCall(identifier);
           this._logger.warn(
@@ -699,6 +778,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
   }
 
   async shutdown(): Promise<void> {
+    this._isShutDown = true;
     for (const [identifier, pending] of this._pendingCalls) {
       clearTimeout(pending.timer);
       for (const message of pending.messages) {
@@ -1105,6 +1185,38 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         this._logger.error('Failed to publish outbound frame event', err);
       });
     return sentTimestamp;
+  }
+
+  private _recordCallOutcome(
+    outcome: CallEventOutcome,
+    identifier: string,
+    protocol: OCPPVersionType,
+    correlationId: string,
+    action: string,
+  ): void {
+    // Built inside the chain, so a malformed event is logged rather than thrown into the caller.
+    Promise.resolve()
+      .then(() =>
+        this._messagesExchangeSink.record(
+          buildCallEvent({
+            tenantId: getTenantIdFromIdentifier(identifier),
+            ocppConnectionName: getStationIdFromIdentifier(identifier),
+            outcome,
+            correlationId,
+            action,
+            protocol,
+            timestamp: new Date().toISOString(),
+          }),
+        ),
+      )
+      .catch((err) => {
+        this._logger.error(
+          `Failed to publish call ${outcome} event`,
+          identifier,
+          correlationId,
+          err,
+        );
+      });
   }
 
   private async _releaseOutstandingCall(identifier: string): Promise<void> {

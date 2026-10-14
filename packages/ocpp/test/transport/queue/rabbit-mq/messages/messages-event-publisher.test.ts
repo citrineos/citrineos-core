@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {
+  CallEventOutcome,
   ConnectionEventState,
   FrameDirection,
   MessageOrigin,
@@ -16,9 +17,11 @@ import type * as amqplib from 'amqplib';
 import { MessagesEventPublisher } from '@/transport/index.js';
 import { aMockAmqpChannel } from '@test/providers/rabbit-mq-provider.js';
 import {
+  aCallEvent,
   aConnectionEvent,
   aFrameEvent,
   anEmittingConnectionManager,
+  aWebsocketLifecycleEvent,
 } from '@test/providers/messages-event-provider.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
 import type { RabbitMQChannelManager } from '@/transport/queue/rabbit-mq/channel-manager.js';
@@ -226,6 +229,57 @@ describe('MessagesEventPublisher', () => {
         tenantId: '1',
         state: ConnectionEventState.Closed,
       });
+    });
+
+    it('should expose the type and source headers for a websocket lifecycle event', async () => {
+      await publisher.publish(
+        aWebsocketLifecycleEvent({ type: 'ConnectionRejected', source: 'unknown_station' }),
+      );
+
+      expect(optionsOf().headers).toEqual({
+        kind: 'websocket',
+        tenantId: '1',
+        type: 'ConnectionRejected',
+        source: 'unknown_station',
+      });
+    });
+
+    it('should route a websocket lifecycle event by its type', async () => {
+      await publisher.publish(aWebsocketLifecycleEvent({ type: 'Close' }));
+
+      expect(channel.publish).toHaveBeenCalledWith(
+        MESSAGES_EXCHANGE,
+        'websocket.Close',
+        expect.any(Buffer),
+        expect.anything(),
+      );
+    });
+
+    it('should expose the outcome and action headers for a call event', async () => {
+      await publisher.publish(
+        aCallEvent({
+          outcome: CallEventOutcome.SendFailed,
+          action: OCPP_CallAction.Reset,
+        }),
+      );
+
+      expect(optionsOf().headers).toEqual({
+        kind: 'call',
+        tenantId: '1',
+        outcome: CallEventOutcome.SendFailed,
+        action: OCPP_CallAction.Reset,
+      });
+    });
+
+    it('should route a call event by its outcome', async () => {
+      await publisher.publish(aCallEvent({ outcome: CallEventOutcome.Timeout }));
+
+      expect(channel.publish).toHaveBeenCalledWith(
+        MESSAGES_EXCHANGE,
+        'call.timeout',
+        expect.any(Buffer),
+        expect.anything(),
+      );
     });
 
     it('should report backpressure without treating it as a loss', async () => {

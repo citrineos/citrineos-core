@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { extractBasicCredentials } from '@/apis/request-operations.js';
+import { extractBasicCredentials } from '@/transport/network-connection/util.js';
 import { faker } from '@faker-js/faker';
-import { aRequestWithAuthorization } from '../providers/incoming-message-provider.js';
+import { aRequestWithAuthorization } from '../../providers/incoming-message-provider.js';
 import { describe, expect, it } from 'vitest';
 
 describe('extractBasicCredentials', () => {

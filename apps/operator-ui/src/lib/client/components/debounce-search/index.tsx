@@ -64,7 +64,7 @@ export const DebounceSearch = ({
   }, [onChangeDebounce]);
 
   return (
-    <div className={className ?? 'relative w-[300px]'}>
+    <div className={className ?? 'relative w-full sm:w-[300px]'}>
       <Input
         type="text"
         placeholder={placeholder}

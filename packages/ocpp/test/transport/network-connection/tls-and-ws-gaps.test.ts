@@ -33,10 +33,8 @@ import {
   type CertificateGenerationInput,
 } from '@services/index.js';
 import { TlsCredentialManager } from '@/transport/network-connection/tls-certificate-manager.js';
-import {
-  getClientIdFromUrl,
-  WebsocketNetworkConnection,
-} from '@/transport/network-connection/websocket-network-connection.js';
+import { getClientIdFromUrl } from '@/transport/network-connection/util.js';
+import { WebsocketNetworkConnection } from '@/transport/network-connection/websocket-network-connection.js';
 import { readFile } from '../../helpers/file-util.js';
 import { parseOcspRequestHex } from '../../helpers/ocsp-request-parser.js';
 import KJUR = jsrsasign.KJUR;
@@ -507,6 +505,7 @@ describe('WebsocketNetworkConnection', () => {
       getTenantIdByWebsocketServerPath: vi.fn(),
       getAllTenantWebsocketServerPaths: vi.fn(),
       connectionManager: {},
+      messagesExchangeSink: { record: vi.fn().mockResolvedValue({ delivered: true }) },
     });
   });
 
@@ -586,6 +585,7 @@ describe('WebsocketNetworkConnection', () => {
     const openWs = makeWs(WebSocket.OPEN);
     // identifier format is `${tenantId}:${ocppConnectionName}`
     seedSocket('5:cp9', openWs);
+    cache.remove.mockResolvedValue(null);
     router.deregisterConnection.mockResolvedValue(true);
 
     const actualResult = await connection.disconnect(5, 'cp9');

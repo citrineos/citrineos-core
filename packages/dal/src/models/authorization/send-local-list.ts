@@ -39,8 +39,6 @@ export class SendLocalList extends Model implements OCPP2_0_1.SendLocalListReque
   @BelongsToMany(() => LocalListAuthorization, () => SendLocalListAuthorization)
   declare localAuthorizationList?: any;
 
-  customData?: OCPP2_0_1.CustomDataType | null | undefined;
-
   toSendLocalListRequest(): OCPP2_0_1.SendLocalListRequest {
     const localAuthList = (this.localAuthorizationList || [])
       .map((localListAuth: LocalListAuthorizationDto) => {

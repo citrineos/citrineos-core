@@ -29,6 +29,7 @@ import {
   DrizzleCertificateRepository,
   DrizzleChangeConfigurationRepository,
   DrizzleChargingStationRepository,
+  DrizzleChargingStationSequenceRepository,
   DrizzleComponentRepository,
   DrizzleConnectorRepository,
   DrizzleLocationRepository,
@@ -40,6 +41,9 @@ import {
   DrizzleMessageInfoRepository,
   DrizzleReservationRepository,
   DrizzleSecurityEventRepository,
+  DrizzleWebsocketEventRepository,
+  DrizzleNetworkAlertConfigRepository,
+  DrizzleNetworkAlertRepository,
   DrizzleServerNetworkProfileRepository,
   DrizzleSetNetworkProfileRepository,
   DrizzleSubscriptionRepository,
@@ -66,6 +70,9 @@ import {
   SequelizeOCPPMessageRepository,
   SequelizeReservationRepository,
   SequelizeSecurityEventRepository,
+  SequelizeWebsocketEventRepository,
+  SequelizeNetworkAlertConfigRepository,
+  SequelizeNetworkAlertRepository,
   SequelizeServerNetworkProfileRepository,
   SequelizeSetNetworkProfileRepository,
   SequelizeSubscriptionRepository,
@@ -104,6 +111,9 @@ import {
   CertificateAuthorityService,
   DeviceModelService,
   InstallCertificateHelperService,
+  NetworkAlertConfigResolver,
+  NetworkAlertService,
+  NetworkAlertSweeper,
   NetworkProfileService,
   RealTimeAuthorizer,
 } from '@services/index.js';
@@ -326,7 +336,6 @@ function registerRepositories(container: AwilixContainer): void {
     deleteCertificateAttemptRepository: asClass(
       SequelizeDeleteCertificateAttemptRepository,
     ).singleton(),
-    deviceModelRepository: asClass(SequelizeDeviceModelRepository).singleton(),
     installCertificateAttemptRepository: asClass(
       SequelizeInstallCertificateAttemptRepository,
     ).singleton(),
@@ -337,6 +346,9 @@ function registerRepositories(container: AwilixContainer): void {
     ocppMessageRepository: asClass(SequelizeOCPPMessageRepository).singleton(),
     reservationRepository: asClass(SequelizeReservationRepository).singleton(),
     securityEventRepository: asClass(SequelizeSecurityEventRepository).singleton(),
+    websocketEventRepository: asClass(SequelizeWebsocketEventRepository).singleton(),
+    networkAlertRepository: asClass(SequelizeNetworkAlertRepository).singleton(),
+    networkAlertConfigRepository: asClass(SequelizeNetworkAlertConfigRepository).singleton(),
     chargingStationNetworkProfileRepository: asClass(
       SequelizeChargingStationNetworkProfileRepository,
     ).singleton(),
@@ -346,24 +358,23 @@ function registerRepositories(container: AwilixContainer): void {
     tariffRepository: asClass(SequelizeTariffRepository).singleton(),
     tenantRepository: asClass(SequelizeTenantRepository).singleton(),
     transactionEventRepository: asClass(SequelizeTransactionEventRepository).singleton(),
+    // The device model aggregate is the instance behind all three narrow tokens.
+    variableAttributeRepository: asClass(SequelizeDeviceModelRepository).singleton(),
     variableMonitoringRepository: asClass(SequelizeVariableMonitoringRepository).singleton(),
     // use asFunction to return an already existing instance
     chargingStationRepository: asFunction(
       ({ locationRepository }) => locationRepository,
     ).singleton(),
     componentRepository: asFunction(
-      ({ deviceModelRepository }) => deviceModelRepository,
+      ({ variableAttributeRepository }) => variableAttributeRepository,
     ).singleton(),
     connectorRepository: asFunction(({ locationRepository }) => locationRepository).singleton(),
     evseRepository: asFunction(({ locationRepository }) => locationRepository).singleton(),
     statusNotificationRepository: asFunction(
       ({ locationRepository }) => locationRepository,
     ).singleton(),
-    variableAttributeRepository: asFunction(
-      ({ deviceModelRepository }) => deviceModelRepository,
-    ).singleton(),
     variableCharacteristicsRepository: asFunction(
-      ({ deviceModelRepository }) => deviceModelRepository,
+      ({ variableAttributeRepository }) => variableAttributeRepository,
     ).singleton(),
   });
 
@@ -381,6 +392,9 @@ function registerRepositories(container: AwilixContainer): void {
       certificateRepository: asClass(DrizzleCertificateRepository).singleton(),
       changeConfigurationRepository: asClass(DrizzleChangeConfigurationRepository).singleton(),
       chargingStationRepository: asClass(DrizzleChargingStationRepository).singleton(),
+      chargingStationSequenceRepository: asClass(
+        DrizzleChargingStationSequenceRepository,
+      ).singleton(),
       connectorRepository: asClass(DrizzleConnectorRepository).singleton(),
       locationRepository: asClass(DrizzleLocationRepository).singleton(),
       deleteCertificateAttemptRepository: asClass(
@@ -394,6 +408,9 @@ function registerRepositories(container: AwilixContainer): void {
       messageInfoRepository: asClass(DrizzleMessageInfoRepository).singleton(),
       reservationRepository: asClass(DrizzleReservationRepository).singleton(),
       securityEventRepository: asClass(DrizzleSecurityEventRepository).singleton(),
+      websocketEventRepository: asClass(DrizzleWebsocketEventRepository).singleton(),
+      networkAlertRepository: asClass(DrizzleNetworkAlertRepository).singleton(),
+      networkAlertConfigRepository: asClass(DrizzleNetworkAlertConfigRepository).singleton(),
       setNetworkProfileRepository: asClass(DrizzleSetNetworkProfileRepository).singleton(),
       statusNotificationRepository: asClass(DrizzleStatusNotificationRepository).singleton(),
       subscriptionRepository: asClass(DrizzleSubscriptionRepository).singleton(),
@@ -421,6 +438,9 @@ function registerServices(container: AwilixContainer): void {
     installCertificateHelperService: asClass(InstallCertificateHelperService).singleton(),
     deviceModelService: asClass(DeviceModelService).singleton(),
     networkProfileService: asClass(NetworkProfileService).singleton(),
+    networkAlertConfigResolver: asClass(NetworkAlertConfigResolver).singleton(),
+    networkAlertService: asClass(NetworkAlertService).singleton(),
+    networkAlertSweeper: asClass(NetworkAlertSweeper).singleton(),
     smartChargingService: asClass(InternalSmartCharging).singleton(),
     realTimeAuthorizer: asClass(RealTimeAuthorizer).singleton(),
     authorizers: asValue([]),

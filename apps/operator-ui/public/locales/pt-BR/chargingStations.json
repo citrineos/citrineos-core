@@ -38,7 +38,8 @@
       "aggregatedMeterValuesData": "Dados Agregados de Medição",
       "noEvsesPermission": "Você não tem permissão para visualizar EVSEs.",
       "noOcppLogsPermission": "Você não tem permissão para visualizar os logs OCPP.",
-      "noConfigurationsPermission": "Você não tem permissão para visualizar as configurações da estação."
+      "noConfigurationsPermission": "Você não tem permissão para visualizar as configurações da estação.",
+      "networkProfiles": "Perfis de Rede"
     },
     "columns": {
       "name": "Nome",
@@ -54,7 +55,9 @@
       "capabilities": "Capacidades",
       "firmwareVersion": "Versão do Firmware",
       "createdAt": "Criado em",
-      "updatedAt": "Atualizado em"
+      "updatedAt": "Atualizado em",
+      "securityProfile": "Perfil de Segurança",
+      "serverId": "ID do Servidor"
     },
     "aggregatedData": {
       "timeRange": "Intervalo de Tempo:",
@@ -426,7 +429,10 @@
       "downloadCsv": "Baixar CSV",
       "searchPlaceholder": "Pesquisar...",
       "addConfiguration": "Adicionar Configuração",
-      "editConfiguration": "Editar Configuração"
+      "editConfiguration": "Editar Configuração",
+      "filterByType": "Filtrar por tipo",
+      "searchTypes": "Buscar tipos",
+      "mutability": "Mutabilidade"
     },
     "connectionModal": {
       "welcomeTitle": "Bem-vindo à Operator UI do CitrineOS",
@@ -473,6 +479,15 @@
       "origin": "Origem",
       "startDate": "Data Inicial",
       "endDate": "Data Final"
+    },
+    "networkProfiles": {
+      "empty": "Nenhum perfil de rede foi configurado para esta estação ainda.",
+      "slot": "Slot",
+      "ocppVersion": "Versão OCPP",
+      "csmsUrl": "URL do CSMS",
+      "securityProfile": "Perfil de Segurança",
+      "serverId": "ID do Servidor",
+      "delete": "Excluir Perfis de Rede"
     }
   }
 }

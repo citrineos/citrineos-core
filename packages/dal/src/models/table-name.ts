@@ -64,6 +64,12 @@ export const TableName = {
   // Messaging
   MessageInfos: 'MessageInfos',
   OCPPMessages: 'OCPPMessages',
+  WebsocketEvents: 'WebsocketEvents',
+
+  // Network alerts
+  NetworkAlertConfigs: 'NetworkAlertConfigs',
+  NetworkAlertOccurrences: 'NetworkAlertOccurrences',
+  NetworkAlerts: 'NetworkAlerts',
 
   // Reservation
   Reservations: 'Reservations',

@@ -44,9 +44,15 @@ import { ServerNetworkProfile } from '../../models/location/server-network-profi
 import { SetNetworkProfile } from '../../models/location/set-network-profile.js';
 import { StatusNotification } from '../../models/location/status-notification.js';
 import { MessageInfo } from '../../models/message-info/message-info.js';
+import {
+  NetworkAlert,
+  NetworkAlertConfig,
+  NetworkAlertOccurrence,
+} from '../../models/network-alert/index.js';
 import { OCPPMessage } from '../../models/ocpp-message.js';
 import { Reservation } from '../../models/reservation.js';
 import { SecurityEvent } from '../../models/security-event.js';
+import { WebsocketEvent } from '../../models/websocket-event.js';
 import { Subscription } from '../../models/subscription/subscription.js';
 import { Tariff } from '../../models/tariff/tariffs.js';
 import { Tenant } from '../../models/tenant.js';
@@ -175,6 +181,9 @@ export class DefaultSequelizeInstance {
         Location,
         MeterValue,
         MessageInfo,
+        NetworkAlert,
+        NetworkAlertConfig,
+        NetworkAlertOccurrence,
         OCPPMessage,
         Reservation,
         SalesTariff,
@@ -195,6 +204,7 @@ export class DefaultSequelizeInstance {
         VariableMonitoringStatus,
         VariableStatus,
         Variable,
+        WebsocketEvent,
         LocalListAuthorization,
         LocalListVersion,
         LocalListVersionAuthorization,

@@ -701,7 +701,6 @@ describe('drizzle row-to-DTO mappers', () => {
     expect(dto.idTokenValue).toBeNull();
     expect(dto.meterValue).toBeUndefined();
     expect(dto.evse).toBeUndefined();
-    expect(dto.customData).toBeUndefined();
     expect(dto.tenantId).toBe(TENANT);
   });
 

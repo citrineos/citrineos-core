@@ -23,7 +23,7 @@ import {
   OCPP2_request_types,
   OCPP2_response_types,
 } from '@citrineos/types';
-import { type IDeviceModelRepository } from '@citrineos/dal';
+import { type IVariableAttributeRepository } from '@citrineos/dal';
 import { isForeignKeyConstraintError } from '@util/errors.js';
 
 @AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.NotifyReport)
@@ -34,26 +34,26 @@ export class NotifyReportRequestOcpp2Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
   protected _cache: ICache;
   protected _config: SystemConfig;
-  protected _deviceModelRepository: IDeviceModelRepository;
+  protected _variableAttributeRepository: IVariableAttributeRepository;
 
   constructor({
     logger,
     ocppSender,
     cache,
     config,
-    deviceModelRepository,
+    variableAttributeRepository,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
     cache: ICache;
     config: SystemConfig;
-    deviceModelRepository: IDeviceModelRepository;
+    variableAttributeRepository: IVariableAttributeRepository;
   }) {
     super(logger);
 
     this._ocppSender = ocppSender;
     this._cache = cache;
     this._config = config;
-    this._deviceModelRepository = deviceModelRepository;
+    this._variableAttributeRepository = variableAttributeRepository;
   }
 
   async handle(
@@ -79,14 +79,14 @@ export class NotifyReportRequestOcpp2Handler extends AbstractHandler {
           }
         }
         const variableAttributes =
-          await this._deviceModelRepository.createOrUpdateDeviceModelByStationId(
+          await this._variableAttributeRepository.createOrUpdateDeviceModelByStationId(
             tenantId,
             reportDataType,
             ocppConnectionName,
             timestamp,
           );
         for (const variableAttribute of variableAttributes) {
-          await this._deviceModelRepository.updateResultByStationId(
+          await this._variableAttributeRepository.updateResultByStationId(
             tenantId,
             {
               attributeType: variableAttribute.type,

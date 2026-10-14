@@ -2,18 +2,18 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import type { RabbitMQChannelManager } from '@/transport/index.js';
+import { recordOcppDeadLetterReceived, UNKNOWN_ACTION } from '@/transport/metrics.js';
+import {
+  assertDeadLetterExchange,
+  deadLetterExchangeName,
+  DeadLetterHeader,
+  deadLetterQueueName,
+} from '@/transport/queue/rabbit-mq/dead-letter-publisher.js';
 import { childLogger } from '@citrineos/base';
 import type { SystemConfig } from '@citrineos/types';
 import type * as amqplib from 'amqplib';
 import type { ILogObj, Logger } from 'tslog';
-import type { RabbitMQChannelManager } from '@/transport/index.js';
-import {
-  assertDeadLetterExchange,
-  DeadLetterHeader,
-  deadLetterExchangeName,
-  deadLetterQueueName,
-} from '@/transport/queue/rabbit-mq/dead-letter-publisher.js';
-import { recordOcppDeadLetterReceived, UNKNOWN_ACTION } from '@/transport/metrics.js';
 import { UNKNOWN_DEAD_LETTER_REASON } from './messages-metrics.js';
 
 /** Dead letters with the same reason, action and source are logged once per window. */
@@ -44,6 +44,12 @@ export interface OcppDeadLetterReport {
   body: string;
 }
 
+/** Runs for each dead letter after it is reported, before it is acked. */
+export interface IOcppDeadLetterProcessor {
+  readonly name: string;
+  process(report: OcppDeadLetterReport): Promise<void>;
+}
+
 /**
  * Drains the dead-letter queue of the OCPP exchange: messages a router or module gave up on, and
  * messages whose TTL ran out on a router's queue.
@@ -60,6 +66,7 @@ export class OcppDeadLetterConsumer {
   private readonly _exchange: string;
   private readonly _prefetch: number;
   private readonly _queueArguments: Record<string, unknown>;
+  private readonly _processors: IOcppDeadLetterProcessor[];
 
   private _consumerTag?: string;
   private _started = false;
@@ -69,13 +76,16 @@ export class OcppDeadLetterConsumer {
   constructor({
     config,
     channelManager,
+    ocppDeadLetterProcessors,
     logger,
   }: {
     config: SystemConfig;
     channelManager: RabbitMQChannelManager;
+    ocppDeadLetterProcessors: IOcppDeadLetterProcessor[];
     logger?: Logger<ILogObj>;
   }) {
     this._channelManager = channelManager;
+    this._processors = ocppDeadLetterProcessors;
     this._logger = childLogger(logger, this.constructor.name);
     this._exchange = config.messageBroker.amqp.exchange;
     this._prefetch = config.messageBroker.amqp.prefetch.messagesDeadLetter;
@@ -144,13 +154,29 @@ export class OcppDeadLetterConsumer {
     this._logger.info(`Draining dead-letter queue ${this.queue}`);
   }
 
-  private _onDelivery(message: amqplib.ConsumeMessage | null, channel: amqplib.Channel): void {
+  private async _onDelivery(
+    message: amqplib.ConsumeMessage | null,
+    channel: amqplib.Channel,
+  ): Promise<void> {
     if (!message) return;
+    let report: OcppDeadLetterReport | undefined;
     try {
-      this._record(this._describe(message));
+      report = this._describe(message);
+      this._record(report);
     } catch (error) {
-      // Reporting must never be the reason a dead letter sticks around unacked.
       this._logger.error(`Failed to report a dead letter on ${this.queue}:`, error);
+    }
+    if (report) {
+      for (const processor of this._processors) {
+        try {
+          await processor.process(report);
+        } catch (error) {
+          this._logger.error(
+            `Dead-letter processor ${processor.name} failed on ${this.queue}:`,
+            error,
+          );
+        }
+      }
     }
     channel.ack(message);
   }

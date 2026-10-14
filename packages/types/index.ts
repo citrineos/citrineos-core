@@ -31,10 +31,14 @@ export {
 export type { HandlerProperties } from './src/interfaces/messages/internal-types.js';
 
 export {
+  CallEventOutcome,
+  CallEventSchema,
   ConnectionEventState,
   FrameDirection,
+  isCallEvent,
   isConnectionEvent,
   isFrameEvent,
+  isWebsocketLifecycleEvent,
   MESSAGES_DLX,
   MESSAGES_EXCHANGE,
   MESSAGES_QUEUES,
@@ -43,15 +47,20 @@ export {
   messagesEventRoutingKey,
   ConnectionEventSchema,
   FrameEventSchema,
+  WebsocketLifecycleEventSchema,
   type MessagesEvent,
   type MessagesEventContext,
   type MessagesQueueSpec,
+  type CallEvent,
   type ConnectionEvent,
+  type ICallEventProcessor,
   type FrameEvent,
   type IConnectionEventProcessor,
   type IFrameEventProcessor,
   type IMessagesEventProcessor,
+  type IWebsocketLifecycleEventProcessor,
   type MessagesRecordResult,
+  type WebsocketLifecycleEvent,
 } from '@interfaces/messages/messages-types.js';
 
 export { HttpMethod } from './src/interfaces/api/http-methods.js';
@@ -111,6 +120,9 @@ export * from './src/interfaces/dto/local-list-version-dto.js';
 export * from './src/interfaces/dto/location-dto.js';
 export * from './src/interfaces/dto/message-info-dto.js';
 export * from './src/interfaces/dto/meter-value-dto.js';
+export * from './src/interfaces/dto/network-alert-config-dto.js';
+export * from './src/interfaces/dto/network-alert-dto.js';
+export * from './src/interfaces/dto/network-alert-occurrence-dto.js';
 export * from './src/interfaces/dto/ocpp-message-dto.js';
 export * from './src/interfaces/dto/real-time-authorization.js';
 export * from './src/interfaces/dto/reservation-dto.js';
@@ -135,15 +147,18 @@ export * from './src/interfaces/dto/types/enums.js';
 export * from './src/interfaces/dto/types/hours.js';
 export * from './src/interfaces/dto/types/location.js';
 export * from './src/interfaces/dto/types/message-info.js';
+export * from './src/interfaces/dto/types/network-alert.js';
 export * from './src/interfaces/dto/types/ocpi-registration.js';
 export * from './src/interfaces/dto/types/sales-tariff.js';
 export * from './src/interfaces/dto/types/sampled-value-dto.js';
 export * from './src/interfaces/dto/types/tariff-types.js';
 export * from './src/interfaces/dto/types/transaction-type.js';
 export * from './src/interfaces/dto/types/vat.js';
+export * from './src/interfaces/dto/types/websocket-event.js';
 export * from './src/interfaces/dto/variable-attribute-dto.js';
 export * from './src/interfaces/dto/variable-characteristics-dto.js';
 export * from './src/interfaces/dto/variable-dto.js';
 export * from './src/interfaces/dto/variable-monitoring-dto.js';
 export * from './src/interfaces/dto/variable-monitoring-status-dto.js';
 export * from './src/interfaces/dto/variable-status-dto.js';
+export * from './src/interfaces/dto/websocket-event-dto.js';

@@ -27,8 +27,10 @@ const meter = metrics.getMeter('citrineos.ocpp');
 export const WsUpgradeResult = {
   Upgraded: 'upgraded',
   AuthFailed: 'auth_failed',
+  UnknownStation: 'unknown_station',
   BrokerUnavailable: 'broker_unavailable',
   TenantUnresolved: 'tenant_unresolved',
+  InvalidHandshake: 'invalid_handshake',
   InternalError: 'internal_error',
 } as const;
 export type WsUpgradeResult = (typeof WsUpgradeResult)[keyof typeof WsUpgradeResult];
@@ -93,7 +95,8 @@ export const UNKNOWN_ACTION = 'unknown';
 
 /**
  * Upgrade/authentication outcomes. `result` is the earliest decision point:
- * upgraded | auth_failed | broker_unavailable | tenant_unresolved | internal_error.
+ * upgraded | auth_failed | broker_unavailable | tenant_unresolved | invalid_handshake |
+ * internal_error.
  */
 const wsUpgradeTotal = meter.createCounter('ocpp_ws_upgrade_total', {
   description: 'WebSocket upgrade/authentication attempts, by result',
@@ -135,6 +138,15 @@ const wsActiveConnections = meter.createUpDownCounter('ocpp_ws_active_connection
   description: 'Currently active WebSocket connections',
 });
 
+/**
+ * TLS handshakes that failed before any HTTP request, by `server_id` and Node's error `code`. An
+ * expired or rejected client certificate lands here and never reaches ocpp_ws_upgrade_total.
+ * Load-balancer health checks and port scanners land here too, usually as ECONNRESET.
+ */
+const wsTlsHandshakeFailureTotal = meter.createCounter('ocpp_ws_tls_handshake_failure_total', {
+  description: 'TLS handshakes that failed before any HTTP request, by server and error code',
+});
+
 /** Failures sending to a station, by `reason`: no_cache | no_socket | not_open | send_error. */
 const wsSendFailureTotal = meter.createCounter('ocpp_ws_send_failure_total', {
   description: 'Failures sending a message to a charging station, by reason',
@@ -143,6 +155,11 @@ const wsSendFailureTotal = meter.createCounter('ocpp_ws_send_failure_total', {
 /** A WebSocket upgrade/authentication attempt resolved to `result`. */
 export function recordWsUpgrade(result: WsUpgradeResult): void {
   wsUpgradeTotal.add(1, { result });
+}
+
+/** A TLS handshake on websocket server `serverId` failed with Node error `code`. */
+export function recordWsTlsHandshakeFailure(serverId: string, code: string | undefined): void {
+  wsTlsHandshakeFailureTotal.add(1, { server_id: serverId, code: code ?? 'unknown' });
 }
 
 /** A connection completed the full registration path on the given OCPP version. */

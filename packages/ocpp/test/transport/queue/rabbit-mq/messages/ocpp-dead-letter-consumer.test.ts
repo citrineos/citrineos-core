@@ -62,23 +62,26 @@ describe('OcppDeadLetterConsumer', () => {
   const { container, logger } = createTestContainer();
   let harness: ReturnType<typeof aChannelManagerPerChannelId>;
   let consumer: OcppDeadLetterConsumer;
+  let processor: { name: string; process: ReturnType<typeof vi.fn> };
 
   function channel(): amqplib.Channel {
     return harness.channels.get(CHANNEL_ID)!;
   }
 
-  function deliver(message: amqplib.ConsumeMessage): void {
+  async function deliver(message: amqplib.ConsumeMessage): Promise<void> {
     const [, onDelivery] = vi.mocked(channel().consume).mock.calls[0];
-    onDelivery(message);
+    await onDelivery(message);
   }
 
   beforeEach(async () => {
     vi.useFakeTimers();
     vi.clearAllMocks();
     harness = aChannelManagerPerChannelId(aMockAmqpChannel);
+    processor = { name: 'spy', process: vi.fn().mockResolvedValue(undefined) };
     consumer = getTestInstance(container, OcppDeadLetterConsumer, {
       config: aSystemConfigWithAmqp({ prefetch: { messagesDeadLetter: 7 } }),
       channelManager: harness.channelManager,
+      ocppDeadLetterProcessors: [processor],
     });
     await consumer.start();
   });
@@ -106,10 +109,10 @@ describe('OcppDeadLetterConsumer', () => {
     expect(channel().consume).toHaveBeenCalledWith('test-exchange.dlq', expect.any(Function));
   });
 
-  it('should report why CitrineOS dropped a message, count it, and ack it', () => {
+  it('should report why CitrineOS dropped a message, count it, and ack it', async () => {
     const message = aCitrineosDeadLetter({ reason: 'handler_error', error: 'boom' });
 
-    deliver(message);
+    await deliver(message);
 
     expect(recordOcppDeadLetterReceived).toHaveBeenCalledWith('handler_error', 'Reset');
     expect(logger.error).toHaveBeenCalledWith(
@@ -128,8 +131,8 @@ describe('OcppDeadLetterConsumer', () => {
     expect(channel().ack).toHaveBeenCalledWith(message);
   });
 
-  it('should take the reason and queue from x-death for a message the broker expired', () => {
-    deliver(aBrokerExpiredDeadLetter());
+  it('should take the reason and queue from x-death for a message the broker expired', async () => {
+    await deliver(aBrokerExpiredDeadLetter());
 
     expect(recordOcppDeadLetterReceived).toHaveBeenCalledWith('expired', 'Reset');
     expect(logger.error).toHaveBeenCalledWith(
@@ -140,7 +143,7 @@ describe('OcppDeadLetterConsumer', () => {
 
   it('should log a kind of dead letter once per minute and summarise the rest', async () => {
     for (let i = 0; i < 5; i++) {
-      deliver(aCitrineosDeadLetter());
+      await deliver(aCitrineosDeadLetter());
     }
     expect(logger.error).toHaveBeenCalledTimes(1);
     expect(recordOcppDeadLetterReceived).toHaveBeenCalledTimes(5);
@@ -152,14 +155,14 @@ describe('OcppDeadLetterConsumer', () => {
       '4 more dead letter(s) of Reset (reason: stale, source: router) in the last minute',
     );
 
-    deliver(aCitrineosDeadLetter());
+    await deliver(aCitrineosDeadLetter());
     expect(logger.error).toHaveBeenCalledTimes(3);
   });
 
-  it('should log different reasons separately within a window', () => {
-    deliver(aCitrineosDeadLetter({ reason: 'stale' }));
-    deliver(aCitrineosDeadLetter({ reason: 'unroutable' }));
-    deliver(aCitrineosDeadLetter({ reason: 'stale', action: 'RequestStartTransaction' }));
+  it('should log different reasons separately within a window', async () => {
+    await deliver(aCitrineosDeadLetter({ reason: 'stale' }));
+    await deliver(aCitrineosDeadLetter({ reason: 'unroutable' }));
+    await deliver(aCitrineosDeadLetter({ reason: 'stale', action: 'RequestStartTransaction' }));
 
     expect(logger.error).toHaveBeenCalledTimes(3);
   });
@@ -171,5 +174,38 @@ describe('OcppDeadLetterConsumer', () => {
     await vi.advanceTimersByTimeAsync(0);
 
     expect(channel().consume).toHaveBeenCalledWith('test-exchange.dlq', expect.any(Function));
+  });
+
+  it('should hand each dead letter to its processors before acking it', async () => {
+    const message = aCitrineosDeadLetter({ reason: 'stale' });
+    processor.process.mockImplementation(async () => {
+      expect(channel().ack).not.toHaveBeenCalled();
+    });
+
+    await deliver(message);
+
+    expect(processor.process).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reason: 'stale',
+        action: 'Reset',
+        tenantId: '1',
+        ocppConnectionName: 'CS001',
+        correlationId: 'corr-1',
+      }),
+    );
+    expect(channel().ack).toHaveBeenCalledWith(message);
+  });
+
+  it('should still ack a dead letter whose processor fails', async () => {
+    const message = aCitrineosDeadLetter();
+    processor.process.mockRejectedValue(new Error('database down'));
+
+    await deliver(message);
+
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.stringContaining('Dead-letter processor spy failed'),
+      expect.any(Error),
+    );
+    expect(channel().ack).toHaveBeenCalledWith(message);
   });
 });
