@@ -430,21 +430,11 @@ export interface ITransactionRepository {
     evseId: number,
     excludeTransactionId: string,
   ): Promise<TransactionDto[]>;
-}
-
-export interface ITransactionEventRepository extends ITransactionRepository {
   createOrUpdateTransactionByTransactionEventAndStationId(
     tenantId: number,
     value: OCPP2_request_types.TransactionEventRequest,
     ocppConnectionName: string,
   ): Promise<TransactionDto>;
-  createMeterValue(
-    tenantId: number,
-    value: OCPP2_common_types.MeterValueType,
-    transactionDatabaseId?: number | null,
-    transactionId?: string | null,
-    tariffId?: number | null,
-  ): Promise<MeterValueDto>;
   createTransactionByStartTransaction(
     tenantId: number,
     request: OCPP1_6.StartTransactionRequest,
@@ -456,11 +446,6 @@ export interface ITransactionEventRepository extends ITransactionRepository {
     ocppConnectionName: string,
     transactionId: number,
   ): Promise<void>;
-  readAllByStationIdAndTransactionId(
-    tenantId: number,
-    ocppConnectionName: string,
-    transactionId: string,
-  ): Promise<TransactionEventDto[]>;
   createStopTransaction(
     tenantId: number,
     transactionDatabaseId: number,
@@ -471,6 +456,21 @@ export interface ITransactionEventRepository extends ITransactionRepository {
     reason?: string,
     idTokenDatabaseId?: number,
   ): Promise<StopTransactionDto>;
+}
+
+export interface ITransactionEventRepository extends ITransactionRepository {
+  createMeterValue(
+    tenantId: number,
+    value: OCPP2_common_types.MeterValueType,
+    transactionDatabaseId?: number | null,
+    transactionId?: string | null,
+    tariffId?: number | null,
+  ): Promise<MeterValueDto>;
+  readAllByStationIdAndTransactionId(
+    tenantId: number,
+    ocppConnectionName: string,
+    transactionId: string,
+  ): Promise<TransactionEventDto[]>;
 }
 
 export interface IVariableMonitoringRepository extends CrudRepository<VariableMonitoring> {
