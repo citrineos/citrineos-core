@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import type { IFileStorage } from '@citrineos/base';
 import type { OCPP2_common_types, SystemConfig } from '@citrineos/types';
-import { sequelize } from '@citrineos/dal';
 import type { IChargingStationSecurityInfoRepository } from '@citrineos/dal';
 import * as crypto from 'node:crypto';
 import { stringToArrayBuffer } from 'pvutils';
@@ -29,20 +28,23 @@ export class SignedMeterValuesUtil {
    *
    * @param {Logger<ILogObj>} [logger] - The `logger` represents an instance of {@link Logger<ILogObj>}.
    *
+   * @param {IChargingStationSecurityInfoRepository} chargingStationSecurityInfoRepository - Stores the public key file id recorded per charging station.
+   *
    */
   constructor({
     fileStorage,
     config,
     logger,
+    chargingStationSecurityInfoRepository,
   }: {
     fileStorage: IFileStorage;
     config: SystemConfig;
     logger: Logger<ILogObj>;
+    chargingStationSecurityInfoRepository: IChargingStationSecurityInfoRepository;
   }) {
     this._fileStorage = fileStorage;
     this._logger = logger;
-    this._chargingStationSecurityInfoRepository =
-      new sequelize.SequelizeChargingStationSecurityInfoRepository({ config, logger });
+    this._chargingStationSecurityInfoRepository = chargingStationSecurityInfoRepository;
 
     this._signedMeterValuesConfiguration = config.transactions.signedMeterValues;
   }

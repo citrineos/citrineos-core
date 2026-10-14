@@ -797,8 +797,7 @@ export interface IWebsocketEventRepository {
   ): Promise<WebsocketEventDto>;
 }
 
-export interface IChargingStationSecurityInfoRepository
-  extends CrudRepository<ChargingStationSecurityInfo> {
+export interface IChargingStationSecurityInfoRepository {
   readChargingStationPublicKeyFileId(tenantId: number, ocppConnectionName: string): Promise<string>;
   readOrCreateChargingStationInfo(
     tenantId: number,
@@ -823,17 +822,28 @@ export interface IServerNetworkProfileRepository {
   findByProfileId(tenantId: number, id: string): Promise<ServerNetworkProfileDto | undefined>;
 }
 
-export interface IChargingStationNetworkProfileRepository
-  extends CrudRepository<ChargingStationNetworkProfile> {
+export interface IChargingStationNetworkProfileRepository {
   deleteAllByStationIdAndConfigurationSlots(
     tenantId: number,
     ocppConnectionName: string,
     configurationSlot: number[],
-  ): Promise<ChargingStationNetworkProfile[]>;
+  ): Promise<ChargingStationNetworkProfileDto[]>;
   readAllByStationIdWithProfiles(
     tenantId: number,
     ocppConnectionName: string,
   ): Promise<ChargingStationNetworkProfileDto[]>;
+  readByConfigurationSlot(
+    tenantId: number,
+    ocppConnectionName: string,
+    configurationSlot: number,
+  ): Promise<ChargingStationNetworkProfileDto | undefined>;
+  upsertByConfigurationSlot(
+    tenantId: number,
+    stationId: number,
+    configurationSlot: number,
+    setNetworkProfileId: number,
+    websocketServerConfigId: string,
+  ): Promise<ChargingStationNetworkProfileDto>;
 }
 
 export interface SetNetworkProfileCreateInput {

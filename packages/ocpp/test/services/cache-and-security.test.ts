@@ -16,25 +16,10 @@ const pemMarker = (label: string, edge: 'BEGIN' | 'END') =>
 const pemBlock = (label: string, body: string) =>
   `${pemMarker(label, 'BEGIN')}\n${body}\n${pemMarker(label, 'END')}`;
 
-const { mockSecurityInfoRepository } = vi.hoisted(() => ({
-  mockSecurityInfoRepository: {
-    readChargingStationPublicKeyFileId: vi.fn(),
-    readOrCreateChargingStationInfo: vi.fn(),
-  },
-}));
-
-vi.mock('@citrineos/dal', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@citrineos/dal')>();
-  return {
-    ...actual,
-    sequelize: {
-      ...actual.sequelize,
-      SequelizeChargingStationSecurityInfoRepository: vi
-        .fn()
-        .mockImplementation(() => mockSecurityInfoRepository),
-    },
-  };
-});
+const mockSecurityInfoRepository = {
+  readChargingStationPublicKeyFileId: vi.fn(),
+  readOrCreateChargingStationInfo: vi.fn(),
+};
 
 class CachedThing {
   name!: string;
@@ -253,6 +238,7 @@ describe('SignedMeterValuesUtil', () => {
     getTestInstance(container, SignedMeterValuesUtil, {
       fileStorage: fileStorage as unknown as IFileStorage,
       config,
+      chargingStationSecurityInfoRepository: mockSecurityInfoRepository,
     });
 
   const meterValuesWith = (
