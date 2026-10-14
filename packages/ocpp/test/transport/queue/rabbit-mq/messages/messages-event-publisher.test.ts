@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {
+  CallEventOutcome,
   ConnectionEventState,
   FrameDirection,
   MessageOrigin,
@@ -16,6 +17,7 @@ import type * as amqplib from 'amqplib';
 import { MessagesEventPublisher } from '@/transport/index.js';
 import { aMockAmqpChannel } from '@test/providers/rabbit-mq-provider.js';
 import {
+  aCallEvent,
   aConnectionEvent,
   aFrameEvent,
   anEmittingConnectionManager,
@@ -248,6 +250,33 @@ describe('MessagesEventPublisher', () => {
       expect(channel.publish).toHaveBeenCalledWith(
         MESSAGES_EXCHANGE,
         'websocket.Close',
+        expect.any(Buffer),
+        expect.anything(),
+      );
+    });
+
+    it('should expose the outcome and action headers for a call event', async () => {
+      await publisher.publish(
+        aCallEvent({
+          outcome: CallEventOutcome.SendFailed,
+          action: OCPP_CallAction.Reset,
+        }),
+      );
+
+      expect(optionsOf().headers).toEqual({
+        kind: 'call',
+        tenantId: '1',
+        outcome: CallEventOutcome.SendFailed,
+        action: OCPP_CallAction.Reset,
+      });
+    });
+
+    it('should route a call event by its outcome', async () => {
+      await publisher.publish(aCallEvent({ outcome: CallEventOutcome.Timeout }));
+
+      expect(channel.publish).toHaveBeenCalledWith(
+        MESSAGES_EXCHANGE,
+        'call.timeout',
         expect.any(Buffer),
         expect.anything(),
       );

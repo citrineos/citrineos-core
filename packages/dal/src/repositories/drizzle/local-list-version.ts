@@ -20,8 +20,6 @@ export function toLocalListVersionDto(entity: LocalListVersionEntity): LocalList
     versionNumber: entity.versionNumber ?? 0,
     // Relation, not a scalar column.
     localAuthorizationList: undefined,
-    // customData is not persisted as a column.
-    customData: undefined,
     tenantId: entity.tenantId,
     tenant: undefined,
     createdAt: entity.createdAt,

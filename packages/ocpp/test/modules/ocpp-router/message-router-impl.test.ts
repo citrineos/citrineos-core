@@ -1118,7 +1118,7 @@ describe('MessageRouterImpl', () => {
         CORRELATION_ID,
         expect.stringMatching(new RegExp(`^${action}@`)),
         CacheNamespace.Transactions + IDENTIFIER,
-        config.timeouts.maxCallLengthSeconds,
+        { seconds: config.timeouts.maxCallLengthSeconds, onExpire: expect.any(Function) },
       );
     });
   });

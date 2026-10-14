@@ -42,8 +42,6 @@ export function toTransactionEventDto(entity: TransactionEventEntity): Transacti
     evse: undefined,
     idTokenValue: entity.idTokenValue ?? null,
     idTokenType: entity.idTokenType ?? null,
-    // customData is not persisted as a column on this model.
-    customData: undefined,
     tenantId: entity.tenantId,
     tenant: undefined,
     createdAt: entity.createdAt,

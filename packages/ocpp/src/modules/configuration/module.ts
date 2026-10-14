@@ -7,7 +7,6 @@ import { EventGroup } from '@citrineos/types';
 import type {
   IBootRepository,
   IChangeConfigurationRepository,
-  IDeviceModelRepository,
   ILocationRepository,
   IMessageInfoRepository,
   IOCPPMessageRepository,
@@ -20,7 +19,6 @@ import type { DeviceModelService } from './device-model-service.js';
 
 export interface ConfigurationModuleDependencies extends OcppModuleDependencies {
   bootRepository: IBootRepository;
-  deviceModelRepository: IDeviceModelRepository;
   messageInfoRepository: IMessageInfoRepository;
   locationRepository: ILocationRepository;
   changeConfigurationRepository: IChangeConfigurationRepository;
@@ -49,7 +47,6 @@ export class ConfigurationModule extends AbstractModule {
     ocppValidator,
     ocppSender,
     bootRepository,
-    deviceModelRepository,
     messageInfoRepository,
     locationRepository,
     changeConfigurationRepository,
@@ -73,7 +70,6 @@ export class ConfigurationModule extends AbstractModule {
     );
 
     this._bootRepository = bootRepository;
-    this._deviceModelRepository = deviceModelRepository;
     this._messageInfoRepository = messageInfoRepository;
     this._locationRepository = locationRepository;
     this._changeConfigurationRepository = changeConfigurationRepository;
@@ -96,12 +92,6 @@ export class ConfigurationModule extends AbstractModule {
 
   get bootRepository(): IBootRepository {
     return this._bootRepository;
-  }
-
-  protected _deviceModelRepository: IDeviceModelRepository;
-
-  get deviceModelRepository(): IDeviceModelRepository {
-    return this._deviceModelRepository;
   }
 
   protected _messageInfoRepository: IMessageInfoRepository;

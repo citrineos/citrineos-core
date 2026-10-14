@@ -15,7 +15,6 @@ export const LocalListVersionSchema = BaseSchema.extend({
     .nonempty()
     .nullable()
     .optional(),
-  customData: z.any().nullable().optional(),
 });
 
 export type LocalListVersionDto = z.infer<typeof LocalListVersionSchema>;

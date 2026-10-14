@@ -94,6 +94,24 @@ describe('WebsocketEventPersistProcessor', () => {
       expect(context.persistedId).toBe(42);
     });
 
+    it('should hand the linked station to later processors', async () => {
+      websocketEventRepository.createWebsocketEvent.mockResolvedValue({ id: 42, stationId: 17 });
+      const context: MessagesEventContext = {};
+
+      await processor.process(aWebsocketLifecycleEvent(), context);
+
+      expect(context.stationId).toBe(17);
+    });
+
+    it('should leave the station undefined for an event linked to none', async () => {
+      websocketEventRepository.createWebsocketEvent.mockResolvedValue({ id: 42, stationId: null });
+      const context: MessagesEventContext = {};
+
+      await processor.process(aWebsocketLifecycleEvent({ ocppConnectionName: undefined }), context);
+
+      expect(context.stationId).toBeUndefined();
+    });
+
     it('should propagate a write failure, so the pipeline retries and then dead-letters', async () => {
       websocketEventRepository.createWebsocketEvent.mockRejectedValue(new Error('no partition'));
 

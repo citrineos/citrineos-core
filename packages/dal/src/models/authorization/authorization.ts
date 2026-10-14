@@ -131,9 +131,6 @@ export class Authorization extends Model implements AuthorizationDto {
   })
   declare prepaidBalance?: number | null;
 
-  @Column(DataType.JSONB)
-  declare customData?: any | null;
-
   // For cases where Authorization is owned by an upstream partner, i.e. an eMSP
   @ForeignKey(() => TenantPartner)
   @Column(DataType.INTEGER)

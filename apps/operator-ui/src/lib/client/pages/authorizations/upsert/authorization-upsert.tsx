@@ -31,7 +31,7 @@ import { CanAccess, type GetOneResponse, useTranslate } from '@refinedev/core';
 import { useForm } from '@refinedev/react-hook-form';
 import z from 'zod';
 import { AccessDeniedFallback } from '@lib/utils/access-denied-fallback';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useFieldArray } from 'react-hook-form';
 import { AddArrayItemButton } from '@lib/client/components/form/add-array-item-button';
 import { RemoveArrayItemButton } from '@lib/client/components/form/remove-array-item-button';
@@ -46,30 +46,32 @@ type AuthorizationUpsertProps = {
   params: { id?: string };
 };
 
-const AuthorizationCreateSchema = AuthorizationSchema.pick({
-  [AuthorizationProps.idToken]: true,
-  [AuthorizationProps.idTokenType]: true,
-  [AuthorizationProps.status]: true,
-  [AuthorizationProps.cacheExpiryDateTime]: true,
-  [AuthorizationProps.language1]: true,
-  [AuthorizationProps.language2]: true,
-  [AuthorizationProps.personalMessage]: true,
-  [AuthorizationProps.disallowedEvseIdPrefixes]: true,
-  [AuthorizationProps.realTimeAuth]: true,
-  [AuthorizationProps.realTimeAuthUrl]: true,
-  [AuthorizationProps.concurrentTransaction]: true,
-}).extend({
-  [AuthorizationProps.realTimeAuthUrl]: z.string().nullable().optional(),
-  [AuthorizationProps.allowedConnectorTypes]: z.string().nullable().optional(),
-  [AuthorizationProps.disallowedEvseIdPrefixes]: z.string().nullable().optional(),
-  [AuthorizationProps.groupAuthorizationId]: z.coerce.number<number>().nullable().optional(),
-  [AuthorizationProps.chargingPriority]: z.coerce.number<number>().nullable().optional(),
-  [AuthorizationProps.additionalInfo]: z
-    .array(z.object({ additionalIdToken: z.string(), type: z.string() }))
-    .nullable()
-    .optional(),
-  realTimeAuthTimeout: z.coerce.number<number>().nullable().optional(),
-});
+const buildAuthorizationCreateSchema = (idTokenRequiredMessage: string) =>
+  AuthorizationSchema.pick({
+    [AuthorizationProps.idToken]: true,
+    [AuthorizationProps.idTokenType]: true,
+    [AuthorizationProps.status]: true,
+    [AuthorizationProps.cacheExpiryDateTime]: true,
+    [AuthorizationProps.language1]: true,
+    [AuthorizationProps.language2]: true,
+    [AuthorizationProps.personalMessage]: true,
+    [AuthorizationProps.disallowedEvseIdPrefixes]: true,
+    [AuthorizationProps.realTimeAuth]: true,
+    [AuthorizationProps.realTimeAuthUrl]: true,
+    [AuthorizationProps.concurrentTransaction]: true,
+  }).extend({
+    [AuthorizationProps.realTimeAuthUrl]: z.string().nullable().optional(),
+    [AuthorizationProps.allowedConnectorTypes]: z.string().nullable().optional(),
+    [AuthorizationProps.disallowedEvseIdPrefixes]: z.string().nullable().optional(),
+    [AuthorizationProps.groupAuthorizationId]: z.coerce.number<number>().nullable().optional(),
+    [AuthorizationProps.chargingPriority]: z.coerce.number<number>().nullable().optional(),
+    [AuthorizationProps.additionalInfo]: z
+      .array(z.object({ additionalIdToken: z.string(), type: z.string() }))
+      .nullable()
+      .optional(),
+    realTimeAuthTimeout: z.coerce.number<number>().nullable().optional(),
+    [AuthorizationProps.idToken]: z.string().trim().min(1, idTokenRequiredMessage),
+  });
 
 const defaultValues = {
   [AuthorizationProps.idToken]: '',
@@ -90,7 +92,7 @@ const defaultValues = {
   [AuthorizationProps.concurrentTransaction]: false,
 };
 
-export type AuthorizationCreateDto = z.infer<typeof AuthorizationCreateSchema>;
+export type AuthorizationCreateDto = z.infer<ReturnType<typeof buildAuthorizationCreateSchema>>;
 
 const idTokenTypes = Object.keys(OCPP2_0_1.IdTokenEnumType);
 const authorizationStatuses = Object.keys(OCPP2_0_1.AuthorizationStatusEnumType);
@@ -103,6 +105,10 @@ export const AuthorizationUpsert = ({ params }: AuthorizationUpsertProps) => {
 
   const tenantId = useTenantId();
 
+  const authorizationCreateSchema = useMemo(
+    () => buildAuthorizationCreateSchema(translate('Authorizations.validation.idTokenRequired')),
+    [translate],
+  );
   const form = useForm({
     refineCoreProps: {
       resource: ResourceType.AUTHORIZATIONS,
@@ -129,7 +135,7 @@ export const AuthorizationUpsert = ({ params }: AuthorizationUpsertProps) => {
       },
     },
     defaultValues: { ...defaultValues },
-    resolver: zodResolver(AuthorizationCreateSchema),
+    resolver: zodResolver(authorizationCreateSchema),
     warnWhenUnsavedChanges: true,
   });
 

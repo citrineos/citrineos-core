@@ -8,7 +8,6 @@ import {
   type MessageStateEnumType,
   type TenantDto,
   type MessageContent,
-  OCPP2_0_1,
 } from '@citrineos/types';
 import { DEFAULT_TENANT_ID, OCPP2_Namespace } from '@citrineos/base';
 import {
@@ -98,8 +97,6 @@ export class MessageInfo extends Model implements MessageInfoDto {
     type: DataType.INTEGER,
   })
   declare displayComponentId?: number | null;
-
-  declare customData?: OCPP2_0_1.CustomDataType | null;
 
   @ForeignKey(() => Tenant)
   @Column({

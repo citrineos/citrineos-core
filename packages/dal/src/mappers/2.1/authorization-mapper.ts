@@ -13,7 +13,6 @@ import {
 export class AuthorizationMapper {
   static toAuthorizationData(authorization: AuthorizationDto): OCPP2_1.AuthorizationData {
     return {
-      customData: authorization.customData,
       idToken: AuthorizationMapper.toIdToken(authorization),
       idTokenInfo: AuthorizationMapper.toIdTokenInfo(authorization),
     };
@@ -24,7 +23,6 @@ export class AuthorizationMapper {
       throw new Error('IdToken type is missing.');
     }
     return {
-      customData: authorization.customData,
       additionalInfo: authorization.additionalInfo ?? null,
       idToken: authorization.idToken,
       type: AuthorizationMapper.toIdTokenEnumType(authorization.idTokenType),
@@ -39,7 +37,6 @@ export class AuthorizationMapper {
       language1: authorization.language1,
       language2: authorization.language2,
       personalMessage: authorization.personalMessage,
-      customData: authorization.customData,
       // groupIdToken must be eager-loaded (include groupAuthorization) to be surfaced here.
       groupIdToken: authorization.groupAuthorization
         ? AuthorizationMapper.toIdToken(authorization.groupAuthorization)

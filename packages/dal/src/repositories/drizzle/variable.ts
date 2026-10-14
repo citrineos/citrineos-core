@@ -18,7 +18,6 @@ export function toVariableDto(entity: VariableEntity): VariableDto {
     id: entity.id,
     name: entity.name ?? '',
     instance: entity.instance ?? null,
-    customData: undefined,
     tenantId: entity.tenantId,
     tenant: undefined,
     createdAt: entity.createdAt,

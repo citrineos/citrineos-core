@@ -13,7 +13,7 @@ export const VariableMonitoringSchema = BaseSchema.extend({
   id: z.number().int(),
   stationId: z.number().int().nullable().optional(),
   transaction: z.boolean(),
-  value: z.number().int(),
+  value: z.number(),
   type: MonitorEnumSchema,
   severity: z.number().int(),
   variable: VariableSchema,

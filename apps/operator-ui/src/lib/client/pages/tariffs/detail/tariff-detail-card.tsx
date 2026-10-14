@@ -116,7 +116,9 @@ export const TariffDetailCard = ({ tariff }: TariffDetailCardProps) => {
           />
           <KeyValueDisplay
             keyLabel={translate('Tariffs.detail.taxRate')}
-            value={tariff.taxRate != null ? tariff.taxRate.toFixed(4) : NOT_APPLICABLE}
+            value={
+              tariff.taxRate != null ? String(Number(tariff.taxRate.toFixed(4))) : NOT_APPLICABLE
+            }
           />
           <KeyValueDisplay
             keyLabel={translate('Tariffs.detail.tariffAltText')}

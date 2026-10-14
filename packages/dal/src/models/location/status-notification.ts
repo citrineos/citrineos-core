@@ -66,8 +66,6 @@ export class StatusNotification extends Model implements StatusNotificationDto {
   @Column(DataType.STRING)
   declare vendorErrorCode?: string | null;
 
-  declare customData?: object | null;
-
   @BelongsTo(() => Connector, 'connectorId')
   declare connector?: ConnectorDto;
 

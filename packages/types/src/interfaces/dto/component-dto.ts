@@ -14,7 +14,6 @@ export const ComponentSchema = BaseSchema.extend({
   evse: EvseTypeSchema.optional(),
   evseDatabaseId: z.number().int().nullable().optional(),
   variables: z.array(VariableSchema).optional(),
-  customData: z.any().nullable().optional(),
 });
 
 export const ComponentProps = ComponentSchema.keyof().enum;

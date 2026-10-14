@@ -6,7 +6,6 @@ import {
   type VariableStatusDto,
   type TenantDto,
   type StatusInfo,
-  OCPP2_0_1,
 } from '@citrineos/types';
 import { DEFAULT_TENANT_ID, OCPP2_Namespace } from '@citrineos/base';
 import {
@@ -45,8 +44,6 @@ export class VariableStatus extends Model implements VariableStatusDto {
   @ForeignKey(() => VariableAttribute)
   @Column(DataType.INTEGER)
   declare variableAttributeId?: number | null;
-
-  declare customData?: OCPP2_0_1.CustomDataType | null;
 
   @ForeignKey(() => Tenant)
   @Column({
