@@ -2,10 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-export { DefaultDrizzleInstance } from './util.js';
-export { citext } from './schema/column-types.js';
-export { registeredTables, registeredTableNames, type RegisteredTable } from './schema-registry.js';
-export * as drizzleSchema from './schema/index.js';
+export {
+  DrizzleAuthorizationRepository,
+  toAuthorizationDto,
+} from '../../repositories/drizzle/authorization.js';
 export {
   DrizzleRepository,
   DrizzleTenantScopedRepository,
@@ -15,75 +15,27 @@ export {
   type DrizzleWriteContext,
   type TenantScopedTable,
 } from '../../repositories/drizzle/base.js';
-export {
-  DrizzleAuthorizationRepository,
-  toAuthorizationDto,
-} from '../../repositories/drizzle/authorization.js';
-export {
-  authorizationTable,
-  tenantAuthorizationTable,
-  AuthorizationEntitySchema,
-  AuthorizationEntityInsertSchema,
-  type AuthorizationEntity,
-  type AuthorizationEntityInsert,
-} from './schema/authorization.js';
 export { DrizzleBootRepository, toBootDto } from '../../repositories/drizzle/boot.js';
-export {
-  bootTable,
-  tenantBootTable,
-  BootEntitySchema,
-  BootEntityInsertSchema,
-  type BootEntity,
-  type BootEntityInsert,
-} from './schema/boot.js';
 export {
   DrizzleCertificateRepository,
   toCertificateDto,
 } from '../../repositories/drizzle/certificate.js';
 export {
-  certificateTable,
-  tenantCertificateTable,
-  CertificateEntitySchema,
-  CertificateEntityInsertSchema,
-  type CertificateEntity,
-  type CertificateEntityInsert,
-} from './schema/certificate.js';
-export {
   DrizzleChangeConfigurationRepository,
   toChangeConfigurationDto,
 } from '../../repositories/drizzle/change-configuration.js';
 export {
-  changeConfigurationTable,
-  tenantChangeConfigurationTable,
-  ChangeConfigurationEntitySchema,
-  ChangeConfigurationEntityInsertSchema,
-  type ChangeConfigurationEntity,
-  type ChangeConfigurationEntityInsert,
-} from './schema/change-configuration.js';
-export {
-  DrizzleChargingStationRepository,
-  toChargingStationDto,
-} from '../../repositories/drizzle/charging-station.js';
-export {
-  chargingStationTable,
-  tenantChargingStationTable,
-  ChargingStationEntitySchema,
-  ChargingStationEntityInsertSchema,
-  type ChargingStationEntity,
-  type ChargingStationEntityInsert,
-} from './schema/charging-station.js';
+  DrizzleChargingStationSecurityInfoRepository,
+  toChargingStationSecurityInfoDto,
+} from '../../repositories/drizzle/charging-station-security-info.js';
 export {
   DrizzleChargingStationSequenceRepository,
   toChargingStationSequenceDto,
 } from '../../repositories/drizzle/charging-station-sequence.js';
 export {
-  chargingStationSequenceTable,
-  tenantChargingStationSequenceTable,
-  ChargingStationSequenceEntitySchema,
-  ChargingStationSequenceEntityInsertSchema,
-  type ChargingStationSequenceEntity,
-  type ChargingStationSequenceEntityInsert,
-} from './schema/charging-station-sequence.js';
+  DrizzleChargingStationRepository,
+  toChargingStationDto,
+} from '../../repositories/drizzle/charging-station.js';
 export {
   DrizzleComponentRepository,
   toComponentDto,
@@ -93,219 +45,279 @@ export {
   toConnectorDto,
 } from '../../repositories/drizzle/connector.js';
 export {
-  connectorTable,
-  tenantConnectorTable,
-  ConnectorEntitySchema,
-  ConnectorEntityInsertSchema,
-  type ConnectorEntity,
-  type ConnectorEntityInsert,
-} from './schema/connector.js';
-export { DrizzleEvseRepository, toEvseDto } from '../../repositories/drizzle/evse.js';
-export {
-  evseTable,
-  tenantEvseTable,
-  EvseEntitySchema,
-  EvseEntityInsertSchema,
-  type EvseEntity,
-  type EvseEntityInsert,
-} from './schema/evse.js';
-export {
-  DrizzleStatusNotificationRepository,
-  toStatusNotificationDto,
-} from '../../repositories/drizzle/status-notification.js';
-export {
-  statusNotificationTable,
-  tenantStatusNotificationTable,
-  StatusNotificationEntitySchema,
-  StatusNotificationEntityInsertSchema,
-  type StatusNotificationEntity,
-  type StatusNotificationEntityInsert,
-} from './schema/status-notification.js';
-export { toLatestStatusNotificationDto } from '../../repositories/drizzle/latest-status-notification.js';
-export {
-  latestStatusNotificationTable,
-  tenantLatestStatusNotificationTable,
-  LatestStatusNotificationEntitySchema,
-  LatestStatusNotificationEntityInsertSchema,
-  type LatestStatusNotificationEntity,
-  type LatestStatusNotificationEntityInsert,
-} from './schema/latest-status-notification.js';
-export { DrizzleLocationRepository, toLocationDto } from '../../repositories/drizzle/location.js';
-export {
-  locationTable,
-  tenantLocationTable,
-  LocationEntitySchema,
-  LocationEntityInsertSchema,
-  type LocationEntity,
-  type LocationEntityInsert,
-} from './schema/location.js';
-export {
   DrizzleDeleteCertificateAttemptRepository,
   toDeleteCertificateAttemptDto,
 } from '../../repositories/drizzle/delete-certificate-attempt.js';
-export {
-  deleteCertificateAttemptTable,
-  tenantDeleteCertificateAttemptTable,
-  DeleteCertificateAttemptEntitySchema,
-  DeleteCertificateAttemptEntityInsertSchema,
-  type DeleteCertificateAttemptEntity,
-  type DeleteCertificateAttemptEntityInsert,
-} from './schema/delete-certificate-attempt.js';
+export { DrizzleEvseRepository, toEvseDto } from '../../repositories/drizzle/evse.js';
 export {
   DrizzleInstallCertificateAttemptRepository,
   toInstallCertificateAttemptDto,
 } from '../../repositories/drizzle/install-certificate-attempt.js';
 export {
-  installCertificateAttemptTable,
-  tenantInstallCertificateAttemptTable,
-  InstallCertificateAttemptEntitySchema,
-  InstallCertificateAttemptEntityInsertSchema,
-  type InstallCertificateAttemptEntity,
-  type InstallCertificateAttemptEntityInsert,
-} from './schema/install-certificate-attempt.js';
-export {
   DrizzleInstalledCertificateRepository,
   toInstalledCertificateDto,
 } from '../../repositories/drizzle/installed-certificate.js';
-export {
-  installedCertificateTable,
-  tenantInstalledCertificateTable,
-  InstalledCertificateEntitySchema,
-  InstalledCertificateEntityInsertSchema,
-  type InstalledCertificateEntity,
-  type InstalledCertificateEntityInsert,
-} from './schema/installed-certificate.js';
+export { toLatestStatusNotificationDto } from '../../repositories/drizzle/latest-status-notification.js';
+export { DrizzleLocationRepository, toLocationDto } from '../../repositories/drizzle/location.js';
 export {
   DrizzleMessageInfoRepository,
   toMessageInfoDto,
 } from '../../repositories/drizzle/message-info.js';
 export {
-  messageInfoTable,
-  tenantMessageInfoTable,
-  MessageInfoEntitySchema,
-  MessageInfoEntityInsertSchema,
-  type MessageInfoEntity,
-  type MessageInfoEntityInsert,
-} from './schema/message-info.js';
-export {
-  DrizzleReservationRepository,
-  toReservationDto,
-} from '../../repositories/drizzle/reservation.js';
-export {
-  reservationTable,
-  tenantReservationTable,
-  ReservationEntitySchema,
-  ReservationEntityInsertSchema,
-  type ReservationEntity,
-  type ReservationEntityInsert,
-} from './schema/reservation.js';
-export {
-  DrizzleSecurityEventRepository,
-  toSecurityEventDto,
-} from '../../repositories/drizzle/security-event.js';
-export {
-  securityEventTable,
-  tenantSecurityEventTable,
-  SecurityEventEntitySchema,
-  SecurityEventEntityInsertSchema,
-  type SecurityEventEntity,
-  type SecurityEventEntityInsert,
-} from './schema/security-event.js';
-export {
-  DrizzleSetNetworkProfileRepository,
-  toSetNetworkProfileDto,
-} from '../../repositories/drizzle/set-network-profile.js';
-export {
-  setNetworkProfileTable,
-  tenantSetNetworkProfileTable,
-  SetNetworkProfileEntitySchema,
-  SetNetworkProfileEntityInsertSchema,
-  type SetNetworkProfileEntity,
-  type SetNetworkProfileEntityInsert,
-} from './schema/set-network-profile.js';
-export {
-  DrizzleSubscriptionRepository,
-  toSubscriptionDto,
-} from '../../repositories/drizzle/subscription.js';
-export {
-  subscriptionTable,
-  tenantSubscriptionTable,
-  SubscriptionEntitySchema,
-  SubscriptionEntityInsertSchema,
-  type SubscriptionEntity,
-  type SubscriptionEntityInsert,
-} from './schema/subscription.js';
-export {
-  DrizzleServerNetworkProfileRepository,
-  toServerNetworkProfileDto,
-} from '../../repositories/drizzle/server-network-profile.js';
-export {
-  serverNetworkProfileTable,
-  tenantServerNetworkProfileTable,
-  ServerNetworkProfileEntitySchema,
-  ServerNetworkProfileEntityInsertSchema,
-  type ServerNetworkProfileEntity,
-  type ServerNetworkProfileEntityInsert,
-} from './schema/server-network-profile.js';
-export { DrizzleTariffRepository, toTariffDto } from '../../repositories/drizzle/tariff.js';
-export {
-  tariffTable,
-  tenantTariffTable,
-  TariffEntitySchema,
-  TariffEntityInsertSchema,
-  type TariffEntity,
-  type TariffEntityInsert,
-} from './schema/tariff.js';
-export { DrizzleTenantRepository, toTenantDto } from '../../repositories/drizzle/tenant.js';
-export {
-  tenantTable,
-  tenantTenantTable,
-  TenantEntitySchema,
-  TenantEntityInsertSchema,
-  type TenantEntity,
-  type TenantEntityInsert,
-} from './schema/tenant.js';
-export {
-  DrizzleVariableAttributeRepository,
-  toVariableAttributeDto,
-} from '../../repositories/drizzle/variable-attribute.js';
-export {
-  variableAttributeTable,
-  tenantVariableAttributeTable,
-  VariableAttributeEntitySchema,
-  VariableAttributeEntityInsertSchema,
-  type VariableAttributeEntity,
-  type VariableAttributeEntityInsert,
-} from './schema/variable-attribute.js';
-export {
-  DrizzleVariableCharacteristicsRepository,
-  toVariableCharacteristicsDto,
-} from '../../repositories/drizzle/variable-characteristics.js';
-export {
-  variableCharacteristicsTable,
-  tenantVariableCharacteristicsTable,
-  VariableCharacteristicsEntitySchema,
-  VariableCharacteristicsEntityInsertSchema,
-  type VariableCharacteristicsEntity,
-  type VariableCharacteristicsEntityInsert,
-} from './schema/variable-characteristics.js';
-export {
-  DrizzleWebsocketEventRepository,
-  toWebsocketEventDto,
-} from '../../repositories/drizzle/websocket-event.js';
+  DrizzleNetworkAlertConfigRepository,
+  toNetworkAlertConfigDto,
+} from '../../repositories/drizzle/network-alert-config.js';
 export {
   DrizzleNetworkAlertRepository,
   toNetworkAlertDto,
   toNetworkAlertOccurrenceDto,
 } from '../../repositories/drizzle/network-alert.js';
 export {
-  DrizzleNetworkAlertConfigRepository,
-  toNetworkAlertConfigDto,
-} from '../../repositories/drizzle/network-alert-config.js';
+  DrizzleReservationRepository,
+  toReservationDto,
+} from '../../repositories/drizzle/reservation.js';
 export {
-  websocketEventTable,
-  WebsocketEventEntitySchema,
+  DrizzleSecurityEventRepository,
+  toSecurityEventDto,
+} from '../../repositories/drizzle/security-event.js';
+export {
+  DrizzleServerNetworkProfileRepository,
+  toServerNetworkProfileDto,
+} from '../../repositories/drizzle/server-network-profile.js';
+export {
+  DrizzleSetNetworkProfileRepository,
+  toSetNetworkProfileDto,
+} from '../../repositories/drizzle/set-network-profile.js';
+export {
+  DrizzleStatusNotificationRepository,
+  toStatusNotificationDto,
+} from '../../repositories/drizzle/status-notification.js';
+export {
+  DrizzleSubscriptionRepository,
+  toSubscriptionDto,
+} from '../../repositories/drizzle/subscription.js';
+export { DrizzleTariffRepository, toTariffDto } from '../../repositories/drizzle/tariff.js';
+export { DrizzleTenantRepository, toTenantDto } from '../../repositories/drizzle/tenant.js';
+export {
+  DrizzleVariableAttributeRepository,
+  toVariableAttributeDto,
+} from '../../repositories/drizzle/variable-attribute.js';
+export {
+  DrizzleVariableCharacteristicsRepository,
+  toVariableCharacteristicsDto,
+} from '../../repositories/drizzle/variable-characteristics.js';
+export {
+  DrizzleWebsocketEventRepository,
+  toWebsocketEventDto,
+} from '../../repositories/drizzle/websocket-event.js';
+export { registeredTableNames, registeredTables, type RegisteredTable } from './schema-registry.js';
+export {
+  AuthorizationEntityInsertSchema,
+  AuthorizationEntitySchema,
+  authorizationTable,
+  tenantAuthorizationTable,
+  type AuthorizationEntity,
+  type AuthorizationEntityInsert,
+} from './schema/authorization.js';
+export {
+  BootEntityInsertSchema,
+  BootEntitySchema,
+  bootTable,
+  tenantBootTable,
+  type BootEntity,
+  type BootEntityInsert,
+} from './schema/boot.js';
+export {
+  CertificateEntityInsertSchema,
+  CertificateEntitySchema,
+  certificateTable,
+  tenantCertificateTable,
+  type CertificateEntity,
+  type CertificateEntityInsert,
+} from './schema/certificate.js';
+export {
+  ChangeConfigurationEntityInsertSchema,
+  ChangeConfigurationEntitySchema,
+  changeConfigurationTable,
+  tenantChangeConfigurationTable,
+  type ChangeConfigurationEntity,
+  type ChangeConfigurationEntityInsert,
+} from './schema/change-configuration.js';
+export {
+  ChargingStationSecurityInfoEntityInsertSchema,
+  ChargingStationSecurityInfoEntitySchema,
+  chargingStationSecurityInfoTable,
+  tenantChargingStationSecurityInfoTable,
+  type ChargingStationSecurityInfoEntity,
+  type ChargingStationSecurityInfoEntityInsert,
+} from './schema/charging-station-security-info.js';
+export {
+  ChargingStationSequenceEntityInsertSchema,
+  ChargingStationSequenceEntitySchema,
+  chargingStationSequenceTable,
+  tenantChargingStationSequenceTable,
+  type ChargingStationSequenceEntity,
+  type ChargingStationSequenceEntityInsert,
+} from './schema/charging-station-sequence.js';
+export {
+  ChargingStationEntityInsertSchema,
+  ChargingStationEntitySchema,
+  chargingStationTable,
+  tenantChargingStationTable,
+  type ChargingStationEntity,
+  type ChargingStationEntityInsert,
+} from './schema/charging-station.js';
+export { citext } from './schema/column-types.js';
+export {
+  ConnectorEntityInsertSchema,
+  ConnectorEntitySchema,
+  connectorTable,
+  tenantConnectorTable,
+  type ConnectorEntity,
+  type ConnectorEntityInsert,
+} from './schema/connector.js';
+export {
+  DeleteCertificateAttemptEntityInsertSchema,
+  DeleteCertificateAttemptEntitySchema,
+  deleteCertificateAttemptTable,
+  tenantDeleteCertificateAttemptTable,
+  type DeleteCertificateAttemptEntity,
+  type DeleteCertificateAttemptEntityInsert,
+} from './schema/delete-certificate-attempt.js';
+export {
+  EvseEntityInsertSchema,
+  EvseEntitySchema,
+  evseTable,
+  tenantEvseTable,
+  type EvseEntity,
+  type EvseEntityInsert,
+} from './schema/evse.js';
+export * as drizzleSchema from './schema/index.js';
+export {
+  InstallCertificateAttemptEntityInsertSchema,
+  InstallCertificateAttemptEntitySchema,
+  installCertificateAttemptTable,
+  tenantInstallCertificateAttemptTable,
+  type InstallCertificateAttemptEntity,
+  type InstallCertificateAttemptEntityInsert,
+} from './schema/install-certificate-attempt.js';
+export {
+  InstalledCertificateEntityInsertSchema,
+  InstalledCertificateEntitySchema,
+  installedCertificateTable,
+  tenantInstalledCertificateTable,
+  type InstalledCertificateEntity,
+  type InstalledCertificateEntityInsert,
+} from './schema/installed-certificate.js';
+export {
+  LatestStatusNotificationEntityInsertSchema,
+  LatestStatusNotificationEntitySchema,
+  latestStatusNotificationTable,
+  tenantLatestStatusNotificationTable,
+  type LatestStatusNotificationEntity,
+  type LatestStatusNotificationEntityInsert,
+} from './schema/latest-status-notification.js';
+export {
+  LocationEntityInsertSchema,
+  LocationEntitySchema,
+  locationTable,
+  tenantLocationTable,
+  type LocationEntity,
+  type LocationEntityInsert,
+} from './schema/location.js';
+export {
+  MessageInfoEntityInsertSchema,
+  MessageInfoEntitySchema,
+  messageInfoTable,
+  tenantMessageInfoTable,
+  type MessageInfoEntity,
+  type MessageInfoEntityInsert,
+} from './schema/message-info.js';
+export {
+  ReservationEntityInsertSchema,
+  ReservationEntitySchema,
+  reservationTable,
+  tenantReservationTable,
+  type ReservationEntity,
+  type ReservationEntityInsert,
+} from './schema/reservation.js';
+export {
+  SecurityEventEntityInsertSchema,
+  SecurityEventEntitySchema,
+  securityEventTable,
+  tenantSecurityEventTable,
+  type SecurityEventEntity,
+  type SecurityEventEntityInsert,
+} from './schema/security-event.js';
+export {
+  ServerNetworkProfileEntityInsertSchema,
+  ServerNetworkProfileEntitySchema,
+  serverNetworkProfileTable,
+  tenantServerNetworkProfileTable,
+  type ServerNetworkProfileEntity,
+  type ServerNetworkProfileEntityInsert,
+} from './schema/server-network-profile.js';
+export {
+  SetNetworkProfileEntityInsertSchema,
+  SetNetworkProfileEntitySchema,
+  setNetworkProfileTable,
+  tenantSetNetworkProfileTable,
+  type SetNetworkProfileEntity,
+  type SetNetworkProfileEntityInsert,
+} from './schema/set-network-profile.js';
+export {
+  StatusNotificationEntityInsertSchema,
+  StatusNotificationEntitySchema,
+  statusNotificationTable,
+  tenantStatusNotificationTable,
+  type StatusNotificationEntity,
+  type StatusNotificationEntityInsert,
+} from './schema/status-notification.js';
+export {
+  SubscriptionEntityInsertSchema,
+  SubscriptionEntitySchema,
+  subscriptionTable,
+  tenantSubscriptionTable,
+  type SubscriptionEntity,
+  type SubscriptionEntityInsert,
+} from './schema/subscription.js';
+export {
+  TariffEntityInsertSchema,
+  TariffEntitySchema,
+  tariffTable,
+  tenantTariffTable,
+  type TariffEntity,
+  type TariffEntityInsert,
+} from './schema/tariff.js';
+export {
+  TenantEntityInsertSchema,
+  TenantEntitySchema,
+  tenantTable,
+  tenantTenantTable,
+  type TenantEntity,
+  type TenantEntityInsert,
+} from './schema/tenant.js';
+export {
+  tenantVariableAttributeTable,
+  VariableAttributeEntityInsertSchema,
+  VariableAttributeEntitySchema,
+  variableAttributeTable,
+  type VariableAttributeEntity,
+  type VariableAttributeEntityInsert,
+} from './schema/variable-attribute.js';
+export {
+  tenantVariableCharacteristicsTable,
+  VariableCharacteristicsEntityInsertSchema,
+  VariableCharacteristicsEntitySchema,
+  variableCharacteristicsTable,
+  type VariableCharacteristicsEntity,
+  type VariableCharacteristicsEntityInsert,
+} from './schema/variable-characteristics.js';
+export {
   WebsocketEventEntityInsertSchema,
+  WebsocketEventEntitySchema,
+  websocketEventTable,
   type WebsocketEventEntity,
   type WebsocketEventEntityInsert,
 } from './schema/websocket-event.js';
+export { DefaultDrizzleInstance } from './util.js';

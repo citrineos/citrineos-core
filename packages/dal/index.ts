@@ -77,6 +77,7 @@ export {
   DrizzleCertificateRepository,
   DrizzleChangeConfigurationRepository,
   DrizzleChargingStationRepository,
+  DrizzleChargingStationSecurityInfoRepository,
   DrizzleChargingStationSequenceRepository,
   DrizzleComponentRepository,
   DrizzleConnectorRepository,
