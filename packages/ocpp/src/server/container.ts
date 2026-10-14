@@ -23,11 +23,15 @@ import { type ILogObj, Logger } from 'tslog';
 import {
   DefaultDrizzleInstance,
   DefaultSequelizeInstance,
+  DrizzleAsyncJobStatusRepository,
   DrizzleAuthorizationRepository,
   DrizzleBootRepository,
   DrizzleCertificateRepository,
   DrizzleChangeConfigurationRepository,
+  DrizzleChargingStationNetworkProfileRepository,
   DrizzleChargingStationRepository,
+  DrizzleChargingStationSecurityInfoRepository,
+  DrizzleChargingStationSequenceRepository,
   DrizzleComponentRepository,
   DrizzleConnectorRepository,
   DrizzleLocationRepository,
@@ -384,11 +388,21 @@ function registerRepositories(container: AwilixContainer): void {
 
       useTenantSchema: asValue(false),
 
+      asyncJobStatusRepository: asClass(DrizzleAsyncJobStatusRepository).singleton(),
       authorizationRepository: asClass(DrizzleAuthorizationRepository).singleton(),
       bootRepository: asClass(DrizzleBootRepository).singleton(),
       certificateRepository: asClass(DrizzleCertificateRepository).singleton(),
       changeConfigurationRepository: asClass(DrizzleChangeConfigurationRepository).singleton(),
       chargingStationRepository: asClass(DrizzleChargingStationRepository).singleton(),
+      chargingStationNetworkProfileRepository: asClass(
+        DrizzleChargingStationNetworkProfileRepository,
+      ).singleton(),
+      chargingStationSecurityInfoRepository: asClass(
+        DrizzleChargingStationSecurityInfoRepository,
+      ).singleton(),
+      chargingStationSequenceRepository: asClass(
+        DrizzleChargingStationSequenceRepository,
+      ).singleton(),
       connectorRepository: asClass(DrizzleConnectorRepository).singleton(),
       locationRepository: asClass(DrizzleLocationRepository).singleton(),
       deleteCertificateAttemptRepository: asClass(

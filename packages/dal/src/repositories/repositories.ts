@@ -4,6 +4,8 @@
 
 import type { CrudRepository } from '@citrineos/base';
 import type {
+  AsyncJobCreate,
+  AsyncJobDto,
   AttributeEnumType,
   AuthorizationCreate,
   AuthorizationDto,
@@ -17,7 +19,6 @@ import type {
   ChangeConfigurationDto,
   ChargingLimitSourceEnumType,
   ChargingProfilePurposeEnumType,
-  ChargingStateEnumType,
   ChargingStationDto,
   ChargingStationNetworkProfileDto,
   ChargingStationSequenceTypeEnumType,
@@ -55,10 +56,13 @@ import type {
   ServerNetworkProfileDto,
   SetNetworkProfileDto,
   StatusNotificationDto,
+  StopTransactionDto,
   SubscriptionDto,
   TariffDto,
   TenantDto,
+  TransactionCreate,
   TransactionDto,
+  TransactionEventDto,
   UpdateEnumType,
   VariableAttributeDto,
   VariableCharacteristicsDto,
@@ -89,15 +93,26 @@ import type {
   CompositeSchedule,
 } from '../models/charging-profile/index.js';
 import type { ChargingStationSecurityInfo } from '../models/charging-station-security-info.js';
-import type { ChargingStationSequence } from '../models/charging-station-sequence/charging-station-sequence.js';
 import type { ChargingStationNetworkProfile } from '../models/location/charging-station-network-profile.js';
-import type {
-  MeterValue,
-  StopTransaction,
-  Transaction,
-} from '../models/transaction-event/index.js';
-import type { TransactionEvent } from '../models/transaction-event/transaction-event.js';
 import type { EventData, VariableMonitoring } from '../models/variable-monitoring/index.js';
+
+export type AsyncJobStatusUpdate = Partial<
+  Pick<
+    AsyncJobDto,
+    'paginatedParams' | 'totalObjects' | 'finishedAt' | 'stoppedAt' | 'stopScheduled' | 'isFailed'
+  >
+>;
+
+export interface IAsyncJobStatusRepository {
+  createAsyncJobStatus(tenantId: number, input: AsyncJobCreate): Promise<AsyncJobDto>;
+  readByJobId(tenantId: number, jobId: string): Promise<AsyncJobDto | undefined>;
+  updateAsyncJobStatus(
+    tenantId: number,
+    jobId: string,
+    data: AsyncJobStatusUpdate,
+  ): Promise<AsyncJobDto>;
+  deleteByJobId(tenantId: number, jobId: string): Promise<AsyncJobDto | undefined>;
+}
 
 export interface IAuthorizationRepository {
   readAllByQuerystring: (
@@ -382,24 +397,24 @@ export interface ISubscriptionRepository {
   deleteByKey(tenantId: number, key: string): Promise<SubscriptionDto | undefined>;
 }
 
-export interface ITransactionEventRepository extends CrudRepository<TransactionEvent> {
+export interface ITransactionEventRepository {
   createOrUpdateTransactionByTransactionEventAndStationId(
     tenantId: number,
     value: OCPP2_request_types.TransactionEventRequest,
     ocppConnectionName: string,
-  ): Promise<Transaction>;
+  ): Promise<TransactionDto>;
   createMeterValue(
     tenantId: number,
     value: OCPP2_common_types.MeterValueType,
     transactionDatabaseId?: number | null,
     transactionId?: string | null,
     tariffId?: number | null,
-  ): Promise<MeterValue>;
+  ): Promise<MeterValueDto>;
   createTransactionByStartTransaction(
     tenantId: number,
     request: OCPP1_6.StartTransactionRequest,
     ocppConnectionName: string,
-  ): Promise<Transaction>;
+  ): Promise<TransactionDto>;
   updateTransactionByMeterValues(
     tenantId: number,
     meterValues: MeterValueDto[],
@@ -410,36 +425,26 @@ export interface ITransactionEventRepository extends CrudRepository<TransactionE
     tenantId: number,
     ocppConnectionName: string,
     transactionId: string,
-  ): Promise<TransactionEvent[]>;
+  ): Promise<TransactionEventDto[]>;
   readTransactionByStationIdAndTransactionId(
     tenantId: number,
     ocppConnectionName: string,
     transactionId: string,
-  ): Promise<Transaction | undefined>;
-  readAllTransactionsByStationIdAndEvseAndChargingStates(
-    tenantId: number,
-    ocppConnectionName: string,
-    evse: OCPP2_common_types.EVSEType,
-    chargingStates?: ChargingStateEnumType[],
-  ): Promise<Transaction[]>;
+  ): Promise<TransactionDto | undefined>;
   readAllActiveTransactionsByAuthorizationId(
     tenantId: number,
     authorizationId: number,
-  ): Promise<Transaction[]>;
+  ): Promise<TransactionDto[]>;
   readActiveTransactionsWithTariffAndEvseByStationId(
     tenantId: number,
     ocppConnectionName: string,
     evseTypeId?: number,
   ): Promise<TransactionDto[]>;
-  readAllMeterValuesByTransactionDataBaseId(
-    tenantId: number,
-    transactionDataBaseId: number,
-  ): Promise<MeterValue[]>;
   getActiveTransactionByStationIdAndEvseId(
     tenantId: number,
     ocppConnectionName: string,
     evseId: number,
-  ): Promise<Transaction | undefined>;
+  ): Promise<TransactionDto | undefined>;
   updateTransactionTotalCostById(tenantId: number, totalCost: number, id: number): Promise<void>;
   createStopTransaction(
     tenantId: number,
@@ -450,19 +455,19 @@ export interface ITransactionEventRepository extends CrudRepository<TransactionE
     meterValues: MeterValueDto[],
     reason?: string,
     idTokenDatabaseId?: number,
-  ): Promise<StopTransaction>;
+  ): Promise<StopTransactionDto>;
   updateTransactionByStationIdAndTransactionId(
     tenantId: number,
-    transaction: Partial<Transaction>,
+    transaction: Partial<TransactionCreate>,
     transactionId: string,
     ocppConnectionName: string,
-  ): Promise<Transaction | undefined>;
+  ): Promise<TransactionDto | undefined>;
   deactivateActiveTransactionsByStationIdAndEvseId(
     tenantId: number,
     ocppConnectionName: string,
     evseId: number,
     excludeTransactionId: string,
-  ): Promise<Transaction[]>;
+  ): Promise<TransactionDto[]>;
 }
 
 export interface IVariableMonitoringRepository extends CrudRepository<VariableMonitoring> {
@@ -778,8 +783,7 @@ export interface IWebsocketEventRepository {
   ): Promise<WebsocketEventDto>;
 }
 
-export interface IChargingStationSecurityInfoRepository
-  extends CrudRepository<ChargingStationSecurityInfo> {
+export interface IChargingStationSecurityInfoRepository {
   readChargingStationPublicKeyFileId(tenantId: number, ocppConnectionName: string): Promise<string>;
   readOrCreateChargingStationInfo(
     tenantId: number,
@@ -788,8 +792,7 @@ export interface IChargingStationSecurityInfoRepository
   ): Promise<void>;
 }
 
-export interface IChargingStationSequenceRepository
-  extends CrudRepository<ChargingStationSequence> {
+export interface IChargingStationSequenceRepository {
   getNextSequenceValue(
     tenantId: number,
     ocppConnectionName: string,
@@ -805,17 +808,28 @@ export interface IServerNetworkProfileRepository {
   findByProfileId(tenantId: number, id: string): Promise<ServerNetworkProfileDto | undefined>;
 }
 
-export interface IChargingStationNetworkProfileRepository
-  extends CrudRepository<ChargingStationNetworkProfile> {
+export interface IChargingStationNetworkProfileRepository {
   deleteAllByStationIdAndConfigurationSlots(
     tenantId: number,
     ocppConnectionName: string,
     configurationSlot: number[],
-  ): Promise<ChargingStationNetworkProfile[]>;
+  ): Promise<ChargingStationNetworkProfileDto[]>;
   readAllByStationIdWithProfiles(
     tenantId: number,
     ocppConnectionName: string,
   ): Promise<ChargingStationNetworkProfileDto[]>;
+  readByConfigurationSlot(
+    tenantId: number,
+    ocppConnectionName: string,
+    configurationSlot: number,
+  ): Promise<ChargingStationNetworkProfileDto | undefined>;
+  upsertByConfigurationSlot(
+    tenantId: number,
+    stationId: number,
+    configurationSlot: number,
+    setNetworkProfileId: number,
+    websocketServerConfigId: string,
+  ): Promise<ChargingStationNetworkProfileDto>;
 }
 
 export interface SetNetworkProfileCreateInput {

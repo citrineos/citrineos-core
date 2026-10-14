@@ -108,39 +108,4 @@ export class AsyncJobStatus extends Model {
       this.tenantId = DEFAULT_TENANT_ID;
     }
   }
-
-  toDTO(): AsyncJobStatusDTO {
-    return {
-      jobId: this.jobId,
-      jobName: this.jobName,
-      tenantPartnerId: this.tenantPartnerId,
-      tenantPartner: this.tenantPartner,
-      createdAt: this.createdAt,
-      finishedAt: this.finishedAt,
-      stoppedAt: this.stoppedAt,
-      stopScheduled: this.stopScheduled,
-      isFailed: this.isFailed,
-      paginatedParams: this.paginationParams,
-      totalObjects: this.totalObjects,
-    };
-  }
-}
-
-export class AsyncJobStatusDTO {
-  jobId!: string;
-  jobName!: AsyncJobNameEnumType;
-  tenantPartnerId!: number;
-  tenantPartner?: TenantPartnerDto;
-  createdAt!: Date;
-  finishedAt?: Date;
-  stoppedAt?: Date | null;
-  stopScheduled!: boolean;
-  isFailed?: boolean;
-  paginatedParams!: PaginatedParams;
-  totalObjects?: number;
-}
-
-export class AsyncJobRequest {
-  tenantPartnerId!: number;
-  paginatedParams!: PaginatedParams;
 }

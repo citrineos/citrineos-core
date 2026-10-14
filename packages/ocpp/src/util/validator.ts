@@ -11,13 +11,15 @@ import {
   type IdTokenEnumType,
   type OCPP2_common_types,
   type VariableAttributeDto,
+  type TransactionDto,
 } from '@citrineos/types';
 import type {
   IChargingProfileRepository,
   IVariableAttributeRepository,
   ITransactionEventRepository,
 } from '@citrineos/dal';
-import type { ChargingNeeds, Transaction } from '@citrineos/dal';
+import type { ChargingNeeds } from '@citrineos/dal';
+import { requireTransactionDatabaseId } from './transaction.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { calculateCheckDigit } from './emaid-check-digit-calculator.js';
@@ -41,7 +43,7 @@ export function validateLanguageTag(languageTag: string): boolean {
 }
 
 export interface ChargingProfileTransactionContext {
-  transaction: Transaction;
+  transaction: TransactionDto;
   chargingNeeds: ChargingNeeds | undefined;
 }
 
@@ -110,7 +112,7 @@ export async function validateChargingProfileType(
         await chargingProfileRepository.findChargingNeedsByEvseDBIdAndTransactionDBId(
           tenantId,
           transaction.evseId,
-          transaction.id,
+          requireTransactionDatabaseId(transaction),
         );
     }
     logger.info(`Found ChargingNeeds: ${JSON.stringify(receivedChargingNeeds)}`);

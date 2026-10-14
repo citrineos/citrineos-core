@@ -43,7 +43,7 @@ export class SequelizeChargingStationNetworkProfileRepository
     tenantId: number,
     ocppConnectionName: string,
     configurationSlot: number[],
-  ): Promise<ChargingStationNetworkProfile[]> {
+  ): Promise<ChargingStationNetworkProfileDto[]> {
     const stationId = await resolveStationId(tenantId, ocppConnectionName);
     if (stationId === undefined) {
       return [];
@@ -55,6 +55,7 @@ export class SequelizeChargingStationNetworkProfileRepository
         tenantId,
         configurationSlot: { [Op.in]: configurationSlot },
       },
+      include: [SetNetworkProfile, ServerNetworkProfile],
     });
   }
 
@@ -62,11 +63,55 @@ export class SequelizeChargingStationNetworkProfileRepository
     tenantId: number,
     ocppConnectionName: string,
   ): Promise<ChargingStationNetworkProfileDto[]> {
-    const rows = await this.readAllByQuery(tenantId, {
-      where: { ocppConnectionName, tenantId },
+    return this.readAllByOcppConnectionName(tenantId, ocppConnectionName);
+  }
+
+  async readByConfigurationSlot(
+    tenantId: number,
+    ocppConnectionName: string,
+    configurationSlot: number,
+  ): Promise<ChargingStationNetworkProfileDto | undefined> {
+    const stationId = await resolveStationId(tenantId, ocppConnectionName);
+    if (stationId === undefined) {
+      return undefined;
+    }
+
+    const [row] = await this.readAllByQuery(tenantId, {
+      where: { stationId, tenantId, configurationSlot },
       include: [SetNetworkProfile, ServerNetworkProfile],
+      limit: 1,
     });
-    return rows as unknown as ChargingStationNetworkProfileDto[];
+    return row;
+  }
+
+  async upsertByConfigurationSlot(
+    tenantId: number,
+    stationId: number,
+    configurationSlot: number,
+    setNetworkProfileId: number,
+    websocketServerConfigId: string,
+  ): Promise<ChargingStationNetworkProfileDto> {
+    const where = { tenantId, stationId, configurationSlot };
+    // The model's primary key is (stationId, websocketServerConfigId), so an instance save
+    // never writes a changed websocketServerConfigId; a static update keyed on the slot does.
+    return this.s.transaction(async (transaction) => {
+      const [updated] = await ChargingStationNetworkProfile.update(
+        { setNetworkProfileId, websocketServerConfigId },
+        { where, transaction },
+      );
+      if (updated === 0) {
+        await ChargingStationNetworkProfile.create(
+          { ...where, setNetworkProfileId, websocketServerConfigId },
+          { transaction },
+        );
+      }
+      return ChargingStationNetworkProfile.findOne({
+        where,
+        include: [SetNetworkProfile, ServerNetworkProfile],
+        transaction,
+        rejectOnEmpty: true,
+      });
+    });
   }
 }
 
