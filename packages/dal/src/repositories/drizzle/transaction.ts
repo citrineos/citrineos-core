@@ -318,7 +318,64 @@ export class DrizzleTransactionRepository
     };
   }
 
-  // ─── ITransactionEventRepository reads ───────────────────────────────────
+  // MeterValues is partitioned on (id, transactionCreatedAt),
+  // Since Drizzle has no hooks as in Sequelize, the same fallback
+  // chain runs here or the row lands in the wrong partition.
+  private async resolveMeterValuePartitionKey(
+    tenantId: number,
+    transactionCreatedAt: Date | undefined,
+    transactionDatabaseId: number | null | undefined,
+  ): Promise<Date> {
+    if (transactionCreatedAt != null) {
+      return transactionCreatedAt;
+    }
+    if (transactionDatabaseId != null) {
+      const transactions = this.getTable(tenantId);
+      const rows = await this.db
+        .select({ createdAt: transactions.createdAt })
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.id, transactionDatabaseId),
+            this.tenantFilter(transactions, tenantId),
+          ),
+        )
+        .limit(1);
+      if (rows[0]?.createdAt) {
+        return rows[0].createdAt;
+      }
+    }
+    return new Date();
+  }
+
+  private toTransactionColumns(values: Partial<TransactionCreate>): Record<string, unknown> {
+    const columns: Record<string, unknown> = {};
+    const assign = (key: string, value: unknown) => {
+      if (value !== undefined) columns[key] = value;
+    };
+    assign('stationId', values.stationId);
+    assign('evseId', values.evseId);
+    assign('connectorId', values.connectorId);
+    assign('authorizationId', values.authorizationId);
+    assign('tariffId', values.tariffId);
+    assign('locationId', values.locationId);
+    assign('isActive', values.isActive);
+    assign('chargingState', values.chargingState);
+    assign('timeSpentCharging', values.timeSpentCharging);
+    assign('transactionLimit', values.transactionLimit);
+    assign('stoppedReason', values.stoppedReason);
+    assign('remoteStartId', values.remoteStartId);
+    assign('customData', values.customData);
+    // DECIMAL columns are written as strings by node-postgres.
+    assign('meterStart', values.meterStart?.toString());
+    assign('totalKwh', values.totalKwh?.toString());
+    assign('totalCost', values.totalCost?.toString());
+    assign('startTime', values.startTime === undefined ? undefined : new Date(values.startTime));
+    assign('endTime', values.endTime === undefined ? undefined : new Date(values.endTime));
+    return columns;
+  }
+
+  // ─── ITransactionRepository reads ───────────────────────────────────
 
   async readTransactionByStationIdAndTransactionId(
     tenantId: number,
@@ -519,6 +576,8 @@ export class DrizzleTransactionRepository
     );
   }
 
+  // ─── ITransactionRepository writes ───────────────────────────────────
+
   async updateTransactionTotalCostById(
     tenantId: number,
     totalCost: number,
@@ -586,36 +645,6 @@ export class DrizzleTransactionRepository
       .returning()) as TransactionEntity[];
 
     return rows.map(toTransactionDto);
-  }
-
-  // MeterValues is partitioned on (id, transactionCreatedAt),
-  // Sinnce Drizzle has no hooks as in Sequelize, so the same fallback
-  // chain runs here or the row lands in the wrong partition.
-  private async resolveMeterValuePartitionKey(
-    tenantId: number,
-    transactionCreatedAt: Date | undefined,
-    transactionDatabaseId: number | null | undefined,
-  ): Promise<Date> {
-    if (transactionCreatedAt != null) {
-      return transactionCreatedAt;
-    }
-    if (transactionDatabaseId != null) {
-      const transactions = this.getTable(tenantId);
-      const rows = await this.db
-        .select({ createdAt: transactions.createdAt })
-        .from(transactions)
-        .where(
-          and(
-            eq(transactions.id, transactionDatabaseId),
-            this.tenantFilter(transactions, tenantId),
-          ),
-        )
-        .limit(1);
-      if (rows[0]?.createdAt) {
-        return rows[0].createdAt;
-      }
-    }
-    return new Date();
   }
 
   async createMeterValue(
@@ -721,32 +750,5 @@ export class DrizzleTransactionRepository
 
       return toStopTransactionDto(stopTransaction);
     });
-  }
-
-  private toTransactionColumns(values: Partial<TransactionCreate>): Record<string, unknown> {
-    const columns: Record<string, unknown> = {};
-    const assign = (key: string, value: unknown) => {
-      if (value !== undefined) columns[key] = value;
-    };
-    assign('stationId', values.stationId);
-    assign('evseId', values.evseId);
-    assign('connectorId', values.connectorId);
-    assign('authorizationId', values.authorizationId);
-    assign('tariffId', values.tariffId);
-    assign('locationId', values.locationId);
-    assign('isActive', values.isActive);
-    assign('chargingState', values.chargingState);
-    assign('timeSpentCharging', values.timeSpentCharging);
-    assign('transactionLimit', values.transactionLimit);
-    assign('stoppedReason', values.stoppedReason);
-    assign('remoteStartId', values.remoteStartId);
-    assign('customData', values.customData);
-    // DECIMAL columns are written as strings by node-postgres.
-    assign('meterStart', values.meterStart?.toString());
-    assign('totalKwh', values.totalKwh?.toString());
-    assign('totalCost', values.totalCost?.toString());
-    assign('startTime', values.startTime === undefined ? undefined : new Date(values.startTime));
-    assign('endTime', values.endTime === undefined ? undefined : new Date(values.endTime));
-    return columns;
   }
 }
