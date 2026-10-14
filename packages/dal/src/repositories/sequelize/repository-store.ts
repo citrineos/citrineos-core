@@ -40,6 +40,7 @@ import {
   DrizzleCertificateRepository,
   DrizzleChangeConfigurationRepository,
   DrizzleChargingStationRepository,
+  DrizzleChargingStationSequenceRepository,
   DrizzleComponentRepository,
   DrizzleConnectorRepository,
   DrizzleLocationRepository,
@@ -128,11 +129,6 @@ export class RepositoryStore {
       logger,
       sequelizeInstance,
     });
-    this.chargingStationSequenceRepository = new SequelizeChargingStationSequenceRepository({
-      config,
-      logger,
-      sequelizeInstance,
-    });
     this.localAuthListRepository = new SequelizeLocalAuthListRepository({
       config,
       logger,
@@ -169,6 +165,10 @@ export class RepositoryStore {
         logger,
       });
       this.chargingStationRepository = new DrizzleChargingStationRepository({ config, logger });
+      this.chargingStationSequenceRepository = new DrizzleChargingStationSequenceRepository({
+        config,
+        logger,
+      });
       this.connectorRepository = new DrizzleConnectorRepository({ config, logger });
       this.deleteCertificateAttemptRepository = new DrizzleDeleteCertificateAttemptRepository({
         config,
@@ -215,6 +215,11 @@ export class RepositoryStore {
         sequelizeInstance,
       });
       this.changeConfigurationRepository = new SequelizeChangeConfigurationRepository({
+        config,
+        logger,
+        sequelizeInstance,
+      });
+      this.chargingStationSequenceRepository = new SequelizeChargingStationSequenceRepository({
         config,
         logger,
         sequelizeInstance,
