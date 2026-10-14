@@ -97,8 +97,8 @@ catalogs:
       specifier: 0.31.11
       version: 0.31.11
     drizzle-orm:
-      specifier: 0.45.3
-      version: 0.45.3
+      specifier: 0.45.4
+      version: 0.45.4
     drizzle-zod:
       specifier: 0.8.3
       version: 0.8.3
@@ -924,10 +924,10 @@ importers:
         version: link:../types
       drizzle-orm:
         specifier: 'catalog:'
-        version: 0.45.3(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(pg@8.11.3)(sqlite3@5.1.7)
+        version: 0.45.4(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(pg@8.11.3)(sqlite3@5.1.7)
       drizzle-zod:
         specifier: 'catalog:'
-        version: 0.8.3(drizzle-orm@0.45.3(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(pg@8.11.3)(sqlite3@5.1.7))(zod@4.1.12)
+        version: 0.8.3(drizzle-orm@0.45.4(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(pg@8.11.3)(sqlite3@5.1.7))(zod@4.1.12)
       pg:
         specifier: 'catalog:'
         version: 8.11.3
@@ -1193,10 +1193,10 @@ importers:
         version: 0.5.1
       drizzle-orm:
         specifier: 'catalog:'
-        version: 0.45.3(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(pg@8.11.3)(sqlite3@5.1.7)
+        version: 0.45.4(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(pg@8.11.3)(sqlite3@5.1.7)
       drizzle-zod:
         specifier: 'catalog:'
-        version: 0.8.3(drizzle-orm@0.45.3(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(pg@8.11.3)(sqlite3@5.1.7))(zod@4.1.12)
+        version: 0.8.3(drizzle-orm@0.45.4(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(pg@8.11.3)(sqlite3@5.1.7))(zod@4.1.12)
       fastify:
         specifier: 'catalog:'
         version: 5.12.5
@@ -6274,8 +6274,8 @@ packages:
     resolution: {integrity: sha512-YCYqxTLIB2OCqf6w9/Vef13baBVbwQIPcbT4Y56AfO6B9ajZhDhD8Jkveg/hJvT/iuMloKD/IYYkyMMNhr7Kqg==}
     hasBin: true
 
-  drizzle-orm@0.45.3:
-    resolution: {integrity: sha512-CAloER21cDdcgZ1OmjrZX82EeRNsdP+y0onX/eyoYDaYzki/adrAa91lzM5jWh7zZPK4qUbw/6LGv9J+A+uizA==}
+  drizzle-orm@0.45.4:
+    resolution: {integrity: sha512-NiM1YZpJ2UxyeE67DpDDZ+Tsw4YLX3trSlkNT7Tm9eKoUNb1LvaAaQzXgYQsWs+AQ9TUmmwMmBOCXuqqxUWKKQ==}
     peerDependencies:
       '@aws-sdk/client-rds-data': '>=3'
       '@cloudflare/workers-types': '>=4'
@@ -15863,16 +15863,16 @@ snapshots:
       esbuild: 0.25.12
       tsx: 4.23.15
 
-  drizzle-orm@0.45.3(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(pg@8.11.3)(sqlite3@5.1.7):
+  drizzle-orm@0.45.4(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(pg@8.11.3)(sqlite3@5.1.7):
     optionalDependencies:
       '@opentelemetry/api': 1.9.1
       '@types/pg': 8.23.1
       pg: 8.11.3
       sqlite3: 5.1.7
 
-  drizzle-zod@0.8.3(drizzle-orm@0.45.3(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(pg@8.11.3)(sqlite3@5.1.7))(zod@4.1.12):
+  drizzle-zod@0.8.3(drizzle-orm@0.45.4(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(pg@8.11.3)(sqlite3@5.1.7))(zod@4.1.12):
     dependencies:
-      drizzle-orm: 0.45.3(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(pg@8.11.3)(sqlite3@5.1.7)
+      drizzle-orm: 0.45.4(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(pg@8.11.3)(sqlite3@5.1.7)
       zod: 4.1.12
 
   dunder-proto@1.0.1:
