@@ -992,6 +992,8 @@ describe.each(kinds)('AsyncJobStatus repository (%s)', (kind) => {
     expect(await AsyncJobStatus.count()).toBe(0);
     expect(await repo.deleteByJobId(TENANT, created.jobId)).toBeUndefined();
   });
+});
+
 describe.each(kinds)('ChargingStationSequence repository (%s)', (kind) => {
   const { transactionId, getChargingProfiles } = ChargingStationSequenceTypeEnum;
 
