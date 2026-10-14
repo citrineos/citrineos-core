@@ -8,6 +8,7 @@ import {
   Certificate,
   ChargingStation,
   ChargingStationNetworkProfile,
+  ChargingStationSecurityInfo,
   ChargingStationSequence,
   DeleteCertificateAttempt,
   InstalledCertificate,
@@ -30,6 +31,7 @@ import {
   type IBootRepository,
   type ICertificateRepository,
   type IChargingStationNetworkProfileRepository,
+  type IChargingStationSecurityInfoRepository,
   type IChargingStationSequenceRepository,
   type IDeleteCertificateAttemptRepository,
   type IInstallCertificateAttemptRepository,
@@ -37,6 +39,7 @@ import {
   SequelizeBootRepository,
   SequelizeCertificateRepository,
   SequelizeChargingStationNetworkProfileRepository,
+  SequelizeChargingStationSecurityInfoRepository,
   SequelizeChargingStationSequenceRepository,
   SequelizeDeleteCertificateAttemptRepository,
   SequelizeInstallCertificateAttemptRepository,
@@ -47,6 +50,7 @@ import {
   DrizzleCertificateRepository,
   toCertificateDto,
 } from '@dal/repositories/drizzle/certificate.js';
+import { DrizzleChargingStationSecurityInfoRepository } from '@dal/repositories/drizzle/charging-station-security-info.js';
 import { DrizzleChargingStationSequenceRepository } from '@dal/repositories/drizzle/charging-station-sequence.js';
 import {
   DrizzleDeleteCertificateAttemptRepository,
@@ -139,6 +143,15 @@ function certificateRepo(kind: Kind): ICertificateRepository {
         sequelizeInstance: h.sequelizeInstance,
       })
     : new DrizzleCertificateRepository({ config: h.config, drizzleInstance: db });
+}
+
+function securityInfoRepo(kind: Kind): IChargingStationSecurityInfoRepository {
+  return kind === 'sequelize'
+    ? new SequelizeChargingStationSecurityInfoRepository({
+        config: h.config,
+        sequelizeInstance: h.sequelizeInstance,
+      })
+    : new DrizzleChargingStationSecurityInfoRepository({ config: h.config, drizzleInstance: db });
 }
 
 function installedCertificateRepo(kind: Kind): IInstalledCertificateRepository {
@@ -1054,6 +1067,92 @@ describe('drizzle row-to-DTO mappers', () => {
     expect(dto.serialNumber).toBe('s');
     expect(dto.status).toBe('Failed');
     expect(dto.tenantId).toBe(TENANT);
+  });
+});
+
+describe.each(kinds)('ChargingStationSecurityInfo repository (%s)', (kind) => {
+  it('readOrCreateChargingStationInfo stores the fileId under the resolved station', async () => {
+    const station = await aStation(TENANT);
+
+    await securityInfoRepo(kind).readOrCreateChargingStationInfo(TENANT, STATION, 'file-1');
+
+    const rows = await ChargingStationSecurityInfo.findAll();
+    expect(rows).toHaveLength(1);
+    expect(rows[0].stationId).toBe(station.id);
+    expect(rows[0].publicKeyFileId).toBe('file-1');
+    expect(rows[0].tenantId).toBe(TENANT);
+  });
+
+  it('a second readOrCreateChargingStationInfo keeps the original fileId', async () => {
+    await aStation(TENANT);
+    const repo = securityInfoRepo(kind);
+
+    await repo.readOrCreateChargingStationInfo(TENANT, STATION, 'file-1');
+    await repo.readOrCreateChargingStationInfo(TENANT, STATION, 'file-2');
+
+    const rows = await ChargingStationSecurityInfo.findAll();
+    expect(rows).toHaveLength(1);
+    expect(rows[0].publicKeyFileId).toBe('file-1');
+  });
+
+  it('readOrCreateChargingStationInfo rejects an unknown station and writes nothing', async () => {
+    await aStation(TENANT);
+
+    await expect(
+      securityInfoRepo(kind).readOrCreateChargingStationInfo(TENANT, 'CS-MISSING', 'file-1'),
+    ).rejects.toThrow(
+      "Cannot store security info: no charging station named 'CS-MISSING' exists in tenant 1.",
+    );
+    expect(await ChargingStationSecurityInfo.count()).toBe(0);
+  });
+
+  it('readChargingStationPublicKeyFileId returns the stored fileId', async () => {
+    await aStation(TENANT);
+    const repo = securityInfoRepo(kind);
+    await repo.readOrCreateChargingStationInfo(TENANT, STATION, 'file-1');
+
+    expect(await repo.readChargingStationPublicKeyFileId(TENANT, STATION)).toBe('file-1');
+  });
+
+  it("readChargingStationPublicKeyFileId returns '' for an unknown station, a station without a row, and another tenant", async () => {
+    await aStation(TENANT);
+    await aStation(OTHER_TENANT);
+    const repo = securityInfoRepo(kind);
+
+    expect(await repo.readChargingStationPublicKeyFileId(TENANT, STATION)).toBe('');
+
+    await repo.readOrCreateChargingStationInfo(TENANT, STATION, 'file-1');
+
+    expect(await repo.readChargingStationPublicKeyFileId(TENANT, 'CS-MISSING')).toBe('');
+    expect(await repo.readChargingStationPublicKeyFileId(OTHER_TENANT, STATION)).toBe('');
+  });
+
+  it("readChargingStationPublicKeyFileId returns '' for a row with no fileId", async () => {
+    const station = await aStation(TENANT);
+    await ChargingStationSecurityInfo.create({
+      stationId: station.id,
+      publicKeyFileId: null,
+      tenantId: TENANT,
+    } as any);
+
+    expect(await securityInfoRepo(kind).readChargingStationPublicKeyFileId(TENANT, STATION)).toBe(
+      '',
+    );
+  });
+
+  it('the same connection name keeps a separate fileId per tenant', async () => {
+    const stationA = await aStation(TENANT);
+    const stationB = await aStation(OTHER_TENANT);
+    const repo = securityInfoRepo(kind);
+
+    await repo.readOrCreateChargingStationInfo(TENANT, STATION, 'file-a');
+    await repo.readOrCreateChargingStationInfo(OTHER_TENANT, STATION, 'file-b');
+
+    expect(await repo.readChargingStationPublicKeyFileId(TENANT, STATION)).toBe('file-a');
+    expect(await repo.readChargingStationPublicKeyFileId(OTHER_TENANT, STATION)).toBe('file-b');
+    const rowB = await ChargingStationSecurityInfo.findOne({ where: { tenantId: OTHER_TENANT } });
+    expect(rowB!.stationId).toBe(stationB.id);
+    expect(rowB!.stationId).not.toBe(stationA.id);
   });
 });
 

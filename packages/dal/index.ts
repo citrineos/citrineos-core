@@ -77,6 +77,7 @@ export {
   DrizzleChangeConfigurationRepository,
   DrizzleChargingStationNetworkProfileRepository,
   DrizzleChargingStationRepository,
+  DrizzleChargingStationSecurityInfoRepository,
   DrizzleChargingStationSequenceRepository,
   DrizzleComponentRepository,
   DrizzleConnectorRepository,
