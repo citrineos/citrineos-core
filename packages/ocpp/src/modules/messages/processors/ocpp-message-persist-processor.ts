@@ -60,6 +60,7 @@ export class OcppMessagePersistProcessor implements IFrameEventProcessor {
     // Handing it back is how the webhook `info` map keeps carrying a real action.
     context.persistedAction = record.action;
     context.persistedId = record.id;
+    context.stationId = record.stationId;
     if (
       !record.action &&
       (event.type === MessageTypeId.CallResult || event.type === MessageTypeId.CallError)

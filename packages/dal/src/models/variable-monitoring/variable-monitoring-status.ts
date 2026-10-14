@@ -6,7 +6,6 @@ import {
   type VariableMonitoringStatusDto,
   type TenantDto,
   type StatusInfo,
-  OCPP2_0_1,
 } from '@citrineos/types';
 import { DEFAULT_TENANT_ID, OCPP2_Namespace } from '@citrineos/base';
 import {
@@ -42,8 +41,6 @@ export class VariableMonitoringStatus extends Model implements VariableMonitorin
   @ForeignKey(() => VariableMonitoring)
   @Column(DataType.INTEGER)
   declare variableMonitoringId?: number | null;
-
-  declare customData?: OCPP2_0_1.CustomDataType | null;
 
   @ForeignKey(() => Tenant)
   @Column({

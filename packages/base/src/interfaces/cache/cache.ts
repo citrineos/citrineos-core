@@ -5,6 +5,22 @@
 import type { ClassConstructor } from 'class-transformer';
 
 /**
+ * How long a key lives, in seconds, optionally with a callback for when it expires.
+ *
+ * The callback belongs to the key, not to this call: it survives later writes that do not pass a
+ * callback of their own, and fires whenever the key eventually expires. It does not fire when the
+ * key is removed or evicted. It runs only in the process that registered it, and a callback whose
+ * expiry is missed (e.g. the process stops, or a Redis subscriber is disconnected at that moment) is
+ * lost.
+ */
+export type CacheExpiry =
+  | number
+  | {
+      seconds: number;
+      onExpire?: (key: string, namespace: string) => void | Promise<void>;
+    };
+
+/**
  * Interface for cache
  * Implementers SHALL ensure minimal logic outside of promise resolution or async function to prevent lag
  * Users of this interface can assume these methods behave asynchronously
@@ -59,10 +75,10 @@ export interface ICache {
    * @param {string} key - The key for the value.
    * @param {string} value - The value to set.
    * @param {string} [namespace] - The namespace for the key.
-   * @param {number} [expireSeconds] - The number of seconds after which the key should expire.
+   * @param {CacheExpiry} [expire] - The number of seconds after which the key should expire, optionally with a callback for when it does.
    * @returns {Promise<boolean>} - Returns true if the value was set successfully.
    * */
-  set(key: string, value: string, namespace?: string, expireSeconds?: number): Promise<boolean>;
+  set(key: string, value: string, namespace?: string, expire?: CacheExpiry): Promise<boolean>;
 
   /**
    * Sets a value asynchronously in the underlying cache if it doesn't exist. Returns false if the key already exists.
@@ -70,14 +86,14 @@ export interface ICache {
    * @param {string} key - The key for the value.
    * @param {string} value - The value to set.
    * @param {string} [namespace] - The namespace for the key.
-   * @param {number} [expireSeconds] - The number of seconds after which the key should expire.
+   * @param {CacheExpiry} [expire] - The number of seconds after which the key should expire, optionally with a callback for when it does.
    * @returns {Promise<boolean>} - Returns true if the value was set successfully.
    * */
   setIfNotExist(
     key: string,
     value: string,
     namespace?: string,
-    expireSeconds?: number,
+    expire?: CacheExpiry,
   ): Promise<boolean>;
 
   /**

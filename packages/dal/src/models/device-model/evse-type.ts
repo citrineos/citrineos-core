@@ -53,8 +53,6 @@ export class EvseType extends Model implements OCPP2_0_1.EVSEType, EvseTypeDto {
   })
   declare connectorId?: number | null;
 
-  declare customData?: OCPP2_0_1.CustomDataType | null;
-
   @ForeignKey(() => Tenant)
   @Column({
     type: DataType.INTEGER,

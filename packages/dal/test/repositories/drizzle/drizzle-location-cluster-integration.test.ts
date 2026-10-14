@@ -547,6 +547,25 @@ describe('DrizzleStatusNotificationRepository', () => {
     expect(await repo.countAll(OTHER_TENANT)).toBe(1);
   });
 
+  it('addStatusNotificationToChargingStation returns the saved row with its id', async () => {
+    const repo = new DrizzleStatusNotificationRepository(deps());
+    const { station, typeA, evse } = await aCommissionedStation(TENANT);
+    const connector = await aConnector(TENANT, station.id, evse.id, typeA.databaseId, 1);
+
+    const saved = await repo.addStatusNotificationToChargingStation(TENANT, STATION, {
+      timestamp: TS,
+      connectorStatus: 'Occupied',
+      evseId: 1,
+      connectorId: connector.id,
+    });
+
+    const rows = await StatusNotification.findAll();
+    expect(rows).toHaveLength(1);
+    expect(saved.id).toBe(rows[0].id);
+    expect(saved.stationId).toBe(station.id);
+    expect(saved.connectorStatus).toBe('Occupied');
+  });
+
   it('updateById rejects clearing tenantId', async () => {
     const repo = new DrizzleStatusNotificationRepository(deps());
     const sn = (await StatusNotification.create({
@@ -656,6 +675,7 @@ describe('location cluster row-to-DTO mappers', () => {
         isOnline: null,
         protocol: 'ocpp1.6',
         latestOcppMessageTimestamp: new Date(TS),
+        lastConnectedAt: null,
         chargePointVendor: 'ACME',
         chargePointModel: null,
         chargePointSerialNumber: null,

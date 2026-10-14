@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { DEFAULT_TENANT_ID, OCPP2_Namespace } from '@citrineos/base';
-import { OCPP2_0_1, type TenantDto, type LocalListAuthorizationDto } from '@citrineos/types';
+import { type TenantDto, type LocalListAuthorizationDto } from '@citrineos/types';
 import {
   BeforeCreate,
   BeforeUpdate,
@@ -36,8 +36,6 @@ export class LocalListVersion extends Model {
   declare localAuthorizationList?:
     | [LocalListAuthorizationDto, ...LocalListAuthorizationDto[]]
     | undefined;
-
-  customData?: OCPP2_0_1.CustomDataType | null | undefined;
 
   @ForeignKey(() => Tenant)
   @Column({

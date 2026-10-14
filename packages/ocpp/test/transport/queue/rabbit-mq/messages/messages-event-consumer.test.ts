@@ -32,6 +32,7 @@ vi.mock('@/transport/queue/rabbit-mq/messages/messages-metrics.js', async (impor
 const OCPP_QUEUE = 'messages.ocpp';
 const CONNECTIONS_QUEUE = 'messages.connections';
 const WEBSOCKET_QUEUE = 'messages.websocket';
+const CALLS_QUEUE = 'messages.calls';
 
 describe('MessagesEventConsumer', () => {
   const { container, logger } = createTestContainer();
@@ -68,7 +69,12 @@ describe('MessagesEventConsumer', () => {
     it('should consume every messages-plane queue', async () => {
       await consumer.start(handler);
 
-      expect(consumer.consumedQueues).toEqual([OCPP_QUEUE, CONNECTIONS_QUEUE, WEBSOCKET_QUEUE]);
+      expect(consumer.consumedQueues).toEqual([
+        OCPP_QUEUE,
+        CONNECTIONS_QUEUE,
+        WEBSOCKET_QUEUE,
+        CALLS_QUEUE,
+      ]);
     });
 
     it('should set the configured messages prefetch on each queue before consuming', async () => {
@@ -79,7 +85,7 @@ describe('MessagesEventConsumer', () => {
 
       await configured.start(handler);
 
-      for (const queue of [OCPP_QUEUE, CONNECTIONS_QUEUE, WEBSOCKET_QUEUE]) {
+      for (const queue of [OCPP_QUEUE, CONNECTIONS_QUEUE, WEBSOCKET_QUEUE, CALLS_QUEUE]) {
         const channel = channelFor(queue);
         expect(channel.prefetch).toHaveBeenCalledWith(7);
         expect(vi.mocked(channel.prefetch).mock.invocationCallOrder[0]).toBeLessThan(
@@ -95,6 +101,7 @@ describe('MessagesEventConsumer', () => {
         `messages-consumer-${OCPP_QUEUE}`,
         `messages-consumer-${CONNECTIONS_QUEUE}`,
         `messages-consumer-${WEBSOCKET_QUEUE}`,
+        `messages-consumer-${CALLS_QUEUE}`,
       ]);
       expect(channelFor(OCPP_QUEUE)).not.toBe(channelFor(CONNECTIONS_QUEUE));
     });
@@ -132,7 +139,7 @@ describe('MessagesEventConsumer', () => {
 
       await consumer.start(handler);
 
-      expect(consumer.consumedQueues).toEqual([CONNECTIONS_QUEUE, WEBSOCKET_QUEUE]);
+      expect(consumer.consumedQueues).toEqual([CONNECTIONS_QUEUE, WEBSOCKET_QUEUE, CALLS_QUEUE]);
       expect(logger.error).toHaveBeenCalled();
     });
 
@@ -141,7 +148,12 @@ describe('MessagesEventConsumer', () => {
       await consumer.subscribe();
 
       expect(channelFor(OCPP_QUEUE).consume).toHaveBeenCalledTimes(1);
-      expect(consumer.consumedQueues).toEqual([OCPP_QUEUE, CONNECTIONS_QUEUE, WEBSOCKET_QUEUE]);
+      expect(consumer.consumedQueues).toEqual([
+        OCPP_QUEUE,
+        CONNECTIONS_QUEUE,
+        WEBSOCKET_QUEUE,
+        CALLS_QUEUE,
+      ]);
     });
   });
 
@@ -151,7 +163,12 @@ describe('MessagesEventConsumer', () => {
 
       harness.connectionManager.emit('connected');
       await vi.waitFor(() => expect(channelFor(OCPP_QUEUE).consume).toHaveBeenCalledTimes(2));
-      expect(consumer.consumedQueues).toEqual([OCPP_QUEUE, CONNECTIONS_QUEUE, WEBSOCKET_QUEUE]);
+      expect(consumer.consumedQueues).toEqual([
+        OCPP_QUEUE,
+        CONNECTIONS_QUEUE,
+        WEBSOCKET_QUEUE,
+        CALLS_QUEUE,
+      ]);
     });
 
     it('should ignore a reconnect before it was ever started', () => {

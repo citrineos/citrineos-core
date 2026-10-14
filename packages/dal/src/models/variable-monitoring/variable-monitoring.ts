@@ -10,7 +10,6 @@ import {
   type VariableDto,
   type VariableMonitoringDto,
   type VariableMonitoringStatusDto,
-  OCPP2_0_1,
 } from '@citrineos/types';
 import { DEFAULT_TENANT_ID, OCPP2_Namespace } from '@citrineos/base';
 import {
@@ -106,8 +105,6 @@ export class VariableMonitoring extends Model implements VariableMonitoringDto {
 
   @HasMany(() => VariableMonitoringStatus, 'variableMonitoringId')
   declare statuses?: VariableMonitoringStatusDto[];
-
-  declare customData?: OCPP2_0_1.CustomDataType | null;
 
   @BelongsTo(() => ChargingStation, 'stationId')
   declare chargingStation?: ChargingStationDto;

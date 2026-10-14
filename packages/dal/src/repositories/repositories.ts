@@ -35,10 +35,19 @@ import type {
   InstalledCertificateDto,
   LocationDto,
   MessageInfoDto,
+  MessageOrigin,
   MeterValueDto,
+  NetworkAlertConfigDto,
+  NetworkAlertCreate,
+  NetworkAlertDto,
+  NetworkAlertOccurrenceCreate,
+  NetworkAlertOccurrenceDto,
+  NetworkAlertType,
+  NetworkAlertUpdate,
   OCPP1_6,
   OCPP2_common_types,
   OCPP2_request_types,
+  OcppCallFailureReason,
   OCPPMessageDto,
   OCPPVersion,
   ReservationDto,
@@ -53,10 +62,17 @@ import type {
   UpdateEnumType,
   VariableAttributeDto,
   VariableCharacteristicsDto,
+  VariableDto,
   WebsocketEventCreate,
   WebsocketEventDto,
-  VariableDto,
 } from '@citrineos/types';
+import type {
+  NetworkAlertSubject,
+  OpenNetworkAlert,
+  ResponseLatencySample,
+  SilentStation,
+} from '../interfaces/projections/network-alert.js';
+import type { VariableWithCharacteristics } from '../interfaces/projections/variable-with-characteristics.js';
 import type { AuthorizationQuerystring } from '../interfaces/queries/authorization.js';
 import type { TariffQueryString } from '../interfaces/queries/tariff.js';
 import type { VariableAttributeQuerystring } from '../interfaces/queries/variable-attribute.js';
@@ -73,7 +89,6 @@ import type {
   CompositeSchedule,
 } from '../models/charging-profile/index.js';
 import type { ChargingStationSecurityInfo } from '../models/charging-station-security-info.js';
-import type { ChargingStationSequence } from '../models/charging-station-sequence/charging-station-sequence.js';
 import type {
   MeterValue,
   StopTransaction,
@@ -169,10 +184,6 @@ export interface IVariableCharacteristicsRepository {
     variableInstance: string | null,
   ): Promise<VariableCharacteristicsDto | undefined>;
 }
-
-export type VariableWithCharacteristics = VariableDto & {
-  variableCharacteristics?: VariableCharacteristicsDto;
-};
 
 export interface IComponentRepository {
   findComponentAndVariable(
@@ -295,7 +306,7 @@ export interface IStatusNotificationRepository {
     tenantId: number,
     ocppConnectionName: string,
     statusNotification: StatusNotificationDto,
-  ): Promise<void>;
+  ): Promise<StatusNotificationDto>;
 }
 
 export interface IConnectorRepository {
@@ -696,6 +707,67 @@ export interface IOCPPMessageRepository {
   readAllByQuery(tenantId: number, query: object): Promise<OCPPMessageDto[]>;
 }
 
+/** Reads and writes on one subject's alerts, inside the transaction that holds its lock. */
+export interface INetworkAlertSession {
+  /** The subject's unresolved alert, if it has one. */
+  findOpen(): Promise<NetworkAlertDto | undefined>;
+  createAlert(alert: NetworkAlertCreate): Promise<NetworkAlertDto>;
+  updateAlert(id: number, values: NetworkAlertUpdate): Promise<void>;
+  addOccurrence(occurrence: NetworkAlertOccurrenceCreate): Promise<void>;
+  countOccurrencesSince(alertId: number, since: string): Promise<number>;
+  findLatestOccurrence(alertId: number): Promise<NetworkAlertOccurrenceDto | undefined>;
+  findLatestCallFailure(
+    alertId: number,
+    reason: OcppCallFailureReason,
+    origin: MessageOrigin,
+  ): Promise<NetworkAlertOccurrenceDto | undefined>;
+  updateOccurrenceDetails(id: number, details: NetworkAlertOccurrenceDto['details']): Promise<void>;
+}
+
+export interface INetworkAlertRepository {
+  /**
+   * Runs `fn` in one transaction holding an advisory lock on the subject, so concurrent events
+   * for the same station or connector, on any instance, read and write its alerts one at a time.
+   */
+  withSubjectLock<T>(
+    subject: NetworkAlertSubject,
+    fn: (session: INetworkAlertSession) => Promise<T>,
+  ): Promise<T>;
+  /**
+   * Runs `fn` while holding the sweep lock. Resolves false, without running it, when another
+   * instance holds the lock.
+   */
+  withSweepLock(fn: () => Promise<void>): Promise<boolean>;
+  /** Unresolved alerts of `type` across every tenant, with their station's connection state. */
+  readOpenByType(type: NetworkAlertType): Promise<OpenNetworkAlert[]>;
+  /**
+   * The tenant's stations marked online that have sent nothing for `missedHeartbeats` heartbeat
+   * intervals as of `at`. A station's interval comes from its Boot record, or is
+   * `defaultHeartbeatInterval` seconds when that has none.
+   */
+  readSilentStations(
+    tenantId: number,
+    at: string,
+    defaultHeartbeatInterval: number,
+    missedHeartbeats: number,
+  ): Promise<SilentStation[]>;
+  /**
+   * For each station and responding side in the tenant, the latest `sampleSize` CallResults stored
+   * since `since` that are linked to their Call, when there are that many and their average latency
+   * is over `thresholdMs`.
+   */
+  readSlowResponseSamples(
+    tenantId: number,
+    since: string,
+    sampleSize: number,
+    thresholdMs: number,
+  ): Promise<ResponseLatencySample[]>;
+}
+
+export interface INetworkAlertConfigRepository {
+  readByTenant(tenantId: number): Promise<NetworkAlertConfigDto[]>;
+}
+
 export interface IWebsocketEventRepository {
   createWebsocketEvent(
     tenantId: number,
@@ -714,8 +786,7 @@ export interface IChargingStationSecurityInfoRepository
   ): Promise<void>;
 }
 
-export interface IChargingStationSequenceRepository
-  extends CrudRepository<ChargingStationSequence> {
+export interface IChargingStationSequenceRepository {
   getNextSequenceValue(
     tenantId: number,
     ocppConnectionName: string,
@@ -799,4 +870,5 @@ export interface ITenantRepository {
   readByWebsocketServerPath(path: string): Promise<TenantDto | undefined>;
   readAllWithWebsocketServerPath(): Promise<TenantDto[]>;
   updateWebsocketServerPath(tenantId: number, path: string | null): Promise<TenantDto | undefined>;
+  readTenantIds(): Promise<number[]>;
 }

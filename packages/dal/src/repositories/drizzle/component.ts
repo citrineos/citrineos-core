@@ -39,10 +39,8 @@ import {
   variableCharacteristicsTable,
 } from '../../db/drizzle/schema/variable-characteristics.js';
 import { type Explicit } from '../../db/drizzle/types.js';
-import type {
-  IComponentRepository,
-  VariableWithCharacteristics,
-} from '@dal/repositories/repositories.js';
+import type { VariableWithCharacteristics } from '@dal/interfaces/projections/variable-with-characteristics.js';
+import type { IComponentRepository } from '@dal/repositories/repositories.js';
 import { DrizzleRepository, type DrizzleWriteContext } from './base.js';
 import { toEvseTypeDto } from './evse-type.js';
 import { toVariableDto } from './variable.js';
@@ -62,7 +60,6 @@ export function toComponentDto(entity: ComponentEntity): ComponentDto {
     // Relation fields are not present as scalar columns.
     evse: undefined,
     variables: undefined,
-    customData: undefined,
     tenantId: entity.tenantId,
     tenant: undefined,
     createdAt: entity.createdAt,

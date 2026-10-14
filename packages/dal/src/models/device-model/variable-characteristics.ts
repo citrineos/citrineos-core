@@ -64,8 +64,6 @@ export class VariableCharacteristics
   })
   declare variableId?: number | null;
 
-  declare customData?: OCPP2_0_1.CustomDataType | null;
-
   @ForeignKey(() => Tenant)
   @Column({
     type: DataType.INTEGER,

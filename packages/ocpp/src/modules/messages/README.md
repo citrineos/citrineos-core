@@ -25,10 +25,10 @@ out of the "hot path" and expand to process messages more flexibly without addin
    which is then routed to the "frame" queue.
 4. The MessagesModule consumes (with the help of MessagesEventConsumer) the message and runs all frame processors against
    the message (with the help of MessagesEventPipeline).
-   - As of time of writing, three processors exist for OCPP Messages: one to store the OCPP message in the
+   - As of time of writing, four processors exist for OCPP Messages: one to store the OCPP message in the
      OCPPMessages database table, one to dispatch the message via the webhook-dispatcher (for any Charging Station
-     message subscribers), and one to stamp `ChargingStations.latestOcppMessageTimestamp` with the receipt time of
-     each inbound frame.
+     message subscribers), one to stamp `ChargingStations.latestOcppMessageTimestamp` with the receipt time of
+     each inbound frame, and one to record CallErrors as network alerts (see below).
 
 ## Example: Websocket Connection
 
@@ -50,19 +50,21 @@ out of the "hot path" and expand to process messages more flexibly without addin
     │                  │ frame.<direction>.<action>
     │                  │ connection.<state>
     │                  │ websocket.<type>
+    │                  │ call.<outcome>
     │                  ▼
     │        ┌──────────────────────────────────────────┐
     │        │   (RabbitMQ exchanges)
     │        │   messages.ocpp         ← frame.#        │
     │        │   messages.connections  ← connection.#   │
     │        │   messages.websocket    ← websocket.#    │
+    │        │   messages.calls        ← call.#         │
     │        │     all durable, each with a .dlq        │
     │        └──────────────────┬───────────────────────┘
     │                           │ one channel per queue
     │                           ▼
     │        ┌────────────────────────────────────────────────────────────────────────┐
     │        │   MessagesModule (via MessagesEventConsumer) → MessagesEventPipeline   │
-    │        │      Dispatches by kind (frame.#, connection.# or websocket.#)         │
+    │        │      Dispatches by kind (frame.#, connection.#, websocket.# or call.#)  │
     │        └────────────────────────────────────────────────────────────────────────┘
     │
     ├──── CallbackUrlNotifier ──► the API caller's callback URL
@@ -72,8 +74,8 @@ out of the "hot path" and expand to process messages more flexibly without addin
 # The "messages" exchange
 
 A new "messages" exchange was added to RabbitMQ handle all "business" messages, and presently
-holds three queues: one for frame events, one for station connections, and one for websocket
-lifecycle events.
+holds four queues: one for frame events, one for station connections, one for websocket
+lifecycle events, and one for Calls that never completed their exchange.
 
 ## Example: Websocket lifecycle
 
@@ -81,7 +83,17 @@ lifecycle events.
 see: a refused upgrade (`UpgradeRejected` — authentication failures, invalid handshakes, failed TLS
 handshakes), a socket closed during connection setup (`ConnectionRejected`), an `Open` and a
 `Close`. Each carries the close codes, the HTTP status, who initiated it and why. These are routed
-to the "websocket" queue, where one processor persists each event to the WebsocketEvents table.
+to the "websocket" queue, where one processor persists each event to the WebsocketEvents table and
+a second records station connectivity alerts from it.
+
+## Example: Call outcomes
+
+A Call the CSMS sends leaves no frame behind when it goes wrong, so the router publishes a `call`
+event for each one that did not complete: `timeout` when the station has not answered it within
+`timeouts.maxCallLengthSeconds`, and `send_failed` when the router held the station's connection but
+could not write the Call to it. Like connection events, these come from the router rather than the
+transport, so they hold whatever manages the station's socket. The timers behind `timeout` live in
+the router's memory: a router that crashes loses them.
 
 # Dead-letter queues
 
@@ -100,7 +112,10 @@ the only remaining record of it. A proper dead-letter queue process will be impl
 Messages on the OCPP exchange (`messageBroker.amqp.exchange`, "citrineos" by default) that a router
 or module gives up on are published to the fanout exchange "citrineos.dlx" and drained from
 "citrineos.dlq" by OcppDeadLetterConsumer. Nothing is replayed; each dead letter is counted on
-`ocpp_dead_letter_received_total` by reason and action, for alerting, and logged. The first dead
+`ocpp_dead_letter_received_total` by reason and action, for alerting, and logged, then handed to
+the dead-letter processors before it is acked. One processor records each message the CSMS meant
+for a station and gave up delivering (`stale`, `expired`, `unroutable`, `overflow`, `shutdown`) as a
+`SendFailed` network alert. A processor that fails is logged; the dead letter is acked regardless. The first dead
 letter of a given reason, action and source in each minute is logged in full; the rest are
 summarised in one line when the minute ends.
 
@@ -153,6 +168,41 @@ dropped without a log; `ocpp_message_dead_lettered_total{outcome="published"}`, 
 that produced each dead letter, still includes it, so the difference from
 `ocpp_dead_letter_received_total` is what was dropped. The bounds are queue arguments: changing them means deleting the queue first. An
 operator policy can lower them in place.
+
+# Network alerts
+
+Network alerts are the operator-facing record of stations misbehaving. Each alert is an episode:
+one unresolved row per station and type (per connector, for connector status), which every
+occurrence extends, with each occurrence kept in NetworkAlertOccurrences. Severity only rises within
+an episode; an acknowledged episode becomes active again only when it does. NetworkAlertService
+holds the episode logic, and takes an advisory lock per station or connector, because events for one
+station are processed concurrently and out of order, by any instance.
+
+| Type                  | Recorded by                                                                                                                                                                                  | Resolved                                                             |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `StationConnectivity` | Each unexpected websocket `Close` (not a replaced connection, an admin disconnect or a server shutdown); escalated on frequent disconnects, and by the sweep when offline or silent too long | By the sweep, once the station is reachable and quiet for the window |
+| `ConnectorStatus`     | StatusNotificationService, for each status that `severityByStatus` maps to a severity                                                                                                        | By the first status that maps to none                                |
+| `OcppCallFailures`    | CallError frames in either direction, `call` events (timeout, send failed), dead letters that never reached the station, and slow responses found by the sweep                               | By the sweep, after `quietPeriodSeconds` without a failure           |
+
+Slow responses are judged in samples, not one by one. Each sweep averages every station's latest
+`slowSampleSize` CallResults from each side, measured from the Call the correlation trigger linked
+them to, over the tenant's quiet period. A full sample averaging over `slowThresholdMs` is one Slow
+occurrence; a sample overlapping the last one recorded is skipped, so a station that stays slow adds
+one occurrence per `slowSampleSize` new responses. A response stored before its Call is not linked
+and not measured; that only happens to responses that closely follow their Call.
+
+Rules come from `networkAlerts.defaults` in the system configuration, overridden per tenant by
+NetworkAlertConfigs rows. Each tenant's resolved configuration is reused for one sweep interval, so a
+change reaches every instance within it.
+
+NetworkAlertSweeper runs every `networkAlerts.sweepIntervalSeconds` on every instance; one at a time
+does the work, under a database lock. A station still marked online that has missed
+`missedHeartbeats` heartbeats (a StationConnectivity rule, 2 by default) is treated as disconnected
+since its last message (a socket that died without a close, e.g. when its instance crashed). Its
+heartbeat interval is the one on its Boot record, or
+`ocpp.heartbeatInterval` when that has none, as BootNotification answers it. The sweep also
+escalates stations offline longer than `offlineTooLong`, records slow samples, and resolves quiet
+episodes.
 
 # Future features
 
