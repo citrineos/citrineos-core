@@ -1,13 +1,13 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { OCPPVersionType } from '@citrineos/types';
+import type { OCPPVersionType, TransactionDto } from '@citrineos/types';
 import type { ITransactionEventRepository } from '@citrineos/dal';
-import { Transaction } from '@citrineos/dal';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { CostCalculator } from './cost-calculator.js';
 import { Scheduler } from './scheduler.js';
+import { requireTransactionDatabaseId } from '@util/transaction.js';
 
 /** The computed cost update to send to a charging station. */
 export interface CostUpdate {
@@ -75,7 +75,7 @@ export class CostNotifier extends Scheduler {
   }
 
   async calculateCostAndNotify(
-    transaction: Transaction,
+    transaction: TransactionDto,
     tenantId: number,
     protocol: OCPPVersionType,
     ocppConnectionName: string,
@@ -85,7 +85,7 @@ export class CostNotifier extends Scheduler {
     await this._transactionEventRepository.updateTransactionTotalCostById(
       tenantId,
       cost,
-      transaction.id,
+      requireTransactionDatabaseId(transaction),
     );
 
     await this._notifyCostUpdated({

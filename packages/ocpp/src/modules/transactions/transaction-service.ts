@@ -21,6 +21,7 @@ import {
   type OCPP2_common_types,
   type OCPP2_request_types,
   type OCPP2_response_types,
+  type TransactionDto,
 } from '@citrineos/types';
 import type {
   IAuthorizationRepository,
@@ -32,7 +33,6 @@ import type {
 } from '@citrineos/dal';
 import { OCPP1_6_Mapper } from '@citrineos/dal';
 import { OCPP2_0_1_Mapper } from '@citrineos/dal';
-import { MeterValue, Transaction } from '@citrineos/dal';
 import type { ILogObj, Logger } from 'tslog';
 import { stationIdFilter } from '@citrineos/dal';
 
@@ -78,22 +78,33 @@ export class TransactionService {
   }
 
   async recalculateTotalKwh(
-    transaction: Transaction,
+    tenantId: number,
+    ocppConnectionName: string,
+    transaction: TransactionDto,
     newMeterValues: MeterValueDto[],
   ): Promise<number> {
-    let meterStart = transaction.meterStart;
-    if (meterStart === null || meterStart === undefined) {
-      meterStart = MeterValueUtils.getMeterStart(newMeterValues);
-      transaction.set('meterStart', meterStart);
-    }
+    const reportedMeterStart = transaction.meterStart;
+    const meterStart =
+      reportedMeterStart ?? MeterValueUtils.getMeterStart(newMeterValues) ?? undefined;
     const totalKwh = MeterValueUtils.getTotalKwh(
       newMeterValues,
       transaction.totalKwh ?? 0,
       meterStart ?? undefined,
     );
 
-    transaction.set('totalKwh', totalKwh);
-    await transaction.save();
+    await this._transactionEventRepository.updateTransactionByStationIdAndTransactionId(
+      tenantId,
+      reportedMeterStart == null ? { meterStart, totalKwh } : { totalKwh },
+      transaction.transactionId,
+      ocppConnectionName,
+    );
+
+    // The caller passes this same object straight to cost calculation, which prices on
+    // totalKwh; so we need to set value here.
+    transaction.totalKwh = totalKwh;
+    if (reportedMeterStart == null) {
+      transaction.meterStart = meterStart;
+    }
 
     this._logger.debug(`Recalculated ${totalKwh} kWh for ${transaction.id} transaction`);
     return totalKwh;
@@ -297,7 +308,7 @@ export class TransactionService {
     transactionDbId?: number | null,
     transactionId?: string | null,
     tariffId?: number | null,
-  ): Promise<MeterValue[]> {
+  ): Promise<MeterValueDto[]> {
     return Promise.all(
       meterValues.map(async (meterValue) => {
         if (transactionDbId) {

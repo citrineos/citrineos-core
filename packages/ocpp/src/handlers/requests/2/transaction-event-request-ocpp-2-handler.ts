@@ -28,6 +28,7 @@ import {
   TransactionEventEnum,
   OCPP2_request_types,
   OCPP2_response_types,
+  type TransactionDto,
 } from '@citrineos/types';
 import {
   ChargingSchedule,
@@ -35,13 +36,13 @@ import {
   type IVariableAttributeRepository,
   type ITransactionEventRepository,
   OCPP2_0_1_Mapper,
-  Transaction,
 } from '@citrineos/dal';
 import type { CostCalculator } from '@modules/transactions/cost-calculator.js';
 import { deriveTimeSpentChargingSeconds } from '@modules/transactions/time-spent-charging.js';
 import type { CostNotifier } from '@modules/transactions/cost-notifier.js';
 import type { TransactionService } from '@modules/transactions/transaction-service.js';
 import { isForeignKeyConstraintError } from '@util/errors.js';
+import { requireTransactionDatabaseId } from '@util/transaction.js';
 
 @AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.TransactionEvent)
 export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
@@ -118,7 +119,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
     const transactionId = transactionEvent.transactionInfo.transactionId;
     let authorizationResponse: OCPP2_response_types.TransactionEventResponse | undefined =
       undefined;
-    let transaction: Transaction | undefined = undefined;
+    let transaction: TransactionDto | undefined = undefined;
     if (transactionEvent.idToken) {
       if (isOcpp21) {
         authorizationResponse = await this._transactionService.authorizeOcpp21IdToken(
@@ -402,7 +403,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
             };
             await this._transactionEventRepository.updateTransactionByStationIdAndTransactionId(
               tenantId,
-              { transactionLimit: updatedLimit } as Partial<Transaction>,
+              { transactionLimit: updatedLimit } as Partial<TransactionDto>,
               transactionId,
               ocppConnectionName,
             );
@@ -550,7 +551,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
       await this._transactionEventRepository.updateTransactionTotalCostById(
         tenantId,
         response.totalCost,
-        transaction.id,
+        requireTransactionDatabaseId(transaction),
       );
     }
 
@@ -695,7 +696,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
    */
   private syncTransactionLimitToResponse(
     response: OCPP2_1.TransactionEventResponse,
-    transaction: Transaction,
+    transaction: TransactionDto,
     stationTransactionLimit: OCPP2_1.TransactionLimitType | null | undefined,
     ocppConnectionName: string,
     transactionId: string,
@@ -755,7 +756,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
     try {
       await this._transactionEventRepository.updateTransactionByStationIdAndTransactionId(
         tenantId,
-        { transactionLimit: response.transactionLimit } as Partial<Transaction>,
+        { transactionLimit: response.transactionLimit } as Partial<TransactionDto>,
         transactionId,
         ocppConnectionName,
       );
