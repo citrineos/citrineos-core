@@ -193,6 +193,12 @@ export class DrizzleChargingStationNetworkProfileRepository
       }
 
       const [dto] = await this.selectWithProfiles(tenantId, where, ctx.db);
+      if (!dto) {
+        // Mirrors the Sequelize implementation's rejectOnEmpty
+        throw new Error(
+          `Wrote ChargingStationNetworkProfile for station ${stationId} slot ${configurationSlot} but could not read it back`,
+        );
+      }
       this.raise(ctx, existing.length > 0 ? 'updated' : 'created', [dto]);
       return dto;
     });
