@@ -9,7 +9,6 @@ import {
   InstallCertificateStatusEnum,
   MessageOrigin,
   MessageState,
-  MessageTypeId,
   OCPP_CallAction,
   type OcppRequest,
   OCPPVersion,
@@ -21,14 +20,12 @@ import {
   SequelizeDeleteCertificateAttemptRepository,
   SequelizeInstallCertificateAttemptRepository,
   SequelizeInstalledCertificateRepository,
-  SequelizeOCPPMessageRepository,
 } from '@citrineos/dal';
 import {
   Certificate,
   ChargingStation,
   InstallCertificateAttempt,
   InstalledCertificate,
-  OCPPMessage,
   Tenant,
 } from '@dal/db/sequelize/index.js';
 import { InstallCertificateResponseOcpp2Handler } from '@handlers/index.js';
@@ -122,31 +119,7 @@ async function aPendingAttempt(certificatePem: string) {
   } as never);
 }
 
-async function anInstallCertificateRequest(certificatePem: string) {
-  const payload = {
-    certificateType: CertificateUseEnum.V2GRootCertificate,
-    certificate: certificatePem,
-  };
-  return OCPPMessage.create({
-    stationId,
-    correlationId: CORRELATION_ID,
-    origin: MessageOrigin.ChargingStationManagementSystem,
-    type: MessageTypeId.Call,
-    protocol: OCPPVersion.OCPP2_0_1,
-    action: OCPP_CallAction.InstallCertificate,
-    payload,
-    raw: JSON.stringify([
-      MessageTypeId.Call,
-      CORRELATION_ID,
-      OCPP_CallAction.InstallCertificate,
-      payload,
-    ]),
-    timestamp: new Date().toISOString(),
-    tenantId: DEFAULT_TENANT_ID,
-  } as never);
-}
-
-function anAcceptedResponse(): IMessage<OcppRequest> {
+function anAcceptedResponse(certificatePem: string): IMessage<OcppRequest> {
   return {
     context: {
       tenantId: DEFAULT_TENANT_ID,
@@ -160,6 +133,10 @@ function anAcceptedResponse(): IMessage<OcppRequest> {
     action: OCPP_CallAction.InstallCertificate,
     state: MessageState.Response,
     protocol: OCPPVersion.OCPP2_0_1,
+    request: {
+      certificateType: CertificateUseEnum.V2GRootCertificate,
+      certificate: certificatePem,
+    },
   } as unknown as IMessage<OcppRequest>;
 }
 
@@ -173,15 +150,12 @@ describe('InstallCertificateResponseOcpp2Handler with an earlier install of that
   const { container } = createTestContainer();
 
   function aHandler() {
-    const deps = { config, logger: undefined, sequelizeInstance } as never;
     return getTestInstance(container, InstallCertificateResponseOcpp2Handler, {
-      ocppMessageRepository: new SequelizeOCPPMessageRepository(deps),
       installCertificateHelperService: aHelperService(),
     });
   }
 
   beforeEach(async () => {
-    await OCPPMessage.destroy({ where: {}, truncate: true, cascade: true });
     await InstalledCertificate.destroy({ where: {}, truncate: true, cascade: true });
     await InstallCertificateAttempt.destroy({ where: {}, truncate: true, cascade: true });
     await Certificate.destroy({ where: {}, truncate: true, cascade: true });
@@ -200,9 +174,8 @@ describe('InstallCertificateResponseOcpp2Handler with an earlier install of that
   it('settles the attempt for the certificate the station accepted', async () => {
     const unanswered = await aPendingAttempt(OTHER_PEM);
     const answered = await aPendingAttempt(ROOT_PEM);
-    await anInstallCertificateRequest(ROOT_PEM);
 
-    await aHandler().handle(anAcceptedResponse() as never);
+    await aHandler().handle(anAcceptedResponse(ROOT_PEM) as never);
 
     expect(await statusOf(answered)).toBe(InstallCertificateStatusEnum.Accepted);
     expect(await statusOf(unanswered)).toBeNull();

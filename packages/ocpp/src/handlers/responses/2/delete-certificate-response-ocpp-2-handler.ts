@@ -10,7 +10,6 @@ import {
 import {
   DeleteCertificateStatusEnum,
   type HandlerProperties,
-  MessageOrigin,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
   OCPP2_request_types,
@@ -19,35 +18,32 @@ import {
 import type {
   IDeleteCertificateAttemptRepository,
   IInstalledCertificateRepository,
-  IOCPPMessageRepository,
 } from '@citrineos/dal';
-import { stationIdFilter } from '@citrineos/dal';
 
 @AsResponseHandler(OCPP_2_VER_LIST, OCPP_CallAction.DeleteCertificate)
 export class DeleteCertificateResponseOcpp2Handler extends AbstractHandler {
   protected _deleteCertificateAttemptRepository: IDeleteCertificateAttemptRepository;
   protected _installedCertificateRepository: IInstalledCertificateRepository;
-  protected _ocppMessageRepository: IOCPPMessageRepository;
 
   constructor({
     logger,
     deleteCertificateAttemptRepository,
     installedCertificateRepository,
-    ocppMessageRepository,
   }: AbstractHandlerDependencies & {
     deleteCertificateAttemptRepository: IDeleteCertificateAttemptRepository;
     installedCertificateRepository: IInstalledCertificateRepository;
-    ocppMessageRepository: IOCPPMessageRepository;
   }) {
     super(logger);
 
     this._deleteCertificateAttemptRepository = deleteCertificateAttemptRepository;
     this._installedCertificateRepository = installedCertificateRepository;
-    this._ocppMessageRepository = ocppMessageRepository;
   }
 
   async handle(
-    message: IMessage<OCPP2_response_types.DeleteCertificateResponse>,
+    message: IMessage<
+      OCPP2_response_types.DeleteCertificateResponse,
+      OCPP2_request_types.DeleteCertificateRequest
+    >,
     props?: HandlerProperties,
   ) {
     this._logger.debug(
@@ -58,16 +54,7 @@ export class DeleteCertificateResponseOcpp2Handler extends AbstractHandler {
     const tenantId = message.context.tenantId;
     const ocppConnectionName = message.context.ocppConnectionName;
 
-    const originalRequest = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
-      where: {
-        stationId: await stationIdFilter(tenantId, ocppConnectionName),
-        correlationId: message.context.correlationId,
-        origin: MessageOrigin.ChargingStationManagementSystem,
-      },
-    });
-    const certificateHashData = (
-      originalRequest?.payload as OCPP2_request_types.DeleteCertificateRequest | undefined
-    )?.certificateHashData;
+    const certificateHashData = message.request?.certificateHashData;
 
     const existingPendingDeleteCertificateAttempt = certificateHashData
       ? await this._deleteCertificateAttemptRepository.findPendingByStationAndHashData(

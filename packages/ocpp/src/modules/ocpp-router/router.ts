@@ -544,6 +544,16 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
             },
           },
         );
+        await this._cache
+          .set(
+            correlationId,
+            JSON.stringify(payload),
+            CacheNamespace.CallRequests + identifier,
+            this._config.timeouts.maxCallLengthSeconds,
+          )
+          .catch((err) => {
+            this._logger.error('Failed to cache the request of the call', identifier, err);
+          });
         const rawMessage = JSON.stringify(message);
         let successTimestamp: Date | undefined;
         try {
@@ -559,6 +569,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
           // Not released through _releaseOutstandingCall: the Calls waiting behind this one are
           // re-emitted with it, not sent here.
           await this._cache.remove(correlationId, transactionNamespace);
+          await this._cache.remove(correlationId, CacheNamespace.CallRequests + identifier);
           await this._cache.remove(OUTSTANDING_CALL_CACHE_KEY, transactionNamespace);
           throw error;
         }
@@ -581,6 +592,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
             String(action),
           );
           const removed = await this._cache.remove(correlationId, transactionNamespace);
+          await this._cache.remove(correlationId, CacheNamespace.CallRequests + identifier);
           await this._releaseOutstandingCall(identifier);
           this._logger.warn(
             `Failed to send call, removed from cache: ${removed}`,
@@ -956,6 +968,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     await this._cache.remove(messageId, CacheNamespace.Transactions + identifier).catch((err) => {
       this._logger.error('_onCallResult cache remove failed', err);
     });
+    const request = await this._takeCallRequest(identifier, messageId);
 
     if (!cachedActionTimestamp) {
       recordOcppCallResponse(UNKNOWN_ACTION, CallResponseOutcome.OrphanOrTimeout);
@@ -1003,6 +1016,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       mapToCallAction(protocol, action),
       timestamp,
       protocol,
+      request,
     );
 
     if (!confirmation.success) {
@@ -1038,6 +1052,9 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     // Always remove pending call transaction
     await this._cache.remove(messageId, CacheNamespace.Transactions + identifier).catch((err) => {
       this._logger.error('_onCallError cache remove failed', err);
+    });
+    await this._cache.remove(messageId, CacheNamespace.CallRequests + identifier).catch((err) => {
+      this._logger.error('_onCallError call request cache remove failed', err);
     });
 
     if (!cachedActionTimestamp) {
@@ -1185,6 +1202,24 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
         this._logger.error('Failed to publish outbound frame event', err);
       });
     return sentTimestamp;
+  }
+
+  private async _takeCallRequest(
+    identifier: string,
+    correlationId: string,
+  ): Promise<OcppRequest | undefined> {
+    const namespace = CacheNamespace.CallRequests + identifier;
+    const request = await this._cache
+      .get<string>(correlationId, namespace)
+      .then((cached): OcppRequest | undefined => (cached ? JSON.parse(cached) : undefined))
+      .catch((err) => {
+        this._logger.error('Failed to read the request of the outstanding call', identifier, err);
+        return undefined;
+      });
+    await this._cache.remove(correlationId, namespace).catch((err) => {
+      this._logger.error('_onCallResult call request cache remove failed', err);
+    });
+    return request;
   }
 
   private _recordCallOutcome(
@@ -1440,6 +1475,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     action: CallAction,
     timestamp: Date,
     protocol: OCPPVersionType,
+    request: OcppRequest | undefined,
   ): Promise<IMessageConfirmation> {
     const messageId = message.messageId;
     const payload = message.payload;
@@ -1456,6 +1492,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
       MessageOrigin.ChargingStation,
       protocol,
       timestamp,
+      request,
     );
 
     this._callbackUrlNotifier

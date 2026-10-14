@@ -11,37 +11,34 @@ import {
   type CertificateUseEnumType,
   GetInstalledCertificateStatusEnum,
   type HandlerProperties,
-  MessageOrigin,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
   OCPP2_common_types,
   OCPP2_request_types,
   OCPP2_response_types,
 } from '@citrineos/types';
-import { type IInstalledCertificateRepository, type IOCPPMessageRepository } from '@citrineos/dal';
-import { stationIdFilter } from '@citrineos/dal';
+import { type IInstalledCertificateRepository } from '@citrineos/dal';
 
 @AsResponseHandler(OCPP_2_VER_LIST, OCPP_CallAction.GetInstalledCertificateIds)
 export class GetInstalledCertificateIdsResponseOcpp2Handler extends AbstractHandler {
-  protected _ocppMessageRepository: IOCPPMessageRepository;
   protected _installedCertificateRepository: IInstalledCertificateRepository;
 
   constructor({
     logger,
-    ocppMessageRepository,
     installedCertificateRepository,
   }: AbstractHandlerDependencies & {
-    ocppMessageRepository: IOCPPMessageRepository;
     installedCertificateRepository: IInstalledCertificateRepository;
   }) {
     super(logger);
 
-    this._ocppMessageRepository = ocppMessageRepository;
     this._installedCertificateRepository = installedCertificateRepository;
   }
 
   async handle(
-    message: IMessage<OCPP2_response_types.GetInstalledCertificateIdsResponse>,
+    message: IMessage<
+      OCPP2_response_types.GetInstalledCertificateIdsResponse,
+      OCPP2_request_types.GetInstalledCertificateIdsRequest
+    >,
     props?: HandlerProperties,
   ) {
     this._logger.debug(
@@ -51,16 +48,21 @@ export class GetInstalledCertificateIdsResponseOcpp2Handler extends AbstractHand
     );
     const tenantId = message.context.tenantId;
     const ocppConnectionName = message.context.ocppConnectionName;
-    const correlationId = message.context.correlationId;
     const certificateHashDataList: OCPP2_common_types.CertificateHashDataChainType[] =
       message.payload.certificateHashDataChain!;
-    const requestedCertificateType = await this.readRequestedCertificateType(
-      tenantId,
-      ocppConnectionName,
-      correlationId,
-    );
+    const request = message.request;
+    const requestedCertificateType = request?.certificateType ?? undefined;
+    // Without the request we cannot tell "all types" from "the requested types", so nothing is removed.
+    if (!request) {
+      this._logger.warn(
+        `No GetInstalledCertificateIdsRequest found for station ${ocppConnectionName}, keeping stored certificates`,
+      );
+    }
 
     if (message.payload.status === GetInstalledCertificateStatusEnum.NotFound) {
+      if (!request) {
+        return;
+      }
       if (requestedCertificateType) {
         this._logger.debug(
           `GetInstalledCertificateIdsRequest sent to ${ocppConnectionName} had certificateType: ${requestedCertificateType}. Cleaning up installed certificates of this type in DB if any.`,
@@ -136,6 +138,9 @@ export class GetInstalledCertificateIdsResponseOcpp2Handler extends AbstractHand
       this._logger.debug('Created new installed certificate record', created);
     }
 
+    if (!request) {
+      return;
+    }
     for (const existing of stored) {
       if (reportedKeys.has(installedCertificateKey(existing.certificateType, existing))) {
         continue;
@@ -143,25 +148,6 @@ export class GetInstalledCertificateIdsResponseOcpp2Handler extends AbstractHand
       await this._installedCertificateRepository.deleteById(tenantId, existing.id!);
       this._logger.debug('Removed installed certificate no longer on the station', existing);
     }
-  }
-
-  private async readRequestedCertificateType(
-    tenantId: number,
-    ocppConnectionName: string,
-    correlationId: string,
-  ): Promise<OCPP2_request_types.GetInstalledCertificateIdsRequest['certificateType']> {
-    const request = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
-      where: {
-        stationId: await stationIdFilter(tenantId, ocppConnectionName),
-        correlationId,
-        origin: MessageOrigin.ChargingStationManagementSystem,
-      },
-    });
-
-    const payload = request?.payload as
-      | OCPP2_request_types.GetInstalledCertificateIdsRequest
-      | undefined;
-    return payload?.certificateType ?? undefined;
   }
 }
 

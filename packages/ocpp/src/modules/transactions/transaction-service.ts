@@ -13,7 +13,6 @@ import {
   type AuthorizationStatusEnumType,
   type ConnectorDto,
   type EvseDto,
-  MessageOrigin,
   type MeterValueDto,
   OCPP1_6,
   OCPP2_0_1,
@@ -27,14 +26,12 @@ import type {
   IAuthorizationRepository,
   IConnectorRepository,
   IEvseRepository,
-  IOCPPMessageRepository,
   IReservationRepository,
   ITransactionEventRepository,
 } from '@citrineos/dal';
 import { OCPP1_6_Mapper } from '@citrineos/dal';
 import { OCPP2_0_1_Mapper } from '@citrineos/dal';
 import type { ILogObj, Logger } from 'tslog';
-import { stationIdFilter } from '@citrineos/dal';
 
 export class TransactionService {
   private _transactionEventRepository: ITransactionEventRepository;
@@ -42,7 +39,6 @@ export class TransactionService {
   private _evseRepository: IEvseRepository;
   private _connectorRepository: IConnectorRepository;
   private _reservationRepository: IReservationRepository;
-  private _ocppMessageRepository: IOCPPMessageRepository;
   private _logger: Logger<ILogObj>;
   private _authorizers: IAuthorizer[];
 
@@ -52,7 +48,6 @@ export class TransactionService {
     evseRepository,
     connectorRepository,
     reservationRepository,
-    ocppMessageRepository,
     realTimeAuthorizer,
     authorizers,
     logger,
@@ -62,7 +57,6 @@ export class TransactionService {
     evseRepository: IEvseRepository;
     connectorRepository: IConnectorRepository;
     reservationRepository: IReservationRepository;
-    ocppMessageRepository: IOCPPMessageRepository;
     realTimeAuthorizer: IAuthorizer;
     authorizers?: IAuthorizer[];
     logger: Logger<ILogObj>;
@@ -72,7 +66,6 @@ export class TransactionService {
     this._evseRepository = evseRepository;
     this._connectorRepository = connectorRepository;
     this._reservationRepository = reservationRepository;
-    this._ocppMessageRepository = ocppMessageRepository;
     this._logger = childLogger(logger, this.constructor.name);
     this._authorizers = [realTimeAuthorizer, ...(authorizers || [])];
   }
@@ -487,27 +480,19 @@ export class TransactionService {
   async updateTransactionStatus(
     tenantId: number,
     ocppConnectionName: string,
-    correlationId: string,
+    request: OCPP2_request_types.GetTransactionStatusRequest | undefined,
     ongoingIndicator: boolean,
   ) {
-    const request = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
-      where: {
-        tenantId,
-        stationId: await stationIdFilter(tenantId, ocppConnectionName),
-        correlationId,
-        origin: MessageOrigin.ChargingStationManagementSystem,
-      },
-    });
     if (!request) {
-      this._logger.error(
-        `No valid GetTransactionStatusRequest found for correlationId ${correlationId}`,
-      );
+      this._logger.error(`No GetTransactionStatusRequest found for station ${ocppConnectionName}`);
       return;
     }
 
-    const transactionId = request.payload.transactionId;
+    const transactionId = request.transactionId;
     if (!transactionId) {
-      this._logger.error(`No valid transactionId found from the message ${request.payload}`);
+      this._logger.error(
+        `No valid transactionId found from the message ${JSON.stringify(request)}`,
+      );
       return;
     }
 

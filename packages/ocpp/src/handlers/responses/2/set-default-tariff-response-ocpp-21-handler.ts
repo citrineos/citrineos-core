@@ -10,36 +10,30 @@ import {
 import {
   type HandlerProperties,
   type TariffDto,
-  MessageOrigin,
   OCPP2_1,
   OCPP_CallAction,
   OCPPVersion,
   TariffSetStatusEnum,
 } from '@citrineos/types';
-import { type IOCPPMessageRepository, type ITariffRepository } from '@citrineos/dal';
-import { stationIdFilter } from '@citrineos/dal';
+import { type ITariffRepository } from '@citrineos/dal';
 
 @AsResponseHandler([OCPPVersion.OCPP2_1], OCPP_CallAction.SetDefaultTariff)
 export class SetDefaultTariffResponseOcpp21Handler extends AbstractHandler {
-  protected _ocppMessageRepository: IOCPPMessageRepository;
   protected _tariffRepository: ITariffRepository;
 
   constructor({
     logger,
-    ocppMessageRepository,
     tariffRepository,
   }: AbstractHandlerDependencies & {
-    ocppMessageRepository: IOCPPMessageRepository;
     tariffRepository: ITariffRepository;
   }) {
     super(logger);
 
-    this._ocppMessageRepository = ocppMessageRepository;
     this._tariffRepository = tariffRepository;
   }
 
   async handle(
-    message: IMessage<OCPP2_1.SetDefaultTariffResponse>,
+    message: IMessage<OCPP2_1.SetDefaultTariffResponse, OCPP2_1.SetDefaultTariffRequest>,
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug(
@@ -58,23 +52,15 @@ export class SetDefaultTariffResponseOcpp21Handler extends AbstractHandler {
     const tenantId = message.context.tenantId;
     const ocppConnectionName = message.context.ocppConnectionName;
 
-    const storedRequest = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
-      where: {
-        tenantId,
-        stationId: await stationIdFilter(tenantId, ocppConnectionName),
-        correlationId: message.context.correlationId,
-        origin: MessageOrigin.ChargingStationManagementSystem,
-      },
-    });
+    const request = message.request;
 
-    if (!storedRequest) {
+    if (!request) {
       this._logger.error(
         `No SetDefaultTariffRequest found for correlationId ${message.context.correlationId} on station ${ocppConnectionName}`,
       );
       return;
     }
 
-    const request = storedRequest.payload as OCPP2_1.SetDefaultTariffRequest;
     const tariffData = request.tariff;
 
     const newTariff: TariffDto = {

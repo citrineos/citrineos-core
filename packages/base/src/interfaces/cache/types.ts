@@ -10,6 +10,10 @@ export enum CacheNamespace {
   ChargingStation = 'cs',
   TenantPathMapping = 'tpm',
   Transactions = 'tx',
+  /**
+   * Payloads of the Calls the CSMS sent and is awaiting a response to, keyed by correlationId.
+   */
+  CallRequests = 'call_req',
   Connections = 'conn',
   Protocol = 'prtcl',
   /**

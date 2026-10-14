@@ -6,7 +6,6 @@ import {
   type IAuthorizationRepository,
   type IConnectorRepository,
   type IEvseRepository,
-  type IOCPPMessageRepository,
   type IReservationRepository,
   type ITransactionEventRepository,
 } from '@citrineos/dal';
@@ -41,7 +40,6 @@ describe('TransactionService', () => {
   let transactionEventRepository: Mocked<ITransactionEventRepository>;
   let locationRepository: Mocked<IConnectorRepository & IEvseRepository>;
   let reservationRepository: Mocked<IReservationRepository>;
-  let ocppMessageRepository: Mocked<IOCPPMessageRepository>;
   let authorizer: Mocked<IAuthorizer>;
   let realTimeAuthorizer: Mocked<IAuthorizer>;
 
@@ -63,8 +61,6 @@ describe('TransactionService', () => {
 
     reservationRepository = {} as unknown as Mocked<IReservationRepository>;
 
-    ocppMessageRepository = {} as unknown as Mocked<IOCPPMessageRepository>;
-
     authorizer = {
       authorize: vi.fn(),
     } as Mocked<IAuthorizer>;
@@ -79,7 +75,6 @@ describe('TransactionService', () => {
       evseRepository: locationRepository,
       connectorRepository: locationRepository,
       reservationRepository,
-      ocppMessageRepository,
       realTimeAuthorizer,
       authorizers: [authorizer],
     });
@@ -458,7 +453,6 @@ describe('TransactionService', () => {
         evseRepository: locationRepository,
         connectorRepository: locationRepository,
         reservationRepository: {} as unknown as IReservationRepository,
-        ocppMessageRepository: {} as unknown as IOCPPMessageRepository,
         realTimeAuthorizer,
         authorizers: [],
       });
@@ -579,6 +573,39 @@ describe('TransactionService', () => {
     });
   });
 
+  describe('updateTransactionStatus', () => {
+    it('sets isActive on the transaction named in the GetTransactionStatusRequest', async () => {
+      transactionEventRepository.updateTransactionByStationIdAndTransactionId = vi
+        .fn()
+        .mockResolvedValue(aTransaction());
+
+      await transactionService.updateTransactionStatus(
+        DEFAULT_TENANT_ID,
+        'cs-001',
+        { transactionId: 'tx-1' },
+        false,
+      );
+
+      expect(
+        transactionEventRepository.updateTransactionByStationIdAndTransactionId,
+      ).toHaveBeenCalledWith(DEFAULT_TENANT_ID, { isActive: false }, 'tx-1', 'cs-001');
+    });
+
+    it('updates nothing without the GetTransactionStatusRequest', async () => {
+      transactionEventRepository.updateTransactionByStationIdAndTransactionId = vi.fn();
+
+      await transactionService.updateTransactionStatus(
+        DEFAULT_TENANT_ID,
+        'cs-001',
+        undefined,
+        false,
+      );
+
+      expect(
+        transactionEventRepository.updateTransactionByStationIdAndTransactionId,
+      ).not.toHaveBeenCalled();
+    });
+  });
   describe('TransactionService.recalculateTotalKwh', () => {
     const STATION = 'cp001';
 

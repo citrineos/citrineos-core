@@ -4,6 +4,7 @@
 
 import { type IMessage, DEFAULT_TENANT_ID } from '@citrineos/base';
 import {
+  type OcppRequest,
   type OcppResponse,
   ChargingLimitSourceEnum,
   EventGroup,
@@ -17,7 +18,6 @@ import type {
   IChangeConfigurationRepository,
   IChargingProfileRepository,
   ILocalAuthListRepository,
-  IOCPPMessageRepository,
 } from '@citrineos/dal';
 import {
   ChangeConfigurationResponseOcpp16Handler,
@@ -36,16 +36,14 @@ import {
 import type { Mocked } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const STATION_DB_ID = vi.hoisted(() => 4242);
-vi.mock('@citrineos/dal', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@citrineos/dal')>()),
-  stationIdFilter: vi.fn().mockResolvedValue(STATION_DB_ID),
-}));
-
 const STATION = 'station-001';
 const CORRELATION_ID = 'corr-001';
 
-function makeMessage<T extends OcppResponse>(action: OCPP_CallAction, payload: T): IMessage<T> {
+function makeMessage<T extends OcppResponse, R extends OcppRequest = OcppRequest>(
+  action: OCPP_CallAction,
+  payload: T,
+  request?: R,
+): IMessage<T, R> {
   return {
     context: {
       tenantId: DEFAULT_TENANT_ID,
@@ -59,12 +57,8 @@ function makeMessage<T extends OcppResponse>(action: OCPP_CallAction, payload: T
     action,
     state: MessageState.Response,
     protocol: OCPPVersion.OCPP1_6,
-  } as unknown as IMessage<T>;
-}
-
-// CSMS-originated request row as the IOCPPMessageRepository returns it.
-function requestRow(payload: unknown) {
-  return { payload } as never;
+    request,
+  } as unknown as IMessage<T, R>;
 }
 
 describe('SendLocalListResponseOcpp16Handler', () => {
@@ -168,38 +162,25 @@ describe('SendLocalListResponseOcpp16Handler', () => {
 describe('ChangeConfigurationResponseOcpp16Handler', () => {
   let handler: ChangeConfigurationResponseOcpp16Handler;
   let changeConfigurationRepository: Mocked<IChangeConfigurationRepository>;
-  let ocppMessageRepository: Mocked<IOCPPMessageRepository>;
 
   beforeEach(() => {
     const { container } = createTestContainer();
     changeConfigurationRepository = {
       createOrUpdateChangeConfiguration: vi.fn().mockResolvedValue({ key: 'HeartbeatInterval' }),
     } as unknown as Mocked<IChangeConfigurationRepository>;
-    ocppMessageRepository = {
-      readOnlyOneByQuery: vi
-        .fn()
-        .mockResolvedValue(requestRow({ key: 'HeartbeatInterval', value: '300' })),
-    } as unknown as Mocked<IOCPPMessageRepository>;
     handler = getTestInstance(container, ChangeConfigurationResponseOcpp16Handler, {
       changeConfigurationRepository,
-      ocppMessageRepository,
     });
   });
 
   function respond(status: OCPP1_6.ChangeConfigurationResponseStatus) {
-    return handler.handle(makeMessage(OCPP_CallAction.ChangeConfiguration, { status }));
+    const request: OCPP1_6.ChangeConfigurationRequest = { key: 'HeartbeatInterval', value: '300' };
+    return handler.handle(makeMessage(OCPP_CallAction.ChangeConfiguration, { status }, request));
   }
 
   it('Accepted persists the key and value from the correlated CSMS request', async () => {
     await respond(OCPP1_6.ChangeConfigurationResponseStatus.Accepted);
 
-    expect(ocppMessageRepository.readOnlyOneByQuery).toHaveBeenCalledWith(DEFAULT_TENANT_ID, {
-      where: {
-        stationId: STATION_DB_ID,
-        correlationId: CORRELATION_ID,
-        origin: MessageOrigin.ChargingStationManagementSystem,
-      },
-    });
     expect(changeConfigurationRepository.createOrUpdateChangeConfiguration).toHaveBeenCalledTimes(
       1,
     );
@@ -248,16 +229,16 @@ describe('ChangeConfigurationResponseOcpp16Handler', () => {
 });
 
 describe('RemoteStartTransactionResponseOcpp16Handler', () => {
-  const remoteStartRequest = {
+  const remoteStartRequest: OCPP1_6.RemoteStartTransactionRequest = {
     idTag: 'TAG-1',
     connectorId: 2,
     chargingProfile: {
       chargingProfileId: 42,
       stackLevel: 3,
-      chargingProfilePurpose: 'TxProfile',
-      chargingProfileKind: 'Absolute',
+      chargingProfilePurpose: OCPP1_6.RemoteStartTransactionRequestChargingProfilePurpose.TxProfile,
+      chargingProfileKind: OCPP1_6.RemoteStartTransactionRequestChargingProfileKind.Absolute,
       chargingSchedule: {
-        chargingRateUnit: 'A',
+        chargingRateUnit: OCPP1_6.RemoteStartTransactionRequestChargingRateUnit.A,
         chargingSchedulePeriod: [{ startPeriod: 0, limit: 16 }],
         duration: 3600,
       },
@@ -265,26 +246,23 @@ describe('RemoteStartTransactionResponseOcpp16Handler', () => {
   };
   let handler: RemoteStartTransactionResponseOcpp16Handler;
   let chargingProfileRepository: Mocked<IChargingProfileRepository>;
-  let ocppMessageRepository: Mocked<IOCPPMessageRepository>;
+  let originalRequest: OCPP1_6.RemoteStartTransactionRequest | undefined;
 
-  function build(originalRequest: unknown) {
+  function build(request: OCPP1_6.RemoteStartTransactionRequest | undefined) {
     const { container } = createTestContainer();
     chargingProfileRepository = {
       createOrUpdateChargingProfile: vi.fn().mockResolvedValue({}),
     } as unknown as Mocked<IChargingProfileRepository>;
-    ocppMessageRepository = {
-      readOnlyOneByQuery: vi
-        .fn()
-        .mockResolvedValue(originalRequest === undefined ? undefined : requestRow(originalRequest)),
-    } as unknown as Mocked<IOCPPMessageRepository>;
+    originalRequest = request;
     handler = getTestInstance(container, RemoteStartTransactionResponseOcpp16Handler, {
       chargingProfileRepository,
-      ocppMessageRepository,
     });
   }
 
   function respond(status: OCPP1_6.RemoteStartTransactionResponseStatus) {
-    return handler.handle(makeMessage(OCPP_CallAction.RemoteStartTransaction, { status }));
+    return handler.handle(
+      makeMessage(OCPP_CallAction.RemoteStartTransaction, { status }, originalRequest),
+    );
   }
 
   it('Accepted stores the mapped profile as active CSO on the request connector', async () => {
@@ -292,14 +270,6 @@ describe('RemoteStartTransactionResponseOcpp16Handler', () => {
 
     await respond(OCPP1_6.RemoteStartTransactionResponseStatus.Accepted);
 
-    expect(ocppMessageRepository.readOnlyOneByQuery).toHaveBeenCalledWith(DEFAULT_TENANT_ID, {
-      where: {
-        tenantId: DEFAULT_TENANT_ID,
-        stationId: STATION_DB_ID,
-        correlationId: CORRELATION_ID,
-        origin: MessageOrigin.ChargingStationManagementSystem,
-      },
-    });
     expect(chargingProfileRepository.createOrUpdateChargingProfile).toHaveBeenCalledTimes(1);
     expect(chargingProfileRepository.createOrUpdateChargingProfile).toHaveBeenCalledWith(
       DEFAULT_TENANT_ID,
@@ -347,7 +317,7 @@ describe('RemoteStartTransactionResponseOcpp16Handler', () => {
     expect(chargingProfileRepository.createOrUpdateChargingProfile).not.toHaveBeenCalled();
   });
 
-  it('Accepted with no correlated request stores nothing', async () => {
+  it('Accepted with no request on the message stores nothing', async () => {
     build(undefined);
 
     await respond(OCPP1_6.RemoteStartTransactionResponseStatus.Accepted);
@@ -355,54 +325,51 @@ describe('RemoteStartTransactionResponseOcpp16Handler', () => {
     expect(chargingProfileRepository.createOrUpdateChargingProfile).not.toHaveBeenCalled();
   });
 
-  it('Rejected skips the request lookup entirely', async () => {
+  it('Rejected stores nothing', async () => {
     build(remoteStartRequest);
 
     await respond(OCPP1_6.RemoteStartTransactionResponseStatus.Rejected);
 
-    expect(ocppMessageRepository.readOnlyOneByQuery).not.toHaveBeenCalled();
     expect(chargingProfileRepository.createOrUpdateChargingProfile).not.toHaveBeenCalled();
   });
 });
 
 describe('SetChargingProfileResponseOcpp16Handler', () => {
-  const setChargingProfileRequest = {
+  const setChargingProfileRequest: OCPP1_6.SetChargingProfileRequest = {
     connectorId: 1,
     csChargingProfiles: {
       chargingProfileId: 7,
       stackLevel: 0,
-      chargingProfilePurpose: 'ChargePointMaxProfile',
-      chargingProfileKind: 'Recurring',
-      recurrencyKind: 'Daily',
+      chargingProfilePurpose:
+        OCPP1_6.SetChargingProfileRequestChargingProfilePurpose.ChargePointMaxProfile,
+      chargingProfileKind: OCPP1_6.SetChargingProfileRequestChargingProfileKind.Recurring,
+      recurrencyKind: OCPP1_6.SetChargingProfileRequestRecurrencyKind.Daily,
       chargingSchedule: {
-        chargingRateUnit: 'W',
+        chargingRateUnit: OCPP1_6.SetChargingProfileRequestChargingRateUnit.W,
         chargingSchedulePeriod: [{ startPeriod: 0, limit: 11000, numberPhases: 3 }],
       },
     },
   };
   let handler: SetChargingProfileResponseOcpp16Handler;
   let chargingProfileRepository: Mocked<IChargingProfileRepository>;
-  let ocppMessageRepository: Mocked<IOCPPMessageRepository>;
+  let originalRequest: OCPP1_6.SetChargingProfileRequest | undefined;
 
-  function build(originalRequest: unknown) {
+  function build(request: OCPP1_6.SetChargingProfileRequest | undefined) {
     const { container } = createTestContainer();
     chargingProfileRepository = {
       createOrUpdateChargingProfile: vi.fn().mockResolvedValue({}),
       updateAllByQuery: vi.fn().mockResolvedValue([]),
     } as unknown as Mocked<IChargingProfileRepository>;
-    ocppMessageRepository = {
-      readOnlyOneByQuery: vi
-        .fn()
-        .mockResolvedValue(originalRequest === undefined ? undefined : requestRow(originalRequest)),
-    } as unknown as Mocked<IOCPPMessageRepository>;
+    originalRequest = request;
     handler = getTestInstance(container, SetChargingProfileResponseOcpp16Handler, {
       chargingProfileRepository,
-      ocppMessageRepository,
     });
   }
 
   function respond(status: OCPP1_6.SetChargingProfileResponseStatus) {
-    return handler.handle(makeMessage(OCPP_CallAction.SetChargingProfile, { status }));
+    return handler.handle(
+      makeMessage(OCPP_CallAction.SetChargingProfile, { status }, originalRequest),
+    );
   }
 
   it('Accepted stores the mapped profile, translating ChargePointMaxProfile', async () => {
@@ -437,7 +404,7 @@ describe('SetChargingProfileResponseOcpp16Handler', () => {
     );
   });
 
-  it('Accepted with no correlated request stores nothing', async () => {
+  it('Accepted with no request on the message stores nothing', async () => {
     build(undefined);
 
     await respond(OCPP1_6.SetChargingProfileResponseStatus.Accepted);
@@ -445,12 +412,11 @@ describe('SetChargingProfileResponseOcpp16Handler', () => {
     expect(chargingProfileRepository.createOrUpdateChargingProfile).not.toHaveBeenCalled();
   });
 
-  it('NotSupported skips the request lookup entirely', async () => {
+  it('NotSupported stores nothing', async () => {
     build(setChargingProfileRequest);
 
     await respond(OCPP1_6.SetChargingProfileResponseStatus.NotSupported);
 
-    expect(ocppMessageRepository.readOnlyOneByQuery).not.toHaveBeenCalled();
     expect(chargingProfileRepository.createOrUpdateChargingProfile).not.toHaveBeenCalled();
   });
 });
@@ -458,37 +424,25 @@ describe('SetChargingProfileResponseOcpp16Handler', () => {
 describe('ClearChargingProfileResponseOcpp16Handler', () => {
   let handler: ClearChargingProfileResponseOcpp16Handler;
   let chargingProfileRepository: Mocked<IChargingProfileRepository>;
-  let ocppMessageRepository: Mocked<IOCPPMessageRepository>;
 
   beforeEach(() => {
     const { container } = createTestContainer();
     chargingProfileRepository = {
       updateAllByQuery: vi.fn().mockResolvedValue([]),
     } as unknown as Mocked<IChargingProfileRepository>;
-    ocppMessageRepository = {
-      readOnlyOneByQuery: vi.fn().mockResolvedValue(requestRow({})),
-    } as unknown as Mocked<IOCPPMessageRepository>;
     handler = getTestInstance(container, ClearChargingProfileResponseOcpp16Handler, {
       chargingProfileRepository,
-      ocppMessageRepository,
     });
   });
 
   function respond(status: OCPP1_6.ClearChargingProfileResponseStatus) {
-    return handler.handle(makeMessage(OCPP_CallAction.ClearChargingProfile, { status }));
+    const request: OCPP1_6.ClearChargingProfileRequest = {};
+    return handler.handle(makeMessage(OCPP_CallAction.ClearChargingProfile, { status }, request));
   }
 
   it('Accepted deactivates only the station-scoped active profiles', async () => {
     await respond(OCPP1_6.ClearChargingProfileResponseStatus.Accepted);
 
-    expect(ocppMessageRepository.readOnlyOneByQuery).toHaveBeenCalledWith(DEFAULT_TENANT_ID, {
-      where: {
-        tenantId: DEFAULT_TENANT_ID,
-        stationId: STATION_DB_ID,
-        correlationId: CORRELATION_ID,
-        origin: MessageOrigin.ChargingStationManagementSystem,
-      },
-    });
     expect(chargingProfileRepository.updateAllByQuery).toHaveBeenCalledTimes(1);
     expect(chargingProfileRepository.updateAllByQuery).toHaveBeenCalledWith(
       DEFAULT_TENANT_ID,
