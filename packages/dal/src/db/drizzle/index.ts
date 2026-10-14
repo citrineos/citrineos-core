@@ -3,6 +3,18 @@
 // SPDX-License-Identifier: Apache-2.0
 
 export {
+  DrizzleAsyncJobStatusRepository,
+  toAsyncJobStatusDto,
+} from '../../repositories/drizzle/async-job-status.js';
+export {
+  asyncJobStatusTable,
+  tenantAsyncJobStatusTable,
+  AsyncJobStatusEntitySchema,
+  AsyncJobStatusEntityInsertSchema,
+  type AsyncJobStatusEntity,
+  type AsyncJobStatusEntityInsert,
+} from './schema/async-job-status.js';
+export {
   DrizzleAuthorizationRepository,
   toAuthorizationDto,
 } from '../../repositories/drizzle/authorization.js';

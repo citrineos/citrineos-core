@@ -21,10 +21,6 @@ import { type PgHarness, resetDb, startPgHarness } from '../../utils/pg-harness.
 // Three small repositories sharing one container: async job status rows keyed by a uuid
 // jobId, certificates under a (tenantId, serialNumber, issuerName) unique index, and OCPP
 // messages whose stationId resolves from ocppConnectionName on insert.
-//
-// SequelizeAsyncJobStatusRepository.updateAsyncJobStatus, findAllByQuery and deleteByJobId
-// hard-code tenantId 0 in their where clauses and never match rows stored under a real
-// tenant; those paths stay untested here.
 
 const TENANT_A = 1;
 const TENANT_B = 2;
@@ -62,17 +58,16 @@ describe('SequelizeAsyncJobStatusRepository', () => {
     } as any);
   }
 
-  it('createAsyncJobStatus persists the job under the tenant carried by the instance', async () => {
+  it('createAsyncJobStatus persists the job under the given tenant', async () => {
     const partner = await aPartner(TENANT_B);
 
-    const created = await makeRepo().createAsyncJobStatus(
-      AsyncJobStatus.build({
-        jobName: 'FETCH_OCPI_TOKENS',
-        tenantPartnerId: partner.id,
-        tenantId: TENANT_B,
-        paginationParams: { offset: 0, limit: 25 },
-      } as any),
-    );
+    const created = await makeRepo().createAsyncJobStatus(TENANT_B, {
+      jobName: 'FETCH_OCPI_TOKENS',
+      tenantPartnerId: partner.id,
+      paginatedParams: { offset: 0, limit: 25 },
+      stopScheduled: false,
+      isFailed: false,
+    });
 
     expect(created.jobId).toMatch(UUID);
     expect(created.jobName).toBe('FETCH_OCPI_TOKENS');
@@ -80,6 +75,7 @@ describe('SequelizeAsyncJobStatusRepository', () => {
     expect(created.tenantPartnerId).toBe(partner.id);
     expect(created.stopScheduled).toBe(false);
     expect(created.isFailed).toBe(false);
+    expect(created.paginatedParams).toEqual({ offset: 0, limit: 25 });
     expect(await AsyncJobStatus.count()).toBe(1);
   });
 
@@ -93,11 +89,11 @@ describe('SequelizeAsyncJobStatusRepository', () => {
       totalObjects: 400,
     } as any);
 
-    const found = await makeRepo().readByJobId(stored.jobId);
+    const found = await makeRepo().readByJobId(TENANT_A, stored.jobId);
 
     expect(found).toBeDefined();
     expect(found!.jobId).toBe(stored.jobId);
-    expect(found!.paginationParams).toEqual({ offset: 100, limit: 50 });
+    expect(found!.paginatedParams).toEqual({ offset: 100, limit: 50 });
     expect(found!.totalObjects).toBe(400);
     expect(found!.stoppedAt ?? null).toBeNull();
   });
@@ -111,12 +107,14 @@ describe('SequelizeAsyncJobStatusRepository', () => {
       paginationParams: {},
     } as any);
 
-    expect(await makeRepo().readByJobId('11111111-2222-3333-4444-555555555555')).toBeUndefined();
+    expect(
+      await makeRepo().readByJobId(TENANT_A, '11111111-2222-3333-4444-555555555555'),
+    ).toBeUndefined();
   });
 
   it('updateAsyncJobStatus rejects when no row matches the jobId', async () => {
     await expect(
-      makeRepo().updateAsyncJobStatus({ jobId: 'no-such-job', totalObjects: 5 }),
+      makeRepo().updateAsyncJobStatus(TENANT_A, 'no-such-job', { totalObjects: 5 }),
     ).rejects.toThrow('Failed to update AsyncJobStatus with id no-such-job');
   });
 });

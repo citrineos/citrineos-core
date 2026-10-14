@@ -25,7 +25,8 @@ export {
   LocalListAuthorization,
   LocalListVersion,
   SendLocalList,
-  AsyncJobStatusDTO,
+  ChargingStationNetworkProfile,
+  AsyncJobStatus,
   SignatureAlgorithmEnumType,
   SequelizeAuthorizationRepository,
   SequelizeBootRepository,
@@ -71,6 +72,7 @@ export {
 } from './src/repositories/sequelize/resolve-station-id.js';
 export {
   DefaultDrizzleInstance,
+  DrizzleAsyncJobStatusRepository,
   DrizzleAuthorizationRepository,
   DrizzleBootRepository,
   DrizzleCertificateRepository,
