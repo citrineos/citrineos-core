@@ -9,9 +9,11 @@ import {
   OCPP2_0_1,
   OCPPVersion,
 } from '@citrineos/types';
-import { OCPP2_0_1_Mapper } from '@citrineos/dal';
 import type { IRequestOptions } from 'typed-rest-client';
 import type { IRequestQueryParams } from 'typed-rest-client/Interfaces.js';
+import type { UnlockConnector } from '../../../index.js';
+import { CommandResultType } from '../../../index.js';
+import type { TokensMapper } from '../../mappers/index.js';
 import type {
   GetSequenceQueryResult,
   GetSequenceQueryVariables,
@@ -19,9 +21,6 @@ import type {
   UpsertSequenceMutationVariables,
 } from '../../transport/graphql/index.js';
 import { GET_SEQUENCE, UPSERT_SEQUENCE } from '../../transport/graphql/index.js';
-import type { UnlockConnector } from '../../../index.js';
-import { CommandResultType } from '../../../index.js';
-import type { TokensMapper } from '../../mappers/index.js';
 import { CommandType } from '../../types/command-type.js';
 import { EXTRACT_EVSE_ID } from '../../types/dto/evse-dto.js';
 import type { StartSession } from '../../types/start-session.js';

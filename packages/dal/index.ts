@@ -2,8 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Transaction as SequelizeTransaction } from 'sequelize';
-
 export * from 'sequelize-typescript';
 export {
   citext,
@@ -54,4 +52,3 @@ export {
   resolveStationIdOrThrow,
   stationIdFilter,
 } from './src/repositories/sequelize/resolve-station-id.js';
-export { SequelizeTransaction };
