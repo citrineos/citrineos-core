@@ -88,6 +88,7 @@ import type {
   ChargingProfile,
   CompositeSchedule,
 } from '../models/charging-profile/index.js';
+import type { ChargingStationSecurityInfo } from '../models/charging-station-security-info.js';
 import type { ChargingStationNetworkProfile } from '../models/location/charging-station-network-profile.js';
 import type {
   MeterValue,
@@ -801,17 +802,28 @@ export interface IServerNetworkProfileRepository {
   findByProfileId(tenantId: number, id: string): Promise<ServerNetworkProfileDto | undefined>;
 }
 
-export interface IChargingStationNetworkProfileRepository
-  extends CrudRepository<ChargingStationNetworkProfile> {
+export interface IChargingStationNetworkProfileRepository {
   deleteAllByStationIdAndConfigurationSlots(
     tenantId: number,
     ocppConnectionName: string,
     configurationSlot: number[],
-  ): Promise<ChargingStationNetworkProfile[]>;
+  ): Promise<ChargingStationNetworkProfileDto[]>;
   readAllByStationIdWithProfiles(
     tenantId: number,
     ocppConnectionName: string,
   ): Promise<ChargingStationNetworkProfileDto[]>;
+  readByConfigurationSlot(
+    tenantId: number,
+    ocppConnectionName: string,
+    configurationSlot: number,
+  ): Promise<ChargingStationNetworkProfileDto | undefined>;
+  upsertByConfigurationSlot(
+    tenantId: number,
+    stationId: number,
+    configurationSlot: number,
+    setNetworkProfileId: number,
+    websocketServerConfigId: string,
+  ): Promise<ChargingStationNetworkProfileDto>;
 }
 
 export interface SetNetworkProfileCreateInput {

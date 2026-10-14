@@ -29,6 +29,20 @@ export {
   toChargingStationSecurityInfoDto,
 } from '../../repositories/drizzle/charging-station-security-info.js';
 export {
+  DrizzleChargingStationNetworkProfileRepository,
+  toChargingStationNetworkProfileDto,
+  toChargingStationNetworkProfileRow,
+  type ChargingStationNetworkProfileRow,
+} from '../../repositories/drizzle/charging-station-network-profile.js';
+export {
+  chargingStationNetworkProfileTable,
+  tenantChargingStationNetworkProfileTable,
+  ChargingStationNetworkProfileEntitySchema,
+  ChargingStationNetworkProfileEntityInsertSchema,
+  type ChargingStationNetworkProfileEntity,
+  type ChargingStationNetworkProfileEntityInsert,
+} from './schema/charging-station-network-profile.js';
+export {
   DrizzleChargingStationSequenceRepository,
   toChargingStationSequenceDto,
 } from '../../repositories/drizzle/charging-station-sequence.js';
