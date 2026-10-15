@@ -151,6 +151,7 @@ export * from './src/interfaces/dto/types/network-alert.js';
 export * from './src/interfaces/dto/types/ocpi-registration.js';
 export * from './src/interfaces/dto/types/sales-tariff.js';
 export * from './src/interfaces/dto/types/sampled-value-dto.js';
+export * from './src/interfaces/dto/types/status-notification.js';
 export * from './src/interfaces/dto/types/tariff-types.js';
 export * from './src/interfaces/dto/types/transaction-type.js';
 export * from './src/interfaces/dto/types/vat.js';

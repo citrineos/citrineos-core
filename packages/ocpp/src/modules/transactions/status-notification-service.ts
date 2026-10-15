@@ -12,9 +12,9 @@ import type {
   IChargingStationRepository,
   IComponentRepository,
   IConnectorRepository,
-  IVariableAttributeRepository,
   IEvseRepository,
   IStatusNotificationRepository,
+  IVariableAttributeRepository,
 } from '@citrineos/dal';
 import { OCPP1_6_Mapper, OCPP2_0_1_Mapper } from '@citrineos/dal';
 import {
@@ -92,47 +92,38 @@ export class StatusNotificationService {
       return;
     }
 
-    const statusNotification: StatusNotificationDto = {
-      tenantId,
-      stationId: chargingStation.id!,
-      ...statusNotificationRequest,
-      connectorStatus: OCPP2_0_1_Mapper.LocationMapper.mapConnectorStatus(
-        statusNotificationRequest.connectorStatus,
-      ),
-    };
-
     let matchingEvse = chargingStation.evses?.find(
       (evse) => evse.evseTypeId === statusNotificationRequest.evseId,
     );
 
-    const connectionJson = await this._cache.get<string>(
-      createIdentifier(tenantId, ocppConnectionName),
-      CacheNamespace.Connections,
-    );
-    const connection: IWebsocketConnection | null = connectionJson
-      ? JSON.parse(connectionJson)
-      : null;
-    if (!connection?.allowUnknownChargingStations) {
-      if (!matchingEvse) {
+    if (!matchingEvse) {
+      const connectionJson = await this._cache.get<string>(
+        createIdentifier(tenantId, ocppConnectionName),
+        CacheNamespace.Connections,
+      );
+      const connection: IWebsocketConnection | null = connectionJson
+        ? JSON.parse(connectionJson)
+        : null;
+      if (!connection?.allowUnknownChargingStations) {
         this._logger.error(
           `Connector ${statusNotificationRequest.connectorId} on station ${ocppConnectionName} does not exist and allowUnknownChargingStations is false`,
         );
         return;
-      }
-    } else if (!matchingEvse) {
-      matchingEvse = await this._evseRepository.createOrUpdateEvse(tenantId, {
-        evseTypeId: statusNotificationRequest.evseId,
-        stationId: chargingStation.id!,
-      });
+      } else {
+        matchingEvse = await this._evseRepository.createOrUpdateEvse(tenantId, {
+          evseTypeId: statusNotificationRequest.evseId,
+          stationId: chargingStation.id!,
+        });
 
-      if (matchingEvse.evseTypeId! > 1) {
-        this._logger.warn(
-          `Connector ${statusNotificationRequest.connectorId} on station ${ocppConnectionName} does not exist and allowUnknownChargingStations is true, but the EVSE has evseTypeId ${matchingEvse.evseTypeId}. This may cause a collision with an existing connectorId on a multi-evse station.`,
-        );
+        if (matchingEvse.evseTypeId! > 1) {
+          this._logger.warn(
+            `Connector ${statusNotificationRequest.connectorId} on station ${ocppConnectionName} does not exist and allowUnknownChargingStations is true, but the EVSE has evseTypeId ${matchingEvse.evseTypeId}. This may cause a collision with an existing connectorId on a multi-evse station.`,
+          );
+        }
       }
     }
 
-    const connector = {
+    const connector: ConnectorDto & { evseTypeConnectorId: number } = {
       tenantId,
       stationId: chargingStation.id!,
       evseId: matchingEvse.id!,
@@ -143,17 +134,35 @@ export class StatusNotificationService {
       timestamp: statusNotificationRequest.timestamp,
     };
 
-    const savedConnector = await this._connectorRepository.createOrUpdateOcpp2Connector(
-      tenantId,
-      connector,
-    );
+    if (
+      matchingEvse.connectors?.find(
+        (connector) => connector.evseTypeConnectorId === statusNotificationRequest.connectorId,
+      )
+    ) {
+      await this._connectorRepository.createOrUpdateOcpp2Connector(tenantId, connector);
+    }
 
+    const statusNotification: StatusNotificationDto = {
+      tenantId,
+      stationId: chargingStation.id!,
+      ...statusNotificationRequest,
+      connectorStatus: OCPP2_0_1_Mapper.LocationMapper.mapConnectorStatus(
+        statusNotificationRequest.connectorStatus,
+      ),
+    };
     const savedStatusNotification =
       await this._statusNotificationRepository.addStatusNotificationToChargingStation(
         tenantId,
         ocppConnectionName,
         statusNotification,
       );
+
+    connector.latestStatusNotificationId = savedStatusNotification.id;
+    const savedConnector = await this._connectorRepository.createOrUpdateOcpp2Connector(
+      tenantId,
+      connector,
+    );
+
     if (savedConnector?.id !== undefined) {
       await this._recordConnectorStatus({
         tenantId,
@@ -216,9 +225,7 @@ export class StatusNotificationService {
         ),
       );
 
-      // We upsert the Connector BEFORE saving the StatusNotification because
-      // StatusNotifications.connectorId has an FK to Connectors.connectorId.
-      const connector = {
+      let connector: ConnectorDto & { connectorId: number } = {
         tenantId,
         stationId: chargingStation.id!,
         connectorId: statusNotificationRequest.connectorId,
@@ -234,7 +241,57 @@ export class StatusNotificationService {
         vendorId: statusNotificationRequest.vendorId,
         vendorErrorCode: statusNotificationRequest.vendorErrorCode,
       } as ConnectorDto & { connectorId: number };
-      let savedConnector: ConnectorDto | undefined;
+
+      if (!matchingEvse && statusNotificationRequest.connectorId !== 0) {
+        const connectionJson = await this._cache.get<string>(
+          createIdentifier(tenantId, ocppConnectionName),
+          CacheNamespace.Connections,
+        );
+        const connection: IWebsocketConnection | null = connectionJson
+          ? JSON.parse(connectionJson)
+          : null;
+        if (!connection?.allowUnknownChargingStations) {
+          throw new Error(
+            `Connector ${statusNotificationRequest.connectorId} on station ${ocppConnectionName} does not exist and allowUnknownChargingStations is false`,
+          );
+        }
+        const commissioned = await this._evseRepository.autoCommissionEvseForOcpp16Connector(
+          tenantId,
+          ocppConnectionName,
+        );
+        connector.evseId = commissioned.evseId;
+
+        const savedConnector = await this._connectorRepository.createOrUpdateOcpp16Connector(
+          tenantId,
+          connector,
+        );
+
+        if (savedConnector?.connectorId === undefined) {
+          throw new Error(
+            `Failed to create connector ${statusNotificationRequest.connectorId} on station ${ocppConnectionName}`,
+          );
+        } else {
+          connector = savedConnector as ConnectorDto & { connectorId: number };
+        }
+      } else if (matchingEvse) {
+        connector.evseId = matchingEvse.id!;
+      }
+
+      const statusNotification: StatusNotificationDto =
+        await this._statusNotificationRepository.addStatusNotificationToChargingStation(
+          tenantId,
+          ocppConnectionName,
+          {
+            tenantId,
+            ...statusNotificationRequest,
+            stationId: chargingStation.id!,
+            evseId: matchingEvse ? matchingEvse.evseTypeId : undefined,
+            connectorStatus:
+              OCPP1_6_Mapper.LocationMapper.mapStatusNotificationRequestStatusToConnectorStatus(
+                statusNotificationRequest.status,
+              ),
+          },
+        );
 
       if (chargingStation.use16StatusNotification0 && statusNotificationRequest.connectorId === 0) {
         // update all connectors at this station — connectorId stripped so we
@@ -245,69 +302,36 @@ export class StatusNotificationService {
           {
             ...connector,
             connectorId: undefined,
+            latestStatusNotificationId: statusNotification.id,
           },
         );
       } else if (statusNotificationRequest.connectorId !== 0) {
-        if (!matchingEvse) {
-          const connectionJson = await this._cache.get<string>(
-            createIdentifier(tenantId, ocppConnectionName),
-            CacheNamespace.Connections,
-          );
-          const connection: IWebsocketConnection | null = connectionJson
-            ? JSON.parse(connectionJson)
-            : null;
-          if (!connection?.allowUnknownChargingStations) {
-            throw new Error(
-              `Connector ${statusNotificationRequest.connectorId} on station ${ocppConnectionName} does not exist and allowUnknownChargingStations is false`,
-            );
-          }
-          const commissioned = await this._evseRepository.autoCommissionEvseForOcpp16Connector(
-            tenantId,
-            ocppConnectionName,
-          );
-          connector.evseId = commissioned.evseId;
-        } else {
-          connector.evseId = matchingEvse.id as number;
-        }
-
-        savedConnector = await this._connectorRepository.createOrUpdateOcpp16Connector(
+        connector.latestStatusNotificationId = statusNotification.id;
+        const savedConnector = await this._connectorRepository.createOrUpdateOcpp16Connector(
           tenantId,
           connector,
         );
+
+        if (savedConnector?.connectorId === undefined) {
+          this._logger.error(
+            `Failed to update connector ${statusNotificationRequest.connectorId} on station ${ocppConnectionName}`,
+          );
+        } else {
+          connector = savedConnector as ConnectorDto & { connectorId: number };
+        }
       }
 
-      // Now that the Connector record exists (upserted above, or pre-existing in
-      // the broadcast path), save the StatusNotification record.
-      const statusNotificationInput: StatusNotificationDto = {
-        tenantId,
-        ...statusNotificationRequest,
-        stationId: chargingStation.id!,
-        connectorStatus:
-          OCPP1_6_Mapper.LocationMapper.mapStatusNotificationRequestStatusToConnectorStatus(
-            statusNotificationRequest.status,
-          ),
-      };
-      if (matchingEvse) {
-        statusNotificationInput.evseId = matchingEvse.evseTypeId;
-      }
-      const savedStatusNotification =
-        await this._statusNotificationRepository.addStatusNotificationToChargingStation(
-          tenantId,
-          ocppConnectionName,
-          statusNotificationInput,
-        );
-      // Connector 0 reports on the whole station, which has no ConnectorStatus alert of its own.
-      if (savedConnector?.id !== undefined) {
+      if (connector?.id !== undefined) {
         await this._recordConnectorStatus({
           tenantId,
           stationId: chargingStation.id!,
           evseId: connector.evseId,
-          connectorId: savedConnector.id,
-          status: statusNotificationInput.connectorStatus,
+          connectorId: connector.id,
+          status: statusNotification.connectorStatus,
           errorCode: connector.errorCode,
           vendorErrorCode: statusNotificationRequest.vendorErrorCode,
           occurredAt: timestamp,
-          statusNotificationId: savedStatusNotification.id,
+          statusNotificationId: statusNotification.id,
         });
       }
     } else {

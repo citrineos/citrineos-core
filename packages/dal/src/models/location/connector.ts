@@ -143,6 +143,18 @@ export class Connector extends Model implements ConnectorDto {
   @BelongsTo(() => Tariff, 'tariffId')
   declare tariff?: TariffDto | null;
 
+  @ForeignKey(() => StatusNotification)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: true,
+    onUpdate: 'CASCADE',
+    onDelete: 'SET NULL',
+  })
+  declare latestStatusNotificationId?: number | null;
+
+  @BelongsTo(() => StatusNotification, 'latestStatusNotificationId')
+  declare latestStatusNotification?: StatusNotificationDto | null;
+
   @HasMany(() => StatusNotification, 'connectorId')
   declare statusNotifications?: StatusNotificationDto[];
 

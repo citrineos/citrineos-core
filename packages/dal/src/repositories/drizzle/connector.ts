@@ -50,8 +50,10 @@ export function toConnectorDto(entity: ConnectorEntity): ConnectorDto {
     vendorErrorCode: entity.vendorErrorCode,
     termsAndConditionsUrl: entity.termsAndConditionsUrl,
     tariffId: entity.tariffId,
+    latestStatusNotificationId: entity.latestStatusNotificationId,
     // Relations are not present on a flat DB row.
     tariff: undefined,
+    latestStatusNotification: undefined,
     evse: undefined,
     chargingStation: undefined,
     tenantId: entity.tenantId,
@@ -81,6 +83,7 @@ function writableConnectorColumns(connector: Partial<ConnectorDto>) {
     vendorId: connector.vendorId,
     vendorErrorCode: connector.vendorErrorCode,
     termsAndConditionsUrl: connector.termsAndConditionsUrl,
+    latestStatusNotificationId: connector.latestStatusNotificationId,
   });
 }
 
