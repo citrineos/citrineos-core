@@ -5,12 +5,10 @@
 import type {
   MeterValueDto,
   OCPP1_6,
-  OCPP2_common_types,
   OCPP2_request_types,
   StopTransactionDto,
   TransactionCreate,
   TransactionDto,
-  TransactionEventDto,
 } from '@citrineos/types';
 import { ChargingStationSequenceTypeEnum, OCPP2_0_1 } from '@citrineos/types';
 import { MeterValueUtils } from '@citrineos/base';
@@ -30,11 +28,6 @@ import {
   meterValueTable,
   tenantMeterValueTable,
 } from '../../db/drizzle/schema/meter-value.js';
-import {
-  type EvseTypeEntity,
-  evseTypeTable,
-  tenantEvseTypeTable,
-} from '../../db/drizzle/schema/evse-type.js';
 import { type EvseEntity, evseTable, tenantEvseTable } from '../../db/drizzle/schema/evse.js';
 import {
   type TariffEntity,
@@ -67,9 +60,8 @@ import {
 } from '../../db/drizzle/schema/connector.js';
 import { MeterValueMapper } from '../../mappers/2/meter-value-mapper.js';
 import { type ITransactionRepository } from '../repositories.js';
-import { toTransactionEventDto } from './transaction-event.js';
-import { toMeterValueDto } from './meter-value.js';
-import { toEvseTypeDto } from './evse-type.js';
+import { DrizzleTransactionEventRepository } from './transaction-event.js';
+import { DrizzleMeterValueRepository, toMeterValueDto } from './meter-value.js';
 import { toEvseDto } from './evse.js';
 import { toTariffDto } from './tariff.js';
 import { toStopTransactionDto } from './stop-transaction.js';
@@ -123,10 +115,14 @@ export class DrizzleTransactionRepository
   implements ITransactionRepository
 {
   private readonly chargingStationSequence: IChargingStationSequenceRepository;
+  private readonly meterValue: DrizzleMeterValueRepository;
+  private readonly transactionEvent: DrizzleTransactionEventRepository;
 
   constructor(dependencies: DrizzleRepositoryDependencies) {
     super(dependencies);
     this.chargingStationSequence = new DrizzleChargingStationSequenceRepository(dependencies);
+    this.meterValue = new DrizzleMeterValueRepository(dependencies);
+    this.transactionEvent = new DrizzleTransactionEventRepository(dependencies);
   }
 
   protected getTable(tenantId: number): typeof transactionTable {
@@ -143,10 +139,6 @@ export class DrizzleTransactionRepository
 
   private getMeterValueTable(tenantId: number): typeof meterValueTable {
     return this.useTenantSchema ? tenantMeterValueTable(tenantId) : meterValueTable;
-  }
-
-  private getEvseTypeTable(tenantId: number): typeof evseTypeTable {
-    return this.useTenantSchema ? tenantEvseTypeTable(tenantId) : evseTypeTable;
   }
 
   private getEvseTable(tenantId: number): typeof evseTable {
@@ -231,121 +223,12 @@ export class DrizzleTransactionRepository
     return byTransaction;
   }
 
-  private async readMeterValuesByTransactionEventIds(
-    tenantId: number,
-    transactionEventIds: number[],
-  ): Promise<Map<number, MeterValueDto[]>> {
-    const byEvent = new Map<number, MeterValueDto[]>();
-    if (transactionEventIds.length === 0) {
-      return byEvent;
-    }
-    const meterValues = this.getMeterValueTable(tenantId);
-    const rows = (await this.db
-      .select()
-      .from(meterValues)
-      .where(
-        and(
-          inArray(meterValues.transactionEventId, transactionEventIds),
-          this.tenantFilter(meterValues, tenantId),
-        ),
-      )) as MeterValueEntity[];
-
-    for (const row of rows) {
-      if (row.transactionEventId == null) continue;
-      const bucket = byEvent.get(row.transactionEventId) ?? [];
-      bucket.push(toMeterValueDto(row));
-      byEvent.set(row.transactionEventId, bucket);
-    }
-    return byEvent;
-  }
-
-  private async readEvseTypesByDatabaseIds(
-    tenantId: number,
-    evseTypeDatabaseIds: number[],
-  ): Promise<Map<number, EvseTypeEntity>> {
-    const byDatabaseId = new Map<number, EvseTypeEntity>();
-    if (evseTypeDatabaseIds.length === 0) {
-      return byDatabaseId;
-    }
-    const evseTypes = this.getEvseTypeTable(tenantId);
-    const rows = (await this.db
-      .select()
-      .from(evseTypes)
-      .where(
-        and(
-          inArray(evseTypes.databaseId, evseTypeDatabaseIds),
-          this.tenantFilter(evseTypes, tenantId),
-        ),
-      )) as EvseTypeEntity[];
-    for (const row of rows) {
-      byDatabaseId.set(row.databaseId, row);
-    }
-    return byDatabaseId;
-  }
-
-  private async readTransactionEventsByTransactionDatabaseIds(
-    tenantId: number,
-    transactionDatabaseIds: number[],
-  ): Promise<Map<number, TransactionEventDto[]>> {
-    const byTransaction = new Map<number, TransactionEventDto[]>();
-    if (transactionDatabaseIds.length === 0) {
-      return byTransaction;
-    }
-    const events = this.getTransactionEventTable(tenantId);
-    const rows = (await this.db
-      .select()
-      .from(events)
-      .where(
-        and(
-          inArray(events.transactionDatabaseId, transactionDatabaseIds),
-          this.tenantFilter(events, tenantId),
-        ),
-      )) as TransactionEventEntity[];
-
-    const hydrated = await this.hydrateTransactionEvents(tenantId, rows);
-    for (const [index, row] of rows.entries()) {
-      if (row.transactionDatabaseId == null) continue;
-      const bucket = byTransaction.get(row.transactionDatabaseId) ?? [];
-      bucket.push(hydrated[index]);
-      byTransaction.set(row.transactionDatabaseId, bucket);
-    }
-    return byTransaction;
-  }
-
-  private async hydrateTransactionEvents(
-    tenantId: number,
-    rows: TransactionEventEntity[],
-  ): Promise<TransactionEventDto[]> {
-    const meterValuesByEvent = await this.readMeterValuesByTransactionEventIds(
-      tenantId,
-      rows.map((row) => row.id),
-    );
-    const evseTypesByDatabaseId = await this.readEvseTypesByDatabaseIds(
-      tenantId,
-      rows.flatMap((row) => (row.evseId == null ? [] : [row.evseId])),
-    );
-
-    return rows.map((row) => {
-      const meterValues = meterValuesByEvent.get(row.id);
-      const evseType = row.evseId == null ? undefined : evseTypesByDatabaseId.get(row.evseId);
-      return {
-        ...toTransactionEventDto(row),
-        // The DTO types meterValue as a non-empty tuple, so an event with no readings
-        // keeps the undefined the mapper already set rather than an empty array.
-        ...(meterValues?.length
-          ? { meterValue: meterValues as TransactionEventDto['meterValue'] }
-          : {}),
-        ...(evseType ? { evse: toEvseTypeDto(evseType) } : {}),
-      };
-    });
-  }
-
   private async hydrateTransaction(
     tenantId: number,
     row: TransactionEntity,
   ): Promise<TransactionDto> {
     const [eventsByTransaction, meterValuesByTransaction] = await Promise.all([
-      this.readTransactionEventsByTransactionDatabaseIds(tenantId, [row.id]),
+      this.transactionEvent.readByTransactionDatabaseIds(tenantId, [row.id]),
       this.readMeterValuesByTransactionDatabaseIds(tenantId, [row.id]),
     ]);
     return {
@@ -353,36 +236,6 @@ export class DrizzleTransactionRepository
       transactionEvents: eventsByTransaction.get(row.id) ?? [],
       meterValues: meterValuesByTransaction.get(row.id) ?? [],
     };
-  }
-
-  // MeterValues is partitioned on (id, transactionCreatedAt),
-  // Since Drizzle has no hooks as in Sequelize, the same fallback
-  // chain runs here or the row lands in the wrong partition.
-  private async resolveMeterValuePartitionKey(
-    tenantId: number,
-    transactionCreatedAt: Date | undefined,
-    transactionDatabaseId: number | null | undefined,
-  ): Promise<Date> {
-    if (transactionCreatedAt != null) {
-      return transactionCreatedAt;
-    }
-    if (transactionDatabaseId != null) {
-      const transactions = this.getTable(tenantId);
-      const rows = await this.db
-        .select({ createdAt: transactions.createdAt })
-        .from(transactions)
-        .where(
-          and(
-            eq(transactions.id, transactionDatabaseId),
-            this.tenantFilter(transactions, tenantId),
-          ),
-        )
-        .limit(1);
-      if (rows[0]?.createdAt) {
-        return rows[0].createdAt;
-      }
-    }
-    return new Date();
   }
 
   private toTransactionColumns(values: Partial<TransactionCreate>): Record<string, unknown> {
@@ -714,37 +567,6 @@ export class DrizzleTransactionRepository
     return row ? await this.hydrateTransaction(tenantId, row) : undefined;
   }
 
-  async readAllByStationIdAndTransactionId(
-    tenantId: number,
-    ocppConnectionName: string,
-    transactionId: string,
-  ): Promise<TransactionEventDto[]> {
-    const events = this.getTransactionEventTable(tenantId);
-    const transactions = this.getTable(tenantId);
-
-    // The transaction is joined only to filter by its business id; the Sequelize
-    // implementation drops it from the result for the same reason.
-    const rows = (await this.db
-      .select({ event: events })
-      .from(events)
-      .innerJoin(
-        transactions,
-        and(
-          eq(events.transactionDatabaseId, transactions.id),
-          eq(transactions.transactionId, transactionId),
-          this.tenantFilter(transactions, tenantId),
-        ),
-      )
-      .where(
-        and(eq(events.ocppConnectionName, ocppConnectionName), this.tenantFilter(events, tenantId)),
-      )) as { event: TransactionEventEntity }[];
-
-    return await this.hydrateTransactionEvents(
-      tenantId,
-      rows.map((row) => row.event),
-    );
-  }
-
   // ─── ITransactionRepository writes ───────────────────────────────────
 
   async updateTransactionTotalCostById(
@@ -816,37 +638,6 @@ export class DrizzleTransactionRepository
     return rows.map(toTransactionDto);
   }
 
-  async createMeterValue(
-    tenantId: number,
-    meterValue: OCPP2_common_types.MeterValueType,
-    transactionDatabaseId?: number | null,
-    transactionId?: string | null,
-    tariffId?: number | null,
-    transactionCreatedAt?: Date,
-  ): Promise<MeterValueDto> {
-    const meterValues = this.getMeterValueTable(tenantId);
-    const mapped = MeterValueMapper.fromMeterValueType(meterValue);
-    const partitionKey = await this.resolveMeterValuePartitionKey(
-      tenantId,
-      transactionCreatedAt,
-      transactionDatabaseId,
-    );
-    const rows = (await this.db
-      .insert(meterValues)
-      .values({
-        tenantId,
-        transactionDatabaseId: transactionDatabaseId ?? null,
-        transactionCreatedAt: partitionKey,
-        transactionId: transactionId ?? null,
-        tariffId: tariffId ?? null,
-        sampledValue: mapped.sampledValue,
-        timestamp: new Date(mapped.timestamp),
-      })
-      .returning()) as MeterValueEntity[];
-
-    return toMeterValueDto(rows[0]);
-  }
-
   async createStopTransaction(
     tenantId: number,
     transactionDatabaseId: number,
@@ -904,17 +695,20 @@ export class DrizzleTransactionRepository
 
       // Sequentially, not Promise.all: one pg transaction cannot interleave statements.
       for (const meterValue of meterValues) {
-        await ctx.db.insert(meterValueRows).values({
+        await this.meterValue.insertRow(
           tenantId,
-          transactionDatabaseId,
-          transactionCreatedAt: transaction.createdAt,
-          stopTransactionDatabaseId: stopTransaction.id,
-          sampledValue: meterValue.sampledValue,
-          timestamp: new Date(meterValue.timestamp),
-          connectorId: meterValue.connectorId ?? null,
-          tariffId: meterValue.tariffId ?? null,
-          transactionId: meterValue.transactionId ?? null,
-        });
+          {
+            transactionDatabaseId,
+            transactionCreatedAt: transaction.createdAt,
+            stopTransactionDatabaseId: stopTransaction.id,
+            sampledValue: meterValue.sampledValue,
+            timestamp: new Date(meterValue.timestamp),
+            connectorId: meterValue.connectorId ?? null,
+            tariffId: meterValue.tariffId ?? null,
+            transactionId: meterValue.transactionId ?? null,
+          },
+          ctx.db,
+        );
       }
 
       return toStopTransactionDto(stopTransaction);
@@ -940,7 +734,6 @@ export class DrizzleTransactionRepository
 
     const transactions = this.getTable(tenantId);
     const events = this.getTransactionEventTable(tenantId);
-    const meterValues = this.getMeterValueTable(tenantId);
 
     return await this.withAtomicWrite(async (ctx) => {
       const existingRows = (await ctx.db
@@ -1152,30 +945,31 @@ export class DrizzleTransactionRepository
         .returning()) as TransactionEventEntity[];
       const event = eventRows[0];
 
-      const createdMeterValues: MeterValueEntity[] = [];
+      const createdMeterValues: MeterValueDto[] = [];
       if (value.meterValue && value.meterValue.length > 0) {
         const meterValueTypes = value.meterValue.map((meterValue) =>
           MeterValueMapper.fromMeterValueType(meterValue),
         );
         // Sequentially, not Promise.all: one pg transaction cannot interleave statements.
         for (const meterValueType of meterValueTypes) {
-          const rows = (await ctx.db
-            .insert(meterValues)
-            .values({
+          createdMeterValues.push(
+            await this.meterValue.insertRow(
               tenantId,
-              transactionEventId: event.id,
-              transactionDatabaseId,
-              transactionCreatedAt,
-              transactionId: finalTransaction.transactionId,
-              tariffId: finalTransaction.tariffId,
-              sampledValue: meterValueType.sampledValue,
-              timestamp: new Date(meterValueType.timestamp),
-            })
-            .returning()) as MeterValueEntity[];
-          createdMeterValues.push(rows[0]);
+              {
+                transactionEventId: event.id,
+                transactionDatabaseId,
+                transactionCreatedAt,
+                transactionId: finalTransaction.transactionId,
+                tariffId: finalTransaction.tariffId,
+                sampledValue: meterValueType.sampledValue,
+                timestamp: new Date(meterValueType.timestamp),
+              },
+              ctx.db,
+            ),
+          );
         }
 
-        const meterValueDtos = createdMeterValues.map(toMeterValueDto);
+        const meterValueDtos = createdMeterValues;
         const currentTotalKwh =
           finalTransaction.totalKwh != null ? Number(finalTransaction.totalKwh) : 0;
         const existingMeterStart =
@@ -1218,7 +1012,7 @@ export class DrizzleTransactionRepository
 
       return {
         ...toTransactionDto(finalTransaction),
-        meterValues: createdMeterValues.map(toMeterValueDto),
+        meterValues: createdMeterValues,
       };
     });
   }
@@ -1365,16 +1159,19 @@ export class DrizzleTransactionRepository
 
       // Sequentially, not Promise.all: one pg transaction cannot interleave statements.
       for (const meterValue of meterValues) {
-        await ctx.db.insert(meterValueRows).values({
+        await this.meterValue.insertRow(
           tenantId,
-          transactionDatabaseId: row.id,
-          transactionCreatedAt: row.createdAt,
-          transactionId: row.transactionId,
-          tariffId: row.tariffId,
-          connectorId: row.connectorId,
-          sampledValue: meterValue.sampledValue,
-          timestamp: new Date(meterValue.timestamp),
-        });
+          {
+            transactionDatabaseId: row.id,
+            transactionCreatedAt: row.createdAt,
+            transactionId: row.transactionId,
+            tariffId: row.tariffId,
+            connectorId: row.connectorId,
+            sampledValue: meterValue.sampledValue,
+            timestamp: new Date(meterValue.timestamp),
+          },
+          ctx.db,
+        );
       }
 
       const meterStart =

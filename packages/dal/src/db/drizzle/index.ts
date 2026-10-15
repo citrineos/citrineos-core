@@ -86,6 +86,18 @@ export {
 export { toLatestStatusNotificationDto } from '../../repositories/drizzle/latest-status-notification.js';
 export { DrizzleLocationRepository, toLocationDto } from '../../repositories/drizzle/location.js';
 export {
+  DrizzleMeterValueRepository,
+  toMeterValueDto,
+} from '../../repositories/drizzle/meter-value.js';
+export {
+  meterValueTable,
+  tenantMeterValueTable,
+  MeterValueEntitySchema,
+  MeterValueEntityInsertSchema,
+  type MeterValueEntity,
+  type MeterValueEntityInsert,
+} from './schema/meter-value.js';
+export {
   DrizzleMessageInfoRepository,
   toMessageInfoDto,
 } from '../../repositories/drizzle/message-info.js';
@@ -128,6 +140,10 @@ export {
   DrizzleTransactionRepository,
   toTransactionDto,
 } from '../../repositories/drizzle/transaction.js';
+export {
+  DrizzleTransactionEventRepository,
+  toTransactionEventDto,
+} from '../../repositories/drizzle/transaction-event.js';
 export {
   DrizzleVariableAttributeRepository,
   toVariableAttributeDto,

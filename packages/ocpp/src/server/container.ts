@@ -35,6 +35,7 @@ import {
   DrizzleComponentRepository,
   DrizzleConnectorRepository,
   DrizzleLocationRepository,
+  DrizzleMeterValueRepository,
   DrizzleStatusNotificationRepository,
   DrizzleEvseRepository,
   DrizzleDeleteCertificateAttemptRepository,
@@ -51,6 +52,7 @@ import {
   DrizzleSubscriptionRepository,
   DrizzleTariffRepository,
   DrizzleTenantRepository,
+  DrizzleTransactionEventRepository,
   DrizzleTransactionRepository,
   DrizzleVariableAttributeRepository,
   DrizzleVariableCharacteristicsRepository,
@@ -382,6 +384,9 @@ function registerRepositories(container: AwilixContainer): void {
     transactionRepository: asFunction(
       ({ transactionEventRepository }) => transactionEventRepository,
     ).singleton(),
+    meterValueRepository: asFunction(
+      ({ transactionEventRepository }) => transactionEventRepository,
+    ).singleton(),
   });
 
   if (process.env.CITRINEOS_USE_DRIZZLE === 'true') {
@@ -429,6 +434,8 @@ function registerRepositories(container: AwilixContainer): void {
       serverNetworkProfileRepository: asClass(DrizzleServerNetworkProfileRepository).singleton(),
       tariffRepository: asClass(DrizzleTariffRepository).singleton(),
       tenantRepository: asClass(DrizzleTenantRepository).singleton(),
+      meterValueRepository: asClass(DrizzleMeterValueRepository).singleton(),
+      transactionEventRepository: asClass(DrizzleTransactionEventRepository).singleton(),
       transactionRepository: asClass(DrizzleTransactionRepository).singleton(),
       componentRepository: asClass(DrizzleComponentRepository).singleton(),
       variableAttributeRepository: asClass(DrizzleVariableAttributeRepository).singleton(),

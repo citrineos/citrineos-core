@@ -15,7 +15,7 @@ import {
   OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/types';
-import type { ITransactionEventRepository } from '@citrineos/dal';
+import type { ITransactionEventRepository, ITransactionRepository } from '@citrineos/dal';
 import { TransactionEventRequestOcpp2Handler } from '@handlers/index.js';
 import { createTestContainer, makeMockOcppSender } from '@test/test-container.js';
 import { describe, expect, it, type Mock, vi } from 'vitest';
@@ -50,7 +50,7 @@ function makeMessage<T extends OcppRequest>(
 
 function makeHandler(
   overrides: {
-    transactionEventRepository?: Partial<ITransactionEventRepository>;
+    transactionEventRepository?: Partial<ITransactionEventRepository & ITransactionRepository>;
     cache?: Partial<ICache>;
     transactionService?: Record<string, unknown>;
     config?: SystemConfig;
@@ -73,7 +73,7 @@ function makeHandler(
     updateTransactionByStationIdAndTransactionId: vi.fn().mockResolvedValue({}),
     updateTransactionTotalCostById: vi.fn().mockResolvedValue(undefined),
     ...overrides.transactionEventRepository,
-  } as unknown as ITransactionEventRepository & Record<string, Mock>;
+  } as unknown as ITransactionEventRepository & ITransactionRepository & Record<string, Mock>;
 
   const cache = {
     get: vi.fn().mockResolvedValue(null),
@@ -116,9 +116,8 @@ function makeHandler(
     costNotifier: costNotifier as any,
     variableAttributeRepository: variableAttributeRepository as any,
     signedMeterValuesUtil: signedMeterValuesUtil as any,
-    // One mock behind both tokens, mirroring the Sequelize aggregate that serves both
-    // in production. ITransactionEventRepository extends ITransactionRepository, so the
-    // second needs no cast of its own.
+    // One mock behind both tokens, mirroring the Sequelize aggregate that serves both in
+    // production. The two interfaces are unrelated now, so the mock is cast to both.
     transactionEventRepository: transactionRepository,
     transactionRepository,
     transactionService: transactionService as any,
