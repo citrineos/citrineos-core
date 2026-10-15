@@ -1298,8 +1298,13 @@ export class WebsocketNetworkConnection implements INetworkConnection {
       key,
       cert,
       SNICallback: async (serverName, cb) => {
-        const opts = await certManager.getServerOptions(config);
-        cb(null, tls.createSecureContext(opts));
+        try {
+          const opts = await certManager.getServerOptions(config);
+          cb(null, tls.createSecureContext(opts));
+        } catch (error) {
+          this._logger.error(`SNI callback failed for server ${config.id}`, error);
+          cb(error instanceof Error ? error : new Error(String(error)));
+        }
       },
       ca:
         config.securityProfile > 2 && config.rootCACertificateFilePath
