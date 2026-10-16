@@ -6,6 +6,8 @@
 import { authProvider } from '@lib/providers/auth-provider';
 import config from '@lib/utils/config';
 import { HasuraHeader } from '@lib/utils/hasura-types';
+import { asListSubscription } from '@lib/utils/live-subscription';
+import type { LiveProvider } from '@refinedev/core';
 import {
   graphqlWS,
   type HasuraLiveProviderOptions,
@@ -45,9 +47,14 @@ const hasuraProviderOptions = {
   namingConvention: 'hasura-default',
 };
 
-const liveProvider = liveProviderHasura(
+const hasuraLiveProvider = liveProviderHasura(
   webSocketClient,
   hasuraProviderOptions as HasuraLiveProviderOptions,
 );
+
+const liveProvider: LiveProvider = {
+  ...hasuraLiveProvider,
+  subscribe: (options) => hasuraLiveProvider.subscribe(asListSubscription(options)),
+};
 
 export default liveProvider;
