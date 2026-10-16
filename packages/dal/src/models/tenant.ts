@@ -37,7 +37,6 @@ import { ChargingStation } from './location/charging-station.js';
 import { ChargingStationNetworkProfile } from './location/charging-station-network-profile.js';
 import { Connector } from './location/connector.js';
 import { Evse } from './location/evse.js';
-import { LatestStatusNotification } from './location/latest-status-notification.js';
 import { Location } from './location/location.js';
 import { ServerNetworkProfile } from './location/server-network-profile.js';
 import { SetNetworkProfile } from './location/set-network-profile.js';
@@ -232,9 +231,6 @@ export class Tenant extends Model<TenantAttributes, TenantCreationAttributes> im
 
   @HasMany(() => Evse, 'tenantId')
   declare evses?: Evse[];
-
-  @HasMany(() => LatestStatusNotification, 'tenantId')
-  declare latestStatusNotifications?: LatestStatusNotification[];
 
   @HasMany(() => Location, 'tenantId')
   declare locations?: Location[];

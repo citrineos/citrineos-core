@@ -12,6 +12,7 @@ import {
   ConnectorStatusEnumSchema,
   ConnectorTypeEnumSchema,
 } from './types/enums.js';
+import { StatusNotificationSchemaWithoutParent } from './types/status-notification.js';
 
 export const ConnectorSchemaWithoutParent = BaseSchema.extend({
   id: z.number().int().optional(),
@@ -34,6 +35,8 @@ export const ConnectorSchemaWithoutParent = BaseSchema.extend({
   termsAndConditionsUrl: z.string().nullable().optional(),
   tariffId: z.number().int().nullable().optional(),
   tariff: TariffSchema.nullable().optional(),
+  latestStatusNotificationId: z.number().int().nullable().optional(),
+  latestStatusNotification: StatusNotificationSchemaWithoutParent.nullable().optional(),
 });
 
 export const ConnectorSchema = ConnectorSchemaWithoutParent.extend({
@@ -53,6 +56,7 @@ export const ConnectorCreateSchema = ConnectorSchema.omit({
   evse: true,
   chargingStation: true,
   tariff: true,
+  latestStatusNotification: true,
   updatedAt: true,
   createdAt: true,
 });

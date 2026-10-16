@@ -68,7 +68,7 @@ export const getChargingStationsColumns = (
         ]
       : []),
     {
-      key: ChargingStationDetailsProps.statusNotifications,
+      key: ChargingStationDetailsProps.isOnline,
       header: t('Common.status', 'Status'),
       visible: true,
       filterConfig: {

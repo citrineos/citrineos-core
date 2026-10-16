@@ -56,7 +56,6 @@ export const TableName = {
   // Location
   Connectors: 'Connectors',
   Evses: 'Evses',
-  LatestStatusNotifications: 'LatestStatusNotifications',
   Locations: 'Locations',
   SetNetworkProfiles: 'SetNetworkProfiles',
   StatusNotifications: 'StatusNotifications',

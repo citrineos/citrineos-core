@@ -34,16 +34,11 @@ export const CHARGING_STATIONS_LIST_QUERY = gql`
       evses: Evses {
         ${EVSE_CORE_FIELDS.omit('createdAt', 'updatedAt')}
         ${EVSE_DETAIL_FIELDS.pick('physicalReference')}
-      }
-      LatestStatusNotifications {
-        id
-        stationId
-        statusNotificationId
-        updatedAt
-        createdAt
-        StatusNotification {
-          ${STATUS_NOTIFICATION_FIELDS}
-          stationId
+        connectors: Connectors {
+          id
+          latestStatusNotification: LatestStatusNotification {
+            ${STATUS_NOTIFICATION_FIELDS}
+          }
         }
       }
       transactions: Transactions(where: { isActive: { _eq: true } }) {
@@ -79,8 +74,8 @@ export const FAULTED_CHARGING_STATIONS_LIST_QUERY = gql`
       where: {
         _and: [
           {
-            LatestStatusNotifications: {
-              StatusNotification: { connectorStatus: { _eq: "Faulted" } }
+            Connectors: {
+              LatestStatusNotification: { connectorStatus: { _eq: "Faulted" } }
             }
           }
           $where
@@ -91,23 +86,13 @@ export const FAULTED_CHARGING_STATIONS_LIST_QUERY = gql`
       location: Location {
         ${LOCATION_CORE_FIELDS}
       }
-      LatestStatusNotifications {
-        id
-        stationId
-        statusNotificationId
-        updatedAt
-        createdAt
-        StatusNotification {
-          ${STATUS_NOTIFICATION_FIELDS}
-        }
-      }
     }
     ChargingStations_aggregate(
       where: {
         _and: [
           {
-            LatestStatusNotifications: {
-              StatusNotification: { connectorStatus: { _eq: "Faulted" } }
+            Connectors: {
+              LatestStatusNotification: { connectorStatus: { _eq: "Faulted" } }
             }
           }
           $where
@@ -166,16 +151,9 @@ export const CHARGING_STATIONS_GET_QUERY = gql`
         ${EVSE_DETAIL_FIELDS}
         connectors: Connectors {
           ${CONNECTOR_FULL_FIELDS}
-        }
-      }
-      LatestStatusNotifications {
-        id
-        stationId
-        statusNotificationId
-        updatedAt
-        createdAt
-        statusNotification: StatusNotification {
-          ${STATUS_NOTIFICATION_FIELDS}
+          latestStatusNotification: LatestStatusNotification {
+            ${STATUS_NOTIFICATION_FIELDS}
+          }
         }
       }
       transactions: Transactions(where: { isActive: { _eq: true } }) {
@@ -200,11 +178,6 @@ export const GET_CHARGING_STATIONS_WITH_LOCATION_AND_LATEST_STATUS_NOTIFICATIONS
   query GetChargingStationsWithLocationAndLatestStatusNotificationsAndTransactions {
     ChargingStations {
       ${CHARGING_STATION_CORE_FIELDS}
-      latestStatusNotifications: LatestStatusNotifications {
-        statusNotification: StatusNotification {
-          ${STATUS_NOTIFICATION_FIELDS}
-        }
-      }
       transactions: Transactions(where: { isActive: { _eq: true } }) {
         ${ACTIVE_TRANSACTION_FIELDS}
       }
@@ -213,6 +186,12 @@ export const GET_CHARGING_STATIONS_WITH_LOCATION_AND_LATEST_STATUS_NOTIFICATIONS
       }
       evses: Evses {
         ${EVSE_CORE_FIELDS.omit('evseId')}
+        connectors: Connectors {
+          id
+          latestStatusNotification: LatestStatusNotification {
+            ${STATUS_NOTIFICATION_FIELDS}
+          }
+        }
       }
     }
   }

@@ -37,7 +37,8 @@ export type DrizzleExecutor = NodePgDatabase | PgTransaction<any, any, any>;
  */
 export interface DrizzleWriteContext {
   db: DrizzleExecutor;
-  events: Array<{ name: string; payload: unknown }>;
+  // source is the repository that raised the event: a transaction can span several repositories
+  events: Array<{ source: EventEmitter; name: string; payload: unknown }>;
 }
 
 /**
@@ -166,7 +167,7 @@ export abstract class DrizzleTenantScopedRepository<
     const result = await this.db.transaction(async (tx) => fn({ db: tx, events }));
 
     for (const event of events) {
-      this.emit(event.name, event.payload);
+      event.source.emit(event.name, event.payload);
     }
     return result;
   }
@@ -176,7 +177,7 @@ export abstract class DrizzleTenantScopedRepository<
   // must go through this, or their events fire before the commit they belong to.
   protected raise(ctx: DrizzleWriteContext | undefined, name: string, payload: unknown) {
     if (ctx) {
-      ctx.events.push({ name, payload });
+      ctx.events.push({ source: this, name, payload });
     } else {
       this.emit(name, payload);
     }

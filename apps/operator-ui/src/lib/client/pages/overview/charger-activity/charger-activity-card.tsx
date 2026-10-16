@@ -11,7 +11,6 @@ import {
   ConnectorStatusEnum,
 } from '@citrineos/types';
 import { ChargingStationClass } from '@lib/cls/charging-station-dto';
-import { LatestStatusNotificationClass } from '@lib/cls/latest-status-notification-dto';
 import { GET_CHARGING_STATIONS_WITH_LOCATION_AND_LATEST_STATUS_NOTIFICATIONS_AND_TRANSACTIONS } from '@lib/queries/charging-stations';
 import { ActionType, ResourceType } from '@lib/utils/access-types';
 import { useGqlCustom } from '@lib/utils/use-gql-custom';
@@ -81,31 +80,10 @@ const getOnlineStatusCountsForStation = (
   const counts: OnlineStatusCounts = getNewCounts();
 
   chargingStation.evses?.forEach((evse: EvseDto) => {
-    const latestStatusNotification: LatestStatusNotificationClass = (
-      chargingStation as any
-    ).latestStatusNotifications?.find(
-      (latest: LatestStatusNotificationClass) =>
-        latest.statusNotification &&
-        (latest.statusNotification.evseId === null ||
-          latest.statusNotification.evseId === evse.evseTypeId),
-      //   &&
-      // latest.statusNotification.connectorId === evse.connectorId,
-    );
-
-    // Use type guard to filter for LatestStatusNotificationDto, but do not cast
-    // const statusNotifications = (
-    //   chargingStation.statusNotifications || []
-    // ).filter(sLatestStatusNotificationDto);
-    // Find the latest status notification for this EVSE and its first connector
-    // const latestStatus = statusNotifications.find(
-    //   (status) =>
-    //     status &&
-    //     (status.evseId === undefined || status.evseId === evse.id) &&
-    //     status.connectorId === evse.connectors?.[0]?.id,
-    // );
+    const latestStatusNotification = evse.connectors?.[0]?.latestStatusNotification;
 
     if (latestStatusNotification) {
-      const status = latestStatusNotification.statusNotification!.connectorStatus;
+      const status = latestStatusNotification.connectorStatus;
 
       const chargerStatus = connectorStatusToChargerStatus(status);
 

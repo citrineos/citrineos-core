@@ -16,6 +16,7 @@ import {
   Column,
   DataType,
   ForeignKey,
+  Index,
   Model,
   Table,
 } from 'sequelize-typescript';
@@ -66,7 +67,17 @@ export class StatusNotification extends Model implements StatusNotificationDto {
   @Column(DataType.STRING)
   declare vendorErrorCode?: string | null;
 
-  @BelongsTo(() => Connector, 'connectorId')
+  @ForeignKey(() => Connector)
+  @Index('status_notifications_connector_database_id')
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: true,
+    onUpdate: 'CASCADE',
+    onDelete: 'SET NULL',
+  })
+  declare connectorDatabaseId?: number | null;
+
+  @BelongsTo(() => Connector, 'connectorDatabaseId')
   declare connector?: ConnectorDto;
 
   @ForeignKey(() => Tenant)

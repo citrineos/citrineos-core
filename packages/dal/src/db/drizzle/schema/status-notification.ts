@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { TableName } from '@dal/models/table-name.js';
-import { integer, pgSchema, pgTable, serial, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { index, integer, pgSchema, pgTable, serial, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { type z } from 'zod';
 
@@ -19,6 +19,7 @@ function statusNotificationColumns() {
     connectorStatus: varchar('connectorStatus', { length: 255 }),
     evseId: integer('evseId'),
     connectorId: integer('connectorId'),
+    connectorDatabaseId: integer('connectorDatabaseId'),
     errorCode: varchar('errorCode', { length: 255 }),
     info: varchar('info', { length: 255 }),
     vendorId: varchar('vendorId', { length: 255 }),
@@ -37,6 +38,7 @@ function statusNotificationColumns() {
 export const statusNotificationTable = pgTable(
   TableName.StatusNotifications,
   statusNotificationColumns(),
+  (t) => [index('status_notifications_connector_database_id').on(t.connectorDatabaseId)],
 );
 
 // Schema-per-tenant (future approach): one Postgres schema per tenant, no tenantId filter needed

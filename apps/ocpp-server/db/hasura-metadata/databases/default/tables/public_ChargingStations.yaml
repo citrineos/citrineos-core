@@ -78,13 +78,6 @@ array_relationships:
         table:
           name: InstalledCertificates
           schema: public
-  - name: LatestStatusNotifications
-    using:
-      foreign_key_constraint_on:
-        column: stationId
-        table:
-          name: LatestStatusNotifications
-          schema: public
   - name: OCPPMessages
     using:
       foreign_key_constraint_on:
