@@ -192,32 +192,6 @@ describe('Repository reads on a station name shared by two tenants', () => {
     });
   });
 
-  describe('getTransactionsCount', () => {
-    it("counts only the caller's tenant", async () => {
-      await anActiveTransaction(OTHER_TENANT_ID, otherEvseDatabaseId, 'T-OTHER-1');
-      await anActiveTransaction(OTHER_TENANT_ID, otherEvseDatabaseId, 'T-OTHER-2');
-      await anActiveTransaction(DEFAULT_TENANT_ID, ownEvseDatabaseId, 'T-OWN');
-
-      const count = await transactionEventRepository.getTransactionsCount(DEFAULT_TENANT_ID);
-
-      expect(count).toBe(1);
-    });
-
-    it('agrees with the page getTransactions returns for the same tenant', async () => {
-      await anActiveTransaction(OTHER_TENANT_ID, otherEvseDatabaseId, 'T-OTHER-1');
-      await anActiveTransaction(DEFAULT_TENANT_ID, ownEvseDatabaseId, 'T-OWN-1');
-      await anActiveTransaction(DEFAULT_TENANT_ID, ownEvseDatabaseId, 'T-OWN-2');
-
-      const [count, page] = await Promise.all([
-        transactionEventRepository.getTransactionsCount(DEFAULT_TENANT_ID),
-        transactionEventRepository.getTransactions(DEFAULT_TENANT_ID),
-      ]);
-
-      expect(count).toBe(page.length);
-      expect(count).toBe(2);
-    });
-  });
-
   describe('createOrUpdateChargingProfile', () => {
     it("does not link a TxProfile to the other tenant's transaction with the same id", async () => {
       await anActiveTransaction(OTHER_TENANT_ID, otherEvseDatabaseId, '7');

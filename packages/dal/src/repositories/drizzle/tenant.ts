@@ -2,17 +2,17 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { ITenantRepository } from '@dal/repositories/repositories.js';
 import { childLogger } from '@citrineos/base';
 import type { TenantDto } from '@citrineos/types';
+import type { ITenantRepository } from '@dal/repositories/repositories.js';
 import { eq, isNotNull } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import EventEmitter from 'events';
 import type { ILogObj, Logger } from 'tslog';
+import { type TenantEntity, tenantTable } from '../../db/drizzle/schema/tenant.js';
+import { type Explicit } from '../../db/drizzle/types.js';
 import { DefaultDrizzleInstance } from '../../db/drizzle/util.js';
 import type { DrizzleRepositoryDependencies } from './base.js';
-import { type Explicit } from '../../db/drizzle/types.js';
-import { type TenantEntity, tenantTable } from '../../db/drizzle/schema/tenant.js';
 
 // ─── Mapper ──────────────────────────────────────────────────────────────────
 export function toTenantDto(entity: TenantEntity): TenantDto {
@@ -103,6 +103,11 @@ export class DrizzleTenantRepository extends EventEmitter implements ITenantRepo
     const dto = toTenantDto(rows[0]);
     this.emit('updated', [dto]);
     return dto;
+  }
+
+  async readTenantIds(): Promise<number[]> {
+    const rows = await this.db.select({ id: tenantTable.id }).from(tenantTable);
+    return rows.map((row) => row.id);
   }
 }
 

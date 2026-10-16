@@ -157,16 +157,21 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
       get: vi.fn().mockResolvedValue(JSON.stringify(websocketConnection)),
     } as unknown as ICache;
 
-    // The service needs ComponentRepository and DeviceModelRepository, but the
+    // The service needs ComponentRepository and VariableAttributeRepository, but the
     // 1.6 path doesn't use them. Stubs are sufficient.
     const service = new StatusNotificationService({
-      componentRepository: { readAllByQuery: vi.fn().mockResolvedValue([]) } as any,
-      deviceModelRepository: { createOrUpdateDeviceModelByStationId: vi.fn() } as any,
+      componentRepository: {
+        findConnectorComponentsForAvailabilityState: vi.fn().mockResolvedValue([]),
+        findComponentAndVariable: vi.fn(),
+        findOrCreateEvseAndComponent: vi.fn(),
+        findOrCreateEvseAndComponentAndVariable: vi.fn(),
+      },
+      variableAttributeRepository: { createOrUpdateDeviceModelByStationId: vi.fn() } as any,
       chargingStationRepository: locationRepository,
       evseRepository: locationRepository,
-      connectorRepository: locationRepository,
       statusNotificationRepository: locationRepository,
       cache,
+      networkAlertService: { recordConnectorStatus: vi.fn() },
     });
 
     await expect(
@@ -220,13 +225,18 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
     } as unknown as ICache;
 
     const service = new StatusNotificationService({
-      componentRepository: { readAllByQuery: vi.fn().mockResolvedValue([]) } as any,
-      deviceModelRepository: { createOrUpdateDeviceModelByStationId: vi.fn() } as any,
+      componentRepository: {
+        findConnectorComponentsForAvailabilityState: vi.fn().mockResolvedValue([]),
+        findComponentAndVariable: vi.fn(),
+        findOrCreateEvseAndComponent: vi.fn(),
+        findOrCreateEvseAndComponentAndVariable: vi.fn(),
+      },
+      variableAttributeRepository: { createOrUpdateDeviceModelByStationId: vi.fn() } as any,
       chargingStationRepository: locationRepository,
       evseRepository: locationRepository,
-      connectorRepository: locationRepository,
       statusNotificationRepository: locationRepository,
       cache,
+      networkAlertService: { recordConnectorStatus: vi.fn() },
     });
 
     for (const status of ['Available', 'Charging']) {
@@ -292,13 +302,18 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
     } as unknown as ICache;
 
     const service = new StatusNotificationService({
-      componentRepository: { readAllByQuery: vi.fn().mockResolvedValue([]) } as any,
-      deviceModelRepository: { createOrUpdateDeviceModelByStationId: vi.fn() } as any,
+      componentRepository: {
+        findConnectorComponentsForAvailabilityState: vi.fn().mockResolvedValue([]),
+        findComponentAndVariable: vi.fn(),
+        findOrCreateEvseAndComponent: vi.fn(),
+        findOrCreateEvseAndComponentAndVariable: vi.fn(),
+      },
+      variableAttributeRepository: { createOrUpdateDeviceModelByStationId: vi.fn() } as any,
       chargingStationRepository: locationRepository,
       evseRepository: locationRepository,
-      connectorRepository: locationRepository,
       statusNotificationRepository: locationRepository,
       cache,
+      networkAlertService: { recordConnectorStatus: vi.fn() },
     });
 
     await expect(
@@ -333,13 +348,18 @@ describe('StatusNotificationService.processStatusNotification end-to-end (2.0.1 
     } as unknown as ICache;
 
     return new StatusNotificationService({
-      componentRepository: { readAllByQuery: vi.fn().mockResolvedValue([]) } as any,
-      deviceModelRepository: { createOrUpdateDeviceModelByStationId: vi.fn() } as any,
+      componentRepository: {
+        findConnectorComponentsForAvailabilityState: vi.fn().mockResolvedValue([]),
+        findComponentAndVariable: vi.fn(),
+        findOrCreateEvseAndComponent: vi.fn(),
+        findOrCreateEvseAndComponentAndVariable: vi.fn(),
+      },
+      variableAttributeRepository: { createOrUpdateDeviceModelByStationId: vi.fn() } as any,
       chargingStationRepository: locationRepository,
       evseRepository: locationRepository,
-      connectorRepository: locationRepository,
       statusNotificationRepository: locationRepository,
       cache,
+      networkAlertService: { recordConnectorStatus: vi.fn() },
     });
   };
 

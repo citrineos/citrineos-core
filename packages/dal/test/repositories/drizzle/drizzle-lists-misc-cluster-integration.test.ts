@@ -175,7 +175,6 @@ describe('DrizzleLocalListVersionRepository', () => {
     expect(dto!.ocppConnectionName).toBe(STATION);
     expect(dto!.versionNumber).toBe(7);
     expect(dto!.localAuthorizationList).toBeUndefined();
-    expect(dto!.customData).toBeUndefined();
     expect(dto!.tenantId).toBe(TENANT);
     expect(dto!.createdAt).toBeInstanceOf(Date);
   });
@@ -707,7 +706,6 @@ describe('drizzle row-to-DTO mappers', () => {
     expect(dto.ocppConnectionName).toBe('');
     expect(dto.versionNumber).toBe(0);
     expect(dto.localAuthorizationList).toBeUndefined();
-    expect(dto.customData).toBeUndefined();
     expect(dto.tenant).toBeUndefined();
     expect(dto.createdAt).toEqual(timestamps.createdAt);
   });
@@ -745,7 +743,6 @@ describe('drizzle row-to-DTO mappers', () => {
         language1: null,
         language2: null,
         personalMessage: null,
-        customData: null,
         groupAuthorizationId: 77,
         authorizationId: null,
         tenantId: TENANT,

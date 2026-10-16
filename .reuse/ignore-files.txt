@@ -8,7 +8,6 @@
 apps/ocpp-server/.sequelizerc
 OCPP_201_Logo_core_and_advanced_security.png
 README.md
-apps/ocpp-server/rbac-rules.json
 apps/ocpp-server/entrypoint.sh
 logo_black.png
 logo_white.png
@@ -95,6 +94,7 @@ apps/ocpp-server/src/assets/certificates/rootCertificate.pem
 apps/ocpp-server/src/assets/certificates/rootKey.pem
 apps/ocpp-server/src/assets/certificates/subCAKey.pem
 apps/ocpp-server/src/assets/websocket-servers.json
+apps/ocpp-server/src/assets/roles-seed.json
 
 # Documentation
 AGENTS.md
@@ -124,6 +124,7 @@ apps/operator-ui/public/locales/en/tariffs.json
 apps/operator-ui/public/locales/en/tenantPartners.json
 apps/operator-ui/public/locales/en/transactions.json
 apps/operator-ui/public/locales/en/overview.json
+apps/operator-ui/public/locales/en/networkAlerts.json
 apps/operator-ui/public/locales/pt-BR/common.json
 apps/operator-ui/public/locales/pt-BR/authorizations.json
 apps/operator-ui/public/locales/pt-BR/chargingStations.json
@@ -132,6 +133,7 @@ apps/operator-ui/public/locales/pt-BR/overview.json
 apps/operator-ui/public/locales/pt-BR/tariffs.json
 apps/operator-ui/public/locales/pt-BR/tenantPartners.json
 apps/operator-ui/public/locales/pt-BR/transactions.json
+apps/operator-ui/public/locales/pt-BR/networkAlerts.json
 apps/operator-ui/public/logo-black.svg
 apps/operator-ui/public/logo-collapsed.svg
 apps/operator-ui/public/logo-white.svg

@@ -4,6 +4,8 @@
 import type {
   GetChargingStationByPkQueryResult,
   GetChargingStationByPkQueryVariables,
+  GetEvseByIdQueryResult,
+  GetEvseByIdQueryVariables,
   IDtoEvent,
 } from '../../../index.js';
 import {
@@ -12,6 +14,7 @@ import {
   DtoEventObjectType,
   DtoEventType,
   GET_CHARGING_STATION_BY_PK_QUERY,
+  GET_EVSE_BY_ID_QUERY,
   OcpiModule,
 } from '../../../index.js';
 import type { IOcpiGraphqlClient, LocationsBroadcaster } from '../../../index.js';
@@ -20,7 +23,13 @@ import type { OcpiConfiguredDependencies } from '../../server/dependencies.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { LocationsModuleApi } from './module/locations-module-api.js';
-import type { ChargingStationDto, ConnectorDto, EvseDto, LocationDto } from '@citrineos/types';
+import type {
+  ChargingStationDto,
+  ConnectorDto,
+  EvseDto,
+  LocationDto,
+  TenantDto,
+} from '@citrineos/types';
 
 export { LocationsModuleApi } from './module/locations-module-api.js';
 export type { ILocationsModuleApi } from './module/i-locations-module-api.js';
@@ -241,11 +250,54 @@ export class LocationsModule extends AbstractDtoModule implements OcpiModule {
       );
       return;
     }
-    connectorDto.chargingStation = chargingStationResponse
-      .ChargingStations[0] as ChargingStationDto;
+    const chargingStationDto = chargingStationResponse.ChargingStations[0] as ChargingStationDto;
+    connectorDto.chargingStation = chargingStationDto;
 
-    // TODO: filter out status updates, since they should only apply at the EVSE level
+    // TODO: skip the connector PATCH for status-only changes; status is pushed at the EVSE level below
 
     await this.locationsBroadcaster.broadcastPatchConnector(tenant, connectorDto);
+
+    if (connectorDto.status !== undefined && connectorDto.evseId != null) {
+      await this.broadcastEvseStatus(tenant, connectorDto.evseId, chargingStationDto);
+    }
+  }
+
+  // The connector notification is the only one a StatusNotification produces, and OCPI carries
+  // status on the EVSE, so re-read the EVSE with its connectors and push the derived status.
+  private async broadcastEvseStatus(
+    tenant: TenantDto,
+    evseId: number,
+    chargingStationDto: ChargingStationDto,
+  ): Promise<void> {
+    if (chargingStationDto.locationId == null) {
+      this._logger.error(
+        `Location ID missing for Charging Station ${chargingStationDto.id}, cannot broadcast status of EVSE ${evseId}.`,
+      );
+      return;
+    }
+
+    const response = await this.ocpiGraphqlClient.request<
+      GetEvseByIdQueryResult,
+      GetEvseByIdQueryVariables
+    >(GET_EVSE_BY_ID_QUERY, {
+      locationId: chargingStationDto.locationId,
+      stationId: chargingStationDto.ocppConnectionName,
+      evseId,
+      countryCode: tenant.countryCode!,
+      partyId: tenant.partyId!,
+    });
+    const evseRecord = response.Locations?.[0]?.chargingPool?.[0]?.evses?.[0];
+    if (!evseRecord) {
+      this._logger.error(
+        `EVSE ${evseId} not found for Charging Station ${chargingStationDto.id}, cannot broadcast status.`,
+      );
+      return;
+    }
+
+    await this.locationsBroadcaster.broadcastPatchEvseStatus(
+      tenant,
+      evseRecord as EvseDto,
+      chargingStationDto,
+    );
   }
 }

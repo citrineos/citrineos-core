@@ -2,8 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { ErrorObject } from 'ajv';
 import { childLogger } from '@base-util/logging.js';
+import { outboundDeadline } from '@base-util/staleness.js';
+import type { ErrorObject } from 'ajv';
 
 import {
   ErrorCode,
@@ -17,10 +18,10 @@ import {
   type SystemConfig,
 } from '@citrineos/types';
 import type { ICache } from '@interfaces/cache/cache.js';
-import type { IMessage } from '@interfaces/messages/message.js';
 import type { IMessageConfirmation } from '@interfaces/messages/message-confirmation.js';
 import type { IMessageHandler } from '@interfaces/messages/message-handler.js';
 import type { IMessageSender } from '@interfaces/messages/message-sender.js';
+import type { IMessage } from '@interfaces/messages/message.js';
 import { OCPPValidator } from '@interfaces/modules/ocpp-validator.js';
 import type { IMessageRouter } from '@interfaces/router/router.js';
 import { Call, CallResult, OcppError } from '@ocpp/rpc/message.js';
@@ -110,6 +111,12 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
    */
 
   async handle(message: IMessage<OcppRequest | OcppResponse | OcppError>): Promise<void> {
+    const deadline = outboundDeadline(this._config.timeouts, message);
+    if (deadline !== undefined && Date.now() > deadline) {
+      await this._onStaleMessage(message);
+      return;
+    }
+
     message.payload = this._ocppValidator.sanitizeOCPPPayload(message.payload);
     switch (message.state) {
       case MessageState.Request: {
@@ -128,28 +135,6 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
               errors: errors,
             },
           );
-        }
-
-        // Optionally drop Calls that have aged past `staleCallMaxAgeSeconds` while queued. A
-        // Call can sit in the broker (e.g. requeued during websocket churn while the station
-        // has no live or valid connection) and then be delivered to a later, different
-        // connection — acting on a runtime state the caller never saw (a stale Reset killing a
-        // fresh session, a stale RemoteStop closing someone else's transaction, etc.). This
-        // guard is opt-in: it only drops when `staleCallMaxAgeSeconds` is configured, since some
-        // deployments prefer late delivery over none, and fine-grained per-action staleness
-        // handling is left as future work.
-        const staleCallMaxAgeSeconds = this._config.timeouts.staleCallMaxAgeSeconds;
-        if (staleCallMaxAgeSeconds !== undefined) {
-          const callAgeMs = Date.now() - new Date(message.context.timestamp).getTime();
-          const maxCallAgeMs = staleCallMaxAgeSeconds * 1000;
-          if (callAgeMs > maxCallAgeMs) {
-            this._logger.error(
-              `Dropping stale ${message.action} Call for ${message.context.ocppConnectionName}: ` +
-                `queued ${callAgeMs} ms ago, exceeds staleCallMaxAgeSeconds (${maxCallAgeMs} ms). ` +
-                `correlationId=${message.context.correlationId}`,
-            );
-            break;
-          }
         }
 
         await this.sendCall(
@@ -224,6 +209,19 @@ export abstract class AbstractMessageRouter implements IMessageRouter {
   /**
    * Protected Methods
    */
+
+  /**
+   * Called in place of delivering a message that outlived {@link outboundDeadline}.
+   */
+  protected async _onStaleMessage(
+    message: IMessage<OcppRequest | OcppResponse | OcppError>,
+  ): Promise<void> {
+    const ageMs = Date.now() - new Date(message.context.timestamp).getTime();
+    this._logger.error(
+      `Dropping stale ${message.action} ${MessageState[message.state]} for ${message.context.ocppConnectionName}: ` +
+        `queued ${ageMs} ms ago. correlationId=${message.context.correlationId}`,
+    );
+  }
 
   /**
    * Validates a Call object against its schema.

@@ -21,7 +21,6 @@ import {
   type ITenantRepository,
   SequelizeInstalledCertificateRepository,
   SequelizeLocationRepository,
-  SequelizeOCPPMessageRepository,
   SequelizeTenantRepository,
 } from '@citrineos/dal';
 import { GetInstalledCertificateIdsResponseOcpp2Handler } from '@handlers/index.js';
@@ -58,7 +57,6 @@ let pgContainer: StartedTestContainer;
 let sequelizeInstance: Sequelize;
 let config: SystemConfig;
 let installedCertificateRepository: SequelizeInstalledCertificateRepository;
-let ocppMessageRepository: SequelizeOCPPMessageRepository;
 let tenantRepository: ITenantRepository;
 let locationRepository: SequelizeLocationRepository;
 
@@ -95,7 +93,6 @@ beforeAll(async () => {
 
   const deps = { config, logger: undefined, sequelizeInstance } as never;
   installedCertificateRepository = new SequelizeInstalledCertificateRepository(deps);
-  ocppMessageRepository = new SequelizeOCPPMessageRepository(deps);
   tenantRepository = new SequelizeTenantRepository(deps);
   locationRepository = new SequelizeLocationRepository(deps);
 }, 90_000);
@@ -127,7 +124,19 @@ function aResponseReporting(...certificates: CertificateHashData[]): IMessage<Oc
     action: OCPP_CallAction.GetInstalledCertificateIds,
     state: MessageState.Response,
     protocol: OCPPVersion.OCPP2_0_1,
+    request: {},
   } as unknown as IMessage<OcppRequest>;
+}
+
+function notFound(message: IMessage<OcppRequest>): IMessage<OcppRequest> {
+  return {
+    ...message,
+    payload: { status: GetInstalledCertificateStatusEnum.NotFound },
+  } as unknown as IMessage<OcppRequest>;
+}
+
+function withoutRequest(message: IMessage<OcppRequest>): IMessage<OcppRequest> {
+  return { ...message, request: undefined };
 }
 
 async function anInstalledCertificate(certificateHashData: CertificateHashData) {
@@ -147,16 +156,11 @@ async function aManufacturerCertificate() {
   });
 }
 
-async function aRequestAskingFor(...certificateType: CertificateUseEnumType[]) {
-  return ocppMessageRepository.createOCPPMessage(DEFAULT_TENANT_ID, STATION, {
-    correlationId: 'corr-1',
-    origin: MessageOrigin.ChargingStationManagementSystem,
-    action: OCPP_CallAction.GetInstalledCertificateIds,
-    protocol: OCPPVersion.OCPP2_0_1,
-    payload: { certificateType },
-    raw: JSON.stringify([2, 'corr-1', 'GetInstalledCertificateIds', { certificateType }]),
-    timestamp: new Date().toISOString(),
-  });
+function askingFor(
+  message: IMessage<OcppRequest>,
+  ...certificateType: CertificateUseEnumType[]
+): IMessage<OcppRequest> {
+  return { ...message, request: { certificateType } };
 }
 
 function recordedSerialNumbers() {
@@ -171,7 +175,6 @@ describe('GetInstalledCertificateIdsResponseOcpp2Handler with several certificat
   function aHandler() {
     return getTestInstance(container, GetInstalledCertificateIdsResponseOcpp2Handler, {
       installedCertificateRepository,
-      ocppMessageRepository,
     });
   }
 
@@ -229,10 +232,38 @@ describe('GetInstalledCertificateIdsResponseOcpp2Handler with several certificat
   it('leaves a certificate of a type the request did not ask about', async () => {
     await anInstalledCertificate(ROOT_ONE);
     await aManufacturerCertificate();
-    await aRequestAskingFor(CertificateUseEnum.V2GRootCertificate);
 
-    await aHandler().handle(aResponseReporting(ROOT_TWO) as never);
+    await aHandler().handle(
+      askingFor(aResponseReporting(ROOT_TWO), CertificateUseEnum.V2GRootCertificate) as never,
+    );
 
     expect(await recordedSerialNumbers()).toEqual(['serial-2', 'serial-mf']);
+  });
+
+  it('removes every certificate when the station has none of any type', async () => {
+    await anInstalledCertificate(ROOT_ONE);
+    await aManufacturerCertificate();
+
+    await aHandler().handle(notFound(aResponseReporting()) as never);
+
+    expect(await recordedSerialNumbers()).toEqual([]);
+  });
+
+  it('records reported certificates but removes none when the message carries no request', async () => {
+    await anInstalledCertificate(ROOT_ONE);
+    await aManufacturerCertificate();
+
+    await aHandler().handle(withoutRequest(aResponseReporting(ROOT_TWO)) as never);
+
+    expect(await recordedSerialNumbers()).toEqual(['serial-1', 'serial-2', 'serial-mf']);
+  });
+
+  it('removes nothing on NotFound when the message carries no request', async () => {
+    await anInstalledCertificate(ROOT_ONE);
+    await aManufacturerCertificate();
+
+    await aHandler().handle(notFound(withoutRequest(aResponseReporting())) as never);
+
+    expect(await recordedSerialNumbers()).toEqual(['serial-1', 'serial-mf']);
   });
 });

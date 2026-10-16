@@ -4,20 +4,9 @@
 
 import { z } from 'zod';
 import { ChargingStationSchema } from './charging-station-dto.js';
-import { BaseSchema } from './types/base-dto.js';
-import { ConnectorStatusEnumSchema } from './types/enums.js';
+import { StatusNotificationSchemaWithoutParent } from './types/status-notification.js';
 
-export const StatusNotificationSchema = BaseSchema.extend({
-  id: z.number().int().optional(),
-  stationId: z.number().int().nullable().optional(),
-  timestamp: z.iso.datetime().nullable().optional(),
-  connectorStatus: ConnectorStatusEnumSchema,
-  evseId: z.number().int().nullable().optional(),
-  connectorId: z.number().int(),
-  errorCode: z.string().nullable().optional(),
-  info: z.string().nullable().optional(),
-  vendorId: z.string().nullable().optional(),
-  vendorErrorCode: z.string().nullable().optional(),
+export const StatusNotificationSchema = StatusNotificationSchemaWithoutParent.extend({
   chargingStation: ChargingStationSchema.optional(),
 });
 

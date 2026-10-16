@@ -44,7 +44,6 @@ export enum OCPP2_Namespace {
   EVSEType = 'EvseType',
   EventDataType = 'EventData',
   FileURL = 'FileURL',
-  LatestStatusNotification = 'LatestStatusNotification',
   LocalListAuthorization = 'LocalListAuthorization',
   LocalListVersion = 'LocalListVersion',
   Location = 'Location',

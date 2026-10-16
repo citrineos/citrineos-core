@@ -15,28 +15,28 @@ import {
   OCPP2_request_types,
   OCPP2_response_types,
 } from '@citrineos/types';
-import type { IDeviceModelRepository, IVariableMonitoringRepository } from '@citrineos/dal';
+import type { IComponentRepository, IVariableMonitoringRepository } from '@citrineos/dal';
 
 @AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.NotifyMonitoringReport)
 export class NotifyMonitoringReportRequestOcpp2Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
-  protected _deviceModelRepository: IDeviceModelRepository;
+  protected _componentRepository: IComponentRepository;
   protected _variableMonitoringRepository: IVariableMonitoringRepository;
 
   constructor({
     logger,
     ocppSender,
-    deviceModelRepository,
+    componentRepository,
     variableMonitoringRepository,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
-    deviceModelRepository: IDeviceModelRepository;
+    componentRepository: IComponentRepository;
     variableMonitoringRepository: IVariableMonitoringRepository;
   }) {
     super(logger);
 
     this._ocppSender = ocppSender;
-    this._deviceModelRepository = deviceModelRepository;
+    this._componentRepository = componentRepository;
     this._variableMonitoringRepository = variableMonitoringRepository;
   }
 
@@ -53,7 +53,7 @@ export class NotifyMonitoringReportRequestOcpp2Handler extends AbstractHandler {
     for (const monitorType of message.payload.monitor ? message.payload.monitor : []) {
       const ocppConnectionName: string = message.context.ocppConnectionName;
       const [component, variable] =
-        await this._deviceModelRepository.findOrCreateEvseAndComponentAndVariable(
+        await this._componentRepository.findOrCreateEvseAndComponentAndVariable(
           message.context.tenantId,
           monitorType.component,
           monitorType.variable,
@@ -61,9 +61,9 @@ export class NotifyMonitoringReportRequestOcpp2Handler extends AbstractHandler {
       await this._variableMonitoringRepository.createOrUpdateByMonitoringDataTypeAndStationId(
         message.context.tenantId,
         monitorType,
-        component ? component.id : null,
-        variable ? variable.id : null,
         ocppConnectionName,
+        component.id,
+        variable.id,
       );
     }
 

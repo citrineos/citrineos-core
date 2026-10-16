@@ -16,7 +16,7 @@ import type {
   IAuthorizationRepository,
   IChargingStationRepository,
   IConnectorRepository,
-  ITransactionEventRepository,
+  ITransactionRepository,
 } from '@citrineos/dal';
 import { GetTariffsRequestOcpp21Handler } from '@handlers/index.js';
 import { createTestContainer, makeMockOcppSender } from '@test/test-container.js';
@@ -61,7 +61,7 @@ describe('GetTariffsRequestOcpp21Handler', () => {
   let mockChargingStationRepository: Partial<IChargingStationRepository>;
   let mockConnectorRepository: Partial<IConnectorRepository>;
   let mockAuthorizationRepository: Partial<IAuthorizationRepository>;
-  let mockTransactionEventRepository: Partial<ITransactionEventRepository>;
+  let mockTransactionEventRepository: Partial<ITransactionRepository>;
   let mockReadConnectorsWithTariffs: any;
   let mockAuthorizationFindAll: any;
   let mockReadActiveTransactions: any;
@@ -101,8 +101,7 @@ describe('GetTariffsRequestOcpp21Handler', () => {
       chargingStationRepository:
         mockChargingStationRepository as unknown as IChargingStationRepository,
       connectorRepository: mockConnectorRepository as unknown as IConnectorRepository,
-      transactionEventRepository:
-        mockTransactionEventRepository as unknown as ITransactionEventRepository,
+      transactionRepository: mockTransactionEventRepository as unknown as ITransactionRepository,
     });
   });
 

@@ -507,6 +507,7 @@ export const ReasonEnumSchema = z.enum([
   'StoppedByEV',
   'TimeLimitReached',
   'Timeout',
+  'ReqEnergyTransferRejected',
 ]);
 
 export const RecurrencyKindEnumSchema = z.enum(['Daily', 'Weekly']);

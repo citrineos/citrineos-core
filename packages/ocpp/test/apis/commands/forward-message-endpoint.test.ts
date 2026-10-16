@@ -68,7 +68,7 @@ describe('forwardMessageEndpoint', () => {
   it('sends one call per identifier', async () => {
     const { endpoint } = buildEndpoint();
 
-    await endpoint.handle(['cs001', 'cs002'], {}, undefined, 1, OCPPVersion.OCPP2_0_1);
+    await endpoint.handle(['cs001', 'cs002'], {}, {}, 1, OCPPVersion.OCPP2_0_1);
 
     expect(sendCall.mock.calls.map((call) => call[0].ocppConnectionName)).toEqual([
       'cs001',
@@ -80,7 +80,7 @@ describe('forwardMessageEndpoint', () => {
     const { endpoint } = buildEndpoint();
     const request = { type: 'Immediate', evseId: 3 };
 
-    await endpoint.handle(['cs001'], request, undefined, 1, OCPPVersion.OCPP2_0_1);
+    await endpoint.handle(['cs001'], request, {}, 1, OCPPVersion.OCPP2_0_1);
 
     expect(sendCall.mock.calls[0][0].payload).toBe(request);
   });
@@ -88,7 +88,7 @@ describe('forwardMessageEndpoint', () => {
   it('tags every call with the declared action and event group', async () => {
     const { endpoint } = buildEndpoint();
 
-    await endpoint.handle(['cs001'], {}, undefined, 1, OCPPVersion.OCPP2_0_1);
+    await endpoint.handle(['cs001'], {}, {}, 1, OCPPVersion.OCPP2_0_1);
 
     expect(sendCall.mock.calls[0][0]).toMatchObject({
       action: OCPP_CallAction.Reset,
@@ -99,7 +99,7 @@ describe('forwardMessageEndpoint', () => {
   it('passes the request version through as the protocol', async () => {
     const { endpoint } = buildEndpoint();
 
-    await endpoint.handle(['cs001'], {}, undefined, 1, OCPPVersion.OCPP2_1);
+    await endpoint.handle(['cs001'], {}, {}, 1, OCPPVersion.OCPP2_1);
 
     expect(sendCall.mock.calls[0][0].protocol).toBe(OCPPVersion.OCPP2_1);
   });
@@ -107,7 +107,7 @@ describe('forwardMessageEndpoint', () => {
   it('falls back to the default tenant when none was supplied', async () => {
     const { endpoint } = buildEndpoint();
 
-    await endpoint.handle(['cs001'], {}, undefined, undefined, OCPPVersion.OCPP2_0_1);
+    await endpoint.handle(['cs001'], {}, {}, undefined, OCPPVersion.OCPP2_0_1);
 
     expect(sendCall.mock.calls[0][0].tenantId).toBe(DEFAULT_TENANT_ID);
   });
@@ -115,7 +115,7 @@ describe('forwardMessageEndpoint', () => {
   it('keeps an explicit tenant id', async () => {
     const { endpoint } = buildEndpoint();
 
-    await endpoint.handle(['cs001'], {}, undefined, 42, OCPPVersion.OCPP2_0_1);
+    await endpoint.handle(['cs001'], {}, {}, 42, OCPPVersion.OCPP2_0_1);
 
     expect(sendCall.mock.calls[0][0].tenantId).toBe(42);
   });
@@ -123,9 +123,17 @@ describe('forwardMessageEndpoint', () => {
   it('forwards the callback url when one was supplied', async () => {
     const { endpoint } = buildEndpoint();
 
-    await endpoint.handle(['cs001'], {}, 'http://cb', 1, OCPPVersion.OCPP2_0_1);
+    await endpoint.handle(['cs001'], {}, { callbackUrl: 'http://cb' }, 1, OCPPVersion.OCPP2_0_1);
 
     expect(sendCall.mock.calls[0][0].callbackUrl).toBe('http://cb');
+  });
+
+  it('forwards staleAfterSeconds when one was supplied', async () => {
+    const { endpoint } = buildEndpoint();
+
+    await endpoint.handle(['cs001'], {}, { staleAfterSeconds: 0 }, 1, OCPPVersion.OCPP2_0_1);
+
+    expect(sendCall.mock.calls[0][0].staleAfterSeconds).toBe(0);
   });
 
   it('returns one confirmation per identifier, in order', async () => {
@@ -134,7 +142,7 @@ describe('forwardMessageEndpoint', () => {
     const confirmations = await endpoint.handle(
       ['cs001', 'cs002'],
       {},
-      undefined,
+      {},
       1,
       OCPPVersion.OCPP2_0_1,
     );
@@ -148,7 +156,7 @@ describe('forwardMessageEndpoint', () => {
   it('sends nothing when no identifiers were supplied', async () => {
     const { endpoint } = buildEndpoint();
 
-    const confirmations = await endpoint.handle([], {}, undefined, 1, OCPPVersion.OCPP2_0_1);
+    const confirmations = await endpoint.handle([], {}, {}, 1, OCPPVersion.OCPP2_0_1);
 
     expect(confirmations).toEqual([]);
     expect(sendCall).not.toHaveBeenCalled();

@@ -5,6 +5,7 @@ import { EventGroup, OCPP_CallAction, OCPPVersion, type SystemConfig } from '@ci
 import {
   AbstractMessageEndpoint,
   type IMessageEndpointMetadata,
+  type MessageDelivery,
 } from '@interfaces/api/endpoints/abstract-message-endpoint.js';
 import { AbstractMessageEndpointApi } from '@interfaces/api/endpoints/abstract-message-endpoint-api.js';
 import type { BuiltMessageEndpoint } from '@interfaces/api/endpoints/build-message-endpoints.js';
@@ -27,7 +28,7 @@ class RecordingEndpoint extends AbstractMessageEndpoint {
   public readonly calls: Array<{
     identifiers: string[];
     request: unknown;
-    callbackUrl: string | undefined;
+    delivery: MessageDelivery;
     tenantId: number | undefined;
     version: OCPPVersion;
     extraQueries: Record<string, unknown> | undefined;
@@ -36,12 +37,12 @@ class RecordingEndpoint extends AbstractMessageEndpoint {
   async handle(
     identifiers: string[],
     request: unknown,
-    callbackUrl: string | undefined,
+    delivery: MessageDelivery,
     tenantId: number | undefined,
     version: OCPPVersion,
     extraQueries?: Record<string, unknown>,
   ): Promise<IMessageConfirmation[]> {
-    this.calls.push({ identifiers, request, callbackUrl, tenantId, version, extraQueries });
+    this.calls.push({ identifiers, request, delivery, tenantId, version, extraQueries });
     return [{ success: true, payload: 'ok' }];
   }
 }
@@ -190,10 +191,35 @@ describe('AbstractMessageEndpointApi', () => {
 
       expect(harness.endpoint.calls[0]).toMatchObject({
         tenantId: 7,
-        callbackUrl: 'http://cb',
+        delivery: { callbackUrl: 'http://cb' },
         version: OCPPVersion.OCPP2_0_1,
         request: { value: 'x' },
       });
+    });
+
+    it('threads staleAfterSeconds to the endpoint as a number, keeping it out of extraQueries', async () => {
+      await harness.server.inject({
+        method: 'POST',
+        url: `${url}?identifier=cs001&tenantId=1&staleAfterSeconds=0`,
+        payload: { value: 'x' },
+      });
+
+      expect(harness.endpoint.calls[0].delivery).toEqual({
+        callbackUrl: undefined,
+        staleAfterSeconds: 0,
+      });
+      expect(harness.endpoint.calls[0].extraQueries).toBeUndefined();
+    });
+
+    it('rejects a negative staleAfterSeconds', async () => {
+      const response = await harness.server.inject({
+        method: 'POST',
+        url: `${url}?identifier=cs001&tenantId=1&staleAfterSeconds=-1`,
+        payload: { value: 'x' },
+      });
+
+      expect(response.statusCode).toBe(400);
+      expect(harness.endpoint.calls).toHaveLength(0);
     });
 
     it('forwards declared extra querystrings as extraQueries', async () => {

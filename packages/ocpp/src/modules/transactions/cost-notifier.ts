@@ -1,13 +1,13 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { OCPPVersionType } from '@citrineos/types';
-import type { ITransactionEventRepository } from '@citrineos/dal';
-import { Transaction } from '@citrineos/dal';
+import type { OCPPVersionType, TransactionDto } from '@citrineos/types';
+import type { ITransactionRepository } from '@citrineos/dal';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { CostCalculator } from './cost-calculator.js';
 import { Scheduler } from './scheduler.js';
+import { requireTransactionDatabaseId } from '@util/transaction.js';
 
 /** The computed cost update to send to a charging station. */
 export interface CostUpdate {
@@ -26,23 +26,23 @@ export interface CostUpdate {
 export type CostUpdatedNotifier = (update: CostUpdate) => Promise<void>;
 
 export class CostNotifier extends Scheduler {
-  private readonly _transactionEventRepository: ITransactionEventRepository;
+  private readonly _transactionRepository: ITransactionRepository;
   private readonly _costCalculator: CostCalculator;
   private readonly _notifyCostUpdated: CostUpdatedNotifier;
 
   constructor({
-    transactionEventRepository,
+    transactionRepository,
     costCalculator,
     costUpdatedNotifier,
     logger,
   }: {
-    transactionEventRepository: ITransactionEventRepository;
+    transactionRepository: ITransactionRepository;
     costCalculator: CostCalculator;
     costUpdatedNotifier: CostUpdatedNotifier;
     logger: Logger<ILogObj>;
   }) {
     super(logger);
-    this._transactionEventRepository = transactionEventRepository;
+    this._transactionRepository = transactionRepository;
     this._costCalculator = costCalculator;
     this._notifyCostUpdated = costUpdatedNotifier;
   }
@@ -75,17 +75,17 @@ export class CostNotifier extends Scheduler {
   }
 
   async calculateCostAndNotify(
-    transaction: Transaction,
+    transaction: TransactionDto,
     tenantId: number,
     protocol: OCPPVersionType,
     ocppConnectionName: string,
   ): Promise<void> {
     const cost = await this._costCalculator.calculateTotalCost(tenantId, transaction);
 
-    await this._transactionEventRepository.updateTransactionTotalCostById(
+    await this._transactionRepository.updateTransactionTotalCostById(
       tenantId,
       cost,
-      transaction.id,
+      requireTransactionDatabaseId(transaction),
     );
 
     await this._notifyCostUpdated({
@@ -108,7 +108,7 @@ export class CostNotifier extends Scheduler {
   ) {
     try {
       const transaction =
-        await this._transactionEventRepository.readTransactionByStationIdAndTransactionId(
+        await this._transactionRepository.readTransactionByStationIdAndTransactionId(
           tenantId,
           ocppConnectionName,
           transactionId,

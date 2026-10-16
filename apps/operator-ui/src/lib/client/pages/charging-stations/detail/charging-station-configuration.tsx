@@ -64,10 +64,10 @@ interface VariableAttribute {
     instance: string;
   };
   evseDatabaseId: number | null;
-  Evse: {
-    id: string;
-    connectorId: string;
-  };
+  EvseType: {
+    id: number | null;
+    connectorId: number | null;
+  } | null;
 }
 
 interface ChangeConfiguration {
@@ -295,7 +295,7 @@ export const ChargingStationConfiguration: React.FC<ChargingStationConfiguration
           mutability: attribute.mutability ?? '-',
           component: `${attribute.Component?.name ?? '-'}:${attribute.Component?.instance ?? '-'}`,
           variable: `${attribute.Variable?.name ?? '-'}:${attribute.Variable?.instance ?? '-'}`,
-          evse: `${attribute.Evse?.id ?? '-'}:${attribute.Evse?.connectorId ?? '-'}`,
+          evse: `${attribute.EvseType?.id ?? '-'}:${attribute.EvseType?.connectorId ?? '-'}`,
           componentName: attribute.Component?.name ?? '',
           componentInstance: attribute.Component?.instance ?? null,
           variableName: attribute.Variable?.name ?? '',
@@ -383,7 +383,7 @@ export const ChargingStationConfiguration: React.FC<ChargingStationConfiguration
           item.mutability ?? '-',
           `${item.Component?.name ?? '-'}:${item.Component?.instance ?? '-'}`,
           `${item.Variable?.name ?? '-'}:${item.Variable?.instance ?? '-'}`,
-          `${item.Evse?.id ?? '-'}:${item.Evse?.connectorId ?? '-'}`,
+          `${item.EvseType?.id ?? '-'}:${item.EvseType?.connectorId ?? '-'}`,
         ],
       );
     }

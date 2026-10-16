@@ -23,7 +23,6 @@ describe('AuthenticationMapper', () => {
     it('should map Authorization to AuthorizationData correctly', () => {
       const authorization = aAuthorization();
       const result = AuthorizationMapper.toAuthorizationData(authorization);
-      expect(result).toHaveProperty('customData');
       validateIdToken(result.idToken, authorization);
       expect(result).toHaveProperty('idTokenInfo');
     });
@@ -63,7 +62,6 @@ describe('AuthenticationMapper', () => {
       const result = AuthorizationMapper.toIdTokenInfo(authorization);
 
       expect(result.groupIdToken).toEqual({
-        customData: group.customData,
         additionalInfo: group.additionalInfo,
         idToken: 'GROUP',
         type: OCPP2_0_1.IdTokenEnumType.Central,

@@ -5,19 +5,12 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { ChangeConfiguration } from '@dal/db/sequelize/index.js';
 import type { SystemConfig } from '@citrineos/types';
-import {
-  Component,
-  SequelizeChangeConfigurationRepository,
-  SequelizeComponentRepository,
-  Variable,
-} from '../../../index.js';
+import { SequelizeChangeConfigurationRepository } from '../../../index.js';
 import { type PgHarness, resetDb, startPgHarness } from '../../utils/pg-harness.js';
 
-// SequelizeComponentRepository is the inherited CRUD surface over Component;
 // SequelizeChangeConfigurationRepository adds the OCPP 1.6 configuration upsert.
 // device-model-integration.test.ts owns createOrUpdateByGetVariablesResultAndStationId,
-// so these suites cover the plain component/variable persistence paths and the
-// 1.6 change-configuration flow.
+// so this suite covers the 1.6 change-configuration flow.
 
 const TENANT_A = 1;
 const TENANT_B = 2;
@@ -37,13 +30,6 @@ beforeEach(async () => {
   await resetDb(h);
 });
 
-function componentRepo(): SequelizeComponentRepository {
-  return new SequelizeComponentRepository({
-    config: {} as SystemConfig,
-    sequelizeInstance: h.sequelizeInstance,
-  });
-}
-
 function changeConfigRepo(): SequelizeChangeConfigurationRepository {
   return new SequelizeChangeConfigurationRepository({
     config: {} as SystemConfig,
@@ -61,119 +47,6 @@ function aConfiguration(overrides: Partial<ChangeConfiguration> = {}): ChangeCon
     ...overrides,
   } as ChangeConfiguration;
 }
-
-describe('SequelizeComponentRepository', () => {
-  it('create persists the component and readByKey returns it', async () => {
-    const repo = componentRepo();
-    const created = await repo.create(
-      TENANT_A,
-      Component.build({ name: 'Connector', instance: '1', tenantId: TENANT_A } as any),
-    );
-
-    const found = await repo.readByKey(TENANT_A, created.id);
-
-    expect(found).toBeDefined();
-    expect(found!.id).toBe(created.id);
-    expect(found!.name).toBe('Connector');
-    expect(found!.instance).toBe('1');
-    expect(found!.tenantId).toBe(TENANT_A);
-  });
-
-  it("readByKey does not return another tenant's component", async () => {
-    const created = await Component.create({ name: 'EVSE', tenantId: TENANT_A } as any);
-
-    const found = await componentRepo().readByKey(TENANT_B, created.id);
-
-    expect(found).toBeUndefined();
-  });
-
-  it('readOrCreateByQuery creates once, then returns the existing row', async () => {
-    const repo = componentRepo();
-
-    const [first, createdFirst] = await repo.readOrCreateByQuery(TENANT_A, {
-      where: { name: 'SecurityCtrlr', instance: null },
-    });
-    const [second, createdSecond] = await repo.readOrCreateByQuery(TENANT_A, {
-      where: { name: 'SecurityCtrlr', instance: null },
-    });
-
-    expect(createdFirst).toBe(true);
-    expect(createdSecond).toBe(false);
-    expect(second.id).toBe(first.id);
-    expect(first.tenantId).toBe(TENANT_A);
-    expect(await Component.count()).toBe(1);
-  });
-
-  it('readAllByQuery resolves variables linked through the join table', async () => {
-    const component = await Component.create({ name: 'Connector', tenantId: TENANT_A } as any);
-    await Component.create({ name: 'EVSE', tenantId: TENANT_A } as any);
-    const variable = await Variable.create({ name: 'MaxVoltage', tenantId: TENANT_A } as any);
-    // sequelize-typescript exposes $add instead of the classic addVariable mixin.
-    await component.$add('variables', variable);
-
-    const rows = await componentRepo().readAllByQuery(TENANT_A, {
-      where: { name: 'Connector' },
-      include: [Variable],
-    });
-
-    expect(rows).toHaveLength(1);
-    expect(rows[0].variables).toHaveLength(1);
-    expect(rows[0].variables![0].name).toBe('MaxVoltage');
-  });
-
-  it('rejects a second instance-less component with the same name in a tenant', async () => {
-    const repo = componentRepo();
-    await repo.create(TENANT_A, Component.build({ name: 'EVSE', tenantId: TENANT_A } as any));
-
-    await expect(
-      repo.create(TENANT_A, Component.build({ name: 'EVSE', tenantId: TENANT_A } as any)),
-    ).rejects.toMatchObject({ name: 'SequelizeUniqueConstraintError' });
-    expect(await Component.count()).toBe(1);
-  });
-
-  it('allows the same name under different instances and in another tenant', async () => {
-    await Component.create({ name: 'EVSE', instance: '1', tenantId: TENANT_A } as any);
-    await Component.create({ name: 'EVSE', instance: '2', tenantId: TENANT_A } as any);
-    await Component.create({ name: 'EVSE', tenantId: TENANT_B } as any);
-
-    expect(await Component.count()).toBe(3);
-    expect(await componentRepo().existByQuery(TENANT_A, { where: { name: 'EVSE' } })).toBe(2);
-  });
-
-  it('updateByKey writes within the owning tenant only', async () => {
-    const created = await Component.create({
-      name: 'Connector',
-      instance: 'old',
-      tenantId: TENANT_A,
-    } as any);
-    const repo = componentRepo();
-
-    const crossTenant = await repo.updateByKey(
-      TENANT_B,
-      { instance: 'hijacked' } as Partial<Component>,
-      String(created.id),
-    );
-    const sameTenant = await repo.updateByKey(
-      TENANT_A,
-      { instance: 'new' } as Partial<Component>,
-      String(created.id),
-    );
-
-    expect(crossTenant).toBeUndefined();
-    expect(sameTenant!.instance).toBe('new');
-    expect((await Component.findByPk(created.id))!.instance).toBe('new');
-  });
-
-  it('deleteByKey removes the row and returns it', async () => {
-    const created = await Component.create({ name: 'Connector', tenantId: TENANT_A } as any);
-
-    const deleted = await componentRepo().deleteByKey(TENANT_A, String(created.id));
-
-    expect(deleted!.name).toBe('Connector');
-    expect(await Component.count()).toBe(0);
-    expect(await componentRepo().existsByKey(TENANT_A, String(created.id))).toBe(false);
-  });
-});
 
 describe('SequelizeChangeConfigurationRepository', () => {
   describe('createOrUpdateChangeConfiguration', () => {

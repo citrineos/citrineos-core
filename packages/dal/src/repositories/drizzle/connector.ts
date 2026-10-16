@@ -16,7 +16,7 @@ import {
 } from '../../db/drizzle/schema/connector.js';
 import { type EvseEntity, evseTable, tenantEvseTable } from '../../db/drizzle/schema/evse.js';
 import { type Explicit } from '../../db/drizzle/types.js';
-import { DrizzleRepository, type DrizzleExecutor } from './base.js';
+import { DrizzleRepository, type DrizzleExecutor, type DrizzleWriteContext } from './base.js';
 import { toEvseDto } from './evse.js';
 import {
   type TariffEntity,
@@ -50,8 +50,10 @@ export function toConnectorDto(entity: ConnectorEntity): ConnectorDto {
     vendorErrorCode: entity.vendorErrorCode,
     termsAndConditionsUrl: entity.termsAndConditionsUrl,
     tariffId: entity.tariffId,
+    latestStatusNotificationId: entity.latestStatusNotificationId,
     // Relations are not present on a flat DB row.
     tariff: undefined,
+    latestStatusNotification: undefined,
     evse: undefined,
     chargingStation: undefined,
     tenantId: entity.tenantId,
@@ -81,6 +83,7 @@ function writableConnectorColumns(connector: Partial<ConnectorDto>) {
     vendorId: connector.vendorId,
     vendorErrorCode: connector.vendorErrorCode,
     termsAndConditionsUrl: connector.termsAndConditionsUrl,
+    latestStatusNotificationId: connector.latestStatusNotificationId,
   });
 }
 
@@ -225,8 +228,9 @@ export class DrizzleConnectorRepository
     tenantId: number,
     connector: ConnectorDto,
     match: (table: ReturnType<DrizzleConnectorRepository['getTable']>) => ReturnType<typeof and>,
+    outerCtx?: DrizzleWriteContext,
   ): Promise<ConnectorDto | undefined> {
-    return await this.withAtomicWrite(async (ctx) => {
+    const upsert = async (ctx: DrizzleWriteContext) => {
       const table = this.getTable(tenantId);
 
       const existing = (await ctx.db
@@ -245,27 +249,38 @@ export class DrizzleConnectorRepository
       }
 
       return await this.insert(tenantId, writableConnectorColumns(connector), ctx);
-    });
+    };
+    return outerCtx ? await upsert(outerCtx) : await this.withAtomicWrite(upsert);
   }
 
   async createOrUpdateOcpp16Connector(
     tenantId: number,
     connector: ConnectorDto & { connectorId: number },
+    ctx?: DrizzleWriteContext,
   ): Promise<ConnectorDto | undefined> {
-    return await this.upsertConnector(tenantId, connector, (table) =>
-      and(eq(table.stationId, connector.stationId), eq(table.connectorId, connector.connectorId)),
+    return await this.upsertConnector(
+      tenantId,
+      connector,
+      (table) =>
+        and(eq(table.stationId, connector.stationId), eq(table.connectorId, connector.connectorId)),
+      ctx,
     );
   }
 
   async createOrUpdateOcpp2Connector(
     tenantId: number,
     connector: ConnectorDto & { evseTypeConnectorId: number },
+    ctx?: DrizzleWriteContext,
   ): Promise<ConnectorDto | undefined> {
-    return await this.upsertConnector(tenantId, connector, (table) =>
-      and(
-        eq(table.evseId, connector.evseId),
-        eq(table.evseTypeConnectorId, connector.evseTypeConnectorId),
-      ),
+    return await this.upsertConnector(
+      tenantId,
+      connector,
+      (table) =>
+        and(
+          eq(table.evseId, connector.evseId),
+          eq(table.evseTypeConnectorId, connector.evseTypeConnectorId),
+        ),
+      ctx,
     );
   }
 
@@ -338,10 +353,11 @@ export class DrizzleConnectorRepository
     tenantId: number,
     stationId: number,
     value: Partial<ConnectorDto>,
+    ctx?: DrizzleWriteContext,
   ): Promise<ConnectorDto[]> {
     const table = this.getTable(tenantId);
 
-    const rows = (await this.db
+    const rows = (await (ctx?.db ?? this.db)
       .update(table)
       .set({ ...writableConnectorColumns(value), updatedAt: new Date() })
       .where(and(eq(table.stationId, stationId), this.tenantFilter(table, tenantId)))
@@ -349,7 +365,7 @@ export class DrizzleConnectorRepository
 
     const dtos = rows.map((row) => this.toDto(row));
     if (dtos.length > 0) {
-      this.emit('updated', dtos);
+      this.raise(ctx, 'updated', dtos);
     }
     return dtos;
   }

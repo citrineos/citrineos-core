@@ -34,7 +34,6 @@ function meterValueColumns() {
     connectorId: integer('connectorId'),
     tariffId: integer('tariffId'),
     transactionId: varchar('transactionId', { length: 255 }),
-    customData: jsonb('customData'),
     tenantId: integer('tenantId').notNull(),
     createdAt: timestamp('createdAt', { withTimezone: true, mode: 'date' })
       .notNull()

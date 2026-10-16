@@ -1,0 +1,22 @@
+{
+  "title": "SecurityEventNotificationRequest",
+  "type": "object",
+  "properties": {
+    "type": {
+      "type": "string",
+      "maxLength": 50
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "techInfo": {
+      "type": "string",
+      "maxLength": 255
+    }
+  },
+  "additionalProperties": false,
+  "required": ["type", "timestamp"],
+  "$id": "SecurityEventNotificationRequest",
+  "definitions": {}
+}

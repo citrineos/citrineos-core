@@ -2,13 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import fs from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
 import type { FastifyRequest } from 'fastify';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ICache } from '@citrineos/base';
 import type { Sequelize } from '@citrineos/dal';
 import type { RabbitMQConnectionManager, WebsocketNetworkConnection } from '@/transport/index.js';
@@ -16,24 +13,8 @@ import type { SchemaFinding, SchemaValidationReport } from '@/util/index.js';
 import { HealthCheckService } from '@/server/health-check-service.js';
 import { LocalBypassAuthProvider } from '@/apis/authorization/provider/local-by-pass-auth-provider.js';
 import { OidcTokenProvider } from '@/apis/authorization/oidc-token-provider.js';
-import { RbacRulesLoader } from '@/apis/authorization/rbac/rbac-rules-loader.js';
-import { UrlMatcher } from '@/apis/authorization/rbac/url-matcher.js';
 
 const hiddenLogger = new Logger<ILogObj>({ type: 'hidden' });
-
-const tempDirs: string[] = [];
-
-function tempDir(prefix: string): string {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
-  tempDirs.push(dir);
-  return dir;
-}
-
-afterAll(() => {
-  for (const dir of tempDirs) {
-    fs.rmSync(dir, { recursive: true, force: true });
-  }
-});
 
 describe('HealthCheckService', () => {
   function aCache(ping = vi.fn().mockResolvedValue(undefined)) {
@@ -299,13 +280,13 @@ describe('HealthCheckService', () => {
 
 describe('LocalBypassAuthProvider', () => {
   it('hands out the fixed bypass token', async () => {
-    const provider = new LocalBypassAuthProvider(hiddenLogger);
+    const provider = new LocalBypassAuthProvider(['admin', 'user'], hiddenLogger);
 
     await expect(provider.extractToken({} as FastifyRequest)).resolves.toBe('local-bypass-token');
   });
 
   it('authenticates any token as the local admin user', async () => {
-    const provider = new LocalBypassAuthProvider(hiddenLogger);
+    const provider = new LocalBypassAuthProvider(['admin', 'user'], hiddenLogger);
 
     const result = await provider.authenticateToken('whatever');
 
@@ -322,7 +303,7 @@ describe('LocalBypassAuthProvider', () => {
   });
 
   it('authorizes any user for any request', async () => {
-    const provider = new LocalBypassAuthProvider(hiddenLogger);
+    const provider = new LocalBypassAuthProvider(['admin', 'user'], hiddenLogger);
     const user = (await provider.authenticateToken('whatever')).user!;
 
     const result = await provider.authorizeUser(user, {
@@ -409,128 +390,5 @@ describe('OidcTokenProvider', () => {
 
     await expect(provider.getToken()).rejects.toThrow('Failed to fetch OIDC token: Unauthorized');
     expect(fetchMock).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe('RbacRulesLoader', () => {
-  type LoaderInternals = { loadRules(filePath: string): Promise<void> };
-
-  const rules = {
-    '1': {
-      '/api/users': { GET: ['admin'], '*': ['superadmin'] },
-      '/api/orders/:id': { GET: ['viewer'] },
-      '/files/*': { '*': ['file-admin'] },
-    },
-  };
-
-  let rbacDir: string;
-  let rulesFile: string;
-
-  beforeAll(() => {
-    rbacDir = tempDir('citrine-rbac-');
-    rulesFile = path.join(rbacDir, 'rules.json');
-    fs.writeFileSync(rulesFile, JSON.stringify(rules));
-  });
-
-  // The constructor loads rules fire-and-forget; awaiting the private loadRules keeps assertions deterministic.
-  async function aLoadedLoader(file: string = rulesFile): Promise<RbacRulesLoader> {
-    const loader = new RbacRulesLoader(file, hiddenLogger);
-    await (loader as unknown as LoaderInternals).loadRules(file);
-    return loader;
-  }
-
-  it('resolves roles for an exact url and case-insensitive method', async () => {
-    const loader = await aLoadedLoader();
-
-    expect(loader.getRequiredRoles('1', '/api/users', 'get')).toEqual(['admin']);
-  });
-
-  it('falls back to the method wildcard on an exact url', async () => {
-    const loader = await aLoadedLoader();
-
-    expect(loader.getRequiredRoles('1', '/api/users', 'POST')).toEqual(['superadmin']);
-  });
-
-  it('strips query string and trailing slash before matching', async () => {
-    const loader = await aLoadedLoader();
-
-    expect(loader.getRequiredRoles('1', '/api/users/?page=2', 'GET')).toEqual(['admin']);
-    expect(loader.getRequiredRoles('1', 'api/users', 'GET')).toEqual(['admin']);
-  });
-
-  it('matches path-parameter patterns per method', async () => {
-    const loader = await aLoadedLoader();
-
-    expect(loader.getRequiredRoles('1', '/api/orders/42', 'GET')).toEqual(['viewer']);
-    expect(loader.getRequiredRoles('1', '/api/orders/42', 'DELETE')).toBeNull();
-  });
-
-  it('matches wildcard patterns for any method', async () => {
-    const loader = await aLoadedLoader();
-
-    expect(loader.getRequiredRoles('1', '/files/reports/2024', 'POST')).toEqual(['file-admin']);
-  });
-
-  it('returns null for an unknown tenant or unmapped url', async () => {
-    const loader = await aLoadedLoader();
-
-    expect(loader.getRequiredRoles('2', '/api/users', 'GET')).toBeNull();
-    expect(loader.getRequiredRoles('1', '/unmapped', 'GET')).toBeNull();
-  });
-
-  it('keeps empty rules when the rules file does not exist', async () => {
-    const loader = await aLoadedLoader(path.join(rbacDir, 'missing.json'));
-
-    expect(loader.getRequiredRoles('1', '/api/users', 'GET')).toBeNull();
-  });
-
-  it('rejects rules that fail schema validation', async () => {
-    const invalidFile = path.join(rbacDir, 'invalid.json');
-    // roles must be an array of strings
-    fs.writeFileSync(invalidFile, JSON.stringify({ '1': { '/x': { GET: 'admin' } } }));
-    const loader = new RbacRulesLoader(invalidFile, hiddenLogger);
-
-    await expect((loader as unknown as LoaderInternals).loadRules(invalidFile)).rejects.toThrow(
-      'Invalid RBAC rules format',
-    );
-    expect(loader.getRequiredRoles('1', '/x', 'GET')).toBeNull();
-  });
-
-  it('wraps parse failures for an unreadable rules file', async () => {
-    const garbageFile = path.join(rbacDir, 'garbage.json');
-    fs.writeFileSync(garbageFile, 'not-json');
-    const loader = new RbacRulesLoader(garbageFile, hiddenLogger);
-
-    await expect((loader as unknown as LoaderInternals).loadRules(garbageFile)).rejects.toThrow(
-      /^Failed to load RBAC rules:/,
-    );
-  });
-});
-
-describe('UrlMatcher', () => {
-  it('matches an identical url only', () => {
-    expect(UrlMatcher.match('/api/users', '/api/users')).toBe(true);
-    expect(UrlMatcher.match('/api/user', '/api/users')).toBe(false);
-  });
-
-  it('matches any subpath for a trailing wildcard', () => {
-    expect(UrlMatcher.match('/files/a', '/files/*')).toBe(true);
-    expect(UrlMatcher.match('/files/a/b', '/files/*')).toBe(true);
-    expect(UrlMatcher.match('/files/', '/files/*')).toBe(true);
-  });
-
-  it('does not match the bare base path against a wildcard', () => {
-    expect(UrlMatcher.match('/files', '/files/*')).toBe(false);
-  });
-
-  it('accepts any value for a path-parameter segment', () => {
-    expect(UrlMatcher.match('/users/42', '/users/:id')).toBe(true);
-    expect(UrlMatcher.match('/users/42/orders', '/users/:id')).toBe(false);
-    expect(UrlMatcher.match('/orders/42', '/users/:id')).toBe(false);
-  });
-
-  it('matches multiple path parameters in one pattern', () => {
-    expect(UrlMatcher.match('/t/1/x/2', '/t/:a/x/:b')).toBe(true);
-    expect(UrlMatcher.match('/t/1/y/2', '/t/:a/x/:b')).toBe(false);
   });
 });

@@ -56,7 +56,6 @@ export const TableName = {
   // Location
   Connectors: 'Connectors',
   Evses: 'Evses',
-  LatestStatusNotifications: 'LatestStatusNotifications',
   Locations: 'Locations',
   SetNetworkProfiles: 'SetNetworkProfiles',
   StatusNotifications: 'StatusNotifications',
@@ -64,6 +63,12 @@ export const TableName = {
   // Messaging
   MessageInfos: 'MessageInfos',
   OCPPMessages: 'OCPPMessages',
+  WebsocketEvents: 'WebsocketEvents',
+
+  // Network alerts
+  NetworkAlertConfigs: 'NetworkAlertConfigs',
+  NetworkAlertOccurrences: 'NetworkAlertOccurrences',
+  NetworkAlerts: 'NetworkAlerts',
 
   // Reservation
   Reservations: 'Reservations',

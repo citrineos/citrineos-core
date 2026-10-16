@@ -23,7 +23,7 @@ export const TransactionSchema = BaseSchema.extend({
   isActive: z.boolean(),
   locationId: z.number().int().optional(),
   location: LocationSchema.optional(),
-  station: ChargingStationSchema,
+  station: ChargingStationSchema.optional(),
   evseId: z.number().int().optional(),
   evse: EvseSchema.nullable().optional(),
   connectorId: z.number().int().optional(),

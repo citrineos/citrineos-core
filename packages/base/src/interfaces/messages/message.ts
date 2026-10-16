@@ -20,7 +20,10 @@ import { OcppError } from '@ocpp/rpc/message.js';
  * The base interface for all messages traversing the system.
  *
  */
-export interface IMessage<T extends OcppRequest | OcppResponse> {
+export interface IMessage<
+  T extends OcppRequest | OcppResponse,
+  R extends OcppRequest = OcppRequest,
+> {
   /**
    * The event group of the source module
    */
@@ -62,11 +65,20 @@ export interface IMessage<T extends OcppRequest | OcppResponse> {
    */
   get protocol(): OCPPVersionType;
   set protocol(value: OCPPVersionType);
+
+  /**
+   * The payload of the Call this message responds to, when the CSMS sent that Call
+   */
+  request?: R;
 }
 /**
  * Default implementation of IMessage
  */
-export class Message<T extends OcppRequest | OcppResponse | OcppError> implements IMessage<T> {
+export class Message<
+  T extends OcppRequest | OcppResponse | OcppError,
+  R extends OcppRequest = OcppRequest,
+> implements IMessage<T, R>
+{
   /**
    * Fields
    */
@@ -77,6 +89,7 @@ export class Message<T extends OcppRequest | OcppResponse | OcppError> implement
   protected _context: IMessageContext;
   protected _payload: T;
   protected _protocol: OCPPVersionType;
+  protected _request?: R;
 
   /**
    * Constructs a new instance of Message.
@@ -88,6 +101,7 @@ export class Message<T extends OcppRequest | OcppResponse | OcppError> implement
    * @param {IMessageContext} context - The context of the message.
    * @param {T} payload - The payload of the message.
    * @param {OCPPVersionType} [protocol] - The protocol of the message, example "ocpp1.6".
+   * @param {R} [request] - The payload of the CSMS Call this message responds to.
    */
   constructor(
     origin: MessageOrigin,
@@ -97,6 +111,7 @@ export class Message<T extends OcppRequest | OcppResponse | OcppError> implement
     context: IMessageContext,
     payload: T,
     protocol: OCPPVersionType,
+    request?: R,
   ) {
     this._origin = origin;
     this._eventGroup = eventGroup;
@@ -105,6 +120,7 @@ export class Message<T extends OcppRequest | OcppResponse | OcppError> implement
     this._context = context;
     this._payload = payload;
     this._protocol = protocol;
+    this._request = request;
   }
 
   /**
@@ -131,6 +147,9 @@ export class Message<T extends OcppRequest | OcppResponse | OcppError> implement
   get protocol(): OCPPVersionType {
     return this._protocol;
   }
+  get request(): R | undefined {
+    return this._request;
+  }
   set origin(value: MessageOrigin) {
     this._origin = value;
   }
@@ -151,5 +170,8 @@ export class Message<T extends OcppRequest | OcppResponse | OcppError> implement
   }
   set protocol(value: OCPPVersionType) {
     this._protocol = value;
+  }
+  set request(value: R | undefined) {
+    this._request = value;
   }
 }

@@ -13,7 +13,6 @@ import {
   type AuthorizationStatusEnumType,
   type ConnectorDto,
   type EvseDto,
-  MessageOrigin,
   type MeterValueDto,
   OCPP1_6,
   OCPP2_0_1,
@@ -21,79 +20,89 @@ import {
   type OCPP2_common_types,
   type OCPP2_request_types,
   type OCPP2_response_types,
+  type TransactionDto,
 } from '@citrineos/types';
 import type {
   IAuthorizationRepository,
   IConnectorRepository,
   IEvseRepository,
-  IOCPPMessageRepository,
   IReservationRepository,
-  ITransactionEventRepository,
+  IMeterValueRepository,
+  ITransactionRepository,
 } from '@citrineos/dal';
 import { OCPP1_6_Mapper } from '@citrineos/dal';
 import { OCPP2_0_1_Mapper } from '@citrineos/dal';
-import { MeterValue, Transaction } from '@citrineos/dal';
 import type { ILogObj, Logger } from 'tslog';
-import { stationIdFilter } from '@citrineos/dal';
 
 export class TransactionService {
-  private _transactionEventRepository: ITransactionEventRepository;
+  private _meterValueRepository: IMeterValueRepository;
+  private _transactionRepository: ITransactionRepository;
   private _authorizationRepository: IAuthorizationRepository;
   private _evseRepository: IEvseRepository;
   private _connectorRepository: IConnectorRepository;
   private _reservationRepository: IReservationRepository;
-  private _ocppMessageRepository: IOCPPMessageRepository;
   private _logger: Logger<ILogObj>;
   private _authorizers: IAuthorizer[];
 
   constructor({
-    transactionEventRepository,
+    meterValueRepository,
+    transactionRepository,
     authorizationRepository,
     evseRepository,
     connectorRepository,
     reservationRepository,
-    ocppMessageRepository,
     realTimeAuthorizer,
     authorizers,
     logger,
   }: {
-    transactionEventRepository: ITransactionEventRepository;
+    meterValueRepository: IMeterValueRepository;
+    transactionRepository: ITransactionRepository;
     authorizationRepository: IAuthorizationRepository;
     evseRepository: IEvseRepository;
     connectorRepository: IConnectorRepository;
     reservationRepository: IReservationRepository;
-    ocppMessageRepository: IOCPPMessageRepository;
     realTimeAuthorizer: IAuthorizer;
     authorizers?: IAuthorizer[];
     logger: Logger<ILogObj>;
   }) {
-    this._transactionEventRepository = transactionEventRepository;
+    this._meterValueRepository = meterValueRepository;
+    this._transactionRepository = transactionRepository;
     this._authorizationRepository = authorizationRepository;
     this._evseRepository = evseRepository;
     this._connectorRepository = connectorRepository;
     this._reservationRepository = reservationRepository;
-    this._ocppMessageRepository = ocppMessageRepository;
     this._logger = childLogger(logger, this.constructor.name);
     this._authorizers = [realTimeAuthorizer, ...(authorizers || [])];
   }
 
   async recalculateTotalKwh(
-    transaction: Transaction,
+    tenantId: number,
+    ocppConnectionName: string,
+    transaction: TransactionDto,
     newMeterValues: MeterValueDto[],
   ): Promise<number> {
-    let meterStart = transaction.meterStart;
-    if (meterStart === null || meterStart === undefined) {
-      meterStart = MeterValueUtils.getMeterStart(newMeterValues);
-      transaction.set('meterStart', meterStart);
-    }
+    const reportedMeterStart = transaction.meterStart;
+    const meterStart =
+      reportedMeterStart ?? MeterValueUtils.getMeterStart(newMeterValues) ?? undefined;
     const totalKwh = MeterValueUtils.getTotalKwh(
       newMeterValues,
       transaction.totalKwh ?? 0,
       meterStart ?? undefined,
     );
 
-    transaction.set('totalKwh', totalKwh);
-    await transaction.save();
+    await this._transactionRepository.updateTransactionByStationIdAndTransactionId(
+      tenantId,
+      reportedMeterStart == null ? { meterStart, totalKwh } : { totalKwh },
+      transaction.transactionId,
+      ocppConnectionName,
+    );
+
+    // The caller passes this same object straight to cost calculation, which prices on
+    // totalKwh; so we need to set value here.
+    transaction.totalKwh = totalKwh;
+    if (reportedMeterStart == null) {
+      transaction.meterStart = meterStart;
+    }
 
     this._logger.debug(`Recalculated ${totalKwh} kWh for ${transaction.id} transaction`);
     return totalKwh;
@@ -297,11 +306,11 @@ export class TransactionService {
     transactionDbId?: number | null,
     transactionId?: string | null,
     tariffId?: number | null,
-  ): Promise<MeterValue[]> {
+  ): Promise<MeterValueDto[]> {
     return Promise.all(
       meterValues.map(async (meterValue) => {
         if (transactionDbId) {
-          return await this._transactionEventRepository.createMeterValue(
+          return await this._meterValueRepository.createMeterValue(
             tenantId,
             meterValue,
             transactionDbId,
@@ -309,7 +318,7 @@ export class TransactionService {
             tariffId,
           );
         } else {
-          return await this._transactionEventRepository.createMeterValue(tenantId, meterValue);
+          return await this._meterValueRepository.createMeterValue(tenantId, meterValue);
         }
       }),
     );
@@ -432,7 +441,7 @@ export class TransactionService {
     ocppConnectionName: string,
     evseIdentifier: OCPP2_0_1.EVSEType | number,
   ): Promise<void> {
-    let evseTypeId: number | undefined;
+    let evseId: number | undefined;
 
     if (typeof evseIdentifier === 'number') {
       const connector =
@@ -441,12 +450,17 @@ export class TransactionService {
           ocppConnectionName,
           evseIdentifier,
         );
-      evseTypeId = connector?.evse?.evseTypeId;
+      evseId = connector?.evseId;
     } else {
-      evseTypeId = evseIdentifier.id;
+      const evse = await this._evseRepository.readEvseByStationIdAndOcpp201EvseId(
+        tenantId,
+        ocppConnectionName,
+        evseIdentifier.id,
+      );
+      evseId = evse?.id;
     }
 
-    if (evseTypeId === undefined) {
+    if (evseId === undefined) {
       this._logger.warn(
         `Could not resolve EVSE for station ${ocppConnectionName} with identifier ${JSON.stringify(evseIdentifier)}, skipping deactivation of concurrent transactions`,
       );
@@ -454,16 +468,16 @@ export class TransactionService {
     }
 
     const deactivated =
-      await this._transactionEventRepository.deactivateActiveTransactionsByStationIdAndEvseId(
+      await this._transactionRepository.deactivateActiveTransactionsByStationIdAndEvseId(
         tenantId,
         ocppConnectionName,
-        evseTypeId,
+        evseId,
         transactionId,
       );
 
     if (deactivated.length > 0) {
       this._logger.info(
-        `Deactivated ${deactivated.length} concurrent transaction(s) at station ${ocppConnectionName} EVSE ${evseTypeId}`,
+        `Deactivated ${deactivated.length} concurrent transaction(s) at station ${ocppConnectionName} EVSE ${JSON.stringify(evseIdentifier)}`,
       );
     }
   }
@@ -471,32 +485,24 @@ export class TransactionService {
   async updateTransactionStatus(
     tenantId: number,
     ocppConnectionName: string,
-    correlationId: string,
+    request: OCPP2_request_types.GetTransactionStatusRequest | undefined,
     ongoingIndicator: boolean,
   ) {
-    const request = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
-      where: {
-        tenantId,
-        stationId: await stationIdFilter(tenantId, ocppConnectionName),
-        correlationId,
-        origin: MessageOrigin.ChargingStationManagementSystem,
-      },
-    });
     if (!request) {
+      this._logger.error(`No GetTransactionStatusRequest found for station ${ocppConnectionName}`);
+      return;
+    }
+
+    const transactionId = request.transactionId;
+    if (!transactionId) {
       this._logger.error(
-        `No valid GetTransactionStatusRequest found for correlationId ${correlationId}`,
+        `No valid transactionId found from the message ${JSON.stringify(request)}`,
       );
       return;
     }
 
-    const transactionId = request.payload.transactionId;
-    if (!transactionId) {
-      this._logger.error(`No valid transactionId found from the message ${request.payload}`);
-      return;
-    }
-
     const updatedTransaction =
-      await this._transactionEventRepository.updateTransactionByStationIdAndTransactionId(
+      await this._transactionRepository.updateTransactionByStationIdAndTransactionId(
         tenantId,
         { isActive: ongoingIndicator },
         transactionId,
@@ -530,7 +536,7 @@ export class TransactionService {
     authorizationId: number,
   ): Promise<boolean> {
     const activeTransactions =
-      await this._transactionEventRepository.readAllActiveTransactionsByAuthorizationId(
+      await this._transactionRepository.readAllActiveTransactionsByAuthorizationId(
         tenantId,
         authorizationId,
       );

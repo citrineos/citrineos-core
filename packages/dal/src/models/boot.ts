@@ -90,8 +90,6 @@ export class Boot extends Model implements BootDto {
   @Column(DataType.BOOLEAN)
   declare getConfigurationsOnPending?: boolean | null;
 
-  declare customData?: object | null;
-
   @ForeignKey(() => Tenant)
   @Column({
     type: DataType.INTEGER,

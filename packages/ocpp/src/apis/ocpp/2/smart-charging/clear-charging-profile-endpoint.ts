@@ -8,6 +8,7 @@ import {
   type IOcppSender,
   AbstractMessageEndpoint,
   DEFAULT_TENANT_ID,
+  type MessageDelivery,
 } from '@citrineos/base';
 import {
   ChargingProfilePurposeEnum,
@@ -40,7 +41,7 @@ export class ClearChargingProfileEndpoint extends AbstractMessageEndpoint {
   async handle(
     identifiers: string[],
     request: OCPP2_request_types.ClearChargingProfileRequest,
-    callbackUrl: string | undefined,
+    delivery: MessageDelivery,
     tenantId: number = DEFAULT_TENANT_ID,
     version: OCPPVersion,
   ): Promise<IMessageConfirmation[]> {
@@ -61,7 +62,7 @@ export class ClearChargingProfileEndpoint extends AbstractMessageEndpoint {
           action: OCPP_CallAction.ClearChargingProfile,
           eventGroup: EventGroup.SmartCharging,
           payload: request,
-          callbackUrl,
+          ...delivery,
         }),
       );
     }

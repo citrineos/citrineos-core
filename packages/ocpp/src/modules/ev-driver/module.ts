@@ -5,18 +5,14 @@ import { type AbstractHandler, type OcppModuleDependencies, AbstractModule } fro
 import { EventGroup } from '@citrineos/types';
 import type {
   IChargingProfileRepository,
-  IDeviceModelRepository,
   ILocalAuthListRepository,
   IReservationRepository,
-  ITransactionEventRepository,
 } from '@citrineos/dal';
 
 import type { LocalAuthListService } from './local-auth-list-service.js';
 
 export interface EVDriverModuleDependencies extends OcppModuleDependencies {
   localAuthListRepository: ILocalAuthListRepository;
-  deviceModelRepository: IDeviceModelRepository;
-  transactionEventRepository: ITransactionEventRepository;
   chargingProfileRepository: IChargingProfileRepository;
   reservationRepository: IReservationRepository;
   localAuthListService: LocalAuthListService;
@@ -32,8 +28,6 @@ export class EVDriverModule extends AbstractModule {
    */
 
   protected _localAuthListRepository: ILocalAuthListRepository;
-  protected _deviceModelRepository: IDeviceModelRepository;
-  protected _transactionEventRepository: ITransactionEventRepository;
   protected _chargingProfileRepository: IChargingProfileRepository;
   protected _reservationRepository: IReservationRepository;
   protected _localAuthListService: LocalAuthListService;
@@ -47,8 +41,6 @@ export class EVDriverModule extends AbstractModule {
     ocppValidator,
     ocppSender,
     localAuthListRepository,
-    deviceModelRepository,
-    transactionEventRepository,
     chargingProfileRepository,
     reservationRepository,
     localAuthListService,
@@ -67,8 +59,6 @@ export class EVDriverModule extends AbstractModule {
     );
 
     this._localAuthListRepository = localAuthListRepository;
-    this._deviceModelRepository = deviceModelRepository;
-    this._transactionEventRepository = transactionEventRepository;
     this._chargingProfileRepository = chargingProfileRepository;
     this._reservationRepository = reservationRepository;
     this._localAuthListService = localAuthListService;
@@ -76,14 +66,6 @@ export class EVDriverModule extends AbstractModule {
 
   get localAuthListRepository(): ILocalAuthListRepository {
     return this._localAuthListRepository;
-  }
-
-  get deviceModelRepository(): IDeviceModelRepository {
-    return this._deviceModelRepository;
-  }
-
-  get transactionEventRepository(): ITransactionEventRepository {
-    return this._transactionEventRepository;
   }
 
   get chargingProfileRepository(): IChargingProfileRepository {

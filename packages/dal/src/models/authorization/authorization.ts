@@ -122,11 +122,14 @@ export class Authorization extends Model implements AuthorizationDto {
   })
   declare isPrepaid?: boolean;
 
-  @Column(DataType.DECIMAL)
+  @Column({
+    type: DataType.DECIMAL,
+    get() {
+      const value = this.getDataValue('prepaidBalance');
+      return value == null ? value : Number(value);
+    },
+  })
   declare prepaidBalance?: number | null;
-
-  @Column(DataType.JSONB)
-  declare customData?: any | null;
 
   // For cases where Authorization is owned by an upstream partner, i.e. an eMSP
   @ForeignKey(() => TenantPartner)

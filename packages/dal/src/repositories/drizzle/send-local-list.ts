@@ -22,8 +22,6 @@ export function toSendLocalListDto(entity: SendLocalListEntity): SendLocalListDt
     updateType: entity.updateType ?? '',
     // Relation, not a scalar column.
     localAuthorizationList: undefined,
-    // customData is not persisted as a column.
-    customData: undefined,
     tenantId: entity.tenantId,
     tenant: undefined,
     createdAt: entity.createdAt,

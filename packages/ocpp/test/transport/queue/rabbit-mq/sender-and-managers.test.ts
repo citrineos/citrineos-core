@@ -27,7 +27,13 @@ import { RabbitMqSender } from '@/transport/queue/rabbit-mq/sender.js';
 import { RabbitMQChannelManager } from '@/transport/queue/rabbit-mq/channel-manager.js';
 import { RabbitMQConnectionManager } from '@/transport/queue/rabbit-mq/connection-manager.js';
 import { BrokerAwareMessageSender } from '@/transport/queue/broker-aware-message-sender.js';
-import { aMockAmqpChannel, aMockChannelManager } from '../../../providers/rabbit-mq-provider.js';
+import {
+  aMockAmqpChannel,
+  aMockChannelManager,
+  aMockDeadLetterPublisher,
+  aSystemConfigWithAmqp,
+  type MockDeadLetterPublisher,
+} from '../../../providers/rabbit-mq-provider.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
 
 vi.mock('amqplib', () => ({
@@ -56,6 +62,14 @@ function aMessage(override?: Partial<IMessage<OcppRequest>>): IMessage<OcppReque
     ...override,
   } as unknown as IMessage<OcppRequest>;
 }
+
+let deadLetterPublisher: MockDeadLetterPublisher;
+beforeEach(() => {
+  deadLetterPublisher = aMockDeadLetterPublisher();
+});
+
+/** Calls never go stale, so the header assertions below are not also about expiration. */
+const NO_EXPIRY_TIMEOUTS = aSystemConfigWithAmqp({ staleCallMaxAgeSeconds: 0 }).timeouts;
 
 type PublishChannel = amqp.Channel & { publish: Mock };
 
@@ -92,6 +106,9 @@ describe('RabbitMqSender', () => {
   let sender: RabbitMqSender;
 
   beforeEach(() => {
+    // Responses always expire, so the clock starts at the fixture's timestamp.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-01-01T00:00:00.000Z'));
     channel = aPublishChannel();
     channelManager = aMockChannelManager(channel);
     connectionManager = { isConnected: vi.fn().mockReturnValue(true) };
@@ -99,8 +116,14 @@ describe('RabbitMqSender', () => {
       'test-exchange',
       connectionManager as unknown as RabbitMQConnectionManager,
       channelManager,
+      NO_EXPIRY_TIMEOUTS,
+      deadLetterPublisher,
       logger,
     );
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('should publish a request to the exchange with empty routing key and full headers', async () => {
@@ -158,6 +181,8 @@ describe('RabbitMqSender', () => {
       undefined as unknown as string,
       connectionManager as unknown as RabbitMQConnectionManager,
       channelManager,
+      NO_EXPIRY_TIMEOUTS,
+      deadLetterPublisher,
       logger,
     );
 
@@ -208,6 +233,8 @@ describe('RabbitMqSender', () => {
       'test-exchange',
       connectionManager as unknown as RabbitMQConnectionManager,
       channelManager,
+      NO_EXPIRY_TIMEOUTS,
+      deadLetterPublisher,
       logger,
     );
 
@@ -215,6 +242,144 @@ describe('RabbitMqSender', () => {
 
     expect(result).toEqual({ success: false });
     expect(channel.publish).toHaveBeenCalledTimes(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// RabbitMqSender — broker expiration of messages the CSMS sends
+// ---------------------------------------------------------------------------
+describe('RabbitMqSender expiration', () => {
+  const NOW = new Date('2026-01-01T00:00:10.000Z');
+  let channel: PublishChannel;
+  let channelManager: ReturnType<typeof aMockChannelManager>;
+  const connectionManager = { isConnected: vi.fn().mockReturnValue(true) };
+
+  function aSender(timeouts: ReturnType<typeof aSystemConfigWithAmqp>['timeouts']) {
+    return new RabbitMqSender(
+      'test-exchange',
+      connectionManager as unknown as RabbitMQConnectionManager,
+      channelManager,
+      timeouts,
+      deadLetterPublisher,
+      logger,
+    );
+  }
+
+  function publishedExpiration(): string | undefined {
+    return channel.publish.mock.calls[0][3].expiration;
+  }
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
+    channel = aPublishChannel();
+    channelManager = aMockChannelManager(channel);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('should expire a Call staleCallMaxAgeSeconds after its timestamp', async () => {
+    const sender = aSender(aSystemConfigWithAmqp({ staleCallMaxAgeSeconds: 30 }).timeouts);
+
+    await sender.sendRequest(aMessage(), {});
+
+    expect(publishedExpiration()).toBe('20000');
+  });
+
+  it('should expire a Call 40 s after its timestamp by default', async () => {
+    const sender = aSender(aSystemConfigWithAmqp().timeouts);
+
+    await sender.sendRequest(aMessage(), {});
+
+    expect(publishedExpiration()).toBe('30000');
+  });
+
+  it("should let the message's staleAfterSeconds override the configured age", async () => {
+    const sender = aSender(aSystemConfigWithAmqp({ staleCallMaxAgeSeconds: 30 }).timeouts);
+    const message = aMessage();
+    message.context.staleAfterSeconds = 60;
+
+    await sender.sendRequest(message, {});
+
+    expect(publishedExpiration()).toBe('50000');
+  });
+
+  it('should not expire a Call when staleCallMaxAgeSeconds is 0', async () => {
+    const sender = aSender(NO_EXPIRY_TIMEOUTS);
+
+    await sender.sendRequest(aMessage(), {});
+
+    expect(publishedExpiration()).toBeUndefined();
+  });
+
+  it('should honour staleAfterSeconds when staleCallMaxAgeSeconds is 0', async () => {
+    const sender = aSender(NO_EXPIRY_TIMEOUTS);
+    const message = aMessage();
+    message.context.staleAfterSeconds = 60;
+
+    await sender.sendRequest(message, {});
+
+    expect(publishedExpiration()).toBe('50000');
+  });
+
+  it('should not expire a Call whose staleAfterSeconds is 0', async () => {
+    const sender = aSender(aSystemConfigWithAmqp({ staleCallMaxAgeSeconds: 30 }).timeouts);
+    const message = aMessage();
+    message.context.staleAfterSeconds = 0;
+
+    await sender.sendRequest(message, {});
+
+    expect(publishedExpiration()).toBeUndefined();
+  });
+
+  it('should expire a response maxCallLengthSeconds after it is sent, whatever the stale policy', async () => {
+    const sender = aSender(
+      aSystemConfigWithAmqp({ staleCallMaxAgeSeconds: 0, maxCallLengthSeconds: 15 }).timeouts,
+    );
+
+    await sender.sendResponse(aMessage(), { currentTime: 'now' });
+
+    expect(publishedExpiration()).toBe('5000');
+  });
+
+  it('should dead-letter an already-stale Call instead of publishing it', async () => {
+    const sender = aSender(aSystemConfigWithAmqp({ staleCallMaxAgeSeconds: 5 }).timeouts);
+    const message = aMessage();
+
+    const result = await sender.sendRequest(message, {});
+
+    expect(channel.publish).not.toHaveBeenCalled();
+    expect(deadLetterPublisher.publishMessage).toHaveBeenCalledWith(message, 'stale', 'sender');
+    expect(result).toEqual({ success: false, payload: 'Message went stale before it was sent' });
+  });
+
+  it('should dead-letter a Call whose deadline is exactly now instead of publishing it', async () => {
+    const sender = aSender(aSystemConfigWithAmqp({ staleCallMaxAgeSeconds: 10 }).timeouts);
+
+    await sender.sendRequest(aMessage(), {});
+
+    expect(channel.publish).not.toHaveBeenCalled();
+    expect(deadLetterPublisher.publishMessage).toHaveBeenCalledTimes(1);
+  });
+
+  it('should publish a Call with 1 ms left, with that as its expiration', async () => {
+    vi.setSystemTime(new Date(NOW.getTime() - 1));
+    const sender = aSender(aSystemConfigWithAmqp({ staleCallMaxAgeSeconds: 10 }).timeouts);
+
+    await sender.sendRequest(aMessage(), {});
+
+    expect(publishedExpiration()).toBe('1');
+    expect(deadLetterPublisher.publishMessage).not.toHaveBeenCalled();
+  });
+
+  it('should not expire a message from a station', async () => {
+    const sender = aSender(aSystemConfigWithAmqp({ staleCallMaxAgeSeconds: 5 }).timeouts);
+
+    await sender.sendRequest(aMessage({ origin: MessageOrigin.ChargingStation }), {});
+
+    expect(publishedExpiration()).toBeUndefined();
   });
 });
 
@@ -305,6 +470,67 @@ describe('RabbitMQChannelManager', () => {
 
     expect(connection.createChannel).toHaveBeenCalledTimes(2);
     expect(await manager.getChannel('sender')).toBe(chB);
+  });
+
+  it('should hand concurrent callers for the same channel id one shared channel', async () => {
+    const ch = aManagedChannel();
+    connection.createChannel.mockResolvedValue(ch);
+
+    const [first, second] = await Promise.all([
+      manager.getChannel('receiver'),
+      manager.getChannel('receiver'),
+    ]);
+
+    expect(first).toBe(ch);
+    expect(second).toBe(ch);
+    expect(connection.createChannel).toHaveBeenCalledTimes(1);
+  });
+
+  it('should share the channel recreateChannels is building with a reconnect handler', async () => {
+    const chA = aManagedChannel();
+    const chB = aManagedChannel();
+    const chC = aManagedChannel();
+    connection.createChannel
+      .mockResolvedValueOnce(chA)
+      .mockResolvedValueOnce(chB)
+      .mockResolvedValueOnce(chC);
+    await manager.getChannel('receiver');
+    connectionManager.emit('disconnected');
+
+    let handlerChannel: Promise<unknown> = Promise.resolve(undefined);
+    connectionManager.on('connected', () => {
+      handlerChannel = manager.getChannel('receiver');
+    });
+    connectionManager.emit('connected');
+    await new Promise((resolve) => setImmediate(resolve));
+
+    expect(await handlerChannel).toBe(chB);
+    expect(await manager.getChannel('receiver')).toBe(chB);
+    expect(connection.createChannel).toHaveBeenCalledTimes(2);
+  });
+
+  it('should not let a replaced channel closing clear its replacement', async () => {
+    const chA = aManagedChannel();
+    const chB = aManagedChannel();
+    connection.createChannel.mockResolvedValueOnce(chA).mockResolvedValueOnce(chB);
+    await manager.getChannel('receiver');
+    chA.emit('error', new Error('channel torn down'));
+    await manager.getChannel('receiver');
+
+    chA.emit('close');
+
+    expect(await manager.getChannel('receiver')).toBe(chB);
+    expect(connection.createChannel).toHaveBeenCalledTimes(2);
+  });
+
+  it('should try again after a failed channel creation', async () => {
+    const ch = aManagedChannel();
+    connection.createChannel.mockRejectedValueOnce(new Error('channel refused'));
+    connection.createChannel.mockResolvedValueOnce(ch);
+
+    await expect(manager.getChannel('receiver')).rejects.toThrow('channel refused');
+
+    expect(await manager.getChannel('receiver')).toBe(ch);
   });
 
   it('should propagate a connect failure from getChannel', async () => {

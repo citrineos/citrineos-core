@@ -48,8 +48,6 @@ export class CompositeSchedule extends Model implements CompositeScheduleDto {
   @Column(DataType.JSONB)
   declare chargingSchedulePeriod: [object, ...object[]];
 
-  declare customData?: object | null;
-
   @ForeignKey(() => Tenant)
   @Column({
     type: DataType.INTEGER,

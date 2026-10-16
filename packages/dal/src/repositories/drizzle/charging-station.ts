@@ -34,6 +34,7 @@ export function toChargingStationDto(entity: ChargingStationEntity): ChargingSta
     latestOcppMessageTimestamp: entity.latestOcppMessageTimestamp
       ? entity.latestOcppMessageTimestamp.toISOString()
       : null,
+    lastConnectedAt: entity.lastConnectedAt ? entity.lastConnectedAt.toISOString() : null,
     chargePointVendor: entity.chargePointVendor,
     chargePointModel: entity.chargePointModel,
     chargePointSerialNumber: entity.chargePointSerialNumber,
@@ -88,6 +89,9 @@ function toStationColumns(chargingStation: ChargingStationDto) {
     protocol: chargingStation.protocol,
     latestOcppMessageTimestamp: chargingStation.latestOcppMessageTimestamp
       ? new Date(chargingStation.latestOcppMessageTimestamp)
+      : null,
+    lastConnectedAt: chargingStation.lastConnectedAt
+      ? new Date(chargingStation.lastConnectedAt)
       : null,
     coordinates: chargingStation.coordinates?.coordinates,
     floorLevel: chargingStation.floorLevel,
@@ -194,6 +198,7 @@ export class DrizzleChargingStationRepository
       isOnline,
       protocol: ocppVersion,
       connectedWebsocketServerConfigId: connectedWebsocketServerConfigId ?? null,
+      ...(isOnline && { lastConnectedAt: new Date() }),
     };
 
     const existing = await this.findChargingStation(tenantId, ocppConnectionName);

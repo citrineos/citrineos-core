@@ -278,6 +278,27 @@ describe('ConnectorMapper', () => {
     expect(dto.tariff_ids).toBeUndefined();
     expect(dto.last_updated).toBe(UPDATED_AT);
   });
+
+  it('turns the timestamptz string GraphQL delivers into a Date that serialises as RFC 3339 string(25)', () => {
+    const { connectorMapper } = mappers();
+
+    const dto = connectorMapper.fromPartialGraphql({
+      updatedAt: '2026-08-20T11:00:00.123456+00:00',
+    } as unknown as Partial<ConnectorDto>);
+
+    expect(dto.last_updated).toEqual(new Date('2026-08-20T11:00:00.123Z'));
+    expect(JSON.stringify(dto.last_updated)).toBe('"2026-08-20T11:00:00.123Z"');
+  });
+
+  it('refuses a timestamp that cannot form a Date instead of serialising last_updated as null', () => {
+    const { connectorMapper } = mappers();
+
+    expect(() =>
+      connectorMapper.fromPartialGraphql({
+        updatedAt: 'yesterday',
+      } as unknown as Partial<ConnectorDto>),
+    ).toThrow('Not a timestamp: yesterday');
+  });
 });
 
 describe('EvseMapper', () => {

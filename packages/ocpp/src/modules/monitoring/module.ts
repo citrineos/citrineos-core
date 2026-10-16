@@ -3,11 +3,10 @@
 // SPDX-License-Identifier: Apache-2.0
 import { AbstractHandler, AbstractModule, type OcppModuleDependencies } from '@citrineos/base';
 import { EventGroup } from '@citrineos/types';
-import { type IDeviceModelRepository, type IVariableMonitoringRepository } from '@citrineos/dal';
+import { type IVariableMonitoringRepository } from '@citrineos/dal';
 import type { DeviceModelService } from '@services/device-model/device-model-service.js';
 
 export interface MonitoringModuleDependencies extends OcppModuleDependencies {
-  deviceModelRepository: IDeviceModelRepository;
   variableMonitoringRepository: IVariableMonitoringRepository;
   deviceModelService: DeviceModelService;
   monitoringHandlers?: AbstractHandler[];
@@ -17,7 +16,6 @@ export interface MonitoringModuleDependencies extends OcppModuleDependencies {
  * Component that handles monitoring related messages.
  */
 export class MonitoringModule extends AbstractModule {
-  protected _deviceModelRepository: IDeviceModelRepository;
   protected _variableMonitoringRepository: IVariableMonitoringRepository;
   protected _deviceModelService: DeviceModelService;
 
@@ -29,7 +27,6 @@ export class MonitoringModule extends AbstractModule {
     logger,
     ocppValidator,
     ocppSender,
-    deviceModelRepository,
     variableMonitoringRepository,
     deviceModelService,
     monitoringHandlers,
@@ -46,15 +43,11 @@ export class MonitoringModule extends AbstractModule {
       monitoringHandlers,
     );
 
-    this._deviceModelRepository = deviceModelRepository;
     this._variableMonitoringRepository = variableMonitoringRepository;
 
     this._deviceModelService = deviceModelService;
   }
 
-  get deviceModelRepository(): IDeviceModelRepository {
-    return this._deviceModelRepository;
-  }
   get variableMonitoringRepository(): IVariableMonitoringRepository {
     return this._variableMonitoringRepository;
   }

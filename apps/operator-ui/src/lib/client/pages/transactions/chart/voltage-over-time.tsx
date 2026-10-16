@@ -83,7 +83,10 @@ export const VoltageOverTime = ({ meterValues, validContexts }: VoltageOverTimeP
                 label={getXAxisLabelConfig(translate('Transactions.charts.timeElapsed'))}
               />
               <YAxis
-                domain={[minValue - buffer, maxValue + buffer]}
+                domain={[
+                  minValue >= 0 ? Math.max(0, minValue - buffer) : minValue - buffer,
+                  maxValue + buffer,
+                ]}
                 label={getYAxisLabelConfig(voltageAxisLabel)}
               />
               <ChartTooltip content={<ChartTooltipContent />} />

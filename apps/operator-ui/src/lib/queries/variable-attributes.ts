@@ -6,6 +6,7 @@ import { gql } from 'graphql-tag';
 import { VARIABLE_ATTRIBUTE_FIELDS } from '@lib/queries/fields/variable-attribute-fields';
 import { VARIABLE_FIELDS } from '@lib/queries/fields/variable-fields';
 import { COMPONENT_FIELDS } from '@lib/queries/fields/component-fields';
+import { EVSE_TYPE_FIELDS } from '@lib/queries/fields/evse-type-fields';
 
 export const VARIABLE_ATTRIBUTE_LIST_QUERY = gql`
   query VariableAttributeList(
@@ -21,6 +22,9 @@ export const VARIABLE_ATTRIBUTE_LIST_QUERY = gql`
       }
       Component {
         ${COMPONENT_FIELDS}
+      }
+      EvseType {
+        ${EVSE_TYPE_FIELDS}
       }
     }
     VariableAttributes_aggregate(where: $where) {
@@ -40,6 +44,9 @@ export const VARIABLE_ATTRIBUTE_DOWNLOAD_QUERY = gql`
       }
       Component {
         ${COMPONENT_FIELDS}
+      }
+      EvseType {
+        ${EVSE_TYPE_FIELDS}
       }
     }
     VariableAttributes_aggregate(where: { stationId: { _eq: $stationId } }) {

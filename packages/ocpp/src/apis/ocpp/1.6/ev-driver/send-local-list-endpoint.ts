@@ -8,6 +8,7 @@ import {
   type IOcppSender,
   AbstractMessageEndpoint,
   DEFAULT_TENANT_ID,
+  type MessageDelivery,
 } from '@citrineos/base';
 import { EventGroup, OCPP1_6, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
 import type { LocalAuthListService } from '@modules/ev-driver/local-auth-list-service.js';
@@ -37,7 +38,7 @@ export class SendLocalListEndpoint extends AbstractMessageEndpoint {
   async handle(
     identifiers: string[],
     request: OCPP1_6.SendLocalListRequest,
-    callbackUrl: string | undefined,
+    delivery: MessageDelivery,
     tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     const results: IMessageConfirmation[] = [];
@@ -58,7 +59,7 @@ export class SendLocalListEndpoint extends AbstractMessageEndpoint {
             action: OCPP_CallAction.SendLocalList,
             eventGroup: EventGroup.EVDriver,
             payload: request,
-            callbackUrl,
+            ...delivery,
             correlationId,
           }),
         );

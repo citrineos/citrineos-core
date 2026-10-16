@@ -3,6 +3,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {
+  type CallEvent,
+  type CallEventOutcome,
+  CallEventSchema,
   type ConnectionEvent,
   ConnectionEventState,
   FrameDirection,
@@ -11,6 +14,7 @@ import {
   MessagesEventKind,
   MessageTypeId,
   type OCPPVersionType,
+  type WebsocketLifecycleEvent,
 } from '@citrineos/types';
 
 /**
@@ -107,4 +111,33 @@ export function buildConnectionEvent(input: BuildConnectionEventInput): Connecti
     protocol: input.protocol,
     meta: input.meta,
   } as ConnectionEvent;
+}
+
+export type BuildWebsocketLifecycleEventInput = Omit<WebsocketLifecycleEvent, 'kind'>;
+
+/**
+ * One step in a socket's lifecycle, as the transport saw it.
+ */
+export function buildWebsocketLifecycleEvent(
+  input: BuildWebsocketLifecycleEventInput,
+): WebsocketLifecycleEvent {
+  return { ...input, kind: MessagesEventKind.Websocket };
+}
+
+export interface BuildCallEventInput {
+  tenantId: number;
+  ocppConnectionName: string;
+  outcome: CallEventOutcome;
+  correlationId: string;
+  action: string;
+  protocol: OCPPVersionType;
+  timestamp: string;
+  meta?: Record<string, string>;
+}
+
+/**
+ * A Call the CSMS sent that timed out unanswered, or could not be sent.
+ */
+export function buildCallEvent(input: BuildCallEventInput): CallEvent {
+  return CallEventSchema.parse({ ...input, kind: MessagesEventKind.Call });
 }

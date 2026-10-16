@@ -22,6 +22,7 @@ import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainer
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { RabbitMQChannelManager } from '@/transport/queue/rabbit-mq/channel-manager.js';
 import { RabbitMQConnectionManager } from '@/transport/queue/rabbit-mq/connection-manager.js';
+import { RabbitMqDeadLetterPublisher } from '@/transport/queue/rabbit-mq/dead-letter-publisher.js';
 import { RabbitMqModuleReceiver } from '@/transport/queue/rabbit-mq/module-receiver.js';
 import { type RabbitMqReceiver } from '@/transport/queue/rabbit-mq/receiver.js';
 import { RabbitMqRouterReceiver } from '@/transport/queue/rabbit-mq/router-receiver.js';
@@ -200,9 +201,11 @@ describe('RabbitMq receivers', () => {
 
   describe('RabbitMqModuleReceiver — broker state', () => {
     beforeEach(() => {
+      const config = aSystemConfigWithAmqp({ exchange: EXCHANGE });
       receiver = new RabbitMqModuleReceiver({
-        config: aSystemConfigWithAmqp({ exchange: EXCHANGE }),
+        config,
         channelManager,
+        deadLetterPublisher: new RabbitMqDeadLetterPublisher({ config, channelManager }),
       });
     });
 
@@ -282,12 +285,14 @@ describe('RabbitMq receivers', () => {
     const instanceId = `router-integration`;
 
     beforeEach(() => {
+      const config = aSystemConfigWithAmqp({
+        exchange: EXCHANGE,
+        instanceIdentifier: `${instanceId}-${uid}`,
+      });
       receiver = new RabbitMqRouterReceiver({
-        config: aSystemConfigWithAmqp({
-          exchange: EXCHANGE,
-          instanceIdentifier: `${instanceId}-${uid}`,
-        }),
+        config,
         channelManager,
+        deadLetterPublisher: new RabbitMqDeadLetterPublisher({ config, channelManager }),
       });
     });
 

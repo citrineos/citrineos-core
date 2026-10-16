@@ -4,6 +4,7 @@
 'use client';
 
 import { ActionType, CommandType, ResourceType } from '@lib/utils/access-types';
+import { PERMISSION_FORCE_DISCONNECT } from '@lib/utils/permissions';
 import { Button } from '@lib/client/components/ui/button';
 import { CanAccess, useTranslate } from '@refinedev/core';
 
@@ -28,7 +29,7 @@ export const ForceDisconnectButton = ({
       action={ActionType.COMMAND}
       params={{
         id,
-        commandType: CommandType.FORCE_DISCONNECT,
+        permission: PERMISSION_FORCE_DISCONNECT,
       }}
     >
       <Button variant="destructive" disabled={disabled} onClick={onClickAction}>

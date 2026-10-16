@@ -2,12 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { type IModule } from '@citrineos/base';
-import { type CallAction, type SystemConfig } from '@citrineos/types';
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
-import { RabbitMQChannelManager } from './channel-manager.js';
-import { RabbitMqReceiver } from './receiver.js';
+import { DeadLetterSource, recordOcppMessageDivertedStale } from '@/transport/metrics.js';
+import { type CallAction, MessageOrigin, MessageState } from '@citrineos/types';
+import type * as amqplib from 'amqplib';
+import { RabbitMqReceiver, type RabbitMqReceiverDependencies } from './receiver.js';
+import type { OCPPMessage } from './util.js';
 
 /**
  * {@link RabbitMqReceiver} used by modules.
@@ -16,12 +15,24 @@ import { RabbitMqReceiver } from './receiver.js';
  * (`rabbit_queue_<identifier>`). Every pod running that module consumes from the same queue, so
  * RabbitMQ load balances incoming messages across them as competing consumers. Each identifier
  * gets its own channel, so a channel error on one queue does not take down the others.
+ *
+ * Every message is processed, however late. A station Call delivered after maxCallLengthSeconds
+ * is no longer time sensitive (the station has already timed it out), so it is moved to the
+ * queue's catch-up queue (`<queue>.stale`) instead of holding up fresh Calls queued behind it.
+ * The catch-up consumer has its own, smaller prefetch.
  */
 export class RabbitMqModuleReceiver extends RabbitMqReceiver {
   protected static readonly QUEUE_PREFIX = 'rabbit_queue_';
+  protected static readonly CATCH_UP_SUFFIX = '.stale';
   protected static readonly CHANNEL_PREFIX = 'module-receiver-';
 
+  protected readonly _source = DeadLetterSource.Module;
   protected readonly _prefetch: number;
+  protected readonly _catchUpPrefetch: number;
+  protected readonly _maxCallLengthMs: number;
+
+  protected _catchUpQueues = new Map<string, string>();
+  protected _catchUpConsumers = new Set<string>();
 
   protected _consumerTags = new Map<string, string[]>();
   protected _moduleSubscriptions = new Map<
@@ -29,14 +40,11 @@ export class RabbitMqModuleReceiver extends RabbitMqReceiver {
     Array<{ actions?: CallAction[]; filter?: Record<string, string> }>
   >();
 
-  constructor(deps: {
-    config: SystemConfig;
-    channelManager: RabbitMQChannelManager;
-    logger?: Logger<ILogObj>;
-    module?: IModule;
-  }) {
+  constructor(deps: RabbitMqReceiverDependencies) {
     super(deps);
     this._prefetch = deps.config.messageBroker.amqp.prefetch.module;
+    this._catchUpPrefetch = deps.config.messageBroker.amqp.prefetch.moduleStale;
+    this._maxCallLengthMs = deps.config.timeouts.maxCallLengthSeconds * 1000;
   }
 
   /**
@@ -48,6 +56,7 @@ export class RabbitMqModuleReceiver extends RabbitMqReceiver {
 
     // Old consumer tags reference a dead channel — reset before re-subscribing
     this._consumerTags.clear();
+    this._catchUpConsumers.clear();
 
     let restored = 0;
     for (const [identifier, subscriptions] of this._moduleSubscriptions) {
@@ -139,11 +148,66 @@ export class RabbitMqModuleReceiver extends RabbitMqReceiver {
     const existing = this._consumerTags.get(identifier) ?? [];
     this._consumerTags.set(identifier, [...existing, consumerTag]);
 
+    if (filter.state !== MessageState.Response.toString()) {
+      await this._consumeCatchUpQueue(identifier, queueName, channel);
+    }
+
     return true;
+  }
+
+  protected async _consumeCatchUpQueue(
+    identifier: string,
+    queueName: string,
+    channel: amqplib.Channel,
+  ): Promise<void> {
+    if (this._catchUpConsumers.has(identifier)) {
+      return;
+    }
+    const catchUpQueue = `${queueName}${RabbitMqModuleReceiver.CATCH_UP_SUFFIX}`;
+    await channel.assertQueue(catchUpQueue, {
+      durable: true,
+      autoDelete: true,
+      exclusive: false,
+    });
+    const consumerTag = await this._consume(channel, catchUpQueue, this._catchUpPrefetch);
+    this._consumerTags.set(identifier, [
+      ...(this._consumerTags.get(identifier) ?? []),
+      consumerTag,
+    ]);
+    this._catchUpQueues.set(queueName, catchUpQueue);
+    this._catchUpConsumers.add(identifier);
+  }
+
+  protected async _dispatch(
+    parsed: OCPPMessage,
+    message: amqplib.ConsumeMessage,
+    channel: amqplib.Channel,
+    queueName: string,
+  ): Promise<void> {
+    const catchUpQueue = this._catchUpQueues.get(queueName);
+    if (catchUpQueue && this._isLateStationCall(parsed)) {
+      channel.sendToQueue(catchUpQueue, message.content, message.properties);
+      recordOcppMessageDivertedStale(String(parsed.action));
+      this._logger.debug(
+        `Moved late ${parsed.action} from ${parsed.context.ocppConnectionName} to ${catchUpQueue}. ` +
+          `correlationId=${parsed.context.correlationId}`,
+      );
+      return;
+    }
+    await super._dispatch(parsed, message, channel, queueName);
+  }
+
+  private _isLateStationCall(parsed: OCPPMessage): boolean {
+    if (parsed.origin !== MessageOrigin.ChargingStation || parsed.state !== MessageState.Request) {
+      return false;
+    }
+    const ageMs = Date.now() - new Date(parsed.context.timestamp).getTime();
+    return ageMs > this._maxCallLengthMs;
   }
 
   async unsubscribe(identifier: string): Promise<boolean> {
     this._moduleSubscriptions.delete(identifier);
+    this._catchUpConsumers.delete(identifier);
 
     const channel = await this._channelManager.getChannel(this._channelId(identifier));
     if (!channel) {

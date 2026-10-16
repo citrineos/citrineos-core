@@ -7,6 +7,7 @@ import {
   boolean,
   index,
   integer,
+  numeric,
   pgSchema,
   pgTable,
   serial,
@@ -28,7 +29,7 @@ function variableMonitoringColumns() {
     // OCPP monitoring id (distinct from the databaseId surrogate key).
     id: integer('id'),
     transaction: boolean('transaction'),
-    value: integer('value'),
+    value: numeric('value'),
     type: varchar('type', { length: 255 }),
     severity: integer('severity'),
     // OCPP 2.1 field

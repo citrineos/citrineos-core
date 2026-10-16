@@ -28,7 +28,6 @@ export const TransactionEventSchema = BaseSchema.extend({
   evse: EvseTypeSchema.omit({ tenantId: true }).optional(), // TenantId omitted so that raw OCPP data can be stored
   idTokenValue: z.string().nullable().optional(),
   idTokenType: z.string().nullable().optional(),
-  customData: z.any().nullable().optional(),
 });
 
 export const TransactionEventProps = TransactionEventSchema.keyof().enum;

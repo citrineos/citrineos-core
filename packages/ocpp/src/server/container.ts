@@ -8,6 +8,7 @@ import type { FastifyInstance } from 'fastify';
 
 // -- Config & Base --
 import {
+  DEFAULT_TENANT_ID,
   type IApiAuthProvider,
   type ICache,
   type IFileStorage,
@@ -23,13 +24,19 @@ import { type ILogObj, Logger } from 'tslog';
 import {
   DefaultDrizzleInstance,
   DefaultSequelizeInstance,
+  DrizzleAsyncJobStatusRepository,
   DrizzleAuthorizationRepository,
   DrizzleBootRepository,
   DrizzleCertificateRepository,
   DrizzleChangeConfigurationRepository,
+  DrizzleChargingStationNetworkProfileRepository,
   DrizzleChargingStationRepository,
+  DrizzleChargingStationSecurityInfoRepository,
+  DrizzleChargingStationSequenceRepository,
+  DrizzleComponentRepository,
   DrizzleConnectorRepository,
   DrizzleLocationRepository,
+  DrizzleMeterValueRepository,
   DrizzleStatusNotificationRepository,
   DrizzleEvseRepository,
   DrizzleDeleteCertificateAttemptRepository,
@@ -38,11 +45,16 @@ import {
   DrizzleMessageInfoRepository,
   DrizzleReservationRepository,
   DrizzleSecurityEventRepository,
+  DrizzleWebsocketEventRepository,
+  DrizzleNetworkAlertConfigRepository,
+  DrizzleNetworkAlertRepository,
   DrizzleServerNetworkProfileRepository,
   DrizzleSetNetworkProfileRepository,
   DrizzleSubscriptionRepository,
   DrizzleTariffRepository,
   DrizzleTenantRepository,
+  DrizzleTransactionEventRepository,
+  DrizzleTransactionRepository,
   DrizzleVariableAttributeRepository,
   DrizzleVariableCharacteristicsRepository,
   SequelizeAsyncJobStatusRepository,
@@ -54,7 +66,6 @@ import {
   SequelizeChargingStationNetworkProfileRepository,
   SequelizeChargingStationSecurityInfoRepository,
   SequelizeChargingStationSequenceRepository,
-  SequelizeComponentRepository,
   SequelizeDeleteCertificateAttemptRepository,
   SequelizeDeviceModelRepository,
   SequelizeInstallCertificateAttemptRepository,
@@ -65,6 +76,9 @@ import {
   SequelizeOCPPMessageRepository,
   SequelizeReservationRepository,
   SequelizeSecurityEventRepository,
+  SequelizeWebsocketEventRepository,
+  SequelizeNetworkAlertConfigRepository,
+  SequelizeNetworkAlertRepository,
   SequelizeServerNetworkProfileRepository,
   SequelizeSetNetworkProfileRepository,
   SequelizeSubscriptionRepository,
@@ -74,10 +88,12 @@ import {
   SequelizeVariableMonitoringRepository,
 } from '@citrineos/dal';
 import { AdminApi } from '@/apis/admin-api.js';
+import { PermissionsApi } from '@/apis/permissions-api.js';
+import { DevApi } from '@/apis/dev-api.js';
 import { CommandsApi } from '@/apis/commands-api.js';
 import { OcppMessageApi } from '@/apis/ocpp-message-api.js';
 import { WebPaymentApi } from '@/apis/web-payment-api.js';
-import { registerApiServices } from '@/apis/register.js';
+import { buildPermissionCatalog, registerApiServices } from '@/apis/register.js';
 import {
   CaliforniaPricingModule,
   registerCaliforniaPricingServices,
@@ -98,11 +114,17 @@ import {
 } from '@modules/smart-charging/index.js';
 import { TenantModule } from '@modules/tenant/index.js';
 import { registerTransactionsServices, TransactionsModule } from '@modules/transactions/index.js';
-import { LocalBypassAuthProvider, OIDCAuthProvider } from '@/apis/index.js';
+import { JwtAuthProvider, LocalBypassAuthProvider } from '@/apis/index.js';
+import { PolicyStore } from '@/apis/authorization/policy/policy-store.js';
+import { SeedFileRoleProvider } from '@/apis/authorization/policy/seed-file-role-provider.js';
+import { DevKeyPair, DEV_ISSUER } from '@/apis/authorization/dev/dev-key-pair.js';
 import {
   CertificateAuthorityService,
   DeviceModelService,
   InstallCertificateHelperService,
+  NetworkAlertConfigResolver,
+  NetworkAlertService,
+  NetworkAlertSweeper,
   NetworkProfileService,
   RealTimeAuthorizer,
 } from '@services/index.js';
@@ -115,7 +137,9 @@ import {
   NetworkProfileFilter,
   RabbitMQChannelManager,
   RabbitMQConnectionManager,
+  RabbitMqDeadLetterPublisher,
   RabbitMqModuleReceiver,
+  RabbitMqReemitter,
   RabbitMqRouterReceiver,
   RabbitMqSender,
   UnknownStationFilter,
@@ -230,14 +254,31 @@ function registerMessaging(container: AwilixContainer): void {
   container.register({
     connectionManager: asClass(RabbitMQConnectionManager).singleton(),
     channelManager: asClass(RabbitMQChannelManager).singleton(),
+    deadLetterPublisher: asClass(RabbitMqDeadLetterPublisher).singleton(),
+    reemitter: asClass(RabbitMqReemitter).singleton(),
   });
 
   // This is the message bus per module. Set to be scoped to each specific instance.
   container.register({
     sender: asFunction(
-      ({ exchange, connectionManager, channelManager, logger, maxCallLengthSeconds }) =>
+      ({
+        exchange,
+        config,
+        connectionManager,
+        channelManager,
+        deadLetterPublisher,
+        logger,
+        maxCallLengthSeconds,
+      }) =>
         new BrokerAwareMessageSender(
-          new RabbitMqSender(exchange, connectionManager, channelManager, logger),
+          new RabbitMqSender(
+            exchange,
+            connectionManager,
+            channelManager,
+            config.timeouts,
+            deadLetterPublisher,
+            logger,
+          ),
           connectionManager,
           maxCallLengthSeconds,
           logger,
@@ -245,25 +286,40 @@ function registerMessaging(container: AwilixContainer): void {
     ).scoped(),
 
     handler: asFunction(
-      ({ config, channelManager, logger }) =>
-        new RabbitMqModuleReceiver({ config, channelManager, logger }),
+      ({ config, channelManager, deadLetterPublisher, logger }) =>
+        new RabbitMqModuleReceiver({ config, channelManager, deadLetterPublisher, logger }),
     ).scoped(),
   });
 
   // This is the routing messenger between the charging stations and the message bus
   container.register({
     routerSender: asFunction(
-      ({ exchange, connectionManager, channelManager, logger, maxCallLengthSeconds }) =>
+      ({
+        exchange,
+        config,
+        connectionManager,
+        channelManager,
+        deadLetterPublisher,
+        logger,
+        maxCallLengthSeconds,
+      }) =>
         new BrokerAwareMessageSender(
-          new RabbitMqSender(exchange, connectionManager, channelManager, logger),
+          new RabbitMqSender(
+            exchange,
+            connectionManager,
+            channelManager,
+            config.timeouts,
+            deadLetterPublisher,
+            logger,
+          ),
           connectionManager,
           maxCallLengthSeconds,
           logger,
         ),
     ).singleton(),
     routerHandler: asFunction(
-      ({ config, channelManager, logger }) =>
-        new RabbitMqRouterReceiver({ config, channelManager, logger }),
+      ({ config, channelManager, deadLetterPublisher, logger }) =>
+        new RabbitMqRouterReceiver({ config, channelManager, deadLetterPublisher, logger }),
     ).singleton(),
   });
 }
@@ -291,7 +347,6 @@ function registerRepositories(container: AwilixContainer): void {
     deleteCertificateAttemptRepository: asClass(
       SequelizeDeleteCertificateAttemptRepository,
     ).singleton(),
-    deviceModelRepository: asClass(SequelizeDeviceModelRepository).singleton(),
     installCertificateAttemptRepository: asClass(
       SequelizeInstallCertificateAttemptRepository,
     ).singleton(),
@@ -302,6 +357,9 @@ function registerRepositories(container: AwilixContainer): void {
     ocppMessageRepository: asClass(SequelizeOCPPMessageRepository).singleton(),
     reservationRepository: asClass(SequelizeReservationRepository).singleton(),
     securityEventRepository: asClass(SequelizeSecurityEventRepository).singleton(),
+    websocketEventRepository: asClass(SequelizeWebsocketEventRepository).singleton(),
+    networkAlertRepository: asClass(SequelizeNetworkAlertRepository).singleton(),
+    networkAlertConfigRepository: asClass(SequelizeNetworkAlertConfigRepository).singleton(),
     chargingStationNetworkProfileRepository: asClass(
       SequelizeChargingStationNetworkProfileRepository,
     ).singleton(),
@@ -311,22 +369,29 @@ function registerRepositories(container: AwilixContainer): void {
     tariffRepository: asClass(SequelizeTariffRepository).singleton(),
     tenantRepository: asClass(SequelizeTenantRepository).singleton(),
     transactionEventRepository: asClass(SequelizeTransactionEventRepository).singleton(),
+    // The device model aggregate is the instance behind all three narrow tokens.
+    variableAttributeRepository: asClass(SequelizeDeviceModelRepository).singleton(),
     variableMonitoringRepository: asClass(SequelizeVariableMonitoringRepository).singleton(),
-    componentRepository: asClass(SequelizeComponentRepository).singleton(),
     // use asFunction to return an already existing instance
     chargingStationRepository: asFunction(
       ({ locationRepository }) => locationRepository,
+    ).singleton(),
+    componentRepository: asFunction(
+      ({ variableAttributeRepository }) => variableAttributeRepository,
     ).singleton(),
     connectorRepository: asFunction(({ locationRepository }) => locationRepository).singleton(),
     evseRepository: asFunction(({ locationRepository }) => locationRepository).singleton(),
     statusNotificationRepository: asFunction(
       ({ locationRepository }) => locationRepository,
     ).singleton(),
-    variableAttributeRepository: asFunction(
-      ({ deviceModelRepository }) => deviceModelRepository,
-    ).singleton(),
     variableCharacteristicsRepository: asFunction(
-      ({ deviceModelRepository }) => deviceModelRepository,
+      ({ variableAttributeRepository }) => variableAttributeRepository,
+    ).singleton(),
+    transactionRepository: asFunction(
+      ({ transactionEventRepository }) => transactionEventRepository,
+    ).singleton(),
+    meterValueRepository: asFunction(
+      ({ transactionEventRepository }) => transactionEventRepository,
     ).singleton(),
   });
 
@@ -338,11 +403,21 @@ function registerRepositories(container: AwilixContainer): void {
 
       useTenantSchema: asValue(false),
 
+      asyncJobStatusRepository: asClass(DrizzleAsyncJobStatusRepository).singleton(),
       authorizationRepository: asClass(DrizzleAuthorizationRepository).singleton(),
       bootRepository: asClass(DrizzleBootRepository).singleton(),
       certificateRepository: asClass(DrizzleCertificateRepository).singleton(),
       changeConfigurationRepository: asClass(DrizzleChangeConfigurationRepository).singleton(),
       chargingStationRepository: asClass(DrizzleChargingStationRepository).singleton(),
+      chargingStationNetworkProfileRepository: asClass(
+        DrizzleChargingStationNetworkProfileRepository,
+      ).singleton(),
+      chargingStationSecurityInfoRepository: asClass(
+        DrizzleChargingStationSecurityInfoRepository,
+      ).singleton(),
+      chargingStationSequenceRepository: asClass(
+        DrizzleChargingStationSequenceRepository,
+      ).singleton(),
       connectorRepository: asClass(DrizzleConnectorRepository).singleton(),
       locationRepository: asClass(DrizzleLocationRepository).singleton(),
       deleteCertificateAttemptRepository: asClass(
@@ -356,12 +431,19 @@ function registerRepositories(container: AwilixContainer): void {
       messageInfoRepository: asClass(DrizzleMessageInfoRepository).singleton(),
       reservationRepository: asClass(DrizzleReservationRepository).singleton(),
       securityEventRepository: asClass(DrizzleSecurityEventRepository).singleton(),
+      websocketEventRepository: asClass(DrizzleWebsocketEventRepository).singleton(),
+      networkAlertRepository: asClass(DrizzleNetworkAlertRepository).singleton(),
+      networkAlertConfigRepository: asClass(DrizzleNetworkAlertConfigRepository).singleton(),
       setNetworkProfileRepository: asClass(DrizzleSetNetworkProfileRepository).singleton(),
       statusNotificationRepository: asClass(DrizzleStatusNotificationRepository).singleton(),
       subscriptionRepository: asClass(DrizzleSubscriptionRepository).singleton(),
       serverNetworkProfileRepository: asClass(DrizzleServerNetworkProfileRepository).singleton(),
       tariffRepository: asClass(DrizzleTariffRepository).singleton(),
       tenantRepository: asClass(DrizzleTenantRepository).singleton(),
+      meterValueRepository: asClass(DrizzleMeterValueRepository).singleton(),
+      transactionEventRepository: asClass(DrizzleTransactionEventRepository).singleton(),
+      transactionRepository: asClass(DrizzleTransactionRepository).singleton(),
+      componentRepository: asClass(DrizzleComponentRepository).singleton(),
       variableAttributeRepository: asClass(DrizzleVariableAttributeRepository).singleton(),
       variableCharacteristicsRepository: asClass(
         DrizzleVariableCharacteristicsRepository,
@@ -382,22 +464,50 @@ function registerServices(container: AwilixContainer): void {
     installCertificateHelperService: asClass(InstallCertificateHelperService).singleton(),
     deviceModelService: asClass(DeviceModelService).singleton(),
     networkProfileService: asClass(NetworkProfileService).singleton(),
+    networkAlertConfigResolver: asClass(NetworkAlertConfigResolver).singleton(),
+    networkAlertService: asClass(NetworkAlertService).singleton(),
+    networkAlertSweeper: asClass(NetworkAlertSweeper).singleton(),
     smartChargingService: asClass(InternalSmartCharging).singleton(),
     realTimeAuthorizer: asClass(RealTimeAuthorizer).singleton(),
     authorizers: asValue([]),
-    apiAuthProvider: asFunction(({ config, logger }): IApiAuthProvider => {
-      const oidc = (config as SystemConfig).auth.oidc;
-      if (oidc) {
-        const { cacheTimeSeconds, ...rest } = oidc;
-        return new OIDCAuthProvider(
-          { ...rest, ...(cacheTimeSeconds && { cacheTime: cacheTimeSeconds * 1000 }) },
-          logger,
-        );
+    permissionCatalog: asValue(buildPermissionCatalog()),
+    roleProvider: asClass(SeedFileRoleProvider).singleton(),
+    policyStore: asClass(PolicyStore).singleton(),
+    devKeyPair: asClass(DevKeyPair).singleton(),
+    apiAuthProvider: asFunction((cradle): IApiAuthProvider => {
+      const { config, logger, policyStore } = cradle;
+      const auth = (config as SystemConfig).auth;
+      switch (auth.mode) {
+        case 'jwt': {
+          if (!auth.jwt) {
+            throw new Error("auth.jwt must be provided when auth.mode is 'jwt'");
+          }
+          const { cacheTimeSeconds, ...rest } = auth.jwt;
+          return new JwtAuthProvider(
+            {
+              ...rest,
+              defaultTenantId: String(DEFAULT_TENANT_ID),
+              ...(cacheTimeSeconds && { cacheTime: cacheTimeSeconds * 1000 }),
+            },
+            policyStore,
+            logger,
+          );
+        }
+        case 'localDev':
+          return new JwtAuthProvider(
+            {
+              publicKey: cradle.devKeyPair.publicKey,
+              issuer: DEV_ISSUER,
+              rolesClaim: auth.jwt?.rolesClaim ?? 'roles',
+              tenantClaim: auth.jwt?.tenantClaim ?? 'tenant_id',
+              defaultTenantId: String(DEFAULT_TENANT_ID),
+            },
+            policyStore,
+            logger,
+          );
+        case 'localBypass':
+          return new LocalBypassAuthProvider(auth.localBypass.roles, logger);
       }
-      if ((config as SystemConfig).auth.localBypass) {
-        return new LocalBypassAuthProvider(logger);
-      }
-      throw new Error('No valid API authentication provider configured');
     }).singleton(),
   });
 }
@@ -483,6 +593,8 @@ function registerModules(container: AwilixContainer): void {
 function registerApis(container: AwilixContainer): void {
   container.register({
     commandsApi: asClass(CommandsApi).scoped(),
+    permissionsApi: asClass(PermissionsApi).scoped(),
+    devApi: asClass(DevApi).scoped(),
     ocppMessageApi: asClass(OcppMessageApi).scoped(),
     webPaymentApi: asClass(WebPaymentApi).scoped(),
   });

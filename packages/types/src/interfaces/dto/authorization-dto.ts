@@ -26,7 +26,6 @@ const authorizationFields = {
   language1: z.string().nullable().optional(),
   language2: z.string().nullable().optional(),
   personalMessage: z.any().nullable().optional(),
-  customData: z.any().nullable().optional(),
   concurrentTransaction: z.boolean().optional(),
   isPrepaid: z.boolean().optional(),
   prepaidBalance: z.number().nullable().optional(),

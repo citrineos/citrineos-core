@@ -5,13 +5,13 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import {
   ChargingStation,
+  ChargingStationNetworkProfile,
   ChargingStationSecurityInfo,
   ServerNetworkProfile,
   SetNetworkProfile,
 } from '@dal/db/sequelize/index.js';
 import { OCPP2_0_1, OCPPVersion } from '@citrineos/types';
 import {
-  ChargingStationNetworkProfile,
   SequelizeChargingStationNetworkProfileRepository,
   SequelizeChargingStationSecurityInfoRepository,
   SequelizeServerNetworkProfileRepository,

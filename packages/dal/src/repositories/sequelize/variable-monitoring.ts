@@ -46,9 +46,9 @@ export class SequelizeVariableMonitoringRepository
   async createOrUpdateByMonitoringDataTypeAndStationId(
     tenantId: number,
     value: OCPP2_common_types.MonitoringDataType,
-    componentId: string,
-    variableId: string,
     ocppConnectionName: string,
+    componentId?: number,
+    variableId?: number,
   ): Promise<VariableMonitoring[]> {
     const stationId = await resolveStationIdOrThrow(
       tenantId,
@@ -126,9 +126,9 @@ export class SequelizeVariableMonitoringRepository
   async createOrUpdateBySetMonitoringDataTypeAndStationId(
     tenantId: number,
     value: OCPP2_0_1.SetMonitoringDataType,
-    componentId: string,
-    variableId: string,
     ocppConnectionName: string,
+    componentId?: number,
+    variableId?: number,
   ): Promise<VariableMonitoring> {
     const stationId = await resolveStationIdOrThrow(
       tenantId,
@@ -284,9 +284,9 @@ export class SequelizeVariableMonitoringRepository
   async createEventDatumByComponentIdAndVariableIdAndStationId(
     tenantId: number,
     event: OCPP2_0_1.EventDataType,
-    componentId: string,
-    variableId: string,
     ocppConnectionName: string,
+    componentId?: number,
+    variableId?: number,
   ): Promise<EventData> {
     const stationId = await resolveStationIdOrThrow(
       tenantId,

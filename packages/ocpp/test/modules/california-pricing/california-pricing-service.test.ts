@@ -8,7 +8,7 @@ import type {
   IChangeConfigurationRepository,
   IConnectorRepository,
   ITariffRepository,
-  ITransactionEventRepository,
+  ITransactionRepository,
 } from '@citrineos/dal';
 import type { Transaction } from '@citrineos/dal';
 import { CaliforniaPricingService } from '@modules/california-pricing/california-pricing-service.js';
@@ -30,7 +30,7 @@ describe('CaliforniaPricingService', () => {
 
   let changeConfigurationRepository: Mocked<IChangeConfigurationRepository>;
   let tariffRepository: Mocked<ITariffRepository>;
-  let transactionEventRepository: Mocked<ITransactionEventRepository>;
+  let transactionRepository: Mocked<ITransactionRepository>;
   let connectorRepository: Mocked<IConnectorRepository>;
   let costCalculator: Mocked<CostCalculator>;
   let ocppSender: ReturnType<typeof makeMockOcppSender>;
@@ -47,9 +47,9 @@ describe('CaliforniaPricingService', () => {
       findByConnectorId: vi.fn().mockResolvedValue(undefined),
     } as unknown as Mocked<ITariffRepository>;
 
-    transactionEventRepository = {
+    transactionRepository = {
       readTransactionByStationIdAndTransactionId: vi.fn().mockResolvedValue(undefined),
-    } as unknown as Mocked<ITransactionEventRepository>;
+    } as unknown as Mocked<ITransactionRepository>;
 
     connectorRepository = {
       readConnectorsByStationId: vi.fn().mockResolvedValue([]),
@@ -64,7 +64,7 @@ describe('CaliforniaPricingService', () => {
     service = getTestInstance(container, CaliforniaPricingService, {
       changeConfigurationRepository,
       tariffRepository,
-      transactionEventRepository,
+      transactionRepository,
       connectorRepository,
       costCalculator,
       ocppSender,
@@ -117,7 +117,7 @@ describe('CaliforniaPricingService', () => {
         service.resolvePrice(DEFAULT_TENANT_ID, STATION, undefined),
       ).resolves.toBeUndefined();
       expect(
-        transactionEventRepository.readTransactionByStationIdAndTransactionId,
+        transactionRepository.readTransactionByStationIdAndTransactionId,
       ).not.toHaveBeenCalled();
     });
 
@@ -371,9 +371,7 @@ describe('CaliforniaPricingService', () => {
 
   function givenTransaction(overrides: Partial<Transaction>): Transaction {
     const transaction = { id: 1, ...overrides } as Transaction;
-    transactionEventRepository.readTransactionByStationIdAndTransactionId.mockResolvedValue(
-      transaction,
-    );
+    transactionRepository.readTransactionByStationIdAndTransactionId.mockResolvedValue(transaction);
     return transaction;
   }
 

@@ -8,6 +8,7 @@ import {
   type IOcppSender,
   AbstractMessageEndpoint,
   DEFAULT_TENANT_ID,
+  type MessageDelivery,
 } from '@citrineos/base';
 import {
   EventGroup,
@@ -15,7 +16,7 @@ import {
   type OCPPVersion,
   type OCPP2_request_types,
 } from '@citrineos/types';
-import type { IDeviceModelRepository } from '@citrineos/dal';
+import type { IVariableAttributeRepository } from '@citrineos/dal';
 import type { DeviceModelService } from '@services/device-model/device-model-service.js';
 import { getSizeOfRequest } from '@util/index.js';
 import { COMPONENT_DEVICE_DATA_CTRLR } from '../components.js';
@@ -25,7 +26,7 @@ import { sendInBatches } from './send-in-batches.js';
 interface Dependencies extends AbstractMessageEndpointDependencies {
   ocppSender: IOcppSender;
   deviceModelService: DeviceModelService;
-  deviceModelRepository: IDeviceModelRepository;
+  variableAttributeRepository: IVariableAttributeRepository;
 }
 
 export class SetVariablesEndpoint extends AbstractMessageEndpoint {
@@ -38,19 +39,24 @@ export class SetVariablesEndpoint extends AbstractMessageEndpoint {
 
   private readonly _ocppSender: IOcppSender;
   private readonly _deviceModelService: DeviceModelService;
-  private readonly _deviceModelRepository: IDeviceModelRepository;
+  private readonly _variableAttributeRepository: IVariableAttributeRepository;
 
-  constructor({ logger, ocppSender, deviceModelService, deviceModelRepository }: Dependencies) {
+  constructor({
+    logger,
+    ocppSender,
+    deviceModelService,
+    variableAttributeRepository,
+  }: Dependencies) {
     super(logger);
     this._ocppSender = ocppSender;
     this._deviceModelService = deviceModelService;
-    this._deviceModelRepository = deviceModelRepository;
+    this._variableAttributeRepository = variableAttributeRepository;
   }
 
   async handle(
     identifiers: string[],
     request: OCPP2_request_types.SetVariablesRequest,
-    callbackUrl: string | undefined,
+    delivery: MessageDelivery,
     tenantId: number = DEFAULT_TENANT_ID,
     version: OCPPVersion,
   ): Promise<IMessageConfirmation[]> {
@@ -75,7 +81,7 @@ export class SetVariablesEndpoint extends AbstractMessageEndpoint {
 
         const setVariableData = request.setVariableData;
 
-        await this._deviceModelRepository.createOrUpdateBySetVariablesDataAndStationId(
+        await this._variableAttributeRepository.createOrUpdateBySetVariablesDataAndStationId(
           tenantId,
           setVariableData,
           ocppConnectionName,
@@ -101,7 +107,7 @@ export class SetVariablesEndpoint extends AbstractMessageEndpoint {
             items: setVariableData,
             itemsPerMessage,
             buildPayload: (batch) => ({ ...request, setVariableData: batch }),
-            callbackUrl,
+            delivery,
           })),
         );
       } catch (error) {

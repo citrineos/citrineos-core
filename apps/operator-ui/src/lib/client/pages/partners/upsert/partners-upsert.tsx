@@ -159,7 +159,7 @@ export const PartnersUpsert = ({ params }: PartnersUpsertProps) => {
   return (
     <CanAccess
       resource={ResourceType.PARTNERS}
-      action={ActionType.EDIT}
+      action={id ? ActionType.EDIT : ActionType.CREATE}
       fallback={<AccessDeniedFallback />}
       params={{ id }}
     >

@@ -70,7 +70,6 @@ export const EvseSelector = ({
     },
   });
 
-  console.log('options??', JSON.stringify(options));
   // Format options for Combobox
   const formattedOptions = options.map((option: any) => ({
     value: option.value,

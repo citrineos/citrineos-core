@@ -42,7 +42,7 @@ describe('configuration message endpoints', () => {
     });
 
     it('sends the request to a known station', async () => {
-      const confirmations = await build().handle([STATION], request, undefined, DEFAULT_TENANT_ID);
+      const confirmations = await build().handle([STATION], request, {}, DEFAULT_TENANT_ID);
 
       expect(confirmations).toEqual([{ success: true, payload: 'queued' }]);
       expect(sendCall.mock.calls[0][0]).toMatchObject({
@@ -57,7 +57,7 @@ describe('configuration message endpoints', () => {
     it('refuses an unknown station without sending', async () => {
       readChargingStationByOcppConnectionName.mockResolvedValue(undefined);
 
-      const confirmations = await build().handle([STATION], request, undefined, DEFAULT_TENANT_ID);
+      const confirmations = await build().handle([STATION], request, {}, DEFAULT_TENANT_ID);
 
       expect(confirmations).toEqual([
         { success: false, payload: `Charging station ${STATION} not found` },
@@ -73,7 +73,7 @@ describe('configuration message endpoints', () => {
       const confirmations = await build().handle(
         [STATION, OTHER_STATION],
         request,
-        undefined,
+        {},
         DEFAULT_TENANT_ID,
       );
 
@@ -85,9 +85,15 @@ describe('configuration message endpoints', () => {
     });
 
     it('forwards the callback url', async () => {
-      await build().handle([STATION], request, 'http://cb', DEFAULT_TENANT_ID);
+      await build().handle([STATION], request, { callbackUrl: 'http://cb' }, DEFAULT_TENANT_ID);
 
       expect(sendCall.mock.calls[0][0].callbackUrl).toBe('http://cb');
+    });
+
+    it('forwards staleAfterSeconds', async () => {
+      await build().handle([STATION], request, { staleAfterSeconds: 90 }, DEFAULT_TENANT_ID);
+
+      expect(sendCall.mock.calls[0][0].staleAfterSeconds).toBe(90);
     });
   });
 
@@ -100,7 +106,7 @@ describe('configuration message endpoints', () => {
       });
 
     const handle = (request: OCPP1_6.GetConfigurationRequest) =>
-      build().handle([STATION], request, undefined, DEFAULT_TENANT_ID);
+      build().handle([STATION], request, {}, DEFAULT_TENANT_ID);
 
     it('sends a single call when no keys are requested', async () => {
       const confirmations = await handle({});
@@ -208,7 +214,7 @@ describe('configuration message endpoints', () => {
     it('defaults startDateTime to now when omitted', async () => {
       const request = aRequest();
 
-      await build().handle([STATION], request, undefined, DEFAULT_TENANT_ID, OCPPVersion.OCPP2_0_1);
+      await build().handle([STATION], request, {}, DEFAULT_TENANT_ID, OCPPVersion.OCPP2_0_1);
 
       expect(request.message.startDateTime).toEqual(expect.any(String));
       expect(Number.isNaN(Date.parse(request.message.startDateTime!))).toBe(false);
@@ -220,7 +226,7 @@ describe('configuration message endpoints', () => {
       await build().handle(
         [STATION],
         aRequest({ startDateTime }),
-        undefined,
+        {},
         DEFAULT_TENANT_ID,
         OCPPVersion.OCPP2_0_1,
       );
@@ -235,7 +241,7 @@ describe('configuration message endpoints', () => {
       const confirmations = await build().handle(
         [STATION],
         request,
-        undefined,
+        {},
         DEFAULT_TENANT_ID,
         OCPPVersion.OCPP2_0_1,
       );
@@ -251,7 +257,7 @@ describe('configuration message endpoints', () => {
       const confirmations = await build().handle(
         [STATION],
         request,
-        undefined,
+        {},
         DEFAULT_TENANT_ID,
         OCPPVersion.OCPP2_0_1,
       );
@@ -261,13 +267,7 @@ describe('configuration message endpoints', () => {
     });
 
     it('sends the requested version as the protocol', async () => {
-      await build().handle(
-        [STATION],
-        aRequest(),
-        undefined,
-        DEFAULT_TENANT_ID,
-        OCPPVersion.OCPP2_1,
-      );
+      await build().handle([STATION], aRequest(), {}, DEFAULT_TENANT_ID, OCPPVersion.OCPP2_1);
 
       expect(sendCall.mock.calls[0][0].protocol).toBe(OCPPVersion.OCPP2_1);
     });
@@ -276,7 +276,7 @@ describe('configuration message endpoints', () => {
       await build().handle(
         [STATION, OTHER_STATION],
         aRequest(),
-        undefined,
+        {},
         DEFAULT_TENANT_ID,
         OCPPVersion.OCPP2_0_1,
       );
@@ -293,7 +293,7 @@ describe('configuration message endpoints', () => {
       getTestInstance(container, TriggerMessage16Endpoint, { ocppSender: { sendCall } });
 
     const handle = (request: OCPP1_6.TriggerMessageRequest) =>
-      build().handle([STATION], request, undefined, DEFAULT_TENANT_ID);
+      build().handle([STATION], request, {}, DEFAULT_TENANT_ID);
 
     it('sends when connectorId is omitted', async () => {
       const confirmations = await handle({

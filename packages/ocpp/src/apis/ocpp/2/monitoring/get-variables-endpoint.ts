@@ -8,6 +8,7 @@ import {
   type IOcppSender,
   AbstractMessageEndpoint,
   DEFAULT_TENANT_ID,
+  type MessageDelivery,
 } from '@citrineos/base';
 import {
   EventGroup,
@@ -46,7 +47,7 @@ export class GetVariablesEndpoint extends AbstractMessageEndpoint {
   async handle(
     identifiers: string[],
     request: OCPP2_request_types.GetVariablesRequest,
-    callbackUrl: string | undefined,
+    delivery: MessageDelivery,
     tenantId: number = DEFAULT_TENANT_ID,
     version: OCPPVersion,
   ): Promise<IMessageConfirmation[]> {
@@ -89,7 +90,7 @@ export class GetVariablesEndpoint extends AbstractMessageEndpoint {
             items: getVariableData,
             itemsPerMessage,
             buildPayload: (batch) => ({ ...request, getVariableData: batch }),
-            callbackUrl,
+            delivery,
           })),
         );
       } catch (error) {

@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { type ITransactionEventRepository, Transaction } from '@citrineos/dal';
+import { type ITransactionRepository, Transaction } from '@citrineos/dal';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { OCPPVersion } from '@citrineos/types';
 import { CostCalculator } from '@modules/transactions/cost-calculator.js';
@@ -16,7 +16,7 @@ describe('CostNotifier', () => {
   const anyConnectionName = 'CP_TEST_001';
   const anyProtocol = OCPPVersion.OCPP2_0_1;
 
-  let transactionEventRepository: Mocked<ITransactionEventRepository>;
+  let transactionRepository: Mocked<ITransactionRepository>;
   let costUpdatedNotifier: Mock<CostUpdatedNotifier>;
   let costCalculator: Mocked<CostCalculator>;
   let costNotifier: CostNotifier;
@@ -24,10 +24,10 @@ describe('CostNotifier', () => {
   beforeEach(() => {
     vi.useFakeTimers();
 
-    transactionEventRepository = {
+    transactionRepository = {
       readTransactionByStationIdAndTransactionId: vi.fn(),
       updateTransactionTotalCostById: vi.fn(),
-    } as unknown as Mocked<ITransactionEventRepository>;
+    } as unknown as Mocked<ITransactionRepository>;
 
     costUpdatedNotifier = vi.fn();
 
@@ -36,14 +36,14 @@ describe('CostNotifier', () => {
     } as unknown as Mocked<CostCalculator>;
 
     costNotifier = getTestInstance(container, CostNotifier, {
-      transactionEventRepository,
+      transactionRepository,
       costCalculator,
       costUpdatedNotifier,
     });
   });
 
   afterEach(() => {
-    transactionEventRepository.readTransactionByStationIdAndTransactionId.mockReset();
+    transactionRepository.readTransactionByStationIdAndTransactionId.mockReset();
     costUpdatedNotifier.mockReset();
     costCalculator.calculateTotalCost.mockReset();
     vi.clearAllTimers();
@@ -154,9 +154,7 @@ describe('CostNotifier', () => {
   }
 
   function givenTransaction(transaction: Transaction) {
-    transactionEventRepository.readTransactionByStationIdAndTransactionId.mockResolvedValue(
-      transaction,
-    );
+    transactionRepository.readTransactionByStationIdAndTransactionId.mockResolvedValue(transaction);
     return transaction;
   }
 });

@@ -17,6 +17,7 @@ export { AbstractMessageEndpoint } from './src/interfaces/api/endpoints/abstract
 export type {
   AbstractMessageEndpointDependencies,
   IMessageEndpointMetadata,
+  MessageDelivery,
 } from './src/interfaces/api/endpoints/abstract-message-endpoint.js';
 export { AbstractMessageEndpointApi } from './src/interfaces/api/endpoints/abstract-message-endpoint-api.js';
 export type {
@@ -33,7 +34,7 @@ export type { ICommandEndpointMetadata } from './src/interfaces/api/endpoints/en
 export { BadRequestError } from './src/interfaces/api/exceptions/bad-request-error.js';
 export { NotFoundError } from './src/interfaces/api/exceptions/not-found-error.js';
 export type { IAuthorizer } from './src/interfaces/authorizer/index.js';
-export type { ICache } from './src/interfaces/cache/cache.js';
+export type { CacheExpiry, ICache } from './src/interfaces/cache/cache.js';
 export { MemoryCache } from './src/cache/memory.js';
 export { RedisCache } from './src/cache/redis.js';
 export { CacheNamespace } from './src/interfaces/cache/types.js';
@@ -69,7 +70,12 @@ export type { IAuthenticator } from './src/interfaces/router/authenticator.js';
 export type { INetworkConnection } from './src/interfaces/router/i-network-connection.js';
 export type { IMessageRouter } from './src/interfaces/router/router.js';
 export type { IVatProvider } from './src/interfaces/vat/index.js';
+export type { IRoleProvider } from './src/interfaces/roles/i-role-provider.js';
 export { buildEndpoints } from './src/util/endpoints/build-endpoints.js';
+export {
+  commandPermissionName,
+  messagePermissionName,
+} from './src/util/endpoints/permission-name.js';
 export { buildMessageEndpoints } from './src/util/endpoints/build-message-endpoints.js';
 export { forwardMessageEndpoint } from './src/util/endpoints/forward-message-endpoint.js';
 
@@ -114,10 +120,11 @@ export {
   MASKED_LOG_KEYS,
   MeterValueUtils,
   notNull,
+  outboundDeadline,
   RequestBuilder,
   serializeError,
 } from './src/util/index.js';
-export type { RedactionRule } from './src/util/index.js';
+export type { OutboundMessage, RedactionRule } from './src/util/index.js';
 
 export {
   OCPP1_6_CALL_RESULT_SCHEMA_RECORD,
@@ -128,7 +135,6 @@ export {
   OCPP2_1_CALL_SCHEMA_RECORD,
 } from './src/interfaces/schema/mapping-schema.js';
 
-export { AuthorizationSecurity } from './src/interfaces/api/authorization-security.js';
 export { UnauthorizedError } from './src/interfaces/api/exception/unauthorized-error.js';
 export { UnauthorizedException } from './src/interfaces/api/exceptions/unauthorized-exception.js';
 export { HttpHeader } from './src/interfaces/api/http-header.js';

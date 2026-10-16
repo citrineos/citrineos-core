@@ -72,6 +72,22 @@ describe('SequelizeAuthorizationRepository', () => {
       expect(found!.concurrentTransaction).toBe(false);
     });
 
+    it('reads prepaidBalance back as a number, not the NUMERIC string', async () => {
+      await anAuthorization({ isPrepaid: true, prepaidBalance: 25 });
+
+      const found = await makeRepo().readOnlyOneByQuerystring(TENANT_A, { idToken: TOKEN });
+
+      expect(found!.prepaidBalance).toBe(25);
+    });
+
+    it('leaves a null prepaidBalance null', async () => {
+      await anAuthorization({ isPrepaid: true });
+
+      const found = await makeRepo().readOnlyOneByQuerystring(TENANT_A, { idToken: TOKEN });
+
+      expect(found!.prepaidBalance).toBeNull();
+    });
+
     it('matches the idToken case-insensitively and preserves the stored casing', async () => {
       await anAuthorization({ idToken: 'CaseSensitive-01' });
 

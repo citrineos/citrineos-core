@@ -4,7 +4,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type IMessage, DEFAULT_TENANT_ID, OCPPValidator } from '@citrineos/base';
-import type { IVariableAttributeRepository, ITransactionEventRepository } from '@citrineos/dal';
+import type { IVariableAttributeRepository, ITransactionRepository } from '@citrineos/dal';
 import {
   type OcppRequest,
   type SystemConfig,
@@ -64,10 +64,10 @@ describe('NotifySettlementRequestOcpp21Handler', () => {
       variableAttributeRepository: {
         readAllByQuerystring: vi.fn().mockResolvedValue([{ value: 'true' }]),
       } as unknown as IVariableAttributeRepository,
-      transactionEventRepository: {
+      transactionRepository: {
         readTransactionByStationIdAndTransactionId: vi.fn().mockResolvedValue(undefined),
         updateTransactionByStationIdAndTransactionId: vi.fn().mockResolvedValue(undefined),
-      } as unknown as ITransactionEventRepository,
+      } as unknown as ITransactionRepository,
     });
   });
 

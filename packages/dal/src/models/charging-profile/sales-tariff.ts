@@ -6,7 +6,6 @@ import {
   type SalesTariffDto,
   type SalesTariffEntry,
   type TenantDto,
-  OCPP2_0_1,
 } from '@citrineos/types';
 import { DEFAULT_TENANT_ID, OCPP2_Namespace } from '@citrineos/base';
 import {
@@ -68,8 +67,6 @@ export class SalesTariff extends Model implements SalesTariffDto {
 
   @HasMany(() => ChargingSchedule, 'salesTariffId')
   declare chargingSchedulesBySalesTariff?: ChargingScheduleDto[];
-
-  declare customData?: OCPP2_0_1.CustomDataType | null;
 
   @ForeignKey(() => Tenant)
   @Column({

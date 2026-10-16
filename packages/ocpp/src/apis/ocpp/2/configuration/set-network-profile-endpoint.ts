@@ -8,6 +8,7 @@ import {
   type IOcppSender,
   AbstractMessageEndpoint,
   DEFAULT_TENANT_ID,
+  type MessageDelivery,
 } from '@citrineos/base';
 import {
   EventGroup,
@@ -46,7 +47,7 @@ export class SetNetworkProfileEndpoint extends AbstractMessageEndpoint {
   async handle(
     identifiers: string[],
     request: OCPP2_request_types.SetNetworkProfileRequest,
-    callbackUrl: string | undefined,
+    delivery: MessageDelivery,
     tenantId: number = DEFAULT_TENANT_ID,
     version: OCPPVersion,
     extraQueries?: Record<string, unknown>,
@@ -73,7 +74,7 @@ export class SetNetworkProfileEndpoint extends AbstractMessageEndpoint {
           action: OCPP_CallAction.SetNetworkProfile,
           eventGroup: EventGroup.Configuration,
           payload: request,
-          callbackUrl,
+          ...delivery,
           correlationId,
         }),
       ),

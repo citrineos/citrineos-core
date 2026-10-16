@@ -15,10 +15,10 @@ import {
   OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/types';
-import type { ITransactionEventRepository } from '@citrineos/dal';
+import type { ITransactionEventRepository, ITransactionRepository } from '@citrineos/dal';
 import { TransactionEventRequestOcpp2Handler } from '@handlers/index.js';
 import { createTestContainer, makeMockOcppSender } from '@test/test-container.js';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, type Mock, vi } from 'vitest';
 
 function makeConfig(): SystemConfig {
   return {
@@ -50,7 +50,7 @@ function makeMessage<T extends OcppRequest>(
 
 function makeHandler(
   overrides: {
-    transactionEventRepository?: Partial<ITransactionEventRepository>;
+    transactionEventRepository?: Partial<ITransactionEventRepository & ITransactionRepository>;
     cache?: Partial<ICache>;
     transactionService?: Record<string, unknown>;
     config?: SystemConfig;
@@ -61,7 +61,7 @@ function makeHandler(
   const { logger } = createTestContainer();
   const ocppSender = makeMockOcppSender();
 
-  const transactionEventRepository = {
+  const transactionRepository = {
     createOrUpdateTransactionByTransactionEventAndStationId: vi.fn().mockResolvedValue({
       id: 1,
       transactionId: 'txn-001',
@@ -73,7 +73,7 @@ function makeHandler(
     updateTransactionByStationIdAndTransactionId: vi.fn().mockResolvedValue({}),
     updateTransactionTotalCostById: vi.fn().mockResolvedValue(undefined),
     ...overrides.transactionEventRepository,
-  };
+  } as unknown as ITransactionEventRepository & ITransactionRepository & Record<string, Mock>;
 
   const cache = {
     get: vi.fn().mockResolvedValue(null),
@@ -116,15 +116,17 @@ function makeHandler(
     costNotifier: costNotifier as any,
     variableAttributeRepository: variableAttributeRepository as any,
     signedMeterValuesUtil: signedMeterValuesUtil as any,
-    transactionEventRepository:
-      transactionEventRepository as unknown as ITransactionEventRepository,
+    // One mock behind both tokens, mirroring the Sequelize aggregate that serves both in
+    // production. The two interfaces are unrelated now, so the mock is cast to both.
+    transactionEventRepository: transactionRepository,
+    transactionRepository,
     transactionService: transactionService as any,
   });
 
   return {
     handler,
     ocppSender,
-    transactionEventRepository,
+    transactionEventRepository: transactionRepository,
     cache,
     transactionService,
     costCalculator,

@@ -26,6 +26,8 @@ import { useCustomMutation, useTranslate } from '@refinedev/core';
 import { Edit, Plus, Trash2 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { buttonIconSize } from '@lib/client/styles/icon';
+import { ActionType, ResourceType } from '@lib/utils/access-types';
+import { CanAccess } from '@refinedev/core';
 
 interface Endpoint {
   identifier: string;
@@ -145,22 +147,28 @@ export const PartnerEndpointsTable: React.FC<PartnerEndpointsTableProps> = ({
 
   return (
     <>
-      <div className="mb-4">
-        <Button
-          variant="success"
-          size="sm"
-          onClick={() => {
-            setEditingKey(null);
-            setModalVisible(true);
-            setFormData({ identifier: '', url: '' });
-            setErrors({ identifier: '', url: '' });
-          }}
-          disabled={!isValidPartnerId}
-        >
-          <Plus className={buttonIconSize} />
-          {translate('buttons.add')} {translate('TenantPartners.endpoints.endpoint')}
-        </Button>
-      </div>
+      <CanAccess
+        resource={ResourceType.PARTNERS}
+        action={ActionType.EDIT}
+        params={{ id: partnerId }}
+      >
+        <div className="mb-4">
+          <Button
+            variant="success"
+            size="sm"
+            onClick={() => {
+              setEditingKey(null);
+              setModalVisible(true);
+              setFormData({ identifier: '', url: '' });
+              setErrors({ identifier: '', url: '' });
+            }}
+            disabled={!isValidPartnerId}
+          >
+            <Plus className={buttonIconSize} />
+            {translate('buttons.add')} {translate('TenantPartners.endpoints.endpoint')}
+          </Button>
+        </div>
+      </CanAccess>
 
       <div className="rounded-md border">
         <table className="w-full">
@@ -199,24 +207,30 @@ export const PartnerEndpointsTable: React.FC<PartnerEndpointsTableProps> = ({
                     </a>
                   </td>
                   <td className="p-4 align-middle">
-                    <div className="flex gap-2">
-                      <Button
-                        variant="secondary"
-                        size="icon"
-                        onClick={() => edit(record)}
-                        disabled={!isValidPartnerId}
-                      >
-                        <Edit className={buttonIconSize} />
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="icon"
-                        onClick={() => setDeleteTarget(record.identifier)}
-                        disabled={!isValidPartnerId}
-                      >
-                        <Trash2 className={buttonIconSize} />
-                      </Button>
-                    </div>
+                    <CanAccess
+                      resource={ResourceType.PARTNERS}
+                      action={ActionType.EDIT}
+                      params={{ id: partnerId }}
+                    >
+                      <div className="flex gap-2">
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          onClick={() => edit(record)}
+                          disabled={!isValidPartnerId}
+                        >
+                          <Edit className={buttonIconSize} />
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          onClick={() => setDeleteTarget(record.identifier)}
+                          disabled={!isValidPartnerId}
+                        >
+                          <Trash2 className={buttonIconSize} />
+                        </Button>
+                      </div>
+                    </CanAccess>
                   </td>
                 </tr>
               ))

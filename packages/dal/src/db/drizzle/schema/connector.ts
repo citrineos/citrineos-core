@@ -42,6 +42,7 @@ function connectorColumns() {
     vendorErrorCode: varchar('vendorErrorCode', { length: 255 }),
     termsAndConditionsUrl: varchar('termsAndConditionsUrl', { length: 255 }),
     tariffId: integer('tariffId'),
+    latestStatusNotificationId: integer('latestStatusNotificationId'),
     tenantId: integer('tenantId').notNull(),
     createdAt: timestamp('createdAt', { withTimezone: true, mode: 'date' })
       .notNull()

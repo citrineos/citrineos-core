@@ -8,6 +8,7 @@ import {
   type IOcppSender,
   AbstractMessageEndpoint,
   DEFAULT_TENANT_ID,
+  type MessageDelivery,
 } from '@citrineos/base';
 import {
   AttributeEnum,
@@ -22,7 +23,7 @@ import {
 import type {
   IChargingProfileRepository,
   IVariableAttributeRepository,
-  ITransactionEventRepository,
+  ITransactionRepository,
   IVariableCharacteristicsRepository,
 } from '@citrineos/dal';
 import { OCPP2_0_1_Mapper } from '@citrineos/dal';
@@ -41,7 +42,7 @@ interface Dependencies extends AbstractMessageEndpointDependencies {
   variableAttributeRepository: IVariableAttributeRepository;
   variableCharacteristicsRepository: IVariableCharacteristicsRepository;
   chargingProfileRepository: IChargingProfileRepository;
-  transactionEventRepository: ITransactionEventRepository;
+  transactionRepository: ITransactionRepository;
 }
 
 export class SetChargingProfileEndpoint extends AbstractMessageEndpoint {
@@ -56,7 +57,7 @@ export class SetChargingProfileEndpoint extends AbstractMessageEndpoint {
   private readonly _variableAttributeRepository: IVariableAttributeRepository;
   private readonly _variableCharacteristicsRepository: IVariableCharacteristicsRepository;
   private readonly _chargingProfileRepository: IChargingProfileRepository;
-  private readonly _transactionEventRepository: ITransactionEventRepository;
+  private readonly _transactionRepository: ITransactionRepository;
 
   constructor({
     logger,
@@ -64,20 +65,20 @@ export class SetChargingProfileEndpoint extends AbstractMessageEndpoint {
     variableAttributeRepository,
     variableCharacteristicsRepository,
     chargingProfileRepository,
-    transactionEventRepository,
+    transactionRepository,
   }: Dependencies) {
     super(logger);
     this._ocppSender = ocppSender;
     this._variableAttributeRepository = variableAttributeRepository;
     this._variableCharacteristicsRepository = variableCharacteristicsRepository;
     this._chargingProfileRepository = chargingProfileRepository;
-    this._transactionEventRepository = transactionEventRepository;
+    this._transactionRepository = transactionRepository;
   }
 
   async handle(
     identifiers: string[],
     request: SetChargingProfileRequest,
-    callbackUrl: string | undefined,
+    delivery: MessageDelivery,
     tenantId: number = DEFAULT_TENANT_ID,
     version: OCPPVersion,
   ): Promise<IMessageConfirmation[]> {
@@ -96,7 +97,7 @@ export class SetChargingProfileEndpoint extends AbstractMessageEndpoint {
             ocppConnectionName,
             this._variableAttributeRepository,
             this._chargingProfileRepository,
-            this._transactionEventRepository,
+            this._transactionRepository,
             this._logger,
             request.evseId,
           ));
@@ -135,7 +136,7 @@ export class SetChargingProfileEndpoint extends AbstractMessageEndpoint {
           action: OCPP_CallAction.SetChargingProfile,
           eventGroup: EventGroup.SmartCharging,
           payload: request,
-          callbackUrl,
+          ...delivery,
         });
       }),
     );
