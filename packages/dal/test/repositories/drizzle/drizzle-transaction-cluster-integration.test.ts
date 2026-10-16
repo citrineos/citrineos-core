@@ -1001,7 +1001,7 @@ describe('DrizzleTransactionRepository cluster reads', () => {
     await anEvent(TENANT, { transactionDatabaseId: wanted.id, seqNo: 1 });
     await anEvent(TENANT, { transactionDatabaseId: other.id, seqNo: 2 });
 
-    const events = await transactionRepo().readAllByStationIdAndTransactionId(
+    const events = await transactionEventRepo().readAllByStationIdAndTransactionId(
       TENANT,
       STATION,
       'T-WANTED',
@@ -1030,7 +1030,7 @@ describe('DrizzleTransactionRepository cluster reads', () => {
       tenantId: TENANT,
     } as any);
 
-    const events = await transactionRepo().readAllByStationIdAndTransactionId(
+    const events = await transactionEventRepo().readAllByStationIdAndTransactionId(
       TENANT,
       STATION,
       'T-EVSE',
@@ -1169,7 +1169,7 @@ describe('DrizzleTransactionRepository cluster writes', () => {
     const station = await aStation(TENANT);
     const transaction = await aTransaction(TENANT, station.id, 'T-MV');
 
-    const created = await transactionRepo().createMeterValue(
+    const created = await meterValueRepo().createMeterValue(
       TENANT,
       { timestamp: '2025-06-01T08:05:00.000Z', sampledValue: [{ value: 5 }] } as any,
       transaction.id,
@@ -1179,12 +1179,52 @@ describe('DrizzleTransactionRepository cluster writes', () => {
     expect(stored!.transactionCreatedAt.getTime()).toBe(transaction.createdAt.getTime());
   });
 
+  it('insertRow joins the executor it is handed and rolls back with it', async () => {
+    const station = await aStation(TENANT);
+    const transaction = await aTransaction(TENANT, station.id, 'T-MV-TX');
+    const repo = meterValueRepo();
+
+    await expect(
+      db.transaction(async (tx) => {
+        await repo.insertRow(
+          TENANT,
+          {
+            transactionDatabaseId: transaction.id,
+            transactionCreatedAt: transaction.createdAt,
+            sampledValue: [{ value: 7 }] as any,
+            timestamp: new Date('2025-06-01T08:05:00.000Z'),
+          },
+          tx,
+        );
+        throw new Error('abandon the write');
+      }),
+    ).rejects.toThrow('abandon the write');
+
+    expect(await MeterValue.count({ where: { tenantId: TENANT } })).toBe(0);
+  });
+
+  it('insertRow commits on its own connection when no executor is passed', async () => {
+    const station = await aStation(TENANT);
+    const transaction = await aTransaction(TENANT, station.id, 'T-MV-OWN');
+
+    const created = await meterValueRepo().insertRow(TENANT, {
+      transactionDatabaseId: transaction.id,
+      transactionCreatedAt: transaction.createdAt,
+      sampledValue: [{ value: 9 }] as any,
+      timestamp: new Date('2025-06-01T08:05:00.000Z'),
+    });
+
+    const stored = await MeterValue.findOne({ where: { id: created.id } });
+    expect(stored).not.toBeNull();
+    expect(stored!.tenantId).toBe(TENANT);
+  });
+
   it('createMeterValue keeps an explicitly supplied partition key', async () => {
     const station = await aStation(TENANT);
     const transaction = await aTransaction(TENANT, station.id, 'T-MV2');
     const explicitKey = new Date('2024-02-03T04:05:06.000Z');
 
-    const created = await transactionRepo().createMeterValue(
+    const created = await meterValueRepo().createMeterValue(
       TENANT,
       { timestamp: '2025-06-01T08:05:00.000Z', sampledValue: [{ value: 5 }] } as any,
       transaction.id,

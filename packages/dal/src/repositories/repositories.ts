@@ -92,8 +92,6 @@ import type {
   ChargingProfile,
   CompositeSchedule,
 } from '../models/charging-profile/index.js';
-import type { ChargingStationSecurityInfo } from '../models/charging-station-security-info.js';
-import type { ChargingStationNetworkProfile } from '../models/location/charging-station-network-profile.js';
 import type { EventData, VariableMonitoring } from '../models/variable-monitoring/index.js';
 
 export type AsyncJobStatusUpdate = Partial<
@@ -486,7 +484,7 @@ export interface ITransactionRepository {
   ): Promise<StopTransactionDto>;
 }
 
-export interface ITransactionEventRepository extends ITransactionRepository {
+export interface IMeterValueRepository {
   createMeterValue(
     tenantId: number,
     value: OCPP2_common_types.MeterValueType,
@@ -494,6 +492,9 @@ export interface ITransactionEventRepository extends ITransactionRepository {
     transactionId?: string | null,
     tariffId?: number | null,
   ): Promise<MeterValueDto>;
+}
+
+export interface ITransactionEventRepository {
   readAllByStationIdAndTransactionId(
     tenantId: number,
     ocppConnectionName: string,

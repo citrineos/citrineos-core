@@ -7,7 +7,8 @@ import {
   type IConnectorRepository,
   type IEvseRepository,
   type IReservationRepository,
-  type ITransactionEventRepository,
+  type IMeterValueRepository,
+  type ITransactionRepository,
 } from '@citrineos/dal';
 import { TransactionService } from '@modules/transactions/transaction-service.js';
 import { anAuthorization } from './providers/authorization-provider.js';
@@ -23,7 +24,7 @@ describe('C17 - Prepaid Card Authorization', () => {
   const { container } = createTestContainer();
   let transactionService: TransactionService;
   let authorizationRepository: Mocked<IAuthorizationRepository>;
-  let transactionEventRepository: Mocked<ITransactionEventRepository>;
+  let transactionRepositoryMock: Mocked<IMeterValueRepository & ITransactionRepository>;
   let locationRepository: Mocked<IConnectorRepository & IEvseRepository>;
   let reservationRepository: Mocked<IReservationRepository>;
   let authorizer: Mocked<IAuthorizer>;
@@ -35,9 +36,9 @@ describe('C17 - Prepaid Card Authorization', () => {
       readOnlyOneByQuery: vi.fn(),
     } as unknown as Mocked<IAuthorizationRepository>;
 
-    transactionEventRepository = {
+    transactionRepositoryMock = {
       readAllActiveTransactionsByAuthorizationId: vi.fn().mockResolvedValue([]),
-    } as unknown as Mocked<ITransactionEventRepository>;
+    } as unknown as Mocked<IMeterValueRepository & ITransactionRepository>;
 
     locationRepository = {
       readConnectorByStationIdAndOcpp16ConnectorId: vi.fn(),
@@ -56,8 +57,8 @@ describe('C17 - Prepaid Card Authorization', () => {
     } as Mocked<IAuthorizer>;
 
     transactionService = getTestInstance(container, TransactionService, {
-      transactionEventRepository,
-      transactionRepository: transactionEventRepository,
+      meterValueRepository: transactionRepositoryMock,
+      transactionRepository: transactionRepositoryMock,
       authorizationRepository,
       evseRepository: locationRepository,
       connectorRepository: locationRepository,
