@@ -11,32 +11,32 @@ import {
 } from '@citrineos/base';
 import { type HandlerProperties, OCPP1_6, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
 import type { TransactionService } from '@modules/transactions/transaction-service.js';
-import type { IConnectorRepository, ITransactionEventRepository } from '@citrineos/dal';
+import type { IConnectorRepository, ITransactionRepository } from '@citrineos/dal';
 
 @AsRequestHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.StartTransaction)
 export class StartTransactionRequestOcpp16Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
   protected _connectorRepository: IConnectorRepository;
-  protected _transactionEventRepository: ITransactionEventRepository;
+  protected _transactionRepository: ITransactionRepository;
   protected _transactionService: TransactionService;
 
   constructor({
     logger,
     ocppSender,
     connectorRepository,
-    transactionEventRepository,
+    transactionRepository,
     transactionService,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
     connectorRepository: IConnectorRepository;
-    transactionEventRepository: ITransactionEventRepository;
+    transactionRepository: ITransactionRepository;
     transactionService: TransactionService;
   }) {
     super(logger);
 
     this._ocppSender = ocppSender;
     this._connectorRepository = connectorRepository;
-    this._transactionEventRepository = transactionEventRepository;
+    this._transactionRepository = transactionRepository;
     this._transactionService = transactionService;
   }
 
@@ -72,7 +72,7 @@ export class StartTransactionRequestOcpp16Handler extends AbstractHandler {
       try {
         // Create transaction
         const newTransaction =
-          await this._transactionEventRepository.createTransactionByStartTransaction(
+          await this._transactionRepository.createTransactionByStartTransaction(
             tenantId,
             request,
             ocppConnectionName,

@@ -16,25 +16,25 @@ import {
   OCPPVersion,
 } from '@citrineos/types';
 import { OCPP1_6_Mapper } from '@citrineos/dal';
-import type { ITransactionEventRepository } from '@citrineos/dal';
+import type { ITransactionRepository } from '@citrineos/dal';
 
 @AsRequestHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.MeterValues)
 export class MeterValuesRequestOcpp16Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
-  protected _transactionEventRepository: ITransactionEventRepository;
+  protected _transactionRepository: ITransactionRepository;
 
   constructor({
     logger,
     ocppSender,
-    transactionEventRepository,
+    transactionRepository,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
-    transactionEventRepository: ITransactionEventRepository;
+    transactionRepository: ITransactionRepository;
   }) {
     super(logger);
 
     this._ocppSender = ocppSender;
-    this._transactionEventRepository = transactionEventRepository;
+    this._transactionRepository = transactionRepository;
   }
 
   async handle(
@@ -67,7 +67,7 @@ export class MeterValuesRequestOcpp16Handler extends AbstractHandler {
           }
         }
         if (meterValueEntities.length > 0) {
-          await this._transactionEventRepository.updateTransactionByMeterValues(
+          await this._transactionRepository.updateTransactionByMeterValues(
             tenantId,
             meterValueEntities,
             ocppConnectionName,

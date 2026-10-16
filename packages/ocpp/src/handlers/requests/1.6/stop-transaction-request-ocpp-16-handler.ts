@@ -18,7 +18,6 @@ import {
 } from '@citrineos/types';
 import {
   type IAuthorizationRepository,
-  type ITransactionEventRepository,
   type ITransactionRepository,
   StartTransaction,
   Transaction,
@@ -31,7 +30,6 @@ import type { CostCalculator } from '@modules/transactions/cost-calculator.js';
 export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
   protected _authorizationRepository: IAuthorizationRepository;
-  protected _transactionEventRepository: ITransactionEventRepository;
   protected _transactionRepository: ITransactionRepository;
   protected _costCalculator: CostCalculator;
 
@@ -39,13 +37,11 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
     logger,
     ocppSender,
     authorizationRepository,
-    transactionEventRepository,
     transactionRepository,
     costCalculator,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
     authorizationRepository: IAuthorizationRepository;
-    transactionEventRepository: ITransactionEventRepository;
     transactionRepository: ITransactionRepository;
     costCalculator: CostCalculator;
   }) {
@@ -53,7 +49,6 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
 
     this._ocppSender = ocppSender;
     this._authorizationRepository = authorizationRepository;
-    this._transactionEventRepository = transactionEventRepository;
     this._transactionRepository = transactionRepository;
     this._costCalculator = costCalculator;
   }
@@ -153,7 +148,7 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
     // reason is Local either way.
     const stoppedReason = request.reason ?? OCPP1_6.StopTransactionRequestReason.Local;
 
-    const stopTransaction = await this._transactionEventRepository.createStopTransaction(
+    const stopTransaction = await this._transactionRepository.createStopTransaction(
       tenantId,
       transaction.id,
       ocppConnectionName,
