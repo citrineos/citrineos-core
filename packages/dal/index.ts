@@ -97,6 +97,7 @@ export {
   DrizzleSubscriptionRepository,
   DrizzleTariffRepository,
   DrizzleTenantRepository,
+  DrizzleTransactionRepository,
   DrizzleVariableAttributeRepository,
   DrizzleVariableCharacteristicsRepository,
   DrizzleWebsocketEventRepository,

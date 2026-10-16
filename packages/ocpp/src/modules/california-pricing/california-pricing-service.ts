@@ -9,7 +9,7 @@ import type {
   IChangeConfigurationRepository,
   IConnectorRepository,
   ITariffRepository,
-  ITransactionEventRepository,
+  ITransactionRepository,
 } from '@citrineos/dal';
 import {
   COSTMSG_VENDOR_ID,
@@ -36,12 +36,12 @@ export class CaliforniaPricingService {
   private readonly _ocppSender: IOcppSender;
   private readonly _changeConfigurationRepository: IChangeConfigurationRepository;
   private readonly _tariffRepository: ITariffRepository;
-  private readonly _transactionEventRepository: ITransactionEventRepository;
+  private readonly _transactionRepository: ITransactionRepository;
   private readonly _connectorRepository: IConnectorRepository;
   protected _costCalculator: CostCalculator;
 
   constructor({
-    transactionEventRepository,
+    transactionRepository,
     logger,
     ocppSender,
     changeConfigurationRepository,
@@ -52,7 +52,7 @@ export class CaliforniaPricingService {
     logger: Logger<ILogObj>;
     ocppSender: IOcppSender;
     changeConfigurationRepository: IChangeConfigurationRepository;
-    transactionEventRepository: ITransactionEventRepository;
+    transactionRepository: ITransactionRepository;
     tariffRepository: ITariffRepository;
     connectorRepository: IConnectorRepository;
     costCalculator: CostCalculator;
@@ -60,7 +60,7 @@ export class CaliforniaPricingService {
     this._logger = logger
       ? logger.getSubLogger({ name: this.constructor.name })
       : new TsLogger<ILogObj>({ name: this.constructor.name });
-    this._transactionEventRepository = transactionEventRepository;
+    this._transactionRepository = transactionRepository;
     this._costCalculator = costCalculator;
     this._ocppSender = ocppSender;
     this._changeConfigurationRepository = changeConfigurationRepository;
@@ -92,7 +92,7 @@ export class CaliforniaPricingService {
     }
 
     const transaction =
-      await this._transactionEventRepository.readTransactionByStationIdAndTransactionId(
+      await this._transactionRepository.readTransactionByStationIdAndTransactionId(
         tenantId,
         ocppConnectionName,
         transactionId.toString(),
@@ -129,7 +129,7 @@ export class CaliforniaPricingService {
     }
 
     const transaction =
-      await this._transactionEventRepository.readTransactionByStationIdAndTransactionId(
+      await this._transactionRepository.readTransactionByStationIdAndTransactionId(
         tenantId,
         ocppConnectionName,
         transactionId.toString(),

@@ -23,7 +23,7 @@ import {
 import type {
   IChargingProfileRepository,
   IVariableAttributeRepository,
-  ITransactionEventRepository,
+  ITransactionRepository,
 } from '@citrineos/dal';
 import { OCPP2_0_1_Mapper } from '@citrineos/dal';
 import { validateChargingProfileType } from '@util/index.js';
@@ -36,7 +36,7 @@ interface Dependencies extends AbstractMessageEndpointDependencies {
   cache: ICache;
   variableAttributeRepository: IVariableAttributeRepository;
   chargingProfileRepository: IChargingProfileRepository;
-  transactionEventRepository: ITransactionEventRepository;
+  transactionRepository: ITransactionRepository;
 }
 
 export class RequestStartTransactionEndpoint extends AbstractMessageEndpoint {
@@ -51,7 +51,7 @@ export class RequestStartTransactionEndpoint extends AbstractMessageEndpoint {
   private readonly _cache: ICache;
   private readonly _variableAttributeRepository: IVariableAttributeRepository;
   private readonly _chargingProfileRepository: IChargingProfileRepository;
-  private readonly _transactionEventRepository: ITransactionEventRepository;
+  private readonly _transactionRepository: ITransactionRepository;
 
   constructor({
     logger,
@@ -59,14 +59,14 @@ export class RequestStartTransactionEndpoint extends AbstractMessageEndpoint {
     cache,
     variableAttributeRepository,
     chargingProfileRepository,
-    transactionEventRepository,
+    transactionRepository,
   }: Dependencies) {
     super(logger);
     this._ocppSender = ocppSender;
     this._cache = cache;
     this._variableAttributeRepository = variableAttributeRepository;
     this._chargingProfileRepository = chargingProfileRepository;
-    this._transactionEventRepository = transactionEventRepository;
+    this._transactionRepository = transactionRepository;
   }
 
   async handle(
@@ -117,7 +117,7 @@ export class RequestStartTransactionEndpoint extends AbstractMessageEndpoint {
             ocppConnectionName,
             this._variableAttributeRepository,
             this._chargingProfileRepository,
-            this._transactionEventRepository,
+            this._transactionRepository,
             this._logger,
             request.evseId,
           );

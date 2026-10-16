@@ -19,6 +19,7 @@ import {
 import {
   type IAuthorizationRepository,
   type ITransactionEventRepository,
+  type ITransactionRepository,
   StartTransaction,
   Transaction,
 } from '@citrineos/dal';
@@ -31,6 +32,7 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
   protected _authorizationRepository: IAuthorizationRepository;
   protected _transactionEventRepository: ITransactionEventRepository;
+  protected _transactionRepository: ITransactionRepository;
   protected _costCalculator: CostCalculator;
 
   constructor({
@@ -38,11 +40,13 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
     ocppSender,
     authorizationRepository,
     transactionEventRepository,
+    transactionRepository,
     costCalculator,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
     authorizationRepository: IAuthorizationRepository;
     transactionEventRepository: ITransactionEventRepository;
+    transactionRepository: ITransactionRepository;
     costCalculator: CostCalculator;
   }) {
     super(logger);
@@ -50,6 +54,7 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
     this._ocppSender = ocppSender;
     this._authorizationRepository = authorizationRepository;
     this._transactionEventRepository = transactionEventRepository;
+    this._transactionRepository = transactionRepository;
     this._costCalculator = costCalculator;
   }
 
@@ -195,7 +200,7 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
 
     const totalCost = await this._costCalculator.calculateTotalCost(tenantId, transaction);
     if (totalCost != null) {
-      await this._transactionEventRepository.updateTransactionTotalCostById(
+      await this._transactionRepository.updateTransactionTotalCostById(
         tenantId,
         totalCost,
         transaction.id,

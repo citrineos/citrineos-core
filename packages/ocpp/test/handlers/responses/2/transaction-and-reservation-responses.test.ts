@@ -4,6 +4,7 @@
 
 import { type IMessage, DEFAULT_TENANT_ID } from '@citrineos/base';
 import {
+  type OcppRequest,
   type OcppResponse,
   type SystemConfig,
   CancelReservationStatusEnum,
@@ -18,11 +19,7 @@ import {
   RequestStartStopStatusEnum,
   ReserveNowStatusEnum,
 } from '@citrineos/types';
-import type {
-  IChargingProfileRepository,
-  IOCPPMessageRepository,
-  IReservationRepository,
-} from '@citrineos/dal';
+import type { IChargingProfileRepository, IReservationRepository } from '@citrineos/dal';
 import {
   CancelReservationResponseOcpp2Handler,
   GetTransactionStatusResponseOcpp2Handler,
@@ -41,12 +38,6 @@ import {
 import type { Mocked } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const STATION_DB_ID = vi.hoisted(() => 4242);
-vi.mock('@citrineos/dal', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@citrineos/dal')>()),
-  stationIdFilter: vi.fn().mockResolvedValue(STATION_DB_ID),
-}));
-
 const STATION = 'station-001';
 const CORRELATION_ID = 'corr-001';
 const GENERATED_REQUEST_ID = 42;
@@ -59,7 +50,11 @@ const OCPP_RESERVATION_ID = 7;
 
 const { container, logger } = createTestContainer();
 
-function makeMessage<T extends OcppResponse>(action: OCPP_CallAction, payload: T): IMessage<T> {
+function makeMessage<T extends OcppResponse, R extends OcppRequest = OcppRequest>(
+  action: OCPP_CallAction,
+  payload: T,
+  request?: R,
+): IMessage<T, R> {
   return {
     context: {
       tenantId: DEFAULT_TENANT_ID,
@@ -73,7 +68,8 @@ function makeMessage<T extends OcppResponse>(action: OCPP_CallAction, payload: T
     action,
     state: MessageState.Response,
     protocol: OCPPVersion.OCPP2_0_1,
-  } as unknown as IMessage<T>;
+    request,
+  } as unknown as IMessage<T, R>;
 }
 
 beforeEach(() => {
@@ -216,9 +212,8 @@ describe('RequestStopTransactionResponseOcpp2Handler', () => {
 });
 
 // Accepted/Rejected reservation updates are covered in reservation-response-ocpp-2-handlers.test.ts;
-// here only the request lookup and the missing-request branch are exercised.
+// here only the non-Accepted status and the missing-request branch are exercised.
 describe('ReserveNowResponseOcpp2Handler', () => {
-  let ocppMessageRepository: Mocked<IOCPPMessageRepository>;
   let reservationRepository: Mocked<IReservationRepository>;
 
   beforeEach(() => {
@@ -227,34 +222,23 @@ describe('ReserveNowResponseOcpp2Handler', () => {
     } as unknown as Mocked<IReservationRepository>;
   });
 
-  function makeHandler(request: unknown) {
-    ocppMessageRepository = {
-      readOnlyOneByQuery: vi.fn().mockResolvedValue(request),
-    } as unknown as Mocked<IOCPPMessageRepository>;
+  function makeHandler() {
     return getTestInstance(container, ReserveNowResponseOcpp2Handler, {
-      ocppMessageRepository,
       reservationRepository,
     });
   }
 
-  it('finds the originating request by correlation id and CSMS origin, then stores a non-Accepted status as inactive', async () => {
-    const handler = makeHandler({ payload: { id: OCPP_RESERVATION_ID } });
+  it('reads the reservation id from the originating request, then stores a non-Accepted status as inactive', async () => {
+    const handler = makeHandler();
 
     await handler.handle(
-      makeMessage(OCPP_CallAction.ReserveNow, {
-        status: ReserveNowStatusEnum.Occupied,
-      } as never),
+      makeMessage(
+        OCPP_CallAction.ReserveNow,
+        { status: ReserveNowStatusEnum.Occupied } as never,
+        { id: OCPP_RESERVATION_ID } as never,
+      ),
     );
 
-    expect(ocppMessageRepository.readOnlyOneByQuery).toHaveBeenCalledTimes(1);
-    expect(ocppMessageRepository.readOnlyOneByQuery).toHaveBeenCalledWith(DEFAULT_TENANT_ID, {
-      where: {
-        tenantId: DEFAULT_TENANT_ID,
-        stationId: STATION_DB_ID,
-        correlationId: CORRELATION_ID,
-        origin: MessageOrigin.ChargingStationManagementSystem,
-      },
-    });
     expect(reservationRepository.updateByStationAndReservationId).toHaveBeenCalledTimes(1);
     expect(reservationRepository.updateByStationAndReservationId).toHaveBeenCalledWith(
       DEFAULT_TENANT_ID,
@@ -265,7 +249,7 @@ describe('ReserveNowResponseOcpp2Handler', () => {
   });
 
   it('missing originating request logs an error and touches no reservation', async () => {
-    const handler = makeHandler(null);
+    const handler = makeHandler();
 
     await handler.handle(
       makeMessage(OCPP_CallAction.ReserveNow, {
@@ -284,14 +268,10 @@ describe('ReserveNowResponseOcpp2Handler', () => {
 // here only the missing-request branch is exercised.
 describe('CancelReservationResponseOcpp2Handler', () => {
   it('missing originating request logs an error and touches no reservation', async () => {
-    const ocppMessageRepository = {
-      readOnlyOneByQuery: vi.fn().mockResolvedValue(null),
-    } as unknown as Mocked<IOCPPMessageRepository>;
     const reservationRepository = {
       updateByStationAndReservationId: vi.fn().mockResolvedValue([]),
     } as unknown as Mocked<IReservationRepository>;
     const handler = getTestInstance(container, CancelReservationResponseOcpp2Handler, {
-      ocppMessageRepository,
       reservationRepository,
     });
 
@@ -301,20 +281,14 @@ describe('CancelReservationResponseOcpp2Handler', () => {
       } as never),
     );
 
-    expect(ocppMessageRepository.readOnlyOneByQuery).toHaveBeenCalledWith(DEFAULT_TENANT_ID, {
-      where: {
-        tenantId: DEFAULT_TENANT_ID,
-        stationId: STATION_DB_ID,
-        correlationId: CORRELATION_ID,
-        origin: MessageOrigin.ChargingStationManagementSystem,
-      },
-    });
     expect(reservationRepository.updateByStationAndReservationId).not.toHaveBeenCalled();
     expect(logger.error).toHaveBeenCalledWith(
       `Update reservation failed. ReservationId not found by CorrelationId ${CORRELATION_ID}.`,
     );
   });
 });
+
+const TRANSACTION_STATUS_REQUEST = { transactionId: 'tx-001' } as never;
 
 describe('GetTransactionStatusResponseOcpp2Handler', () => {
   let transactionService: Mocked<TransactionService>;
@@ -333,28 +307,36 @@ describe('GetTransactionStatusResponseOcpp2Handler', () => {
 
   it('ongoingIndicator true is forwarded to the transaction service', async () => {
     await makeHandler().handle(
-      makeMessage(OCPP_CallAction.GetTransactionStatus, { ongoingIndicator: true } as never),
+      makeMessage(
+        OCPP_CallAction.GetTransactionStatus,
+        { ongoingIndicator: true } as never,
+        TRANSACTION_STATUS_REQUEST,
+      ),
     );
 
     expect(transactionService.updateTransactionStatus).toHaveBeenCalledTimes(1);
     expect(transactionService.updateTransactionStatus).toHaveBeenCalledWith(
       DEFAULT_TENANT_ID,
       STATION,
-      CORRELATION_ID,
+      TRANSACTION_STATUS_REQUEST,
       true,
     );
   });
 
   it('ongoingIndicator false is forwarded, not treated as absent', async () => {
     await makeHandler().handle(
-      makeMessage(OCPP_CallAction.GetTransactionStatus, { ongoingIndicator: false } as never),
+      makeMessage(
+        OCPP_CallAction.GetTransactionStatus,
+        { ongoingIndicator: false } as never,
+        TRANSACTION_STATUS_REQUEST,
+      ),
     );
 
     expect(transactionService.updateTransactionStatus).toHaveBeenCalledTimes(1);
     expect(transactionService.updateTransactionStatus).toHaveBeenCalledWith(
       DEFAULT_TENANT_ID,
       STATION,
-      CORRELATION_ID,
+      TRANSACTION_STATUS_REQUEST,
       false,
     );
   });

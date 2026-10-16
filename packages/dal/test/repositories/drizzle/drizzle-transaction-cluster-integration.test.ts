@@ -3,7 +3,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { ChargingStation, StopTransaction, TransactionEvent } from '@dal/db/sequelize/index.js';
+import {
+  Authorization,
+  ChargingStation,
+  Evse,
+  StopTransaction,
+  Tariff,
+  TransactionEvent,
+} from '@dal/db/sequelize/index.js';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
 import type {
@@ -13,7 +20,7 @@ import type {
   TransactionDto,
   TransactionEventDto,
 } from '@citrineos/types';
-import { MeterValue, StartTransaction, Transaction } from '../../../index.js';
+import { EvseType, MeterValue, StartTransaction, Transaction } from '../../../index.js';
 import { SequelizeLocationRepository } from '@dal/repositories/sequelize/location.js';
 import {
   DrizzleMeterValueRepository,
@@ -779,5 +786,476 @@ describe('drizzle row-to-DTO mappers', () => {
     expect(dto.meterValues).toBeUndefined();
     expect(dto.transactionDatabaseId).toBe(9);
     expect(dto.transactionCreatedAt).toEqual(partitionKey);
+  });
+});
+
+describe('DrizzleTransactionRepository cluster reads', () => {
+  // Evses.evseTypeId is the EVSE as OCPP numbers it; Evses.id is the primary key the
+  // transaction stores. Seeding them apart is what makes a lookup on the wrong one fail.
+  async function anEvse(tenantId: number, stationId: number, evseTypeId: number): Promise<number> {
+    const row: any = await Evse.create({ stationId, evseTypeId, tenantId } as any);
+    return row.id as number;
+  }
+
+  async function anEvseType(tenantId: number, ocppEvseId: number): Promise<number> {
+    const row: any = await EvseType.create({ id: ocppEvseId, tenantId } as any);
+    return row.databaseId as number;
+  }
+
+  async function aTariff(tenantId: number): Promise<number> {
+    const row: any = await Tariff.create({
+      currency: 'EUR',
+      pricePerKwh: 0.35,
+      tenantId,
+    } as any);
+    return row.id as number;
+  }
+
+  let idTokenSeq = 0;
+  async function anAuthorization(tenantId: number, tariffId: number | null): Promise<number> {
+    idTokenSeq += 1;
+    const row: any = await Authorization.create({
+      idToken: `TOKEN-${idTokenSeq}`,
+      idTokenType: 'Central',
+      status: 'Accepted',
+      tariffId,
+      tenantId,
+    } as any);
+    return row.id as number;
+  }
+
+  it('readTransactionByStationIdAndTransactionId scopes to the station and the tenant', async () => {
+    const own = await aStation(TENANT);
+    const other = await aStation(OTHER_TENANT, 'CS-TX-OTHER');
+    await aTransaction(TENANT, own.id, 'T-1');
+    await aTransaction(OTHER_TENANT, other.id, 'T-1');
+
+    const found = await transactionRepo().readTransactionByStationIdAndTransactionId(
+      TENANT,
+      STATION,
+      'T-1',
+    );
+
+    expect(found?.transactionId).toBe('T-1');
+    expect(found?.tenantId).toBe(TENANT);
+  });
+
+  it('readTransactionByStationIdAndTransactionId returns undefined for an unknown station', async () => {
+    await expect(
+      transactionRepo().readTransactionByStationIdAndTransactionId(
+        TENANT,
+        'CS-DOES-NOT-EXIST',
+        'T-1',
+      ),
+    ).resolves.toBeUndefined();
+  });
+
+  // Mirrors CrudRepository.readOnlyOneByQuery: the sequelize twin throws here rather
+  // than silently returning the first of several.
+  it('readTransactionByStationIdAndTransactionId throws when the station has duplicates', async () => {
+    const station = await aStation(TENANT);
+    await aTransaction(TENANT, station.id, 'T-DUP');
+    await aTransaction(TENANT, station.id, 'T-DUP');
+
+    await expect(
+      transactionRepo().readTransactionByStationIdAndTransactionId(TENANT, STATION, 'T-DUP'),
+    ).rejects.toThrow(/More than one value found/);
+  });
+
+  it('readAllActiveTransactionsByAuthorizationId returns only active rows for that authorization', async () => {
+    const station = await aStation(TENANT);
+    const authorizationId = await anAuthorization(TENANT, null);
+    const otherAuthorizationId = await anAuthorization(TENANT, null);
+    await aTransaction(TENANT, station.id, 'T-ACTIVE', { authorizationId });
+    await aTransaction(TENANT, station.id, 'T-ENDED', { authorizationId, isActive: false });
+    await aTransaction(TENANT, station.id, 'T-OTHER-AUTH', {
+      authorizationId: otherAuthorizationId,
+    });
+
+    const rows = await transactionRepo().readAllActiveTransactionsByAuthorizationId(
+      TENANT,
+      authorizationId,
+    );
+
+    expect(rows.map((row) => row.transactionId)).toEqual(['T-ACTIVE']);
+  });
+
+  it('getActiveTransactionByStationIdAndEvseId matches the OCPP evse id, not the Evses primary key', async () => {
+    const station = await aStation(TENANT);
+    // Two EVSEs whose primary keys and OCPP numbers deliberately disagree.
+    const evseA = await anEvse(TENANT, station.id, 11);
+    const evseB = await anEvse(TENANT, station.id, 22);
+    await aTransaction(TENANT, station.id, 'T-ON-A', { evseId: evseA });
+    await aTransaction(TENANT, station.id, 'T-ON-B', { evseId: evseB });
+
+    const onB = await transactionRepo().getActiveTransactionByStationIdAndEvseId(
+      TENANT,
+      STATION,
+      22,
+    );
+    const onA = await transactionRepo().getActiveTransactionByStationIdAndEvseId(
+      TENANT,
+      STATION,
+      11,
+    );
+
+    // Asserted both ways round: matching on the primary key would still satisfy one of them.
+    expect(onB?.transactionId).toBe('T-ON-B');
+    expect(onA?.transactionId).toBe('T-ON-A');
+  });
+
+  it('getActiveTransactionByStationIdAndEvseId ignores ended transactions', async () => {
+    const station = await aStation(TENANT);
+    const evse = await anEvse(TENANT, station.id, 11);
+    await aTransaction(TENANT, station.id, 'T-ENDED', { evseId: evse, isActive: false });
+
+    await expect(
+      transactionRepo().getActiveTransactionByStationIdAndEvseId(TENANT, STATION, 11),
+    ).resolves.toBeUndefined();
+  });
+
+  it('getActiveTransactionByStationIdAndEvseId takes the most recently updated of several', async () => {
+    const station = await aStation(TENANT);
+    const evse = await anEvse(TENANT, station.id, 11);
+    const older = await aTransaction(TENANT, station.id, 'T-OLD', { evseId: evse });
+    const newer = await aTransaction(TENANT, station.id, 'T-NEW', { evseId: evse });
+    await older.update({ updatedAt: new Date('2025-01-01T00:00:00.000Z') }, { silent: true });
+    await newer.update({ updatedAt: new Date('2026-01-01T00:00:00.000Z') }, { silent: true });
+
+    const found = await transactionRepo().getActiveTransactionByStationIdAndEvseId(
+      TENANT,
+      STATION,
+      11,
+    );
+
+    expect(found?.transactionId).toBe('T-NEW');
+  });
+
+  it('readActiveTransactionsWithTariffAndEvseByStationId takes the tariff from the authorization', async () => {
+    const station = await aStation(TENANT);
+    const evse = await anEvse(TENANT, station.id, 11);
+    const tariffId = await aTariff(TENANT);
+    const withTariff = await anAuthorization(TENANT, tariffId);
+    const withoutTariff = await anAuthorization(TENANT, null);
+    await aTransaction(TENANT, station.id, 'T-PRICED', {
+      evseId: evse,
+      authorizationId: withTariff,
+    });
+    await aTransaction(TENANT, station.id, 'T-UNPRICED', {
+      evseId: evse,
+      authorizationId: withoutTariff,
+    });
+    await aTransaction(TENANT, station.id, 'T-NO-AUTH', { evseId: evse });
+
+    const rows = await transactionRepo().readActiveTransactionsWithTariffAndEvseByStationId(
+      TENANT,
+      STATION,
+    );
+
+    expect(rows.map((row) => row.transactionId)).toEqual(['T-PRICED']);
+    expect(rows[0].authorization?.tariff?.id).toBe(tariffId);
+    expect(rows[0].evse?.evseTypeId).toBe(11);
+  });
+
+  it('readActiveTransactionsWithTariffAndEvseByStationId narrows to one evse when asked', async () => {
+    const station = await aStation(TENANT);
+    const evseA = await anEvse(TENANT, station.id, 11);
+    const evseB = await anEvse(TENANT, station.id, 22);
+    const tariffId = await aTariff(TENANT);
+    const authorizationId = await anAuthorization(TENANT, tariffId);
+    await aTransaction(TENANT, station.id, 'T-ON-A', { evseId: evseA, authorizationId });
+    await aTransaction(TENANT, station.id, 'T-ON-B', { evseId: evseB, authorizationId });
+
+    const rows = await transactionRepo().readActiveTransactionsWithTariffAndEvseByStationId(
+      TENANT,
+      STATION,
+      22,
+    );
+
+    expect(rows.map((row) => row.transactionId)).toEqual(['T-ON-B']);
+  });
+
+  it('findByTransactionId finds the row without a station and hydrates its children', async () => {
+    const station = await aStation(TENANT);
+    const transaction = await aTransaction(TENANT, station.id, 'T-GRAPH');
+    const event = await anEvent(TENANT, { transactionDatabaseId: transaction.id });
+    await MeterValue.create({
+      transactionEventId: event.id,
+      transactionDatabaseId: transaction.id,
+      sampledValue: [{ value: 7 }],
+      timestamp: new Date('2025-06-01T08:05:00.000Z'),
+      tenantId: TENANT,
+    } as any);
+
+    const found = await transactionRepo().findByTransactionId(TENANT, 'T-GRAPH');
+
+    expect(found?.transactionId).toBe('T-GRAPH');
+    expect(found?.transactionEvents).toHaveLength(1);
+    expect(found?.meterValues).toHaveLength(1);
+  });
+
+  it('readAllByStationIdAndTransactionId returns that transaction events only', async () => {
+    const station = await aStation(TENANT);
+    const wanted = await aTransaction(TENANT, station.id, 'T-WANTED');
+    const other = await aTransaction(TENANT, station.id, 'T-OTHER');
+    await anEvent(TENANT, { transactionDatabaseId: wanted.id, seqNo: 1 });
+    await anEvent(TENANT, { transactionDatabaseId: other.id, seqNo: 2 });
+
+    const events = await transactionRepo().readAllByStationIdAndTransactionId(
+      TENANT,
+      STATION,
+      'T-WANTED',
+    );
+
+    expect(events.map((event) => event.seqNo)).toEqual([1]);
+  });
+
+  // TransactionEvents.evseId is a foreign key to EvseTypes.databaseId, while
+  // EvseTypes.id holds the OCPP evse number. Seeding them apart catches a lookup
+  // that reads the row back by the wrong column.
+  it('readAllByStationIdAndTransactionId hydrates the evse type by its surrogate key', async () => {
+    const station = await aStation(TENANT);
+    const transaction = await aTransaction(TENANT, station.id, 'T-EVSE');
+    await anEvseType(TENANT, 91);
+    const wantedDatabaseId = await anEvseType(TENANT, 92);
+    const event = await anEvent(TENANT, {
+      transactionDatabaseId: transaction.id,
+      evseId: wantedDatabaseId,
+    });
+    await MeterValue.create({
+      transactionEventId: event.id,
+      transactionDatabaseId: transaction.id,
+      sampledValue: [{ value: 3 }],
+      timestamp: new Date('2025-06-01T08:05:00.000Z'),
+      tenantId: TENANT,
+    } as any);
+
+    const events = await transactionRepo().readAllByStationIdAndTransactionId(
+      TENANT,
+      STATION,
+      'T-EVSE',
+    );
+
+    expect(events).toHaveLength(1);
+    expect(events[0].evse?.id).toBe(92);
+    expect(events[0].meterValue).toHaveLength(1);
+  });
+});
+
+describe('DrizzleTransactionRepository cluster writes', () => {
+  async function anEvse(tenantId: number, stationId: number, evseTypeId: number): Promise<number> {
+    const row: any = await Evse.create({ stationId, evseTypeId, tenantId } as any);
+    return row.id as number;
+  }
+
+  const aReading = (value: number): MeterValueDto =>
+    ({
+      timestamp: '2025-06-01T08:05:00.000Z',
+      sampledValue: [{ value }],
+    }) as unknown as MeterValueDto;
+
+  it('updateTransactionTotalCostById writes the cost for that tenant only', async () => {
+    const own = await aStation(TENANT);
+    const other = await aStation(OTHER_TENANT, 'CS-TX-OTHER');
+    const mine = await aTransaction(TENANT, own.id, 'T-COST');
+    const theirs = await aTransaction(OTHER_TENANT, other.id, 'T-COST');
+
+    await transactionRepo().updateTransactionTotalCostById(TENANT, 12.5, mine.id);
+
+    await mine.reload();
+    await theirs.reload();
+    expect(Number(mine.totalCost)).toBe(12.5);
+    expect(theirs.totalCost).toBeNull();
+  });
+
+  it('updateTransactionTotalCostById does not reach another tenant row by id', async () => {
+    const other = await aStation(OTHER_TENANT, 'CS-TX-OTHER');
+    const theirs = await aTransaction(OTHER_TENANT, other.id, 'T-COST');
+
+    await transactionRepo().updateTransactionTotalCostById(TENANT, 9, theirs.id);
+
+    await theirs.reload();
+    expect(theirs.totalCost).toBeNull();
+  });
+
+  it('updateTransactionByStationIdAndTransactionId updates and returns the matching row', async () => {
+    const station = await aStation(TENANT);
+    const transaction = await aTransaction(TENANT, station.id, 'T-UPD');
+
+    const updated = await transactionRepo().updateTransactionByStationIdAndTransactionId(
+      TENANT,
+      { isActive: false, stoppedReason: 'Local', totalKwh: 4.25 },
+      'T-UPD',
+      STATION,
+    );
+
+    await transaction.reload();
+    expect(updated?.transactionId).toBe('T-UPD');
+    expect(transaction.isActive).toBe(false);
+    expect(transaction.stoppedReason).toBe('Local');
+    expect(Number(transaction.totalKwh)).toBe(4.25);
+  });
+
+  it('updateTransactionByStationIdAndTransactionId returns undefined for an unknown station', async () => {
+    await expect(
+      transactionRepo().updateTransactionByStationIdAndTransactionId(
+        TENANT,
+        { isActive: false },
+        'T-UPD',
+        'CS-DOES-NOT-EXIST',
+      ),
+    ).resolves.toBeUndefined();
+  });
+
+  it('deactivateActiveTransactionsByStationIdAndEvseId leaves the excluded transaction active', async () => {
+    const station = await aStation(TENANT);
+    const evse = await anEvse(TENANT, station.id, 11);
+    const keep = await aTransaction(TENANT, station.id, 'T-KEEP', { evseId: evse });
+    const drop = await aTransaction(TENANT, station.id, 'T-DROP', { evseId: evse });
+
+    const deactivated = await transactionRepo().deactivateActiveTransactionsByStationIdAndEvseId(
+      TENANT,
+      STATION,
+      evse,
+      'T-KEEP',
+    );
+
+    await keep.reload();
+    await drop.reload();
+    expect(deactivated.map((row) => row.transactionId)).toEqual(['T-DROP']);
+    expect(keep.isActive).toBe(true);
+    expect(drop.isActive).toBe(false);
+  });
+
+  it('deactivateActiveTransactionsByStationIdAndEvseId leaves other evses alone', async () => {
+    const station = await aStation(TENANT);
+    const evseA = await anEvse(TENANT, station.id, 11);
+    const evseB = await anEvse(TENANT, station.id, 22);
+    const onB = await aTransaction(TENANT, station.id, 'T-ON-B', { evseId: evseB });
+
+    await transactionRepo().deactivateActiveTransactionsByStationIdAndEvseId(
+      TENANT,
+      STATION,
+      evseA,
+      'T-KEEP',
+    );
+
+    await onB.reload();
+    expect(onB.isActive).toBe(true);
+  });
+
+  // The sequelize twin short-circuits on these rather than deactivating everything.
+  it('deactivateActiveTransactionsByStationIdAndEvseId does nothing without a real exclusion', async () => {
+    const station = await aStation(TENANT);
+    const evse = await anEvse(TENANT, station.id, 11);
+    const active = await aTransaction(TENANT, station.id, 'T-ACTIVE', { evseId: evse });
+
+    await expect(
+      transactionRepo().deactivateActiveTransactionsByStationIdAndEvseId(
+        TENANT,
+        STATION,
+        evse,
+        '0',
+      ),
+    ).resolves.toEqual([]);
+
+    await active.reload();
+    expect(active.isActive).toBe(true);
+  });
+
+  // MeterValues is partitioned on (id, transactionCreatedAt); the sequelize model fills
+  // that key from the transaction in a hook the drizzle path has to reproduce.
+  it('createMeterValue takes the partition key from the transaction it points at', async () => {
+    const station = await aStation(TENANT);
+    const transaction = await aTransaction(TENANT, station.id, 'T-MV');
+
+    const created = await transactionRepo().createMeterValue(
+      TENANT,
+      { timestamp: '2025-06-01T08:05:00.000Z', sampledValue: [{ value: 5 }] } as any,
+      transaction.id,
+    );
+
+    const stored = await MeterValue.findOne({ where: { id: created.id } });
+    expect(stored!.transactionCreatedAt.getTime()).toBe(transaction.createdAt.getTime());
+  });
+
+  it('createMeterValue keeps an explicitly supplied partition key', async () => {
+    const station = await aStation(TENANT);
+    const transaction = await aTransaction(TENANT, station.id, 'T-MV2');
+    const explicitKey = new Date('2024-02-03T04:05:06.000Z');
+
+    const created = await transactionRepo().createMeterValue(
+      TENANT,
+      { timestamp: '2025-06-01T08:05:00.000Z', sampledValue: [{ value: 5 }] } as any,
+      transaction.id,
+      'T-MV2',
+      null,
+      explicitKey,
+    );
+
+    const stored = await MeterValue.findOne({ where: { id: created.id } });
+    expect(stored!.transactionCreatedAt.getTime()).toBe(explicitKey.getTime());
+  });
+
+  it('createStopTransaction closes the transaction and attaches the readings', async () => {
+    const station = await aStation(TENANT);
+    const transaction = await aTransaction(TENANT, station.id, 'T-STOP');
+    const stoppedAt = new Date('2025-06-01T09:00:00.000Z');
+
+    const stop = await transactionRepo().createStopTransaction(
+      TENANT,
+      transaction.id,
+      STATION,
+      42500,
+      stoppedAt,
+      [aReading(1), aReading(2)],
+      'Local',
+    );
+
+    await transaction.reload();
+    const readings = await MeterValue.findAll({
+      where: { stopTransactionDatabaseId: stop.id },
+    });
+    expect(stop.meterStop).toBe(42500);
+    expect(stop.reason).toBe('Local');
+    expect(transaction.isActive).toBe(false);
+    expect(new Date(transaction.endTime!).getTime()).toBe(stoppedAt.getTime());
+    expect(readings).toHaveLength(2);
+    expect(readings[0].transactionCreatedAt.getTime()).toBe(transaction.createdAt.getTime());
+  });
+
+  it('createStopTransaction throws for a missing transaction and writes nothing', async () => {
+    await expect(
+      transactionRepo().createStopTransaction(TENANT, 999_999, STATION, 1, new Date(), [
+        aReading(1),
+      ]),
+    ).rejects.toThrow(/not found/);
+
+    expect(await StopTransaction.count()).toBe(0);
+    expect(await MeterValue.count()).toBe(0);
+  });
+
+  // The stop row, the transaction update and the readings share one transaction, so a
+  // failure part-way through must leave none of them behind.
+  it('createStopTransaction rolls the whole stop back when a reading is rejected', async () => {
+    const station = await aStation(TENANT);
+    const transaction = await aTransaction(TENANT, station.id, 'T-ROLLBACK');
+
+    await expect(
+      transactionRepo().createStopTransaction(
+        TENANT,
+        transaction.id,
+        STATION,
+        42500,
+        new Date('2025-06-01T09:00:00.000Z'),
+        [aReading(1), { timestamp: 'not-a-date', sampledValue: [{ value: 2 }] } as any],
+        'Local',
+      ),
+    ).rejects.toThrow();
+
+    await transaction.reload();
+    expect(await StopTransaction.count()).toBe(0);
+    expect(await MeterValue.count()).toBe(0);
+    expect(transaction.isActive).toBe(true);
   });
 });

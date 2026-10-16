@@ -4,6 +4,7 @@
 
 import { type IMessage, DEFAULT_TENANT_ID } from '@citrineos/base';
 import {
+  type OcppRequest,
   type OcppResponse,
   ChargingLimitSourceEnum,
   ChargingProfileStatusEnum,
@@ -18,11 +19,7 @@ import {
   OCPPVersion,
   TariffSetStatusEnum,
 } from '@citrineos/types';
-import type {
-  IChargingProfileRepository,
-  IOCPPMessageRepository,
-  ITariffRepository,
-} from '@citrineos/dal';
+import type { IChargingProfileRepository, ITariffRepository } from '@citrineos/dal';
 import {
   ClearChargingProfileResponseOcpp2Handler,
   GetChargingProfilesResponseOcpp2Handler,
@@ -36,21 +33,16 @@ import type { IdGenerator } from '@util/index.js';
 import type { Mocked } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const STATION_DB_ID = vi.hoisted(() => 4242);
-vi.mock('@citrineos/dal', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@citrineos/dal')>()),
-  stationIdFilter: vi.fn().mockResolvedValue(STATION_DB_ID),
-}));
-
 const STATION = 'station-001';
 const CORRELATION_ID = 'corr-001';
 const REQUEST_ID = 77;
 
-function makeMessage<T extends OcppResponse>(
+function makeMessage<T extends OcppResponse, R extends OcppRequest = OcppRequest>(
   action: OCPP_CallAction,
   protocol: OCPPVersion,
   payload: T,
-): IMessage<T> {
+  request?: R,
+): IMessage<T, R> {
   return {
     context: {
       tenantId: DEFAULT_TENANT_ID,
@@ -64,7 +56,8 @@ function makeMessage<T extends OcppResponse>(
     action,
     state: MessageState.Response,
     protocol,
-  } as unknown as IMessage<T>;
+    request,
+  } as unknown as IMessage<T, R>;
 }
 
 function makeChargingProfileRepository(): Mocked<IChargingProfileRepository> {
@@ -267,11 +260,10 @@ describe('SetChargingProfileResponseOcpp2Handler', () => {
 
 describe('SetDefaultTariffResponseOcpp21Handler', () => {
   const { container, logger } = createTestContainer();
-  let ocppMessageRepository: Mocked<IOCPPMessageRepository>;
   let tariffRepository: Mocked<ITariffRepository>;
   let handler: SetDefaultTariffResponseOcpp21Handler;
 
-  const storedTariffRequest = {
+  const storedTariffRequest: OCPP2_1.SetDefaultTariffRequest = {
     evseId: 1,
     tariff: {
       tariffId: 'tariff-01',
@@ -283,41 +275,22 @@ describe('SetDefaultTariffResponseOcpp21Handler', () => {
   };
 
   beforeEach(() => {
-    ocppMessageRepository = {
-      readOnlyOneByQuery: vi.fn().mockResolvedValue({ payload: storedTariffRequest }),
-    } as unknown as Mocked<IOCPPMessageRepository>;
     tariffRepository = {
       upsertTariffByTariffId: vi.fn().mockResolvedValue({ id: 5 }),
     } as unknown as Mocked<ITariffRepository>;
     handler = getTestInstance(container, SetDefaultTariffResponseOcpp21Handler, {
-      ocppMessageRepository,
       tariffRepository,
-    });
-  });
-
-  it('looks up the originating CSMS request by correlation id', async () => {
-    await handler.handle(
-      makeMessage(OCPP_CallAction.SetDefaultTariff, OCPPVersion.OCPP2_1, {
-        status: TariffSetStatusEnum.Accepted,
-      } as never),
-    );
-
-    expect(ocppMessageRepository.readOnlyOneByQuery).toHaveBeenCalledTimes(1);
-    expect(ocppMessageRepository.readOnlyOneByQuery).toHaveBeenCalledWith(DEFAULT_TENANT_ID, {
-      where: {
-        tenantId: DEFAULT_TENANT_ID,
-        stationId: STATION_DB_ID,
-        correlationId: CORRELATION_ID,
-        origin: MessageOrigin.ChargingStationManagementSystem,
-      },
     });
   });
 
   it('upserts a tariff carried over from the stored request with pricePerKwh forced to 0', async () => {
     await handler.handle(
-      makeMessage(OCPP_CallAction.SetDefaultTariff, OCPPVersion.OCPP2_1, {
-        status: TariffSetStatusEnum.Accepted,
-      } as never),
+      makeMessage(
+        OCPP_CallAction.SetDefaultTariff,
+        OCPPVersion.OCPP2_1,
+        { status: TariffSetStatusEnum.Accepted } as never,
+        storedTariffRequest,
+      ),
     );
 
     // null description coalesces to undefined; equality below ignores undefined keys
@@ -339,16 +312,13 @@ describe('SetDefaultTariffResponseOcpp21Handler', () => {
       } as never),
     );
 
-    expect(ocppMessageRepository.readOnlyOneByQuery).not.toHaveBeenCalled();
     expect(tariffRepository.upsertTariffByTariffId).not.toHaveBeenCalled();
     expect(logger.warn).toHaveBeenCalledWith(
       `SetDefaultTariff rejected for station ${STATION}: ${TariffSetStatusEnum.Rejected}`,
     );
   });
 
-  it('stores nothing when no stored request matches the correlation id', async () => {
-    ocppMessageRepository.readOnlyOneByQuery.mockResolvedValue(undefined);
-
+  it('stores nothing when the message carries no request', async () => {
     await handler.handle(
       makeMessage(OCPP_CallAction.SetDefaultTariff, OCPPVersion.OCPP2_1, {
         status: TariffSetStatusEnum.Accepted,

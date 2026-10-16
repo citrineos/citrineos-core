@@ -338,7 +338,7 @@ describe('smartCharging message endpoints', () => {
             .mockResolvedValue(undefined),
         },
         chargingProfileRepository: { createOrUpdateChargingProfile, readAllByQuery, existByQuery },
-        transactionEventRepository: { readTransactionByStationIdAndTransactionId },
+        transactionRepository: { readTransactionByStationIdAndTransactionId },
       });
 
     const aProfile = (

@@ -64,7 +64,7 @@ export class Transaction extends Model implements TransactionDto {
     onUpdate: 'CASCADE',
     onDelete: 'SET NULL',
   })
-  declare stationId?: number;
+  declare stationId?: number | null;
 
   @BelongsTo(() => ChargingStation, 'stationId')
   declare station: ChargingStationDto;

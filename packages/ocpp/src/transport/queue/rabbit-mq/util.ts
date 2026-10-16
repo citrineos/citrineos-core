@@ -31,6 +31,7 @@ export function fromAmqpContent(content: Buffer): Message<OcppRequest | OcppResp
     messageData.context || messageData._context,
     messageData.payload || messageData._payload, // Keep payload as generic object
     messageData.protocol || messageData._protocol,
+    messageData.request || messageData._request,
   );
 }
 

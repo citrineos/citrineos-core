@@ -11,7 +11,6 @@ import {
   HashAlgorithmEnum,
   MessageOrigin,
   MessageState,
-  MessageTypeId,
   OCPP_CallAction,
   type OcppRequest,
   OCPPVersion,
@@ -23,7 +22,6 @@ import {
   SequelizeDeleteCertificateAttemptRepository,
   SequelizeInstalledCertificateRepository,
   SequelizeLocationRepository,
-  SequelizeOCPPMessageRepository,
   SequelizeTenantRepository,
 } from '@citrineos/dal';
 import { DeleteCertificateResponseOcpp2Handler } from '@handlers/index.js';
@@ -64,7 +62,6 @@ let sequelizeInstance: Sequelize;
 let config: SystemConfig;
 let deleteCertificateAttemptRepository: SequelizeDeleteCertificateAttemptRepository;
 let installedCertificateRepository: SequelizeInstalledCertificateRepository;
-let ocppMessageRepository: SequelizeOCPPMessageRepository;
 let tenantRepository: ITenantRepository;
 let locationRepository: SequelizeLocationRepository;
 
@@ -102,7 +99,6 @@ beforeAll(async () => {
   const deps = { config, logger: undefined, sequelizeInstance } as never;
   deleteCertificateAttemptRepository = new SequelizeDeleteCertificateAttemptRepository(deps);
   installedCertificateRepository = new SequelizeInstalledCertificateRepository(deps);
-  ocppMessageRepository = new SequelizeOCPPMessageRepository(deps);
   tenantRepository = new SequelizeTenantRepository(deps);
   locationRepository = new SequelizeLocationRepository(deps);
 }, 90_000);
@@ -113,24 +109,6 @@ afterAll(async () => {
 });
 
 type CertificateHashData = typeof CERT_A;
-
-/** The request the endpoint sent, which is what says which certificate a response answers for. */
-async function aDeleteCertificateRequest(
-  correlationId: string,
-  certificateHashData: CertificateHashData,
-) {
-  const payload = { certificateHashData };
-  return ocppMessageRepository.createOCPPMessage(DEFAULT_TENANT_ID, STATION, {
-    correlationId,
-    origin: MessageOrigin.ChargingStationManagementSystem,
-    type: MessageTypeId.Call,
-    protocol: OCPPVersion.OCPP2_0_1,
-    action: 'DeleteCertificate',
-    payload,
-    raw: JSON.stringify([MessageTypeId.Call, correlationId, 'DeleteCertificate', payload]),
-    timestamp: new Date().toISOString(),
-  });
-}
 
 /** A pending attempt, as prepareToDeleteCertificate leaves one before the request goes out. */
 async function aPendingDeleteAttempt(certificateHashData: CertificateHashData) {
@@ -147,7 +125,11 @@ async function anInstalledCertificate(certificateHashData: CertificateHashData) 
   });
 }
 
-function anAcceptedResponse(correlationId: string): IMessage<OcppRequest> {
+/** The request the endpoint sent is what says which certificate a response answers for. */
+function anAcceptedResponse(
+  correlationId: string,
+  certificateHashData: CertificateHashData,
+): IMessage<OcppRequest> {
   return {
     context: {
       tenantId: DEFAULT_TENANT_ID,
@@ -161,6 +143,7 @@ function anAcceptedResponse(correlationId: string): IMessage<OcppRequest> {
     action: OCPP_CallAction.DeleteCertificate,
     state: MessageState.Response,
     protocol: OCPPVersion.OCPP2_0_1,
+    request: { certificateHashData },
   } as unknown as IMessage<OcppRequest>;
 }
 
@@ -183,7 +166,6 @@ describe('DeleteCertificateResponseOcpp2Handler with more than one delete in fli
     return getTestInstance(container, DeleteCertificateResponseOcpp2Handler, {
       deleteCertificateAttemptRepository,
       installedCertificateRepository,
-      ocppMessageRepository,
     });
   }
 
@@ -200,9 +182,8 @@ describe('DeleteCertificateResponseOcpp2Handler with more than one delete in fli
   it('settles the attempt for the certificate that was answered', async () => {
     const attemptA = await aPendingDeleteAttempt(CERT_A);
     const attemptB = await aPendingDeleteAttempt(CERT_B);
-    await aDeleteCertificateRequest(CORRELATION_B, CERT_B);
 
-    await aHandler().handle(anAcceptedResponse(CORRELATION_B) as never);
+    await aHandler().handle(anAcceptedResponse(CORRELATION_B, CERT_B) as never);
 
     expect(await statusOf(attemptB)).toBe(DeleteCertificateStatusEnum.Accepted);
     expect(await statusOf(attemptA)).toBeNull();
@@ -212,9 +193,8 @@ describe('DeleteCertificateResponseOcpp2Handler with more than one delete in fli
     // Only the delete for B was answered, so A must survive untouched.
     await aPendingDeleteAttempt(CERT_A);
     await anInstalledCertificate(CERT_A);
-    await aDeleteCertificateRequest(CORRELATION_B, CERT_B);
 
-    await aHandler().handle(anAcceptedResponse(CORRELATION_B) as never);
+    await aHandler().handle(anAcceptedResponse(CORRELATION_B, CERT_B) as never);
 
     expect(await installedCertificatesFor(CERT_A.serialNumber)).toBe(1);
   });
@@ -222,9 +202,8 @@ describe('DeleteCertificateResponseOcpp2Handler with more than one delete in fli
   it('removes the record of the certificate that was deleted', async () => {
     await aPendingDeleteAttempt(CERT_A);
     await anInstalledCertificate(CERT_A);
-    await aDeleteCertificateRequest(CORRELATION_A, CERT_A);
 
-    await aHandler().handle(anAcceptedResponse(CORRELATION_A) as never);
+    await aHandler().handle(anAcceptedResponse(CORRELATION_A, CERT_A) as never);
 
     expect(await installedCertificatesFor(CERT_A.serialNumber)).toBe(0);
   });

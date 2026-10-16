@@ -4,6 +4,7 @@
 
 import { type IMessage, DEFAULT_TENANT_ID } from '@citrineos/base';
 import {
+  type OcppRequest,
   type OcppResponse,
   EventGroup,
   MessageOrigin,
@@ -30,24 +31,9 @@ import { asValue } from 'awilix';
 import type { Mocked } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const STATION_DB_ID = vi.hoisted(() => 4242);
-vi.mock('@citrineos/dal', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@citrineos/dal')>()),
-  stationIdFilter: vi.fn().mockResolvedValue(STATION_DB_ID),
-}));
-
 const STATION = 'station-001';
 const CORRELATION_ID = 'corr-001';
 const SIGN_REQUEST_ID = 42;
-
-// Both certificate response handlers look up the original CSMS-originated request by correlation id.
-const ORIGINAL_REQUEST_QUERY = {
-  where: {
-    stationId: STATION_DB_ID,
-    correlationId: CORRELATION_ID,
-    origin: MessageOrigin.ChargingStationManagementSystem,
-  },
-};
 
 const { container, logger } = createTestContainer();
 
@@ -55,11 +41,12 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-function makeMessage<T extends OcppResponse>(
+function makeMessage<T extends OcppResponse, R extends OcppRequest = OcppRequest>(
   action: OCPP_CallAction,
   payload: T,
   protocol: OCPPVersion = OCPPVersion.OCPP2_0_1,
-): IMessage<T> {
+  request?: R,
+): IMessage<T, R> {
   return {
     context: {
       tenantId: DEFAULT_TENANT_ID,
@@ -73,7 +60,8 @@ function makeMessage<T extends OcppResponse>(
     action,
     state: MessageState.Response,
     protocol,
-  } as unknown as IMessage<T>;
+    request,
+  } as unknown as IMessage<T, R>;
 }
 
 function makeOcppMessageRepository(row: { payload: unknown } | undefined) {
@@ -89,12 +77,10 @@ function makeInstallCertificateHelperService() {
 }
 
 describe('CertificateSignedResponseOcpp2Handler', () => {
-  let ocppMessageRepository: Mocked<IOCPPMessageRepository>;
   let installCertificateHelperService: Mocked<InstallCertificateHelperService>;
 
   function makeHandler() {
     return getTestInstance(container, CertificateSignedResponseOcpp2Handler, {
-      ocppMessageRepository,
       installCertificateHelperService,
     });
   }
@@ -105,26 +91,21 @@ describe('CertificateSignedResponseOcpp2Handler', () => {
 
   it('2.0.1 response finalizes with the request certificate type but no requestId', async () => {
     // requestId is a 2.1-only field; a 2.0.1 response drops it even when the stored request carries one.
-    ocppMessageRepository = makeOcppMessageRepository({
-      payload: {
-        certificateChain: 'pem-chain',
-        certificateType: OCPP2_1.CertificateSigningUseEnumType.ChargingStationCertificate,
-        requestId: SIGN_REQUEST_ID,
-      },
-    });
     const handler = makeHandler();
 
     await handler.handle(
-      makeMessage(OCPP_CallAction.CertificateSigned, {
-        status: OCPP2_0_1.CertificateSignedStatusEnumType.Accepted,
-      }),
+      makeMessage(
+        OCPP_CallAction.CertificateSigned,
+        { status: OCPP2_0_1.CertificateSignedStatusEnumType.Accepted },
+        OCPPVersion.OCPP2_0_1,
+        {
+          certificateChain: 'pem-chain',
+          certificateType: OCPP2_1.CertificateSigningUseEnumType.ChargingStationCertificate,
+          requestId: SIGN_REQUEST_ID,
+        } satisfies OCPP2_1.CertificateSignedRequest,
+      ),
     );
 
-    expect(ocppMessageRepository.readOnlyOneByQuery).toHaveBeenCalledTimes(1);
-    expect(ocppMessageRepository.readOnlyOneByQuery).toHaveBeenCalledWith(
-      DEFAULT_TENANT_ID,
-      ORIGINAL_REQUEST_QUERY,
-    );
     expect(installCertificateHelperService.finalizeInstalledCertificate).toHaveBeenCalledTimes(1);
     expect(installCertificateHelperService.finalizeInstalledCertificate).toHaveBeenCalledWith(
       DEFAULT_TENANT_ID,
@@ -136,13 +117,6 @@ describe('CertificateSignedResponseOcpp2Handler', () => {
   });
 
   it('2.1 response forwards the requestId from the original request', async () => {
-    ocppMessageRepository = makeOcppMessageRepository({
-      payload: {
-        certificateChain: 'pem-chain',
-        certificateType: OCPP2_1.CertificateSigningUseEnumType.V2GCertificate,
-        requestId: SIGN_REQUEST_ID,
-      },
-    });
     const handler = makeHandler();
 
     await handler.handle(
@@ -150,6 +124,11 @@ describe('CertificateSignedResponseOcpp2Handler', () => {
         OCPP_CallAction.CertificateSigned,
         { status: OCPP2_1.CertificateSignedStatusEnumType.Rejected },
         OCPPVersion.OCPP2_1,
+        {
+          certificateChain: 'pem-chain',
+          certificateType: OCPP2_1.CertificateSigningUseEnumType.V2GCertificate,
+          requestId: SIGN_REQUEST_ID,
+        } satisfies OCPP2_1.CertificateSignedRequest,
       ),
     );
 
@@ -164,7 +143,6 @@ describe('CertificateSignedResponseOcpp2Handler', () => {
   });
 
   it('missing original request still finalizes, with undefined requestId and type', async () => {
-    ocppMessageRepository = makeOcppMessageRepository(undefined);
     const handler = makeHandler();
 
     await handler.handle(
@@ -185,10 +163,10 @@ describe('CertificateSignedResponseOcpp2Handler', () => {
     );
   });
 
-  it('repository failure propagates and skips finalization', async () => {
-    ocppMessageRepository = {
-      readOnlyOneByQuery: vi.fn().mockRejectedValue(new Error('db down')),
-    } as unknown as Mocked<IOCPPMessageRepository>;
+  it('finalization failure propagates to the caller', async () => {
+    installCertificateHelperService.finalizeInstalledCertificate.mockRejectedValue(
+      new Error('finalize failed'),
+    );
     const handler = makeHandler();
 
     await expect(
@@ -197,19 +175,15 @@ describe('CertificateSignedResponseOcpp2Handler', () => {
           status: OCPP2_0_1.CertificateSignedStatusEnumType.Accepted,
         }),
       ),
-    ).rejects.toThrow('db down');
-
-    expect(installCertificateHelperService.finalizeInstalledCertificate).not.toHaveBeenCalled();
+    ).rejects.toThrow('finalize failed');
   });
 });
 
 describe('InstallCertificateResponseOcpp2Handler', () => {
-  let ocppMessageRepository: Mocked<IOCPPMessageRepository>;
   let installCertificateHelperService: Mocked<InstallCertificateHelperService>;
 
   function makeHandler() {
     return getTestInstance(container, InstallCertificateResponseOcpp2Handler, {
-      ocppMessageRepository,
       installCertificateHelperService,
     });
   }
@@ -219,25 +193,20 @@ describe('InstallCertificateResponseOcpp2Handler', () => {
   });
 
   it('finalizes with the certificate and type from the original request and no requestId', async () => {
-    ocppMessageRepository = makeOcppMessageRepository({
-      payload: {
-        certificate: 'pem-cert',
-        certificateType: OCPP2_0_1.InstallCertificateUseEnumType.CSMSRootCertificate,
-      },
-    });
     const handler = makeHandler();
 
     await handler.handle(
-      makeMessage(OCPP_CallAction.InstallCertificate, {
-        status: OCPP2_0_1.InstallCertificateStatusEnumType.Accepted,
-      }),
+      makeMessage(
+        OCPP_CallAction.InstallCertificate,
+        { status: OCPP2_0_1.InstallCertificateStatusEnumType.Accepted },
+        OCPPVersion.OCPP2_0_1,
+        {
+          certificate: 'pem-cert',
+          certificateType: OCPP2_0_1.InstallCertificateUseEnumType.CSMSRootCertificate,
+        } satisfies OCPP2_0_1.InstallCertificateRequest,
+      ),
     );
 
-    expect(ocppMessageRepository.readOnlyOneByQuery).toHaveBeenCalledTimes(1);
-    expect(ocppMessageRepository.readOnlyOneByQuery).toHaveBeenCalledWith(
-      DEFAULT_TENANT_ID,
-      ORIGINAL_REQUEST_QUERY,
-    );
     expect(installCertificateHelperService.finalizeInstalledCertificate).toHaveBeenCalledTimes(1);
     expect(installCertificateHelperService.finalizeInstalledCertificate).toHaveBeenCalledWith(
       DEFAULT_TENANT_ID,
@@ -250,7 +219,6 @@ describe('InstallCertificateResponseOcpp2Handler', () => {
   });
 
   it('missing original request finalizes with undefined certificate type', async () => {
-    ocppMessageRepository = makeOcppMessageRepository(undefined);
     const handler = makeHandler();
 
     await handler.handle(
@@ -271,12 +239,6 @@ describe('InstallCertificateResponseOcpp2Handler', () => {
   });
 
   it('finalization failure propagates to the caller', async () => {
-    ocppMessageRepository = makeOcppMessageRepository({
-      payload: {
-        certificate: 'pem-cert',
-        certificateType: OCPP2_0_1.InstallCertificateUseEnumType.MORootCertificate,
-      },
-    });
     installCertificateHelperService.finalizeInstalledCertificate.mockRejectedValue(
       new Error('finalize failed'),
     );
@@ -284,13 +246,17 @@ describe('InstallCertificateResponseOcpp2Handler', () => {
 
     await expect(
       handler.handle(
-        makeMessage(OCPP_CallAction.InstallCertificate, {
-          status: OCPP2_0_1.InstallCertificateStatusEnumType.Rejected,
-        }),
+        makeMessage(
+          OCPP_CallAction.InstallCertificate,
+          { status: OCPP2_0_1.InstallCertificateStatusEnumType.Rejected },
+          OCPPVersion.OCPP2_0_1,
+          {
+            certificate: 'pem-cert',
+            certificateType: OCPP2_0_1.InstallCertificateUseEnumType.MORootCertificate,
+          } satisfies OCPP2_0_1.InstallCertificateRequest,
+        ),
       ),
     ).rejects.toThrow('finalize failed');
-
-    expect(ocppMessageRepository.readOnlyOneByQuery).toHaveBeenCalledTimes(1);
   });
 });
 

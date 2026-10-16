@@ -6,7 +6,6 @@ import {
   type IAuthorizationRepository,
   type IConnectorRepository,
   type IEvseRepository,
-  type IOCPPMessageRepository,
   type IReservationRepository,
   type ITransactionEventRepository,
 } from '@citrineos/dal';
@@ -27,6 +26,8 @@ import {
   OCPP2_0_1,
   OCPP2_1,
   type AuthorizationStatusEnumType,
+  type MeterValueDto,
+  type TransactionDto,
 } from '@citrineos/types';
 
 describe('TransactionService', () => {
@@ -39,7 +40,6 @@ describe('TransactionService', () => {
   let transactionEventRepository: Mocked<ITransactionEventRepository>;
   let locationRepository: Mocked<IConnectorRepository & IEvseRepository>;
   let reservationRepository: Mocked<IReservationRepository>;
-  let ocppMessageRepository: Mocked<IOCPPMessageRepository>;
   let authorizer: Mocked<IAuthorizer>;
   let realTimeAuthorizer: Mocked<IAuthorizer>;
 
@@ -51,6 +51,7 @@ describe('TransactionService', () => {
 
     transactionEventRepository = {
       readAllActiveTransactionsByAuthorizationId: vi.fn(),
+      updateTransactionByStationIdAndTransactionId: vi.fn(),
     } as unknown as Mocked<ITransactionEventRepository>;
 
     locationRepository = {
@@ -59,8 +60,6 @@ describe('TransactionService', () => {
     } as unknown as Mocked<IConnectorRepository & IEvseRepository>;
 
     reservationRepository = {} as unknown as Mocked<IReservationRepository>;
-
-    ocppMessageRepository = {} as unknown as Mocked<IOCPPMessageRepository>;
 
     authorizer = {
       authorize: vi.fn(),
@@ -72,11 +71,11 @@ describe('TransactionService', () => {
 
     transactionService = getTestInstance(container, TransactionService, {
       transactionEventRepository,
+      transactionRepository: transactionEventRepository,
       authorizationRepository,
       evseRepository: locationRepository,
       connectorRepository: locationRepository,
       reservationRepository,
-      ocppMessageRepository,
       realTimeAuthorizer,
       authorizers: [authorizer],
     });
@@ -451,11 +450,11 @@ describe('TransactionService', () => {
 
       transactionService = getTestInstance(container, TransactionService, {
         transactionEventRepository,
+        transactionRepository: transactionEventRepository,
         authorizationRepository: {} as unknown as IAuthorizationRepository,
         evseRepository: locationRepository,
         connectorRepository: locationRepository,
         reservationRepository: {} as unknown as IReservationRepository,
-        ocppMessageRepository: {} as unknown as IOCPPMessageRepository,
         realTimeAuthorizer,
         authorizers: [],
       });
@@ -573,6 +572,159 @@ describe('TransactionService', () => {
           transactionEventRepository.deactivateActiveTransactionsByStationIdAndEvseId,
         ).not.toHaveBeenCalled();
       });
+    });
+  });
+
+  describe('updateTransactionStatus', () => {
+    it('sets isActive on the transaction named in the GetTransactionStatusRequest', async () => {
+      transactionEventRepository.updateTransactionByStationIdAndTransactionId = vi
+        .fn()
+        .mockResolvedValue(aTransaction());
+
+      await transactionService.updateTransactionStatus(
+        DEFAULT_TENANT_ID,
+        'cs-001',
+        { transactionId: 'tx-1' },
+        false,
+      );
+
+      expect(
+        transactionEventRepository.updateTransactionByStationIdAndTransactionId,
+      ).toHaveBeenCalledWith(DEFAULT_TENANT_ID, { isActive: false }, 'tx-1', 'cs-001');
+    });
+
+    it('updates nothing without the GetTransactionStatusRequest', async () => {
+      transactionEventRepository.updateTransactionByStationIdAndTransactionId = vi.fn();
+
+      await transactionService.updateTransactionStatus(
+        DEFAULT_TENANT_ID,
+        'cs-001',
+        undefined,
+        false,
+      );
+
+      expect(
+        transactionEventRepository.updateTransactionByStationIdAndTransactionId,
+      ).not.toHaveBeenCalled();
+    });
+  });
+  describe('TransactionService.recalculateTotalKwh', () => {
+    const STATION = 'cp001';
+
+    // Two register readings two minutes apart: 1 kWh then 5 kWh, so the energy drawn
+    // during this batch is unambiguous and differs from either reading.
+    const registerReadings = (): MeterValueDto[] => [
+      {
+        timestamp: '2026-10-09T15:52:48.000Z',
+        sampledValue: [
+          {
+            value: 1000,
+            context: OCPP2_0_1.ReadingContextEnumType.Sample_Periodic,
+            measurand: OCPP2_0_1.MeasurandEnumType.Energy_Active_Import_Register,
+            unitOfMeasure: { unit: 'Wh', multiplier: 0 },
+          },
+        ],
+      },
+      {
+        timestamp: '2026-10-09T15:54:48.000Z',
+        sampledValue: [
+          {
+            value: 5000,
+            context: OCPP2_0_1.ReadingContextEnumType.Sample_Periodic,
+            measurand: OCPP2_0_1.MeasurandEnumType.Energy_Active_Import_Register,
+            unitOfMeasure: { unit: 'Wh', multiplier: 0 },
+          },
+        ],
+      },
+    ];
+
+    const aPersistedTransaction = (overrides: Partial<TransactionDto> = {}): TransactionDto =>
+      ({
+        id: 7,
+        transactionId: 'T-7',
+        isActive: true,
+        totalKwh: null,
+        meterStart: null,
+        ...overrides,
+      }) as TransactionDto;
+
+    it('seeds meterStart from the readings when the transaction has none', async () => {
+      const transaction = aPersistedTransaction();
+
+      const totalKwh = await transactionService.recalculateTotalKwh(
+        DEFAULT_TENANT_ID,
+        STATION,
+        transaction,
+        registerReadings(),
+      );
+
+      // Earliest reading is the baseline, so the energy drawn is 5 - 1.
+      expect(totalKwh).toBe(4);
+      expect(
+        transactionEventRepository.updateTransactionByStationIdAndTransactionId,
+      ).toHaveBeenCalledWith(DEFAULT_TENANT_ID, { meterStart: 1, totalKwh: 4 }, 'T-7', STATION);
+    });
+
+    it('keeps the meterStart already on the transaction and prices against it', async () => {
+      const transaction = aPersistedTransaction({ meterStart: 2 });
+
+      const totalKwh = await transactionService.recalculateTotalKwh(
+        DEFAULT_TENANT_ID,
+        STATION,
+        transaction,
+        registerReadings(),
+      );
+
+      // 5 - 2, not 5 - 1: a meterStart already recorded is never recomputed.
+      expect(totalKwh).toBe(3);
+      expect(
+        transactionEventRepository.updateTransactionByStationIdAndTransactionId,
+      ).toHaveBeenCalledWith(DEFAULT_TENANT_ID, { totalKwh: 3 }, 'T-7', STATION);
+    });
+
+    // The caller hands the same object to cost calculation immediately afterwards, and
+    // CostCalculator prices on transaction.totalKwh. Writing only the row would price the
+    // session on the previous reading.
+    it('refreshes totalKwh on the passed transaction, not just the row', async () => {
+      const transaction = aPersistedTransaction({ totalKwh: 2, meterStart: 1 });
+
+      await transactionService.recalculateTotalKwh(
+        DEFAULT_TENANT_ID,
+        STATION,
+        transaction,
+        registerReadings(),
+      );
+
+      expect(transaction.totalKwh).toBe(4);
+    });
+
+    it('refreshes a seeded meterStart on the passed transaction too', async () => {
+      const transaction = aPersistedTransaction();
+
+      await transactionService.recalculateTotalKwh(
+        DEFAULT_TENANT_ID,
+        STATION,
+        transaction,
+        registerReadings(),
+      );
+
+      expect(transaction.meterStart).toBe(1);
+    });
+
+    it('addresses the row by transactionId and station, not by database id', async () => {
+      const transaction = aPersistedTransaction({ id: 99, transactionId: 'T-99' });
+
+      await transactionService.recalculateTotalKwh(
+        DEFAULT_TENANT_ID,
+        STATION,
+        transaction,
+        registerReadings(),
+      );
+
+      const [, , transactionId, ocppConnectionName] =
+        transactionEventRepository.updateTransactionByStationIdAndTransactionId.mock.calls[0];
+      expect(transactionId).toBe('T-99');
+      expect(ocppConnectionName).toBe(STATION);
     });
   });
 });

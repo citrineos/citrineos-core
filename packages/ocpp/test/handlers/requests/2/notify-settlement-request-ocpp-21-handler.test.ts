@@ -16,7 +16,7 @@ import {
   OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/types';
-import type { IVariableAttributeRepository, ITransactionEventRepository } from '@citrineos/dal';
+import type { IVariableAttributeRepository, ITransactionRepository } from '@citrineos/dal';
 import { NotifySettlementRequestOcpp21Handler } from '@handlers/index.js';
 import { createTestContainer, makeMockOcppSender } from '@test/test-container.js';
 
@@ -55,7 +55,7 @@ function makeHandler(
   const { logger } = createTestContainer();
   const ocppSender = makeMockOcppSender();
 
-  const transactionEventRepository = {
+  const transactionRepository = {
     readTransactionByStationIdAndTransactionId: overrides.readTransactionError
       ? vi.fn().mockRejectedValue(overrides.readTransactionError)
       : vi.fn().mockResolvedValue(overrides.existingTransaction ?? null),
@@ -74,11 +74,10 @@ function makeHandler(
     config: overrides.config ?? makeConfig('https://receipts.example.com'),
     variableAttributeRepository:
       variableAttributeRepository as unknown as IVariableAttributeRepository,
-    transactionEventRepository:
-      transactionEventRepository as unknown as ITransactionEventRepository,
+    transactionRepository: transactionRepository as unknown as ITransactionRepository,
   });
 
-  return { handler, ocppSender, logger, transactionEventRepository, variableAttributeRepository };
+  return { handler, ocppSender, logger, transactionRepository, variableAttributeRepository };
 }
 
 function sentResponse(
@@ -145,7 +144,7 @@ describe('NotifySettlementRequestOcpp21Handler', () => {
     });
 
     it('builds the receiptId without a transaction segment when the request has no transactionId', async () => {
-      const { handler, ocppSender, transactionEventRepository } = makeHandler({
+      const { handler, ocppSender, transactionRepository } = makeHandler({
         receiptByCSMSAttributes: [{ value: 'true' }],
       });
 
@@ -155,10 +154,10 @@ describe('NotifySettlementRequestOcpp21Handler', () => {
       expect(response.receiptId).toBe('CykjsHKl98MfRCIi4xD7Dvtm_95qwO1FXVSrrKOuQ08');
       expect(response.receiptUrl).toBe('https://receipts.example.com/station-001-psp-123');
       expect(
-        transactionEventRepository.readTransactionByStationIdAndTransactionId,
+        transactionRepository.readTransactionByStationIdAndTransactionId,
       ).not.toHaveBeenCalled();
       expect(
-        transactionEventRepository.updateTransactionByStationIdAndTransactionId,
+        transactionRepository.updateTransactionByStationIdAndTransactionId,
       ).not.toHaveBeenCalled();
     });
 
@@ -218,7 +217,7 @@ describe('NotifySettlementRequestOcpp21Handler', () => {
 
   describe('settlement storage', () => {
     it('merges the settlement into existing transaction customData', async () => {
-      const { handler, transactionEventRepository } = makeHandler({
+      const { handler, transactionRepository } = makeHandler({
         existingTransaction: { customData: { transactionLimit: { maxCost: 20 } } },
       });
 
@@ -233,17 +232,19 @@ describe('NotifySettlementRequestOcpp21Handler', () => {
       );
 
       expect(
-        transactionEventRepository.readTransactionByStationIdAndTransactionId,
+        transactionRepository.readTransactionByStationIdAndTransactionId,
       ).toHaveBeenCalledOnce();
-      expect(
-        transactionEventRepository.readTransactionByStationIdAndTransactionId,
-      ).toHaveBeenCalledWith(DEFAULT_TENANT_ID, 'station-001', 'txn-001');
+      expect(transactionRepository.readTransactionByStationIdAndTransactionId).toHaveBeenCalledWith(
+        DEFAULT_TENANT_ID,
+        'station-001',
+        'txn-001',
+      );
 
       expect(
-        transactionEventRepository.updateTransactionByStationIdAndTransactionId,
+        transactionRepository.updateTransactionByStationIdAndTransactionId,
       ).toHaveBeenCalledOnce();
       const [tenantArg, partial, transactionArg, stationArg] =
-        transactionEventRepository.updateTransactionByStationIdAndTransactionId.mock.calls[0];
+        transactionRepository.updateTransactionByStationIdAndTransactionId.mock.calls[0];
       expect(tenantArg).toBe(DEFAULT_TENANT_ID);
       expect(transactionArg).toBe('txn-001');
       expect(stationArg).toBe('station-001');
@@ -263,13 +264,8 @@ describe('NotifySettlementRequestOcpp21Handler', () => {
     });
 
     it('stores a Rejected settlement without receipt fields and skips receipt generation (C22.FR.01)', async () => {
-      const {
-        handler,
-        ocppSender,
-        logger,
-        transactionEventRepository,
-        variableAttributeRepository,
-      } = makeHandler({ receiptByCSMSAttributes: [{ value: 'true' }] });
+      const { handler, ocppSender, logger, transactionRepository, variableAttributeRepository } =
+        makeHandler({ receiptByCSMSAttributes: [{ value: 'true' }] });
 
       await handler.handle(
         makeMessage({
@@ -282,7 +278,7 @@ describe('NotifySettlementRequestOcpp21Handler', () => {
       );
 
       const [, partial] =
-        transactionEventRepository.updateTransactionByStationIdAndTransactionId.mock.calls[0];
+        transactionRepository.updateTransactionByStationIdAndTransactionId.mock.calls[0];
       const settlement = partial.customData.settlement as Record<string, unknown>;
       expect(settlement.status).toBe('Rejected');
       expect(settlement).not.toHaveProperty('receiptId');
@@ -313,7 +309,7 @@ describe('NotifySettlementRequestOcpp21Handler', () => {
     });
 
     it('still sends the receipt response when reading the transaction fails', async () => {
-      const { handler, ocppSender, logger, transactionEventRepository } = makeHandler({
+      const { handler, ocppSender, logger, transactionRepository } = makeHandler({
         receiptByCSMSAttributes: [{ value: 'true' }],
         readTransactionError: new Error('db down'),
       });
@@ -321,7 +317,7 @@ describe('NotifySettlementRequestOcpp21Handler', () => {
       await handler.handle(makeMessage(settledRequest));
 
       expect(
-        transactionEventRepository.updateTransactionByStationIdAndTransactionId,
+        transactionRepository.updateTransactionByStationIdAndTransactionId,
       ).not.toHaveBeenCalled();
       expect(logger.error).toHaveBeenCalledOnce();
       expect(logger.error.mock.calls[0][0]).toBe(
@@ -381,7 +377,7 @@ describe('NotifySettlementRequestOcpp21Handler', () => {
 
   describe('status validation', () => {
     it('answers a Canceled settlement with an empty response and no warning (C19)', async () => {
-      const { handler, ocppSender, logger, transactionEventRepository } = makeHandler();
+      const { handler, ocppSender, logger, transactionRepository } = makeHandler();
 
       await handler.handle(
         makeMessage({
@@ -395,7 +391,7 @@ describe('NotifySettlementRequestOcpp21Handler', () => {
       expect(ocppSender.sendCall).not.toHaveBeenCalled();
       expect(logger.warn).not.toHaveBeenCalled();
       expect(
-        transactionEventRepository.updateTransactionByStationIdAndTransactionId,
+        transactionRepository.updateTransactionByStationIdAndTransactionId,
       ).not.toHaveBeenCalled();
     });
 

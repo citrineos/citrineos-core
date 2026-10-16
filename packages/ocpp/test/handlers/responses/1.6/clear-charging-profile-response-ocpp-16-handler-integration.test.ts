@@ -8,7 +8,6 @@ import {
   EventGroup,
   MessageOrigin,
   MessageState,
-  MessageTypeId,
   OCPP1_6,
   OCPP_CallAction,
   OCPPVersion,
@@ -19,9 +18,8 @@ import {
   DefaultSequelizeInstance,
   OCPP1_6_Mapper,
   SequelizeChargingProfileRepository,
-  SequelizeOCPPMessageRepository,
 } from '@citrineos/dal';
-import { ChargingStation, OCPPMessage, Tenant } from '@dal/db/sequelize/index.js';
+import { ChargingStation, Tenant } from '@dal/db/sequelize/index.js';
 import { ClearChargingProfileResponseOcpp16Handler } from '@handlers/index.js';
 import { createTestContainer } from '@test/test-container.js';
 import type { Sequelize } from 'sequelize-typescript';
@@ -83,26 +81,6 @@ function aRepository() {
   } as never);
 }
 
-async function aClearRequest(stationId: number, payload: OCPP1_6.ClearChargingProfileRequest) {
-  await OCPPMessage.create({
-    stationId,
-    correlationId: CORRELATION_ID,
-    origin: MessageOrigin.ChargingStationManagementSystem,
-    type: MessageTypeId.Call,
-    protocol: OCPPVersion.OCPP1_6,
-    action: OCPP_CallAction.ClearChargingProfile,
-    payload,
-    raw: JSON.stringify([
-      MessageTypeId.Call,
-      CORRELATION_ID,
-      OCPP_CallAction.ClearChargingProfile,
-      payload,
-    ]),
-    timestamp: new Date().toISOString(),
-    tenantId: DEFAULT_TENANT_ID,
-  } as never);
-}
-
 async function anAcceptedProfile(
   ocppConnectionName: string,
   connectorId: number,
@@ -129,7 +107,9 @@ async function anAcceptedProfile(
   );
 }
 
-function anAcceptedClearResponse(): IMessage<OCPP1_6.ClearChargingProfileResponse> {
+function anAcceptedClearResponse(
+  request?: OCPP1_6.ClearChargingProfileRequest,
+): IMessage<OCPP1_6.ClearChargingProfileResponse, OCPP1_6.ClearChargingProfileRequest> {
   return {
     context: {
       tenantId: DEFAULT_TENANT_ID,
@@ -143,7 +123,8 @@ function anAcceptedClearResponse(): IMessage<OCPP1_6.ClearChargingProfileRespons
     action: OCPP_CallAction.ClearChargingProfile,
     state: MessageState.Response,
     protocol: OCPPVersion.OCPP1_6,
-  } as unknown as IMessage<OCPP1_6.ClearChargingProfileResponse>;
+    request,
+  };
 }
 
 async function clearedProfileIds(ocppConnectionName: string = STATION): Promise<number[]> {
@@ -155,12 +136,11 @@ async function clearedProfileIds(ocppConnectionName: string = STATION): Promise<
 
 describe('An accepted OCPP 1.6 ClearChargingProfile', () => {
   const { logger } = createTestContainer();
-  let station: ChargingStation;
 
   beforeEach(async () => {
     await sequelizeInstance.truncate({ cascade: true, restartIdentity: true });
     await Tenant.create({ id: DEFAULT_TENANT_ID, name: 'A' } as never);
-    station = await ChargingStation.create({
+    await ChargingStation.create({
       ocppConnectionName: STATION,
       isOnline: true,
       tenantId: DEFAULT_TENANT_ID,
@@ -173,19 +153,11 @@ describe('An accepted OCPP 1.6 ClearChargingProfile', () => {
   });
 
   async function clear(request: OCPP1_6.ClearChargingProfileRequest | undefined) {
-    if (request !== undefined) {
-      await aClearRequest(station.id, request);
-    }
     const handler = new ClearChargingProfileResponseOcpp16Handler({
       logger,
       chargingProfileRepository: aRepository(),
-      ocppMessageRepository: new SequelizeOCPPMessageRepository({
-        config,
-        logger: undefined,
-        sequelizeInstance,
-      } as never),
     } as never);
-    await handler.handle(anAcceptedClearResponse());
+    await handler.handle(anAcceptedClearResponse(request));
   }
 
   it('retires only the profile named by id', async () => {
@@ -237,7 +209,7 @@ describe('An accepted OCPP 1.6 ClearChargingProfile', () => {
     expect(await clearedProfileIds(OTHER_STATION)).toEqual([]);
   });
 
-  it('leaves the record unchanged when the original request cannot be found', async () => {
+  it('leaves the record unchanged when the message carries no request', async () => {
     await clear(undefined);
 
     expect(await clearedProfileIds()).toEqual([]);

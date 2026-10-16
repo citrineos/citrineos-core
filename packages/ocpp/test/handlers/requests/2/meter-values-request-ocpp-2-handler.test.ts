@@ -13,7 +13,7 @@ import {
   OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/types';
-import type { ITransactionEventRepository } from '@citrineos/dal';
+import type { ITransactionRepository } from '@citrineos/dal';
 import { MeterValuesRequestOcpp2Handler } from '@handlers/index.js';
 import { createTestContainer, makeMockOcppSender } from '@test/test-container.js';
 import { describe, expect, it, vi } from 'vitest';
@@ -81,7 +81,7 @@ function makeHandler(
   const { logger } = createTestContainer();
   const ocppSender = makeMockOcppSender();
 
-  const transactionEventRepository = {
+  const transactionRepository = {
     getActiveTransactionByStationIdAndEvseId: vi
       .fn()
       .mockResolvedValue(
@@ -103,12 +103,11 @@ function makeHandler(
     config: makeConfig(overrides.sendCostUpdatedOnMeterValue ?? false),
     costNotifier: costNotifier as any,
     signedMeterValuesUtil: signedMeterValuesUtil as any,
-    transactionEventRepository:
-      transactionEventRepository as unknown as ITransactionEventRepository,
+    transactionRepository: transactionRepository as unknown as ITransactionRepository,
     transactionService: transactionService as any,
   });
 
-  return { handler, ocppSender, transactionEventRepository, transactionService, costNotifier };
+  return { handler, ocppSender, transactionRepository, transactionService, costNotifier };
 }
 
 describe('MeterValuesRequestOcpp2Handler', () => {
@@ -153,13 +152,11 @@ describe('MeterValuesRequestOcpp2Handler', () => {
 
     it('stores meter values unlinked when evseId is 0', async () => {
       // evseId 0 addresses the whole Charging Station, so there is no transaction to attach to.
-      const { handler, transactionService, transactionEventRepository } = makeHandler();
+      const { handler, transactionService, transactionRepository } = makeHandler();
 
       await handler.handle(makeMessage(makeRequest(0)));
 
-      expect(
-        transactionEventRepository.getActiveTransactionByStationIdAndEvseId,
-      ).not.toHaveBeenCalled();
+      expect(transactionRepository.getActiveTransactionByStationIdAndEvseId).not.toHaveBeenCalled();
       expect(transactionService.createMeterValues).toHaveBeenCalledWith(
         DEFAULT_TENANT_ID,
         expect.any(Array),

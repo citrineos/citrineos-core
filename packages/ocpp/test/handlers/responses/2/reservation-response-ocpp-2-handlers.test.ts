@@ -14,7 +14,7 @@ import {
   OCPPVersion,
   ReserveNowStatusEnum,
 } from '@citrineos/types';
-import type { IOCPPMessageRepository, IReservationRepository } from '@citrineos/dal';
+import type { IReservationRepository } from '@citrineos/dal';
 import {
   CancelReservationResponseOcpp2Handler,
   ReserveNowResponseOcpp2Handler,
@@ -27,7 +27,6 @@ const STATION_DB_ID = vi.hoisted(() => 4242);
 vi.mock('@citrineos/dal', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@citrineos/dal')>()),
   resolveStationId: vi.fn().mockResolvedValue(STATION_DB_ID),
-  stationIdFilter: vi.fn().mockResolvedValue(STATION_DB_ID),
 }));
 
 const STATION = 'station-001';
@@ -39,7 +38,10 @@ const STATION = 'station-001';
  */
 const OCPP_RESERVATION_ID = 7;
 
-function makeMessage<T extends OcppRequest>(payload: T): IMessage<T> {
+function makeMessage<T extends OcppRequest, R extends OcppRequest = OcppRequest>(
+  payload: T,
+  request?: R,
+): IMessage<T, R> {
   return {
     context: {
       tenantId: DEFAULT_TENANT_ID,
@@ -53,12 +55,12 @@ function makeMessage<T extends OcppRequest>(payload: T): IMessage<T> {
     action: OCPP_CallAction.ReserveNow,
     state: MessageState.Response,
     protocol: OCPPVersion.OCPP2_0_1,
-  } as unknown as IMessage<T>;
+    request,
+  } as unknown as IMessage<T, R>;
 }
 
 describe('reservation response handlers address the reservation by its OCPP id', () => {
   const { container } = createTestContainer();
-  let ocppMessageRepository: Mocked<IOCPPMessageRepository>;
   let reservationRepository: Mocked<IReservationRepository>;
 
   beforeEach(() => {
@@ -67,23 +69,16 @@ describe('reservation response handlers address the reservation by its OCPP id',
     } as unknown as Mocked<IReservationRepository>;
   });
 
-  function withRequest(payload: unknown) {
-    ocppMessageRepository = {
-      readOnlyOneByQuery: vi.fn().mockResolvedValue({ payload }),
-    } as unknown as Mocked<IOCPPMessageRepository>;
-  }
-
   it('ReserveNow updates the row matching the station and OCPP reservation id', async () => {
-    withRequest({ id: OCPP_RESERVATION_ID });
     const handler = getTestInstance(container, ReserveNowResponseOcpp2Handler, {
-      ocppMessageRepository,
       reservationRepository,
     });
 
     await handler.handle(
-      makeMessage({
-        status: OCPP2_0_1.ReserveNowStatusEnumType.Accepted,
-      } as never),
+      makeMessage(
+        { status: OCPP2_0_1.ReserveNowStatusEnumType.Accepted } as never,
+        { id: OCPP_RESERVATION_ID } as never,
+      ),
     );
 
     expect(reservationRepository.updateByStationAndReservationId).toHaveBeenCalledWith(
@@ -95,16 +90,15 @@ describe('reservation response handlers address the reservation by its OCPP id',
   });
 
   it('CancelReservation updates the row matching the station and OCPP reservation id', async () => {
-    withRequest({ reservationId: OCPP_RESERVATION_ID });
     const handler = getTestInstance(container, CancelReservationResponseOcpp2Handler, {
-      ocppMessageRepository,
       reservationRepository,
     });
 
     await handler.handle(
-      makeMessage({
-        status: CancelReservationStatusEnum.Accepted,
-      } as never),
+      makeMessage(
+        { status: CancelReservationStatusEnum.Accepted } as never,
+        { reservationId: OCPP_RESERVATION_ID } as never,
+      ),
     );
 
     expect(reservationRepository.updateByStationAndReservationId).toHaveBeenCalledWith(
@@ -116,16 +110,15 @@ describe('reservation response handlers address the reservation by its OCPP id',
   });
 
   it('CancelReservation leaves the reservation active when the station refuses', async () => {
-    withRequest({ reservationId: OCPP_RESERVATION_ID });
     const handler = getTestInstance(container, CancelReservationResponseOcpp2Handler, {
-      ocppMessageRepository,
       reservationRepository,
     });
 
     await handler.handle(
-      makeMessage({
-        status: CancelReservationStatusEnum.Rejected,
-      } as never),
+      makeMessage(
+        { status: CancelReservationStatusEnum.Rejected } as never,
+        { reservationId: OCPP_RESERVATION_ID } as never,
+      ),
     );
 
     expect(reservationRepository.updateByStationAndReservationId).toHaveBeenCalledWith(

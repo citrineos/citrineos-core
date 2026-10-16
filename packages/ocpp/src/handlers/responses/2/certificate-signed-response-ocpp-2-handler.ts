@@ -11,38 +11,34 @@ import {
   type CertificateUseEnumType,
   type HandlerProperties,
   type InstallCertificateStatusEnumType,
-  MessageOrigin,
   OCPP2_1,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
   OCPPVersion,
   OCPP2_response_types,
 } from '@citrineos/types';
-import type { IOCPPMessageRepository } from '@citrineos/dal';
 import type { InstallCertificateHelperService } from '@services/certificate/install-certificate-helper-service.js';
-import { stationIdFilter } from '@citrineos/dal';
 
 @AsResponseHandler(OCPP_2_VER_LIST, OCPP_CallAction.CertificateSigned)
 export class CertificateSignedResponseOcpp2Handler extends AbstractHandler {
-  protected _ocppMessageRepository: IOCPPMessageRepository;
   protected _installCertificateHelperService: InstallCertificateHelperService;
 
   constructor({
     logger,
-    ocppMessageRepository,
     installCertificateHelperService,
   }: AbstractHandlerDependencies & {
-    ocppMessageRepository: IOCPPMessageRepository;
     installCertificateHelperService: InstallCertificateHelperService;
   }) {
     super(logger);
 
-    this._ocppMessageRepository = ocppMessageRepository;
     this._installCertificateHelperService = installCertificateHelperService;
   }
 
   async handle(
-    message: IMessage<OCPP2_response_types.CertificateSignedResponse>,
+    message: IMessage<
+      OCPP2_response_types.CertificateSignedResponse,
+      OCPP2_1.CertificateSignedRequest
+    >,
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug(
@@ -53,16 +49,7 @@ export class CertificateSignedResponseOcpp2Handler extends AbstractHandler {
     const tenantId = message.context.tenantId;
     const ocppConnectionName = message.context.ocppConnectionName;
 
-    const originalRequest = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
-      where: {
-        stationId: await stationIdFilter(tenantId, ocppConnectionName),
-        correlationId: message.context.correlationId,
-        origin: MessageOrigin.ChargingStationManagementSystem,
-      },
-    });
-    const certSignedPayload = originalRequest?.payload as
-      | OCPP2_1.CertificateSignedRequest
-      | undefined;
+    const certSignedPayload = message.request;
 
     const requestId =
       message.protocol === OCPPVersion.OCPP2_1
