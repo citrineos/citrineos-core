@@ -104,7 +104,7 @@ export class DefaultSequelizeInstance {
 
         await this.syncDb();
 
-        this.logger.info(`Sequelize initialized: ${JSON.stringify(this.instance?.config || {})}`);
+        this.logger.debug('Sequelize initialized:', this.instance?.config ?? {});
         return;
       } catch (error) {
         lastError = error;
