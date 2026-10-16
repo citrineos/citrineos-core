@@ -16,7 +16,7 @@ import {
 import type {
   IChargingProfileRepository,
   IVariableAttributeRepository,
-  ITransactionEventRepository,
+  ITransactionRepository,
 } from '@citrineos/dal';
 import type { ChargingNeeds } from '@citrineos/dal';
 import { requireTransactionDatabaseId } from './transaction.js';
@@ -59,7 +59,7 @@ export interface ChargingProfileValidation {
  * @param ocppConnectionName - The connection name of the charging station
  * @param variableAttributeRepository variableAttributeRepository
  * @param chargingProfileRepository chargingProfileRepository
- * @param transactionEventRepository transactionEventRepository
+ * @param transactionRepository transactionRepository
  * @param logger logger
  * @param evseId evse id
  */
@@ -69,7 +69,7 @@ export async function validateChargingProfileType(
   ocppConnectionName: string,
   variableAttributeRepository: IVariableAttributeRepository,
   chargingProfileRepository: IChargingProfileRepository,
-  transactionEventRepository: ITransactionEventRepository,
+  transactionRepository: ITransactionRepository,
   logger: Logger<ILogObj>,
   evseId?: number | null,
 ): Promise<ChargingProfileValidation> {
@@ -97,7 +97,7 @@ export async function validateChargingProfileType(
   let transactionContext: ChargingProfileTransactionContext | undefined;
   let receivedChargingNeeds: ChargingNeeds | undefined;
   if (chargingProfileType.transactionId && evseId) {
-    const transaction = await transactionEventRepository.readTransactionByStationIdAndTransactionId(
+    const transaction = await transactionRepository.readTransactionByStationIdAndTransactionId(
       tenantId,
       ocppConnectionName,
       chargingProfileType.transactionId,

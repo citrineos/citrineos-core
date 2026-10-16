@@ -24,7 +24,7 @@ import {
 import type {
   IChargingProfileRepository,
   IVariableAttributeRepository,
-  ITransactionEventRepository,
+  ITransactionRepository,
 } from '@citrineos/dal';
 import type { ISmartCharging } from '@modules/smart-charging/smart-charging.js';
 import { generateChargingProfileId, requireTransactionDatabaseId } from '@util/index.js';
@@ -32,7 +32,7 @@ import { generateChargingProfileId, requireTransactionDatabaseId } from '@util/i
 @AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.NotifyEVChargingSchedule)
 export class NotifyEVChargingScheduleRequestOcpp2Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
-  protected _transactionEventRepository: ITransactionEventRepository;
+  protected _transactionRepository: ITransactionRepository;
   protected _chargingProfileRepository: IChargingProfileRepository;
   protected _variableAttributeRepository: IVariableAttributeRepository;
   protected _smartChargingService: ISmartCharging;
@@ -40,20 +40,20 @@ export class NotifyEVChargingScheduleRequestOcpp2Handler extends AbstractHandler
   constructor({
     logger,
     ocppSender,
-    transactionEventRepository,
+    transactionRepository,
     chargingProfileRepository,
     variableAttributeRepository,
     smartChargingService,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
-    transactionEventRepository: ITransactionEventRepository;
+    transactionRepository: ITransactionRepository;
     chargingProfileRepository: IChargingProfileRepository;
     variableAttributeRepository: IVariableAttributeRepository;
     smartChargingService: ISmartCharging;
   }) {
     super(logger);
     this._ocppSender = ocppSender;
-    this._transactionEventRepository = transactionEventRepository;
+    this._transactionRepository = transactionRepository;
     this._chargingProfileRepository = chargingProfileRepository;
     this._variableAttributeRepository = variableAttributeRepository;
     this._smartChargingService = smartChargingService;
@@ -81,7 +81,7 @@ export class NotifyEVChargingScheduleRequestOcpp2Handler extends AbstractHandler
     } as OCPP2_response_types.NotifyEVChargingScheduleResponse);
 
     const activeTransaction =
-      await this._transactionEventRepository.getActiveTransactionByStationIdAndEvseId(
+      await this._transactionRepository.getActiveTransactionByStationIdAndEvseId(
         tenantId,
         ocppConnectionName,
         request.evseId,

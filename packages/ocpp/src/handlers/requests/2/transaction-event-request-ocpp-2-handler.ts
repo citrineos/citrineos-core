@@ -35,6 +35,7 @@ import {
   type IChargingProfileRepository,
   type IVariableAttributeRepository,
   type ITransactionEventRepository,
+  type ITransactionRepository,
   OCPP2_0_1_Mapper,
 } from '@citrineos/dal';
 import type { CostCalculator } from '@modules/transactions/cost-calculator.js';
@@ -54,6 +55,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
   protected _variableAttributeRepository: IVariableAttributeRepository;
   protected _signedMeterValuesUtil: SignedMeterValuesUtil;
   protected _transactionEventRepository: ITransactionEventRepository;
+  protected _transactionRepository: ITransactionRepository;
   protected _transactionService: TransactionService;
 
   private readonly _costUpdatedInterval: number | undefined;
@@ -70,6 +72,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
     variableAttributeRepository,
     signedMeterValuesUtil,
     transactionEventRepository,
+    transactionRepository,
     transactionService,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
@@ -81,6 +84,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
     variableAttributeRepository: IVariableAttributeRepository;
     signedMeterValuesUtil: SignedMeterValuesUtil;
     transactionEventRepository: ITransactionEventRepository;
+    transactionRepository: ITransactionRepository;
     transactionService: TransactionService;
   }) {
     super(logger);
@@ -93,6 +97,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
     this._variableAttributeRepository = variableAttributeRepository;
     this._signedMeterValuesUtil = signedMeterValuesUtil;
     this._transactionEventRepository = transactionEventRepository;
+    this._transactionRepository = transactionRepository;
     this._transactionService = transactionService;
 
     this._sendCostUpdatedOnMeterValue = config.transactions.sendCostUpdatedOnMeterValue;
@@ -143,7 +148,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
     }
     if (transactionEvent.eventType !== TransactionEventEnum.Started) {
       const existingTransaction =
-        await this._transactionEventRepository.readTransactionByStationIdAndTransactionId(
+        await this._transactionRepository.readTransactionByStationIdAndTransactionId(
           tenantId,
           ocppConnectionName,
           transactionId,
@@ -187,7 +192,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
     );
     if (timeSpentCharging != null && timeSpentCharging !== transaction.timeSpentCharging) {
       transaction.timeSpentCharging = timeSpentCharging;
-      await this._transactionEventRepository.updateTransactionByStationIdAndTransactionId(
+      await this._transactionRepository.updateTransactionByStationIdAndTransactionId(
         tenantId,
         { timeSpentCharging },
         transactionId,
@@ -401,7 +406,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
               ...(transaction.transactionLimit ?? {}),
               maxCost: newMaxCost,
             };
-            await this._transactionEventRepository.updateTransactionByStationIdAndTransactionId(
+            await this._transactionRepository.updateTransactionByStationIdAndTransactionId(
               tenantId,
               { transactionLimit: updatedLimit } as Partial<TransactionDto>,
               transactionId,
@@ -548,7 +553,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
 
     // Store total cost in db
     if (response.totalCost && transaction) {
-      await this._transactionEventRepository.updateTransactionTotalCostById(
+      await this._transactionRepository.updateTransactionTotalCostById(
         tenantId,
         response.totalCost,
         requireTransactionDatabaseId(transaction),
@@ -754,7 +759,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
     }
 
     try {
-      await this._transactionEventRepository.updateTransactionByStationIdAndTransactionId(
+      await this._transactionRepository.updateTransactionByStationIdAndTransactionId(
         tenantId,
         { transactionLimit: response.transactionLimit } as Partial<TransactionDto>,
         transactionId,

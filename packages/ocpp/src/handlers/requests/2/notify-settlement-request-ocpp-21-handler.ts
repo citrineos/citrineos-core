@@ -4,7 +4,7 @@
 import { createHash } from 'node:crypto';
 import {
   type IVariableAttributeRepository,
-  type ITransactionEventRepository,
+  type ITransactionRepository,
   Transaction,
 } from '@citrineos/dal';
 import {
@@ -45,26 +45,26 @@ export class NotifySettlementRequestOcpp21Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
   protected _config: SystemConfig;
   protected _variableAttributeRepository: IVariableAttributeRepository;
-  protected _transactionEventRepository: ITransactionEventRepository;
+  protected _transactionRepository: ITransactionRepository;
 
   constructor({
     logger,
     ocppSender,
     config,
     variableAttributeRepository,
-    transactionEventRepository,
+    transactionRepository,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
     config: SystemConfig;
     variableAttributeRepository: IVariableAttributeRepository;
-    transactionEventRepository: ITransactionEventRepository;
+    transactionRepository: ITransactionRepository;
   }) {
     super(logger);
 
     this._ocppSender = ocppSender;
     this._config = config;
     this._variableAttributeRepository = variableAttributeRepository;
-    this._transactionEventRepository = transactionEventRepository;
+    this._transactionRepository = transactionRepository;
   }
 
   async handle(
@@ -130,14 +130,14 @@ export class NotifySettlementRequestOcpp21Handler extends AbstractHandler {
         // Fetch existing transaction to merge customData rather than overwrite it.
         // This preserves any existing customData fields (e.g., transactionLimit set by C23).
         const existingTransaction =
-          await this._transactionEventRepository.readTransactionByStationIdAndTransactionId(
+          await this._transactionRepository.readTransactionByStationIdAndTransactionId(
             tenantId,
             ocppConnectionName,
             request.transactionId,
           );
         const existingCustomData = existingTransaction?.customData ?? {};
 
-        await this._transactionEventRepository.updateTransactionByStationIdAndTransactionId(
+        await this._transactionRepository.updateTransactionByStationIdAndTransactionId(
           tenantId,
           {
             customData: {

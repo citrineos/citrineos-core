@@ -31,6 +31,7 @@ import type {
   ITariffRepository,
   ITenantRepository,
   ITransactionEventRepository,
+  ITransactionRepository,
   IVariableAttributeRepository,
   IVariableCharacteristicsRepository,
   IVariableMonitoringRepository,
@@ -54,6 +55,7 @@ import {
   DrizzleSecurityEventRepository,
   DrizzleServerNetworkProfileRepository,
   DrizzleSubscriptionRepository,
+  DrizzleTransactionRepository,
   DrizzleTariffRepository,
   DrizzleTenantRepository,
   DrizzleVariableAttributeRepository,
@@ -108,6 +110,7 @@ export class RepositoryStore {
   subscriptionRepository: ISubscriptionRepository;
   tariffRepository: ITariffRepository;
   transactionEventRepository: ITransactionEventRepository;
+  transactionRepository: ITransactionRepository;
   variableMonitoringRepository: IVariableMonitoringRepository;
   tenantRepository: ITenantRepository;
   serverNetworkProfileRepository: IServerNetworkProfileRepository;
@@ -140,6 +143,11 @@ export class RepositoryStore {
       sequelizeInstance,
     });
     this.ocppMessageRepository = new SequelizeOCPPMessageRepository({
+      config,
+      logger,
+      sequelizeInstance,
+    });
+    this.transactionEventRepository = new SequelizeTransactionEventRepository({
       config,
       logger,
       sequelizeInstance,
@@ -198,6 +206,7 @@ export class RepositoryStore {
       this.subscriptionRepository = new DrizzleSubscriptionRepository({ config, logger });
       this.tenantRepository = new DrizzleTenantRepository({ config, logger });
       this.tariffRepository = new DrizzleTariffRepository({ config, logger });
+      this.transactionRepository = new DrizzleTransactionRepository({ config, logger });
       this.variableCharacteristicsRepository = new DrizzleVariableCharacteristicsRepository({
         config,
         logger,
@@ -282,13 +291,10 @@ export class RepositoryStore {
       this.componentRepository = deviceModel;
       this.variableAttributeRepository = deviceModel;
       this.variableCharacteristicsRepository = deviceModel;
+      // Transaction cluster
+      this.transactionRepository = this.transactionEventRepository;
     }
 
-    this.transactionEventRepository = new SequelizeTransactionEventRepository({
-      config,
-      logger,
-      sequelizeInstance,
-    });
     this.variableMonitoringRepository = new SequelizeVariableMonitoringRepository({
       config,
       logger,

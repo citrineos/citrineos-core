@@ -97,6 +97,7 @@ function makeHandler(
     authorizationRepository: authorizationRepository as unknown as IAuthorizationRepository,
     transactionEventRepository:
       transactionEventRepository as unknown as ITransactionEventRepository,
+    transactionRepository: transactionEventRepository,
     costCalculator,
   } as never);
 
