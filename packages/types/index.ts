@@ -114,7 +114,6 @@ export * from './src/interfaces/dto/evse-dto.js';
 export * from './src/interfaces/dto/evse-type-dto.js';
 export * from './src/interfaces/dto/install-certificate-attempt-dto.js';
 export * from './src/interfaces/dto/installed-certificate-dto.js';
-export * from './src/interfaces/dto/latest-status-notification-dto.js';
 export * from './src/interfaces/dto/local-list-authorization-dto.js';
 export * from './src/interfaces/dto/local-list-version-dto.js';
 export * from './src/interfaces/dto/location-dto.js';

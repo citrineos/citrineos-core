@@ -322,12 +322,40 @@ export interface IChargingStationRepository {
   ): Promise<void>;
 }
 
+export interface ConnectorStatusNotificationResult {
+  statusNotification: StatusNotificationDto;
+  connector: ConnectorDto;
+}
+
+export interface StationStatusNotificationResult {
+  statusNotification: StatusNotificationDto;
+  connectors: ConnectorDto[];
+}
+
 export interface IStatusNotificationRepository {
   addStatusNotificationToChargingStation(
     tenantId: number,
     ocppConnectionName: string,
     statusNotification: StatusNotificationDto,
   ): Promise<StatusNotificationDto>;
+  addOcpp2ConnectorStatusNotification(
+    tenantId: number,
+    ocppConnectionName: string,
+    connector: ConnectorDto & { evseTypeConnectorId: number },
+    statusNotification: StatusNotificationDto,
+  ): Promise<ConnectorStatusNotificationResult>;
+  addOcpp16ConnectorStatusNotification(
+    tenantId: number,
+    ocppConnectionName: string,
+    connector: ConnectorDto & { connectorId: number },
+    statusNotification: StatusNotificationDto,
+  ): Promise<ConnectorStatusNotificationResult>;
+  addOcpp16StationStatusNotification(
+    tenantId: number,
+    ocppConnectionName: string,
+    connector: Partial<ConnectorDto>,
+    statusNotification: StatusNotificationDto,
+  ): Promise<StationStatusNotificationResult>;
 }
 
 export interface IConnectorRepository {

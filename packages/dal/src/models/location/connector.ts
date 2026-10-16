@@ -155,7 +155,7 @@ export class Connector extends Model implements ConnectorDto {
   @BelongsTo(() => StatusNotification, 'latestStatusNotificationId')
   declare latestStatusNotification?: StatusNotificationDto | null;
 
-  @HasMany(() => StatusNotification, 'connectorId')
+  @HasMany(() => StatusNotification, 'connectorDatabaseId')
   declare statusNotifications?: StatusNotificationDto[];
 
   @HasMany(() => MeterValue, 'connectorId')

@@ -11,7 +11,6 @@ import {
 import type {
   IChargingStationRepository,
   IComponentRepository,
-  IConnectorRepository,
   IEvseRepository,
   IStatusNotificationRepository,
   IVariableAttributeRepository,
@@ -31,7 +30,6 @@ export class StatusNotificationService {
   protected _variableAttributeRepository: IVariableAttributeRepository;
   protected _chargingStationRepository: IChargingStationRepository;
   protected _evseRepository: IEvseRepository;
-  protected _connectorRepository: IConnectorRepository;
   protected _statusNotificationRepository: IStatusNotificationRepository;
   protected _cache: ICache;
   protected _networkAlertService: Pick<NetworkAlertService, 'recordConnectorStatus'>;
@@ -42,7 +40,6 @@ export class StatusNotificationService {
     variableAttributeRepository,
     chargingStationRepository,
     evseRepository,
-    connectorRepository,
     statusNotificationRepository,
     cache,
     networkAlertService,
@@ -52,7 +49,6 @@ export class StatusNotificationService {
     variableAttributeRepository: IVariableAttributeRepository;
     chargingStationRepository: IChargingStationRepository;
     evseRepository: IEvseRepository;
-    connectorRepository: IConnectorRepository;
     statusNotificationRepository: IStatusNotificationRepository;
     cache: ICache;
     networkAlertService: Pick<NetworkAlertService, 'recordConnectorStatus'>;
@@ -62,7 +58,6 @@ export class StatusNotificationService {
     this._variableAttributeRepository = variableAttributeRepository;
     this._chargingStationRepository = chargingStationRepository;
     this._evseRepository = evseRepository;
-    this._connectorRepository = connectorRepository;
     this._statusNotificationRepository = statusNotificationRepository;
     this._cache = cache;
     this._networkAlertService = networkAlertService;
@@ -134,14 +129,6 @@ export class StatusNotificationService {
       timestamp: statusNotificationRequest.timestamp,
     };
 
-    if (
-      matchingEvse.connectors?.find(
-        (connector) => connector.evseTypeConnectorId === statusNotificationRequest.connectorId,
-      )
-    ) {
-      await this._connectorRepository.createOrUpdateOcpp2Connector(tenantId, connector);
-    }
-
     const statusNotification: StatusNotificationDto = {
       tenantId,
       stationId: chargingStation.id!,
@@ -150,20 +137,15 @@ export class StatusNotificationService {
         statusNotificationRequest.connectorStatus,
       ),
     };
-    const savedStatusNotification =
-      await this._statusNotificationRepository.addStatusNotificationToChargingStation(
+    const { statusNotification: savedStatusNotification, connector: savedConnector } =
+      await this._statusNotificationRepository.addOcpp2ConnectorStatusNotification(
         tenantId,
         ocppConnectionName,
+        connector,
         statusNotification,
       );
 
-    connector.latestStatusNotificationId = savedStatusNotification.id;
-    const savedConnector = await this._connectorRepository.createOrUpdateOcpp2Connector(
-      tenantId,
-      connector,
-    );
-
-    if (savedConnector?.id !== undefined) {
+    if (savedConnector.id !== undefined) {
       await this._recordConnectorStatus({
         tenantId,
         stationId: chargingStation.id!,
@@ -225,7 +207,7 @@ export class StatusNotificationService {
         ),
       );
 
-      let connector: ConnectorDto & { connectorId: number } = {
+      const connector: ConnectorDto & { connectorId: number } = {
         tenantId,
         stationId: chargingStation.id!,
         connectorId: statusNotificationRequest.connectorId,
@@ -260,79 +242,57 @@ export class StatusNotificationService {
           ocppConnectionName,
         );
         connector.evseId = commissioned.evseId;
-
-        const savedConnector = await this._connectorRepository.createOrUpdateOcpp16Connector(
-          tenantId,
-          connector,
-        );
-
-        if (savedConnector?.connectorId === undefined) {
-          throw new Error(
-            `Failed to create connector ${statusNotificationRequest.connectorId} on station ${ocppConnectionName}`,
-          );
-        } else {
-          connector = savedConnector as ConnectorDto & { connectorId: number };
-        }
       } else if (matchingEvse) {
         connector.evseId = matchingEvse.id!;
       }
 
-      const statusNotification: StatusNotificationDto =
+      const statusNotification: StatusNotificationDto = {
+        tenantId,
+        ...statusNotificationRequest,
+        stationId: chargingStation.id!,
+        evseId: matchingEvse ? matchingEvse.evseTypeId : undefined,
+        connectorStatus:
+          OCPP1_6_Mapper.LocationMapper.mapStatusNotificationRequestStatusToConnectorStatus(
+            statusNotificationRequest.status,
+          ),
+      };
+
+      if (statusNotificationRequest.connectorId !== 0) {
+        const { statusNotification: savedStatusNotification, connector: savedConnector } =
+          await this._statusNotificationRepository.addOcpp16ConnectorStatusNotification(
+            tenantId,
+            ocppConnectionName,
+            connector,
+            statusNotification,
+          );
+
+        if (savedConnector.id !== undefined) {
+          await this._recordConnectorStatus({
+            tenantId,
+            stationId: chargingStation.id!,
+            evseId: savedConnector.evseId,
+            connectorId: savedConnector.id,
+            status: savedStatusNotification.connectorStatus,
+            errorCode: savedConnector.errorCode,
+            vendorErrorCode: statusNotificationRequest.vendorErrorCode,
+            occurredAt: timestamp,
+            statusNotificationId: savedStatusNotification.id,
+          });
+        }
+      } else if (chargingStation.use16StatusNotification0) {
+        // connectorId stripped so the broadcast doesn't overwrite each row's own connectorId
+        await this._statusNotificationRepository.addOcpp16StationStatusNotification(
+          tenantId,
+          ocppConnectionName,
+          { ...connector, connectorId: undefined },
+          statusNotification,
+        );
+      } else {
         await this._statusNotificationRepository.addStatusNotificationToChargingStation(
           tenantId,
           ocppConnectionName,
-          {
-            tenantId,
-            ...statusNotificationRequest,
-            stationId: chargingStation.id!,
-            evseId: matchingEvse ? matchingEvse.evseTypeId : undefined,
-            connectorStatus:
-              OCPP1_6_Mapper.LocationMapper.mapStatusNotificationRequestStatusToConnectorStatus(
-                statusNotificationRequest.status,
-              ),
-          },
+          statusNotification,
         );
-
-      if (chargingStation.use16StatusNotification0 && statusNotificationRequest.connectorId === 0) {
-        // update all connectors at this station — connectorId stripped so we
-        // don't overwrite the per-row connectorId values
-        await this._connectorRepository.updateAllConnectorsByStationId(
-          tenantId,
-          chargingStation.id!,
-          {
-            ...connector,
-            connectorId: undefined,
-            latestStatusNotificationId: statusNotification.id,
-          },
-        );
-      } else if (statusNotificationRequest.connectorId !== 0) {
-        connector.latestStatusNotificationId = statusNotification.id;
-        const savedConnector = await this._connectorRepository.createOrUpdateOcpp16Connector(
-          tenantId,
-          connector,
-        );
-
-        if (savedConnector?.connectorId === undefined) {
-          this._logger.error(
-            `Failed to update connector ${statusNotificationRequest.connectorId} on station ${ocppConnectionName}`,
-          );
-        } else {
-          connector = savedConnector as ConnectorDto & { connectorId: number };
-        }
-      }
-
-      if (connector?.id !== undefined) {
-        await this._recordConnectorStatus({
-          tenantId,
-          stationId: chargingStation.id!,
-          evseId: connector.evseId,
-          connectorId: connector.id,
-          status: statusNotification.connectorStatus,
-          errorCode: connector.errorCode,
-          vendorErrorCode: statusNotificationRequest.vendorErrorCode,
-          occurredAt: timestamp,
-          statusNotificationId: statusNotification.id,
-        });
       }
     } else {
       this._logger.warn(

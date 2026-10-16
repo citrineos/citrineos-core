@@ -169,7 +169,8 @@ export class RepositoryStore {
         config,
         logger,
       });
-      this.connectorRepository = new DrizzleConnectorRepository({ config, logger });
+      const connectorRepository = new DrizzleConnectorRepository({ config, logger });
+      this.connectorRepository = connectorRepository;
       this.deleteCertificateAttemptRepository = new DrizzleDeleteCertificateAttemptRepository({
         config,
         logger,
@@ -194,6 +195,7 @@ export class RepositoryStore {
       this.statusNotificationRepository = new DrizzleStatusNotificationRepository({
         config,
         logger,
+        connectorRepository,
       });
       this.subscriptionRepository = new DrizzleSubscriptionRepository({ config, logger });
       this.tenantRepository = new DrizzleTenantRepository({ config, logger });

@@ -12,7 +12,6 @@ import {
 } from '@dal/db/sequelize/index.js';
 import { OCPPVersion, type StatusNotificationDto, type SystemConfig } from '@citrineos/types';
 import { SequelizeLocationRepository } from '../../../index.js';
-import { LatestStatusNotification } from '@dal/models/location/latest-status-notification.js';
 import { type PgHarness, resetDb, startPgHarness } from '../../utils/pg-harness.js';
 
 // SequelizeLocationRepository owns the Location -> ChargingStation -> Evse -> Connector
@@ -398,7 +397,7 @@ describe('SequelizeLocationRepository', () => {
   });
 
   describe('addStatusNotificationToChargingStation', () => {
-    it('stores the notification and points the latest entry at it', async () => {
+    it('stores the notification', async () => {
       const { station, connector1 } = await aCommissionedStation();
 
       const saved = await makeRepo().addStatusNotificationToChargingStation(
@@ -414,53 +413,6 @@ describe('SequelizeLocationRepository', () => {
       expect(rows[0].connectorStatus).toBe('Occupied');
       expect(rows[0].evseId).toBe(1);
       expect(rows[0].connectorId).toBe(connector1.id);
-      const latest = await LatestStatusNotification.findAll();
-      expect(latest).toHaveLength(1);
-      expect(latest[0].statusNotificationId).toBe(rows[0].id);
-      expect(latest[0].stationId).toBe(station.id);
-    });
-
-    it('a newer notification for the same evse and connector replaces the latest entry', async () => {
-      const { connector1 } = await aCommissionedStation();
-      const repo = makeRepo();
-
-      await repo.addStatusNotificationToChargingStation(
-        TENANT_A,
-        STATION_NAME,
-        aStatusNotification(connector1.id, { connectorStatus: 'Occupied' }),
-      );
-      await repo.addStatusNotificationToChargingStation(
-        TENANT_A,
-        STATION_NAME,
-        aStatusNotification(connector1.id, { connectorStatus: 'Available' }),
-      );
-
-      expect(await StatusNotification.count()).toBe(2);
-      const latest = await LatestStatusNotification.findAll({ include: [StatusNotification] });
-      expect(latest).toHaveLength(1);
-      expect(latest[0].statusNotification.connectorStatus).toBe('Available');
-    });
-
-    it('notifications for different connectors keep separate latest entries', async () => {
-      const { connector1, connector2 } = await aCommissionedStation();
-      const repo = makeRepo();
-
-      await repo.addStatusNotificationToChargingStation(
-        TENANT_A,
-        STATION_NAME,
-        aStatusNotification(connector1.id),
-      );
-      await repo.addStatusNotificationToChargingStation(
-        TENANT_A,
-        STATION_NAME,
-        aStatusNotification(connector2.id, { connectorStatus: 'Faulted' }),
-      );
-
-      const latest = await LatestStatusNotification.findAll({ include: [StatusNotification] });
-      expect(latest).toHaveLength(2);
-      expect(
-        latest.map((l) => (l.statusNotification as StatusNotification).connectorId).sort(),
-      ).toEqual([connector1.id, connector2.id]);
     });
   });
 

@@ -38,7 +38,6 @@ import { ChargingStation } from '../../models/location/charging-station.js';
 import { ChargingStationNetworkProfile } from '../../models/location/charging-station-network-profile.js';
 import { Connector } from '../../models/location/connector.js';
 import { Evse } from '../../models/location/evse.js';
-import { LatestStatusNotification } from '../../models/location/latest-status-notification.js';
 import { Location } from '../../models/location/location.js';
 import { ServerNetworkProfile } from '../../models/location/server-network-profile.js';
 import { SetNetworkProfile } from '../../models/location/set-network-profile.js';
@@ -194,7 +193,6 @@ export class DefaultSequelizeInstance {
         StartTransaction,
         StatusNotification,
         StopTransaction,
-        LatestStatusNotification,
         Subscription,
         TransactionEvent,
         Tariff,

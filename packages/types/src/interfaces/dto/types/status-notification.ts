@@ -13,6 +13,7 @@ export const StatusNotificationSchemaWithoutParent = BaseSchema.extend({
   connectorStatus: ConnectorStatusEnumSchema,
   evseId: z.number().int().nullable().optional(),
   connectorId: z.number().int(),
+  connectorDatabaseId: z.number().int().nullable().optional(),
   errorCode: z.string().nullable().optional(),
   info: z.string().nullable().optional(),
   vendorId: z.string().nullable().optional(),

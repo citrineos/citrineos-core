@@ -11,14 +11,6 @@ object_relationships:
   - name: Tenant
     using:
       foreign_key_constraint_on: tenantId
-array_relationships:
-  - name: LatestStatusNotifications
-    using:
-      foreign_key_constraint_on:
-        column: statusNotificationId
-        table:
-          name: LatestStatusNotifications
-          schema: public
 select_permissions:
   - role: user
     permission:
