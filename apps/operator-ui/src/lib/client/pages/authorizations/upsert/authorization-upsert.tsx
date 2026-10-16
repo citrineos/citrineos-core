@@ -206,7 +206,7 @@ export const AuthorizationUpsert = ({ params }: AuthorizationUpsertProps) => {
   return (
     <CanAccess
       resource={ResourceType.AUTHORIZATIONS}
-      action={ActionType.EDIT}
+      action={id ? ActionType.EDIT : ActionType.CREATE}
       fallback={<AccessDeniedFallback />}
       params={{ id }}
     >

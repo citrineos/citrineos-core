@@ -8,7 +8,6 @@ import { getTariffsColumns, getTariffsFilters } from '@lib/client/pages/tariffs/
 import { TariffClass } from '@lib/cls/tariff-dto';
 import { TARIFF_LIST_QUERY } from '@lib/queries/tariffs';
 import { ActionType, ResourceType } from '@lib/utils/access-types';
-import { AccessDeniedFallback } from '@lib/utils/access-denied-fallback';
 import { DEFAULT_SORTERS, EMPTY_FILTER } from '@lib/utils/consts';
 import { getPlainToInstanceOptions } from '@lib/utils/tables';
 import { CanAccess, useTranslate } from '@refinedev/core';
@@ -61,11 +60,7 @@ export const TariffsList = () => {
           </CanAccess>
         </div>
       </div>
-      <CanAccess
-        resource={ResourceType.TARIFFS}
-        action={ActionType.LIST}
-        fallback={<AccessDeniedFallback />}
-      >
+      <CanAccess resource={ResourceType.TARIFFS} action={ActionType.LIST}>
         <Table
           refineCoreProps={{
             resource: ResourceType.TARIFFS,

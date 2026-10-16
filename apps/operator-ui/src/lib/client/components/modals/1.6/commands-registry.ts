@@ -3,6 +3,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { ModalComponentType } from '@lib/client/components/modals/modal-types';
+import {
+  PERMISSION_CHANGE_AVAILABILITY,
+  PERMISSION_CHANGE_CONFIGURATION,
+  PERMISSION_DATA_TRANSFER,
+  PERMISSION_GET_CONFIGURATION,
+  PERMISSION_GET_DIAGNOSTICS,
+  PERMISSION_TRIGGER_MESSAGE,
+  PERMISSION_UPDATE_FIRMWARE,
+} from '@lib/utils/permissions';
 
 /**
  * Command definition for OCPP 1.6 commands
@@ -14,6 +23,7 @@ export interface CommandDefinition {
   displayNameKey: string;
   /** Modal component type for registration */
   modalType: ModalComponentType;
+  permission: string;
 }
 
 /**
@@ -30,36 +40,43 @@ export const OCPP1_6_COMMANDS_REGISTRY: Record<string, CommandDefinition> = {
     displayName: 'Change Availability',
     displayNameKey: 'ChargingStations.commands.changeAvailability',
     modalType: ModalComponentType.changeAvailability16,
+    permission: PERMISSION_CHANGE_AVAILABILITY,
   },
   'Data Transfer': {
     displayName: 'Data Transfer',
     displayNameKey: 'ChargingStations.commands.dataTransfer',
     modalType: ModalComponentType.dataTransfer,
+    permission: PERMISSION_DATA_TRANSFER,
   },
   'Change Configuration': {
     displayName: 'Change Configuration',
     displayNameKey: 'ChargingStations.commands.changeConfiguration',
     modalType: ModalComponentType.changeConfiguration16,
+    permission: PERMISSION_CHANGE_CONFIGURATION,
   },
   'Get Configuration': {
     displayName: 'Get Configuration',
     displayNameKey: 'ChargingStations.commands.getConfiguration',
     modalType: ModalComponentType.getConfiguration16,
+    permission: PERMISSION_GET_CONFIGURATION,
   },
   'Get Diagnostics': {
     displayName: 'Get Diagnostics',
     displayNameKey: 'ChargingStations.commands.getDiagnostics',
     modalType: ModalComponentType.getDiagnostics16,
+    permission: PERMISSION_GET_DIAGNOSTICS,
   },
   'Trigger Message': {
     displayName: 'Trigger Message',
     displayNameKey: 'ChargingStations.commands.triggerMessage',
     modalType: ModalComponentType.triggerMessage16,
+    permission: PERMISSION_TRIGGER_MESSAGE,
   },
   'Update Firmware': {
     displayName: 'Update Firmware',
     displayNameKey: 'ChargingStations.commands.updateFirmware',
     modalType: ModalComponentType.updateFirmware16,
+    permission: PERMISSION_UPDATE_FIRMWARE,
   },
 };
 
