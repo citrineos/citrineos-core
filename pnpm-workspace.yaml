@@ -33,7 +33,7 @@ catalog:
   "@playwright/test": 1.64.1
 
   # -- HTTP / Fastify --
-  fastify: 5.12.5
+  fastify: 5.12.7
   "@fastify/auth": 5.1.2
   "@fastify/swagger": 9.9.2
   "@fastify/swagger-ui": 5.2.6
