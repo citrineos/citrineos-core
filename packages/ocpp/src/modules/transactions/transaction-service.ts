@@ -28,7 +28,7 @@ import type {
   IConnectorRepository,
   IEvseRepository,
   IReservationRepository,
-  ITransactionEventRepository,
+  IMeterValueRepository,
   ITransactionRepository,
 } from '@citrineos/dal';
 import { OCPP1_6_Mapper } from '@citrineos/dal';
@@ -40,7 +40,7 @@ import {
 } from '@services/authorization-attempts/index.js';
 
 export class TransactionService {
-  private _transactionEventRepository: ITransactionEventRepository;
+  private _meterValueRepository: IMeterValueRepository;
   private _transactionRepository: ITransactionRepository;
   private _authorizationRepository: IAuthorizationRepository;
   private _evseRepository: IEvseRepository;
@@ -50,7 +50,7 @@ export class TransactionService {
   private _authorizers: IAuthorizer[];
 
   constructor({
-    transactionEventRepository,
+    meterValueRepository,
     transactionRepository,
     authorizationRepository,
     evseRepository,
@@ -60,7 +60,7 @@ export class TransactionService {
     authorizers,
     logger,
   }: {
-    transactionEventRepository: ITransactionEventRepository;
+    meterValueRepository: IMeterValueRepository;
     transactionRepository: ITransactionRepository;
     authorizationRepository: IAuthorizationRepository;
     evseRepository: IEvseRepository;
@@ -70,7 +70,7 @@ export class TransactionService {
     authorizers?: IAuthorizer[];
     logger: Logger<ILogObj>;
   }) {
-    this._transactionEventRepository = transactionEventRepository;
+    this._meterValueRepository = meterValueRepository;
     this._transactionRepository = transactionRepository;
     this._authorizationRepository = authorizationRepository;
     this._evseRepository = evseRepository;
@@ -332,7 +332,7 @@ export class TransactionService {
     return Promise.all(
       meterValues.map(async (meterValue) => {
         if (transactionDbId) {
-          return await this._transactionEventRepository.createMeterValue(
+          return await this._meterValueRepository.createMeterValue(
             tenantId,
             meterValue,
             transactionDbId,
@@ -340,7 +340,7 @@ export class TransactionService {
             tariffId,
           );
         } else {
-          return await this._transactionEventRepository.createMeterValue(tenantId, meterValue);
+          return await this._meterValueRepository.createMeterValue(tenantId, meterValue);
         }
       }),
     );

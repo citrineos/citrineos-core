@@ -3,10 +3,9 @@
 // SPDX-License-Identifier: Apache-2.0
 import { type AbstractHandler, type OcppModuleDependencies, AbstractModule } from '@citrineos/base';
 import { EventGroup } from '@citrineos/types';
-import type { IChargingProfileRepository, ITransactionEventRepository } from '@citrineos/dal';
+import type { IChargingProfileRepository } from '@citrineos/dal';
 
 export interface SmartChargingModuleDependencies extends OcppModuleDependencies {
-  transactionEventRepository: ITransactionEventRepository;
   chargingProfileRepository: IChargingProfileRepository;
   smartChargingHandlers?: AbstractHandler[];
 }
@@ -19,7 +18,6 @@ export class SmartChargingModule extends AbstractModule {
    * Fields
    */
 
-  protected _transactionEventRepository: ITransactionEventRepository;
   protected _chargingProfileRepository: IChargingProfileRepository;
 
   constructor({
@@ -30,7 +28,6 @@ export class SmartChargingModule extends AbstractModule {
     logger,
     ocppValidator,
     ocppSender,
-    transactionEventRepository,
     chargingProfileRepository,
     smartChargingHandlers,
   }: SmartChargingModuleDependencies) {
@@ -46,12 +43,7 @@ export class SmartChargingModule extends AbstractModule {
       smartChargingHandlers,
     );
 
-    this._transactionEventRepository = transactionEventRepository;
     this._chargingProfileRepository = chargingProfileRepository;
-  }
-
-  get transactionEventRepository(): ITransactionEventRepository {
-    return this._transactionEventRepository;
   }
 
   get chargingProfileRepository(): IChargingProfileRepository {

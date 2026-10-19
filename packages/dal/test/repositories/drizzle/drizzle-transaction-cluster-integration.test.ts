@@ -1001,7 +1001,7 @@ describe('DrizzleTransactionRepository cluster reads', () => {
     await anEvent(TENANT, { transactionDatabaseId: wanted.id, seqNo: 1 });
     await anEvent(TENANT, { transactionDatabaseId: other.id, seqNo: 2 });
 
-    const events = await transactionRepo().readAllByStationIdAndTransactionId(
+    const events = await transactionEventRepo().readAllByStationIdAndTransactionId(
       TENANT,
       STATION,
       'T-WANTED',
@@ -1030,7 +1030,7 @@ describe('DrizzleTransactionRepository cluster reads', () => {
       tenantId: TENANT,
     } as any);
 
-    const events = await transactionRepo().readAllByStationIdAndTransactionId(
+    const events = await transactionEventRepo().readAllByStationIdAndTransactionId(
       TENANT,
       STATION,
       'T-EVSE',
@@ -1169,7 +1169,7 @@ describe('DrizzleTransactionRepository cluster writes', () => {
     const station = await aStation(TENANT);
     const transaction = await aTransaction(TENANT, station.id, 'T-MV');
 
-    const created = await transactionRepo().createMeterValue(
+    const created = await meterValueRepo().createMeterValue(
       TENANT,
       { timestamp: '2025-06-01T08:05:00.000Z', sampledValue: [{ value: 5 }] } as any,
       transaction.id,
@@ -1179,12 +1179,52 @@ describe('DrizzleTransactionRepository cluster writes', () => {
     expect(stored!.transactionCreatedAt.getTime()).toBe(transaction.createdAt.getTime());
   });
 
+  it('insertRow joins the executor it is handed and rolls back with it', async () => {
+    const station = await aStation(TENANT);
+    const transaction = await aTransaction(TENANT, station.id, 'T-MV-TX');
+    const repo = meterValueRepo();
+
+    await expect(
+      db.transaction(async (tx) => {
+        await repo.insertRow(
+          TENANT,
+          {
+            transactionDatabaseId: transaction.id,
+            transactionCreatedAt: transaction.createdAt,
+            sampledValue: [{ value: 7 }] as any,
+            timestamp: new Date('2025-06-01T08:05:00.000Z'),
+          },
+          tx,
+        );
+        throw new Error('abandon the write');
+      }),
+    ).rejects.toThrow('abandon the write');
+
+    expect(await MeterValue.count({ where: { tenantId: TENANT } })).toBe(0);
+  });
+
+  it('insertRow commits on its own connection when no executor is passed', async () => {
+    const station = await aStation(TENANT);
+    const transaction = await aTransaction(TENANT, station.id, 'T-MV-OWN');
+
+    const created = await meterValueRepo().insertRow(TENANT, {
+      transactionDatabaseId: transaction.id,
+      transactionCreatedAt: transaction.createdAt,
+      sampledValue: [{ value: 9 }] as any,
+      timestamp: new Date('2025-06-01T08:05:00.000Z'),
+    });
+
+    const stored = await MeterValue.findOne({ where: { id: created.id } });
+    expect(stored).not.toBeNull();
+    expect(stored!.tenantId).toBe(TENANT);
+  });
+
   it('createMeterValue keeps an explicitly supplied partition key', async () => {
     const station = await aStation(TENANT);
     const transaction = await aTransaction(TENANT, station.id, 'T-MV2');
     const explicitKey = new Date('2024-02-03T04:05:06.000Z');
 
-    const created = await transactionRepo().createMeterValue(
+    const created = await meterValueRepo().createMeterValue(
       TENANT,
       { timestamp: '2025-06-01T08:05:00.000Z', sampledValue: [{ value: 5 }] } as any,
       transaction.id,
@@ -1257,5 +1297,354 @@ describe('DrizzleTransactionRepository cluster writes', () => {
     expect(await StopTransaction.count()).toBe(0);
     expect(await MeterValue.count()).toBe(0);
     expect(transaction.isActive).toBe(true);
+  });
+});
+
+describe('DrizzleTransactionRepository write', () => {
+  async function anEvseType(tenantId: number, ocppEvseId: number): Promise<number> {
+    const row: any = await EvseType.create({ id: ocppEvseId, tenantId } as any);
+    return row.databaseId as number;
+  }
+
+  async function aTariff(tenantId: number, tariffId: string): Promise<number> {
+    const row: any = await Tariff.create({
+      tariffId,
+      currency: 'USD',
+      pricePerKwh: 0.35,
+      tenantId,
+    } as any);
+    return row.id as number;
+  }
+
+  const anEventRequest = (overrides: Record<string, unknown> = {}): any => ({
+    eventType: 'Started',
+    timestamp: '2025-06-01T08:00:00.000Z',
+    triggerReason: 'Authorized',
+    seqNo: 0,
+    transactionInfo: { transactionId: 'T-WRITE' },
+    ...overrides,
+  });
+
+  const aSample = (value: number, timestamp = '2025-06-01T08:05:00.000Z'): any => ({
+    timestamp,
+    sampledValue: [
+      {
+        value,
+        measurand: 'Energy.Active.Import.Register',
+        unitOfMeasure: { unit: 'kWh' },
+      },
+    ],
+  });
+
+  it('createOrUpdateTransactionByTransactionEventAndStationId creates the transaction, its event and its readings', async () => {
+    const station = await aStation(TENANT);
+
+    const result = await transactionRepo().createOrUpdateTransactionByTransactionEventAndStationId(
+      TENANT,
+      anEventRequest({ meterValue: [aSample(5)] }),
+      STATION,
+    );
+
+    expect(result.transactionId).toBe('T-WRITE');
+    expect(result.isActive).toBe(true);
+    expect(result.startTime).toBe('2025-06-01T08:00:00.000Z');
+
+    const stored = await Transaction.findOne({
+      where: { tenantId: TENANT, stationId: station.id, transactionId: 'T-WRITE' },
+    });
+    expect(stored).not.toBeNull();
+
+    const events = await TransactionEvent.findAll({
+      where: { tenantId: TENANT, transactionDatabaseId: stored!.id },
+    });
+    expect(events).toHaveLength(1);
+    expect(events[0].seqNo).toBe(0);
+
+    const readings = await MeterValue.findAll({
+      where: { tenantId: TENANT, transactionDatabaseId: stored!.id },
+    });
+    expect(readings).toHaveLength(1);
+    expect(readings[0].transactionEventId).toBe(events[0].id);
+  });
+
+  it('createOrUpdateTransactionByTransactionEventAndStationId updates the existing transaction rather than inserting a second', async () => {
+    const station = await aStation(TENANT);
+    await transactionRepo().createOrUpdateTransactionByTransactionEventAndStationId(
+      TENANT,
+      anEventRequest(),
+      STATION,
+    );
+
+    await transactionRepo().createOrUpdateTransactionByTransactionEventAndStationId(
+      TENANT,
+      anEventRequest({ eventType: 'Updated', seqNo: 1, triggerReason: 'MeterValuePeriodic' }),
+      STATION,
+    );
+
+    const rows = await Transaction.findAll({
+      where: { tenantId: TENANT, stationId: station.id, transactionId: 'T-WRITE' },
+    });
+    expect(rows).toHaveLength(1);
+
+    const events = await TransactionEvent.findAll({
+      where: { tenantId: TENANT, transactionDatabaseId: rows[0].id },
+      order: [['seqNo', 'ASC']],
+    });
+    expect(events.map((e) => e.seqNo)).toEqual([0, 1]);
+  });
+
+  it('createOrUpdateTransactionByTransactionEventAndStationId closes the transaction on an Ended event', async () => {
+    await aStation(TENANT);
+    await transactionRepo().createOrUpdateTransactionByTransactionEventAndStationId(
+      TENANT,
+      anEventRequest(),
+      STATION,
+    );
+
+    const ended = await transactionRepo().createOrUpdateTransactionByTransactionEventAndStationId(
+      TENANT,
+      anEventRequest({
+        eventType: 'Ended',
+        seqNo: 1,
+        timestamp: '2025-06-01T09:00:00.000Z',
+        triggerReason: 'StopAuthorized',
+        transactionInfo: { transactionId: 'T-WRITE', stoppedReason: 'Local' },
+      }),
+      STATION,
+    );
+
+    expect(ended.isActive).toBe(false);
+    expect(ended.endTime).toBe('2025-06-01T09:00:00.000Z');
+    expect(ended.stoppedReason).toBe('Local');
+    // The Started event's startTime survives the Ended update.
+    expect(ended.startTime).toBe('2025-06-01T08:00:00.000Z');
+  });
+
+  it('createOrUpdateTransactionByTransactionEventAndStationId resolves the evse by its OCPP number, creating the row when absent', async () => {
+    const station = await aStation(TENANT);
+
+    const result = await transactionRepo().createOrUpdateTransactionByTransactionEventAndStationId(
+      TENANT,
+      anEventRequest({ evse: { id: 7 } }),
+      STATION,
+    );
+
+    const evse = await Evse.findOne({
+      where: { tenantId: TENANT, stationId: station.id, evseTypeId: 7 },
+    });
+    expect(evse).not.toBeNull();
+    // Transactions.evseId is the Evses primary key, not the OCPP number.
+    expect(result.evseId).toBe(evse!.id);
+    expect(result.evseId).not.toBe(7);
+  });
+
+  it('createOrUpdateTransactionByTransactionEventAndStationId takes the tariff from the 2.1 transactionInfo', async () => {
+    await aStation(TENANT);
+    const tariffDatabaseId = await aTariff(TENANT, 'TARIFF-21');
+
+    const result = await transactionRepo().createOrUpdateTransactionByTransactionEventAndStationId(
+      TENANT,
+      anEventRequest({ transactionInfo: { transactionId: 'T-WRITE', tariffId: 'TARIFF-21' } }),
+      STATION,
+    );
+
+    expect(result.tariffId).toBe(tariffDatabaseId);
+  });
+
+  it('createOrUpdateTransactionByTransactionEventAndStationId links the authorization by idToken and type', async () => {
+    await aStation(TENANT);
+    const auth: any = await Authorization.create({
+      idToken: 'TAG-1',
+      idTokenType: 'ISO14443',
+      status: 'Accepted',
+      tenantId: TENANT,
+    } as any);
+
+    const result = await transactionRepo().createOrUpdateTransactionByTransactionEventAndStationId(
+      TENANT,
+      anEventRequest({ idToken: { idToken: 'TAG-1', type: 'ISO14443' } }),
+      STATION,
+    );
+
+    expect(result.authorizationId).toBe(auth.id);
+
+    const events = await TransactionEvent.findAll({ where: { tenantId: TENANT } });
+    expect(events[0].idTokenValue).toBe('TAG-1');
+  });
+
+  it('createOrUpdateTransactionByTransactionEventAndStationId leaves TransactionEvents.evseId unset, as the sequelize path does', async () => {
+    await aStation(TENANT);
+    await anEvseType(TENANT, 3);
+
+    await transactionRepo().createOrUpdateTransactionByTransactionEventAndStationId(
+      TENANT,
+      anEventRequest({ evse: { id: 3 } }),
+      STATION,
+    );
+
+    const events = await TransactionEvent.findAll({ where: { tenantId: TENANT } });
+    expect(events).toHaveLength(1);
+    expect(events[0].evseId ?? null).toBeNull();
+  });
+
+  it('createOrUpdateTransactionByTransactionEventAndStationId derives meterStart and totalKwh from the readings', async () => {
+    await aStation(TENANT);
+
+    await transactionRepo().createOrUpdateTransactionByTransactionEventAndStationId(
+      TENANT,
+      anEventRequest({ meterValue: [aSample(10, '2025-06-01T08:00:00.000Z')] }),
+      STATION,
+    );
+    const afterFirst = await Transaction.findOne({ where: { tenantId: TENANT } });
+    expect(Number(afterFirst!.meterStart)).toBe(10);
+
+    await transactionRepo().createOrUpdateTransactionByTransactionEventAndStationId(
+      TENANT,
+      anEventRequest({ seqNo: 1, meterValue: [aSample(14, '2025-06-01T08:30:00.000Z')] }),
+      STATION,
+    );
+    const afterSecond = await Transaction.findOne({ where: { tenantId: TENANT } });
+    // meterStart is only taken once; totalKwh is the span from it.
+    expect(Number(afterSecond!.meterStart)).toBe(10);
+    expect(Number(afterSecond!.totalKwh)).toBe(4);
+  });
+
+  it('createOrUpdateTransactionByTransactionEventAndStationId throws for an unknown station and writes nothing', async () => {
+    await expect(
+      transactionRepo().createOrUpdateTransactionByTransactionEventAndStationId(
+        TENANT,
+        anEventRequest(),
+        'CS-DOES-NOT-EXIST',
+      ),
+    ).rejects.toThrow(/no charging station named/);
+
+    expect(await Transaction.count({ where: { tenantId: TENANT } })).toBe(0);
+    expect(await TransactionEvent.count({ where: { tenantId: TENANT } })).toBe(0);
+  });
+
+  it('createOrUpdateTransactionByTransactionEventAndStationId rolls the transaction back when a reading is rejected', async () => {
+    await aStation(TENANT);
+
+    await expect(
+      transactionRepo().createOrUpdateTransactionByTransactionEventAndStationId(
+        TENANT,
+        anEventRequest({
+          meterValue: [{ timestamp: 'not-a-timestamp', sampledValue: [{ value: 1 }] }],
+        }),
+        STATION,
+      ),
+    ).rejects.toThrow();
+
+    expect(await Transaction.count({ where: { tenantId: TENANT } })).toBe(0);
+    expect(await TransactionEvent.count({ where: { tenantId: TENANT } })).toBe(0);
+    expect(await MeterValue.count({ where: { tenantId: TENANT } })).toBe(0);
+  });
+
+  it('createTransactionByStartTransaction allocates a transaction id and converts meterStart to kWh', async () => {
+    const station = await aStation(TENANT);
+    const auth: any = await Authorization.create({
+      idToken: 'TAG-16',
+      status: 'Accepted',
+      tenantId: TENANT,
+    } as any);
+
+    const result = await transactionRepo().createTransactionByStartTransaction(
+      TENANT,
+      {
+        connectorId: 1,
+        idTag: 'TAG-16',
+        meterStart: 5000,
+        timestamp: '2025-06-01T08:00:00.000Z',
+      } as any,
+      STATION,
+    );
+
+    expect(result.transactionId).toBe('1');
+    expect(result.isActive).toBe(true);
+    expect(result.meterStart).toBe(5);
+    expect(result.authorizationId).toBe(auth.id);
+    expect(result.connectorId).toBe(station.connectorDatabaseId);
+
+    const starts = await StartTransaction.findAll({ where: { tenantId: TENANT } });
+    expect(starts).toHaveLength(1);
+    // StartTransactions keeps the reported Wh; only the transaction row is converted.
+    expect(starts[0].meterStart).toBe(5000);
+    expect(starts[0].transactionDatabaseId).toBe(result.id);
+  });
+
+  it('createTransactionByStartTransaction hands out a fresh id per call', async () => {
+    await aStation(TENANT);
+    const request = {
+      connectorId: 1,
+      idTag: 'TAG-16',
+      meterStart: 0,
+      timestamp: '2025-06-01T08:00:00.000Z',
+    } as any;
+
+    const first = await transactionRepo().createTransactionByStartTransaction(
+      TENANT,
+      request,
+      STATION,
+    );
+    const second = await transactionRepo().createTransactionByStartTransaction(
+      TENANT,
+      request,
+      STATION,
+    );
+
+    expect(second.transactionId).not.toBe(first.transactionId);
+  });
+
+  it('createTransactionByStartTransaction throws for a missing connector and writes nothing', async () => {
+    await aStation(TENANT);
+
+    await expect(
+      transactionRepo().createTransactionByStartTransaction(
+        TENANT,
+        {
+          connectorId: 99,
+          idTag: 'TAG-16',
+          meterStart: 0,
+          timestamp: '2025-06-01T08:00:00.000Z',
+        } as any,
+        STATION,
+      ),
+    ).rejects.toThrow(/Unable to find connector 99/);
+
+    expect(await Transaction.count({ where: { tenantId: TENANT } })).toBe(0);
+    expect(await StartTransaction.count({ where: { tenantId: TENANT } })).toBe(0);
+  });
+
+  it('updateTransactionByMeterValues appends the readings and recomputes the totals', async () => {
+    const station = await aStation(TENANT);
+    const transaction = await aTransaction(TENANT, station.id, '42', {
+      startTime: '2025-06-01T08:00:00.000Z',
+    });
+
+    await transactionRepo().updateTransactionByMeterValues(
+      TENANT,
+      [aSample(3, '2025-06-01T08:00:00.000Z'), aSample(9, '2025-06-01T08:20:00.000Z')],
+      STATION,
+      42,
+    );
+
+    const readings = await MeterValue.findAll({
+      where: { tenantId: TENANT, transactionDatabaseId: transaction.id },
+    });
+    expect(readings).toHaveLength(2);
+
+    await transaction.reload();
+    expect(Number(transaction.meterStart)).toBe(3);
+    expect(Number(transaction.totalKwh)).toBe(6);
+    // Sequelize reads BIGINT as a string even though the model declares number.
+    expect(Number(transaction.timeSpentCharging)).toBe(20 * 60);
+  });
+
+  it('updateTransactionByMeterValues writes nothing for an unknown transaction', async () => {
+    await aStation(TENANT);
+
+    await transactionRepo().updateTransactionByMeterValues(TENANT, [aSample(3)], STATION, 404);
+
+    expect(await MeterValue.count({ where: { tenantId: TENANT } })).toBe(0);
   });
 });

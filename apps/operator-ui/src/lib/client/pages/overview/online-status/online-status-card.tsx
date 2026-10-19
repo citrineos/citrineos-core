@@ -9,7 +9,6 @@ import { Card, CardContent, CardHeader } from '@lib/client/components/ui/card';
 import { Circle } from '@lib/client/pages/overview/circle/circle';
 import { CHARGING_STATIONS_LIST_QUERY } from '@lib/queries/charging-stations';
 import { ActionType, ResourceType } from '@lib/utils/access-types';
-import { AccessDeniedFallbackCard } from '@lib/client/components/access-denied-fallback-card';
 import { CanAccess, useList, useTranslate } from '@refinedev/core';
 import { ChevronRightIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -62,11 +61,7 @@ export const OnlineStatusCard = () => {
   if (isLoading) return <OverviewCardSkeleton />;
 
   return (
-    <CanAccess
-      resource={ResourceType.CHARGING_STATIONS}
-      action={ActionType.LIST}
-      fallback={<AccessDeniedFallbackCard />}
-    >
+    <CanAccess resource={ResourceType.CHARGING_STATIONS} action={ActionType.LIST}>
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">

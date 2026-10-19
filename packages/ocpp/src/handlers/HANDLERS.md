@@ -48,7 +48,7 @@ subscribe to that action.
 ## Excluding an action a module has a handler for
 
 To keep a handler in the codebase but stop a deployment from receiving its action, list the action in
-that module's `excludedActions` list, which is referenced in that module's constructor. The handler is still 
+that module's `excludedActions` list, which is referenced in that module's constructor. The handler is still
 constructed; the module simply does not subscribe, so nothing is routed to it.
 
 ## How do `@AsRequestHandler` and `@AsResponseHandler` work?

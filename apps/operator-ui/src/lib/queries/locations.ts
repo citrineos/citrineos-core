@@ -28,15 +28,11 @@ export const LOCATIONS_LIST_QUERY = gql`
         ${CHARGING_STATION_CORE_FIELDS.omit('locationId')}
         evses: Evses {
           ${EVSE_CORE_FIELDS}
-        }
-        LatestStatusNotifications {
-          id
-          stationId
-          statusNotificationId
-          updatedAt
-          createdAt
-          StatusNotification {
-            ${STATUS_NOTIFICATION_FIELDS}
+          connectors: Connectors {
+            id
+            latestStatusNotification: LatestStatusNotification {
+              ${STATUS_NOTIFICATION_FIELDS}
+            }
           }
         }
         transactions: Transactions(where: { isActive: { _eq: true } }) {
@@ -73,16 +69,6 @@ export const LOCATIONS_GET_QUERY = gql`
           id
           createdAt
           updatedAt
-        }
-        LatestStatusNotifications {
-          id
-          stationId
-          statusNotificationId
-          updatedAt
-          createdAt
-          StatusNotification {
-            ${STATUS_NOTIFICATION_FIELDS}
-          }
         }
         Transactions(where: { isActive: { _eq: true } }) {
           ${ACTIVE_TRANSACTION_FIELDS}

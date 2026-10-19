@@ -188,7 +188,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
 
     try {
       transaction =
-        await this._transactionEventRepository.createOrUpdateTransactionByTransactionEventAndStationId(
+        await this._transactionRepository.createOrUpdateTransactionByTransactionEventAndStationId(
           tenantId,
           message.payload,
           ocppConnectionName,

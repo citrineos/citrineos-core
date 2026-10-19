@@ -33,39 +33,7 @@ import { Transaction } from '../../models/transaction-event/transaction.js';
 import { TransactionEvent } from '../../models/transaction-event/transaction-event.js';
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './base.js';
 import { SequelizeChargingStationSequenceRepository } from './charging-station-sequence.js';
-
-/** Seconds between the transaction start and the newest meter value; 1.6 has no reported value. */
-function elapsedSecondsSinceStart(
-  startTime: string | undefined,
-  meterValues: MeterValueDto[],
-): number | undefined {
-  if (!startTime || meterValues.length === 0) {
-    return undefined;
-  }
-
-  const startTimestamp = new Date(startTime).getTime();
-  const latestMeterValueTimestamp = Math.max(
-    ...meterValues.map((meterValue) => new Date(meterValue.timestamp).getTime()),
-  );
-  if (!Number.isFinite(startTimestamp) || !Number.isFinite(latestMeterValueTimestamp)) {
-    return undefined;
-  }
-
-  return Math.max(0, Math.floor((latestMeterValueTimestamp - startTimestamp) / 1000));
-}
-
-/**
- * Avoid to overwrite timeSpentCharging to null
- */
-function transactionInfoForRow<T extends { timeSpentCharging?: number | null }>(
-  transactionInfo: T,
-): T | Omit<T, 'timeSpentCharging'> {
-  if (transactionInfo.timeSpentCharging != null) {
-    return transactionInfo;
-  }
-  const { timeSpentCharging: _unreported, ...rest } = transactionInfo;
-  return rest;
-}
+import { elapsedSecondsSinceStart, transactionInfoForRow } from '../utils.js';
 
 export class SequelizeTransactionEventRepository
   extends SequelizeRepository<TransactionEvent>

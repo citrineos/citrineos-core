@@ -12,4 +12,5 @@ export interface ICommandEndpointMetadata {
   responseSchema?: object;
   tags?: string[];
   description?: string;
+  permission?: string;
 }

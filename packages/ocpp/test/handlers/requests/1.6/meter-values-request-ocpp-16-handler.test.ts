@@ -12,7 +12,7 @@ import {
   OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/types';
-import type { ITransactionEventRepository } from '@citrineos/dal';
+import type { ITransactionRepository } from '@citrineos/dal';
 import { MeterValuesRequestOcpp16Handler } from '@handlers/index.js';
 import { createTestContainer, makeMockOcppSender } from '@test/test-container.js';
 
@@ -52,10 +52,10 @@ function makeHandler() {
   const handler = new MeterValuesRequestOcpp16Handler({
     logger,
     ocppSender: makeMockOcppSender(),
-    transactionEventRepository: {
+    transactionRepository: {
       updateTransactionByMeterValues,
-    } as unknown as ITransactionEventRepository,
-  } as never);
+    } as unknown as ITransactionRepository,
+  });
   return { handler, updateTransactionByMeterValues };
 }
 

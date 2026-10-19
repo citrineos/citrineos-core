@@ -25,6 +25,7 @@ here: <https://github.com/citrineos/citrineos>.
 - [Architecture Flow](#architecture-flow)
 - [Repository Structure](#repository-structure)
 - [HTTP API Surfaces](#http-api-surfaces)
+- [Roles and Permissions](#roles-and-permissions)
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
 - [Running the Full Stack with Docker](#running-the-full-stack-with-docker)
@@ -257,6 +258,30 @@ All three wrap `BaseRestClient`, which is constructed with the base path it prep
 `ocppApiPath(version)`, `COMMANDS_API_PATH` or `ADMIN_API_PATH`, defined in `base-rest-client.ts`.
 Choosing the helper is what selects the surface, so the prefix never appears in a call site.
 
+## Roles and Permissions
+
+Updating or adding a new role requires no change to the repository code nor any restart to any service.
+
+Two kinds of grant, enforced in different places:
+
+| Grant         | Example                              | Enforced by                                        |
+| ------------- | ------------------------------------ | -------------------------------------------------- |
+| `permissions` | `ocpp.configuration.triggerMessage`  | Core, on its REST API                              |
+| `resources`   | `ChargingStations: ["list", "show"]` | The Operator UI, deciding which controls to render |
+
+Permission names are derived from the endpoints themselves. `GET /permissions` lists every name the running
+build exposes; `GET /permissions/user` returns the caller's own grants, which is what the UI reads.
+
+Role definitions live in a seed file read through `fileAccess` and re-read on an interval, so the file can sit
+on a mounted path or in a bucket and be edited in place. See
+[apps/ocpp-server/README.md](./apps/ocpp-server/README.md) for the configuration.
+
+**The identity provider owns who holds a role; the seed owns what the role can do.** The two are joined by the
+role name alone — core never calls the provider for anything but its signing keys. A name on one side with no
+match on the other grants nothing and is logged.
+
+Currently Hasura is not gated by these roles and permissions.
+
 ## Prerequisites
 
 Before you begin, make sure you have the following installed on your system:
@@ -440,35 +465,35 @@ Pass `--env-prefix=<prefix>` on the command line if you need something other tha
 
 Top-level settings:
 
-| Old path                            | New path                                      |
-| ----------------------------------- | --------------------------------------------- |
-| `centralSystem.host`                | `host`                                        |
-| `centralSystem.port`                | `port`                                        |
-| `maxCallLengthSeconds`              | `timeouts.maxCallLengthSeconds`               |
-| `maxCachingSeconds`                 | `timeouts.maxCachingSeconds`                  |
-| `staleCallMaxAgeSeconds`            | `timeouts.staleCallMaxAgeSeconds`             |
-| `shutdownGracePeriodSeconds`        | `timeouts.shutdownGracePeriodSeconds`         |
-| `realTimeAuthDefaultTimeoutSeconds` | `timeouts.realTimeAuthDefaultTimeoutSeconds`  |
-| `notReadyThresholdSeconds`          | `timeouts.notReadyThresholdSeconds`           |
-| `maxReconnectDelay`                 | `messageBroker.amqp.maxReconnectDelaySeconds` |
-| `rbacRulesFileName`                 | `rbac.rulesFileName`                          |
-| `rbacRulesDir`                      | `rbac.rulesDir`                               |
-| `env`, `logLevel`, `oidcClient`     | unchanged                                     |
+| Old path                            | New path                                         |
+| ----------------------------------- | ------------------------------------------------ |
+| `centralSystem.host`                | `host`                                           |
+| `centralSystem.port`                | `port`                                           |
+| `maxCallLengthSeconds`              | `timeouts.maxCallLengthSeconds`                  |
+| `maxCachingSeconds`                 | `timeouts.maxCachingSeconds`                     |
+| `staleCallMaxAgeSeconds`            | `timeouts.staleCallMaxAgeSeconds`                |
+| `shutdownGracePeriodSeconds`        | `timeouts.shutdownGracePeriodSeconds`            |
+| `realTimeAuthDefaultTimeoutSeconds` | `timeouts.realTimeAuthDefaultTimeoutSeconds`     |
+| `notReadyThresholdSeconds`          | `timeouts.notReadyThresholdSeconds`              |
+| `maxReconnectDelay`                 | `messageBroker.amqp.maxReconnectDelaySeconds`    |
+| `rbacRulesFileName`                 | `roles.seedFile`                                 |
+| `rbacRulesDir`                      | removed — resolved against the `fileAccess` root |
+| `env`, `logLevel`, `oidcClient`     | unchanged                                        |
 
 The `util` block was flattened away:
 
-| Old path                                      | New path                                                         |
-| --------------------------------------------- | ---------------------------------------------------------------- |
-| `util.cache.memory: true`                     | `cache.type: 'memory'`                                           |
-| `util.cache.redis.url`                        | `cache.type: 'redis'` plus `cache.url`                           |
-| `util.cache.redis.host` / `.port`             | removed — supply a `redis://` or `rediss://` URL instead         |
-| `util.messageBroker.amqp.*`                   | `messageBroker.amqp.*`                                           |
-| `util.authProvider.localByPass`               | `auth.localBypass` (note the changed spelling)                   |
-| `util.authProvider.oidc.*`                    | `auth.oidc.*`, with `cacheTime` (ms) becoming `cacheTimeSeconds` |
-| `util.swagger.*`                              | `swagger.*`, joined by a new `swagger.enabled` toggle            |
-| `util.networkConnection.websocketServers`     | the JSON file from Step 2                                        |
-| `util.certificateAuthority.v2gCA`             | `integrations.v2gCA`                                             |
-| `util.certificateAuthority.chargingStationCA` | `integrations.chargingStationCA`                                 |
+| Old path                                      | New path                                                                                |
+| --------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `util.cache.memory: true`                     | `cache.type: 'memory'`                                                                  |
+| `util.cache.redis.url`                        | `cache.type: 'redis'` plus `cache.url`                                                  |
+| `util.cache.redis.host` / `.port`             | removed — supply a `redis://` or `rediss://` URL instead                                |
+| `util.messageBroker.amqp.*`                   | `messageBroker.amqp.*`                                                                  |
+| `util.authProvider.localByPass`               | `auth.mode: 'localBypass'`                                                              |
+| `util.authProvider.oidc.*`                    | `auth.mode: 'jwt'` plus `auth.jwt.*`, with `cacheTime` (ms) becoming `cacheTimeSeconds` |
+| `util.swagger.*`                              | `swagger.*`, joined by a new `swagger.enabled` toggle                                   |
+| `util.networkConnection.websocketServers`     | the JSON file from Step 2                                                               |
+| `util.certificateAuthority.v2gCA`             | `integrations.v2gCA`                                                                    |
+| `util.certificateAuthority.chargingStationCA` | `integrations.chargingStationCA`                                                        |
 
 So was `modules` — module settings are now top-level, keyed by what they configure rather than by which module reads
 them:

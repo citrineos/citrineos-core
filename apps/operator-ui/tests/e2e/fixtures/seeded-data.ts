@@ -10,7 +10,7 @@ import type { ApiClient } from './api-client';
 //   ChargingStations.ocppConnectionName — string identifier (the OCPP name
 //                                         the charger uses when it connects)
 //   Child tables (Transactions, Connectors, Evses, StatusNotifications,
-//   LatestStatusNotifications, OCPPMessages, …):
+//   OCPPMessages, …):
 //     stationId          — int FK to ChargingStations.id
 
 function nowIso(): string {
@@ -88,7 +88,6 @@ export async function deleteLocation(api: ApiClient, id: number): Promise<void> 
     .gql(
       `mutation ClearLocationStations($locationId: Int!) {
          delete_StatusNotifications(where: { ChargingStation: { locationId: { _eq: $locationId } } }) { affected_rows }
-         delete_LatestStatusNotifications(where: { ChargingStation: { locationId: { _eq: $locationId } } }) { affected_rows }
          delete_ChargingStations(where: { locationId: { _eq: $locationId } }) { affected_rows }
        }`,
       { locationId: id },
@@ -340,14 +339,6 @@ export async function purgeAllE2eRows(api: ApiClient): Promise<void> {
     .gql(
       `mutation PurgeStatusNotifications {
          delete_StatusNotifications(where: { ChargingStation: { ocppConnectionName: { _like: "e2e-%" } } }) { affected_rows }
-       }`,
-    )
-    .catch(() => undefined);
-
-  await api
-    .gql(
-      `mutation PurgeLatestStatusNotifications {
-         delete_LatestStatusNotifications(where: { ChargingStation: { ocppConnectionName: { _like: "e2e-%" } } }) { affected_rows }
        }`,
     )
     .catch(() => undefined);

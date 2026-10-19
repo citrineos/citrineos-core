@@ -4,12 +4,14 @@
 
 import type {
   MeterValueDto,
-  OCPP2_common_types,
+  OCPP1_6,
+  OCPP2_request_types,
   StopTransactionDto,
   TransactionCreate,
   TransactionDto,
-  TransactionEventDto,
 } from '@citrineos/types';
+import { ChargingStationSequenceTypeEnum, OCPP2_0_1 } from '@citrineos/types';
+import { MeterValueUtils } from '@citrineos/base';
 import { and, desc, eq, inArray, isNotNull, ne } from 'drizzle-orm';
 import {
   tenantTransactionTable,
@@ -26,11 +28,6 @@ import {
   meterValueTable,
   tenantMeterValueTable,
 } from '../../db/drizzle/schema/meter-value.js';
-import {
-  type EvseTypeEntity,
-  evseTypeTable,
-  tenantEvseTypeTable,
-} from '../../db/drizzle/schema/evse-type.js';
 import { type EvseEntity, evseTable, tenantEvseTable } from '../../db/drizzle/schema/evse.js';
 import {
   type TariffEntity,
@@ -51,16 +48,33 @@ import {
   stopTransactionTable,
   tenantStopTransactionTable,
 } from '../../db/drizzle/schema/stop-transaction.js';
+import {
+  type StartTransactionEntity,
+  startTransactionTable,
+  tenantStartTransactionTable,
+} from '../../db/drizzle/schema/start-transaction.js';
+import {
+  type ConnectorEntity,
+  connectorTable,
+  tenantConnectorTable,
+} from '../../db/drizzle/schema/connector.js';
 import { MeterValueMapper } from '../../mappers/2/meter-value-mapper.js';
 import { type ITransactionRepository } from '../repositories.js';
-import { DrizzleRepository } from './base.js';
-import { toTransactionEventDto } from './transaction-event.js';
-import { toMeterValueDto } from './meter-value.js';
-import { toEvseTypeDto } from './evse-type.js';
+import { DrizzleTransactionEventRepository } from './transaction-event.js';
+import { DrizzleMeterValueRepository, toMeterValueDto } from './meter-value.js';
 import { toEvseDto } from './evse.js';
 import { toTariffDto } from './tariff.js';
 import { toStopTransactionDto } from './stop-transaction.js';
+import { toStartTransactionDto } from './start-transaction.js';
 import { toAuthorizationDto } from './authorization.js';
+import { elapsedSecondsSinceStart, transactionInfoForRow } from '../utils.js';
+import { DrizzleChargingStationSequenceRepository } from './charging-station-sequence.js';
+import type { IChargingStationSequenceRepository } from '../repositories.js';
+import {
+  DrizzleRepository,
+  type DrizzleRepositoryDependencies,
+  type DrizzleWriteContext,
+} from './base.js';
 
 // ─── Mapper ──────────────────────────────────────────────────────────────────
 // Scalar columns only; every relation on TransactionDto is optional and a flat row
@@ -100,6 +114,17 @@ export class DrizzleTransactionRepository
   extends DrizzleRepository<typeof transactionTable, TransactionDto>
   implements ITransactionRepository
 {
+  private readonly chargingStationSequence: IChargingStationSequenceRepository;
+  private readonly meterValue: DrizzleMeterValueRepository;
+  private readonly transactionEvent: DrizzleTransactionEventRepository;
+
+  constructor(dependencies: DrizzleRepositoryDependencies) {
+    super(dependencies);
+    this.chargingStationSequence = new DrizzleChargingStationSequenceRepository(dependencies);
+    this.meterValue = new DrizzleMeterValueRepository(dependencies);
+    this.transactionEvent = new DrizzleTransactionEventRepository(dependencies);
+  }
+
   protected getTable(tenantId: number): typeof transactionTable {
     return this.useTenantSchema ? tenantTransactionTable(tenantId) : transactionTable;
   }
@@ -114,10 +139,6 @@ export class DrizzleTransactionRepository
 
   private getMeterValueTable(tenantId: number): typeof meterValueTable {
     return this.useTenantSchema ? tenantMeterValueTable(tenantId) : meterValueTable;
-  }
-
-  private getEvseTypeTable(tenantId: number): typeof evseTypeTable {
-    return this.useTenantSchema ? tenantEvseTypeTable(tenantId) : evseTypeTable;
   }
 
   private getEvseTable(tenantId: number): typeof evseTable {
@@ -138,6 +159,14 @@ export class DrizzleTransactionRepository
 
   private getChargingStationTable(tenantId: number): typeof chargingStationTable {
     return this.useTenantSchema ? tenantChargingStationTable(tenantId) : chargingStationTable;
+  }
+
+  private getStartTransactionTable(tenantId: number): typeof startTransactionTable {
+    return this.useTenantSchema ? tenantStartTransactionTable(tenantId) : startTransactionTable;
+  }
+
+  private getConnectorTable(tenantId: number): typeof connectorTable {
+    return this.useTenantSchema ? tenantConnectorTable(tenantId) : connectorTable;
   }
 
   private async resolveStationId(
@@ -194,121 +223,12 @@ export class DrizzleTransactionRepository
     return byTransaction;
   }
 
-  private async readMeterValuesByTransactionEventIds(
-    tenantId: number,
-    transactionEventIds: number[],
-  ): Promise<Map<number, MeterValueDto[]>> {
-    const byEvent = new Map<number, MeterValueDto[]>();
-    if (transactionEventIds.length === 0) {
-      return byEvent;
-    }
-    const meterValues = this.getMeterValueTable(tenantId);
-    const rows = (await this.db
-      .select()
-      .from(meterValues)
-      .where(
-        and(
-          inArray(meterValues.transactionEventId, transactionEventIds),
-          this.tenantFilter(meterValues, tenantId),
-        ),
-      )) as MeterValueEntity[];
-
-    for (const row of rows) {
-      if (row.transactionEventId == null) continue;
-      const bucket = byEvent.get(row.transactionEventId) ?? [];
-      bucket.push(toMeterValueDto(row));
-      byEvent.set(row.transactionEventId, bucket);
-    }
-    return byEvent;
-  }
-
-  private async readEvseTypesByDatabaseIds(
-    tenantId: number,
-    evseTypeDatabaseIds: number[],
-  ): Promise<Map<number, EvseTypeEntity>> {
-    const byDatabaseId = new Map<number, EvseTypeEntity>();
-    if (evseTypeDatabaseIds.length === 0) {
-      return byDatabaseId;
-    }
-    const evseTypes = this.getEvseTypeTable(tenantId);
-    const rows = (await this.db
-      .select()
-      .from(evseTypes)
-      .where(
-        and(
-          inArray(evseTypes.databaseId, evseTypeDatabaseIds),
-          this.tenantFilter(evseTypes, tenantId),
-        ),
-      )) as EvseTypeEntity[];
-    for (const row of rows) {
-      byDatabaseId.set(row.databaseId, row);
-    }
-    return byDatabaseId;
-  }
-
-  private async readTransactionEventsByTransactionDatabaseIds(
-    tenantId: number,
-    transactionDatabaseIds: number[],
-  ): Promise<Map<number, TransactionEventDto[]>> {
-    const byTransaction = new Map<number, TransactionEventDto[]>();
-    if (transactionDatabaseIds.length === 0) {
-      return byTransaction;
-    }
-    const events = this.getTransactionEventTable(tenantId);
-    const rows = (await this.db
-      .select()
-      .from(events)
-      .where(
-        and(
-          inArray(events.transactionDatabaseId, transactionDatabaseIds),
-          this.tenantFilter(events, tenantId),
-        ),
-      )) as TransactionEventEntity[];
-
-    const hydrated = await this.hydrateTransactionEvents(tenantId, rows);
-    for (const [index, row] of rows.entries()) {
-      if (row.transactionDatabaseId == null) continue;
-      const bucket = byTransaction.get(row.transactionDatabaseId) ?? [];
-      bucket.push(hydrated[index]);
-      byTransaction.set(row.transactionDatabaseId, bucket);
-    }
-    return byTransaction;
-  }
-
-  private async hydrateTransactionEvents(
-    tenantId: number,
-    rows: TransactionEventEntity[],
-  ): Promise<TransactionEventDto[]> {
-    const meterValuesByEvent = await this.readMeterValuesByTransactionEventIds(
-      tenantId,
-      rows.map((row) => row.id),
-    );
-    const evseTypesByDatabaseId = await this.readEvseTypesByDatabaseIds(
-      tenantId,
-      rows.flatMap((row) => (row.evseId == null ? [] : [row.evseId])),
-    );
-
-    return rows.map((row) => {
-      const meterValues = meterValuesByEvent.get(row.id);
-      const evseType = row.evseId == null ? undefined : evseTypesByDatabaseId.get(row.evseId);
-      return {
-        ...toTransactionEventDto(row),
-        // The DTO types meterValue as a non-empty tuple, so an event with no readings
-        // keeps the undefined the mapper already set rather than an empty array.
-        ...(meterValues?.length
-          ? { meterValue: meterValues as TransactionEventDto['meterValue'] }
-          : {}),
-        ...(evseType ? { evse: toEvseTypeDto(evseType) } : {}),
-      };
-    });
-  }
-
   private async hydrateTransaction(
     tenantId: number,
     row: TransactionEntity,
   ): Promise<TransactionDto> {
     const [eventsByTransaction, meterValuesByTransaction] = await Promise.all([
-      this.readTransactionEventsByTransactionDatabaseIds(tenantId, [row.id]),
+      this.transactionEvent.readByTransactionDatabaseIds(tenantId, [row.id]),
       this.readMeterValuesByTransactionDatabaseIds(tenantId, [row.id]),
     ]);
     return {
@@ -316,36 +236,6 @@ export class DrizzleTransactionRepository
       transactionEvents: eventsByTransaction.get(row.id) ?? [],
       meterValues: meterValuesByTransaction.get(row.id) ?? [],
     };
-  }
-
-  // MeterValues is partitioned on (id, transactionCreatedAt),
-  // Since Drizzle has no hooks as in Sequelize, the same fallback
-  // chain runs here or the row lands in the wrong partition.
-  private async resolveMeterValuePartitionKey(
-    tenantId: number,
-    transactionCreatedAt: Date | undefined,
-    transactionDatabaseId: number | null | undefined,
-  ): Promise<Date> {
-    if (transactionCreatedAt != null) {
-      return transactionCreatedAt;
-    }
-    if (transactionDatabaseId != null) {
-      const transactions = this.getTable(tenantId);
-      const rows = await this.db
-        .select({ createdAt: transactions.createdAt })
-        .from(transactions)
-        .where(
-          and(
-            eq(transactions.id, transactionDatabaseId),
-            this.tenantFilter(transactions, tenantId),
-          ),
-        )
-        .limit(1);
-      if (rows[0]?.createdAt) {
-        return rows[0].createdAt;
-      }
-    }
-    return new Date();
   }
 
   private toTransactionColumns(values: Partial<TransactionCreate>): Record<string, unknown> {
@@ -373,6 +263,138 @@ export class DrizzleTransactionRepository
     assign('startTime', values.startTime === undefined ? undefined : new Date(values.startTime));
     assign('endTime', values.endTime === undefined ? undefined : new Date(values.endTime));
     return columns;
+  }
+
+  private async readOrCreateEvse(
+    ctx: DrizzleWriteContext,
+    tenantId: number,
+    stationId: number,
+    evseTypeId: number,
+  ): Promise<EvseEntity> {
+    const evses = this.getEvseTable(tenantId);
+    const existing = (await ctx.db
+      .select()
+      .from(evses)
+      .where(
+        and(
+          eq(evses.stationId, stationId),
+          eq(evses.evseTypeId, evseTypeId),
+          this.tenantFilter(evses, tenantId),
+        ),
+      )
+      .limit(1)) as EvseEntity[];
+    if (existing[0]) {
+      return existing[0];
+    }
+
+    const inserted = (await ctx.db
+      .insert(evses)
+      .values({ tenantId, stationId, evseTypeId })
+      .onConflictDoUpdate({
+        target: [evses.stationId, evses.evseTypeId],
+        set: { updatedAt: new Date() },
+      })
+      .returning()) as EvseEntity[];
+    return inserted[0];
+  }
+
+  private async readOrCreateConnector(
+    ctx: DrizzleWriteContext,
+    tenantId: number,
+    stationId: number,
+    evseId: number,
+    evseTypeConnectorId: number,
+    defaults: { connectorId?: number },
+  ): Promise<ConnectorEntity> {
+    const connectors = this.getConnectorTable(tenantId);
+    const existing = (await ctx.db
+      .select()
+      .from(connectors)
+      .where(
+        and(
+          eq(connectors.stationId, stationId),
+          eq(connectors.evseId, evseId),
+          eq(connectors.evseTypeConnectorId, evseTypeConnectorId),
+          this.tenantFilter(connectors, tenantId),
+        ),
+      )
+      .limit(1)) as ConnectorEntity[];
+    if (existing[0]) {
+      return existing[0];
+    }
+
+    const inserted = (await ctx.db
+      .insert(connectors)
+      .values({
+        tenantId,
+        stationId,
+        evseId,
+        evseTypeConnectorId,
+        connectorId: defaults.connectorId ?? null,
+      })
+      .onConflictDoUpdate({
+        target: [connectors.evseId, connectors.evseTypeConnectorId],
+        set: { updatedAt: new Date() },
+      })
+      .returning()) as ConnectorEntity[];
+    return inserted[0];
+  }
+
+  private async findTariffIdByTariffId(
+    ctx: DrizzleWriteContext,
+    tenantId: number,
+    tariffId: string,
+  ): Promise<number | undefined> {
+    const tariffs = this.getTariffTable(tenantId);
+    const rows = (await ctx.db
+      .select({ id: tariffs.id })
+      .from(tariffs)
+      .where(and(eq(tariffs.tariffId, tariffId), this.tenantFilter(tariffs, tenantId)))
+      .limit(1)) as { id: number }[];
+    return rows[0]?.id;
+  }
+
+  private async findAuthorizationByIdToken(
+    ctx: DrizzleWriteContext,
+    tenantId: number,
+    idToken: string,
+    idTokenType?: string,
+  ): Promise<AuthorizationEntity | undefined> {
+    const authorizations = this.getAuthorizationTable(tenantId);
+    const rows = (await ctx.db
+      .select()
+      .from(authorizations)
+      .where(
+        and(
+          eq(authorizations.idToken, idToken),
+          // 1.6 matches on the token alone; 2.x always reports a type and filters on it.
+          idTokenType === undefined ? undefined : eq(authorizations.idTokenType, idTokenType),
+          this.tenantFilter(authorizations, tenantId),
+        ),
+      )
+      .limit(1)) as AuthorizationEntity[];
+    return rows[0];
+  }
+
+  private async readStationLocationId(
+    tenantId: number,
+    ocppConnectionName: string,
+  ): Promise<number | null | undefined> {
+    const stations = this.getChargingStationTable(tenantId);
+    const rows = await this.db
+      .select({ locationId: stations.locationId })
+      .from(stations)
+      .where(
+        and(
+          eq(stations.ocppConnectionName, ocppConnectionName),
+          this.tenantFilter(stations, tenantId),
+        ),
+      )
+      .limit(1);
+    if (rows.length === 0) {
+      return undefined;
+    }
+    return rows[0].locationId;
   }
 
   // ─── ITransactionRepository reads ───────────────────────────────────
@@ -545,37 +567,6 @@ export class DrizzleTransactionRepository
     return row ? await this.hydrateTransaction(tenantId, row) : undefined;
   }
 
-  async readAllByStationIdAndTransactionId(
-    tenantId: number,
-    ocppConnectionName: string,
-    transactionId: string,
-  ): Promise<TransactionEventDto[]> {
-    const events = this.getTransactionEventTable(tenantId);
-    const transactions = this.getTable(tenantId);
-
-    // The transaction is joined only to filter by its business id; the Sequelize
-    // implementation drops it from the result for the same reason.
-    const rows = (await this.db
-      .select({ event: events })
-      .from(events)
-      .innerJoin(
-        transactions,
-        and(
-          eq(events.transactionDatabaseId, transactions.id),
-          eq(transactions.transactionId, transactionId),
-          this.tenantFilter(transactions, tenantId),
-        ),
-      )
-      .where(
-        and(eq(events.ocppConnectionName, ocppConnectionName), this.tenantFilter(events, tenantId)),
-      )) as { event: TransactionEventEntity }[];
-
-    return await this.hydrateTransactionEvents(
-      tenantId,
-      rows.map((row) => row.event),
-    );
-  }
-
   // ─── ITransactionRepository writes ───────────────────────────────────
 
   async updateTransactionTotalCostById(
@@ -647,37 +638,6 @@ export class DrizzleTransactionRepository
     return rows.map(toTransactionDto);
   }
 
-  async createMeterValue(
-    tenantId: number,
-    meterValue: OCPP2_common_types.MeterValueType,
-    transactionDatabaseId?: number | null,
-    transactionId?: string | null,
-    tariffId?: number | null,
-    transactionCreatedAt?: Date,
-  ): Promise<MeterValueDto> {
-    const meterValues = this.getMeterValueTable(tenantId);
-    const mapped = MeterValueMapper.fromMeterValueType(meterValue);
-    const partitionKey = await this.resolveMeterValuePartitionKey(
-      tenantId,
-      transactionCreatedAt,
-      transactionDatabaseId,
-    );
-    const rows = (await this.db
-      .insert(meterValues)
-      .values({
-        tenantId,
-        transactionDatabaseId: transactionDatabaseId ?? null,
-        transactionCreatedAt: partitionKey,
-        transactionId: transactionId ?? null,
-        tariffId: tariffId ?? null,
-        sampledValue: mapped.sampledValue,
-        timestamp: new Date(mapped.timestamp),
-      })
-      .returning()) as MeterValueEntity[];
-
-    return toMeterValueDto(rows[0]);
-  }
-
   async createStopTransaction(
     tenantId: number,
     transactionDatabaseId: number,
@@ -735,20 +695,501 @@ export class DrizzleTransactionRepository
 
       // Sequentially, not Promise.all: one pg transaction cannot interleave statements.
       for (const meterValue of meterValues) {
-        await ctx.db.insert(meterValueRows).values({
+        await this.meterValue.insertRow(
           tenantId,
-          transactionDatabaseId,
-          transactionCreatedAt: transaction.createdAt,
-          stopTransactionDatabaseId: stopTransaction.id,
-          sampledValue: meterValue.sampledValue,
-          timestamp: new Date(meterValue.timestamp),
-          connectorId: meterValue.connectorId ?? null,
-          tariffId: meterValue.tariffId ?? null,
-          transactionId: meterValue.transactionId ?? null,
-        });
+          {
+            transactionDatabaseId,
+            transactionCreatedAt: transaction.createdAt,
+            stopTransactionDatabaseId: stopTransaction.id,
+            sampledValue: meterValue.sampledValue,
+            timestamp: new Date(meterValue.timestamp),
+            connectorId: meterValue.connectorId ?? null,
+            tariffId: meterValue.tariffId ?? null,
+            transactionId: meterValue.transactionId ?? null,
+          },
+          ctx.db,
+        );
       }
 
       return toStopTransactionDto(stopTransaction);
+    });
+  }
+
+  async createOrUpdateTransactionByTransactionEventAndStationId(
+    tenantId: number,
+    value: OCPP2_request_types.TransactionEventRequest,
+    ocppConnectionName: string,
+  ): Promise<TransactionDto> {
+    // In OCPP 2.1, transactionEventRequest contains tariffId
+    const { tariffId: infoTariffId, ...transactionInfo } =
+      value.transactionInfo as typeof value.transactionInfo & { tariffId?: string | null };
+    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    if (stationId === undefined) {
+      throw new Error(
+        `Cannot record a transaction event: no charging station named ` +
+          `'${ocppConnectionName}' exists in tenant ${tenantId}.`,
+      );
+    }
+    const locationId = await this.readStationLocationId(tenantId, ocppConnectionName);
+
+    const transactions = this.getTable(tenantId);
+    const events = this.getTransactionEventTable(tenantId);
+
+    return await this.withAtomicWrite(async (ctx) => {
+      const existingRows = (await ctx.db
+        .select()
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.stationId, stationId),
+            eq(transactions.transactionId, value.transactionInfo.transactionId),
+            this.tenantFilter(transactions, tenantId),
+          ),
+        )
+        .limit(2)) as TransactionEntity[];
+      const existingTransaction = this.onlyOne(
+        existingRows,
+        `stationId=${stationId}, transactionId=${value.transactionInfo.transactionId}`,
+      );
+
+      const isEnded = value.eventType === OCPP2_0_1.TransactionEventEnumType.Ended;
+      let finalTransaction: TransactionEntity;
+      let created = false;
+
+      if (existingTransaction) {
+        let evseId = existingTransaction.evseId;
+        if (!evseId && value.evse) {
+          const evse = await this.readOrCreateEvse(ctx, tenantId, stationId, value.evse.id);
+          evseId = evse.id;
+        }
+        let connectorId = existingTransaction.connectorId;
+        let tariffId = existingTransaction.tariffId;
+        if (!connectorId && value.evse?.connectorId) {
+          const evse = await this.readOrCreateEvse(ctx, tenantId, stationId, value.evse.id);
+          const connector = await this.readOrCreateConnector(
+            ctx,
+            tenantId,
+            stationId,
+            evse.id,
+            value.evse.connectorId,
+            {},
+          );
+          connectorId = connector.id;
+          tariffId = connector.tariffId;
+        }
+        if (infoTariffId) {
+          const found = await this.findTariffIdByTariffId(ctx, tenantId, infoTariffId);
+          if (found !== undefined) {
+            tariffId = found;
+          }
+        }
+        let authorizationId = existingTransaction.authorizationId;
+        if (!authorizationId && value.idToken) {
+          const authorization = await this.findAuthorizationByIdToken(
+            ctx,
+            tenantId,
+            value.idToken.idToken,
+            value.idToken.type,
+          );
+          if (authorization) {
+            authorizationId = authorization.id;
+          } else {
+            this.logger.warn(
+              `Authorization with idToken ${value.idToken.idToken} : ${value.idToken.type} does not exist. Transaction ${existingTransaction.transactionId} will not be associated with an authorization.`,
+            );
+          }
+        }
+
+        const updatedRows = (await ctx.db
+          .update(transactions)
+          .set({
+            ...this.toTransactionColumns({
+              ...transactionInfoForRow(transactionInfo),
+              isActive: !isEnded,
+              endTime: isEnded ? value.timestamp : undefined,
+            }),
+            authorizationId,
+            evseId,
+            connectorId,
+            tariffId,
+            updatedAt: new Date(),
+          })
+          .where(
+            and(
+              eq(transactions.id, existingTransaction.id),
+              this.tenantFilter(transactions, tenantId),
+            ),
+          )
+          .returning()) as TransactionEntity[];
+        finalTransaction = updatedRows[0];
+      } else {
+        const infoTariff = infoTariffId
+          ? await this.findTariffIdByTariffId(ctx, tenantId, infoTariffId)
+          : undefined;
+
+        let evseId: number | null = null;
+        let connectorId: number | null = null;
+        let tariffId: number | null = infoTariff ?? null;
+        if (value.evse) {
+          const evse = await this.readOrCreateEvse(ctx, tenantId, stationId, value.evse.id);
+          evseId = evse.id;
+          if (value.evse.connectorId) {
+            const connector = await this.readOrCreateConnector(
+              ctx,
+              tenantId,
+              stationId,
+              evse.id,
+              value.evse.connectorId,
+              { connectorId: value.evse.connectorId },
+            );
+            connectorId = connector.id;
+            tariffId = infoTariff ?? connector.tariffId;
+          }
+        }
+
+        let authorizationId: number | null = null;
+        if (value.idToken) {
+          const authorization = await this.findAuthorizationByIdToken(
+            ctx,
+            tenantId,
+            value.idToken.idToken,
+            value.idToken.type,
+          );
+          if (authorization) {
+            authorizationId = authorization.id;
+          } else {
+            this.logger.warn(
+              `Authorization with idToken ${value.idToken.idToken} : ${value.idToken.type} does not exist. Transaction ${value.transactionInfo.transactionId} will not be associated with an authorization.`,
+            );
+          }
+        }
+
+        if (locationId === undefined) {
+          this.logger.error(
+            `Charging station with ocppConnectionName ${ocppConnectionName} does not exist.`,
+          );
+        } else if (locationId === null) {
+          this.logger.warn(
+            `Charging station with ocppConnectionName ${ocppConnectionName} does not have a locationId. Transaction ${value.transactionInfo.transactionId} will not be associated with a location, which may prevent it from being sent to upstream partners.`,
+          );
+        }
+
+        const insertedRows = (await ctx.db
+          .insert(transactions)
+          .values({
+            ...this.toTransactionColumns({
+              ...transactionInfoForRow(transactionInfo),
+              startTime:
+                value.eventType === OCPP2_0_1.TransactionEventEnumType.Started
+                  ? value.timestamp
+                  : undefined,
+            }),
+            tenantId,
+            stationId,
+            transactionId: value.transactionInfo.transactionId,
+            isActive: !isEnded,
+            locationId: locationId ?? null,
+            evseId,
+            connectorId,
+            tariffId,
+            authorizationId,
+          })
+          .returning()) as TransactionEntity[];
+        finalTransaction = insertedRows[0];
+        created = true;
+      }
+
+      const transactionDatabaseId = finalTransaction.id;
+      // The MeterValues partition key. Taken from the row written moments ago in this
+      // same pg transaction, which no fallback lookup outside it could see.
+      const transactionCreatedAt = finalTransaction.createdAt;
+
+      let idTokenValue: string | null = null;
+      let idTokenType: string | null = null;
+      if (value.idToken && value.idToken.type !== OCPP2_0_1.IdTokenEnumType.NoAuthorization) {
+        const authorization = await this.findAuthorizationByIdToken(
+          ctx,
+          tenantId,
+          value.idToken.idToken,
+          value.idToken.type,
+        );
+        if (!authorization) {
+          this.logger.warn(
+            `Authorization not found for ${value.idToken.idToken}:${value.idToken.type}`,
+          );
+        } else {
+          idTokenValue = authorization.idToken;
+          idTokenType = authorization.idTokenType ?? null;
+        }
+      }
+
+      const eventRows = (await ctx.db
+        .insert(events)
+        .values({
+          tenantId,
+          ocppConnectionName,
+          transactionDatabaseId,
+          transactionCreatedAt,
+          eventType: value.eventType,
+          timestamp: new Date(value.timestamp),
+          triggerReason: value.triggerReason,
+          seqNo: value.seqNo,
+          offline: value.offline ?? false,
+          numberOfPhasesUsed: value.numberOfPhasesUsed ?? null,
+          cableMaxCurrent: value.cableMaxCurrent?.toString() ?? null,
+          reservationId: value.reservationId ?? null,
+          transactionInfo: value.transactionInfo,
+          idTokenValue,
+          idTokenType,
+        })
+        .returning()) as TransactionEventEntity[];
+      const event = eventRows[0];
+
+      const createdMeterValues: MeterValueDto[] = [];
+      if (value.meterValue && value.meterValue.length > 0) {
+        const meterValueTypes = value.meterValue.map((meterValue) =>
+          MeterValueMapper.fromMeterValueType(meterValue),
+        );
+        // Sequentially, not Promise.all: one pg transaction cannot interleave statements.
+        for (const meterValueType of meterValueTypes) {
+          createdMeterValues.push(
+            await this.meterValue.insertRow(
+              tenantId,
+              {
+                transactionEventId: event.id,
+                transactionDatabaseId,
+                transactionCreatedAt,
+                transactionId: finalTransaction.transactionId,
+                tariffId: finalTransaction.tariffId,
+                sampledValue: meterValueType.sampledValue,
+                timestamp: new Date(meterValueType.timestamp),
+              },
+              ctx.db,
+            ),
+          );
+        }
+
+        const meterValueDtos = createdMeterValues;
+        const currentTotalKwh =
+          finalTransaction.totalKwh != null ? Number(finalTransaction.totalKwh) : 0;
+        const existingMeterStart =
+          finalTransaction.meterStart != null ? Number(finalTransaction.meterStart) : null;
+        const meterStart =
+          existingMeterStart === null
+            ? MeterValueUtils.getMeterStart(meterValueDtos)
+            : existingMeterStart;
+        const totalKwh = MeterValueUtils.getTotalKwh(
+          meterValueDtos,
+          currentTotalKwh,
+          meterStart ?? undefined,
+        );
+
+        const refreshed = (await ctx.db
+          .update(transactions)
+          .set({
+            totalKwh: totalKwh.toString(),
+            ...(existingMeterStart === null ? { meterStart: meterStart?.toString() ?? null } : {}),
+            updatedAt: new Date(),
+          })
+          .where(
+            and(
+              eq(transactions.id, transactionDatabaseId),
+              this.tenantFilter(transactions, tenantId),
+            ),
+          )
+          .returning()) as TransactionEntity[];
+        finalTransaction = refreshed[0];
+      }
+
+      // `this` is the Transactions repository here, where Sequelize's `this` is the
+      // TransactionEvents one. Only the transaction-level emit has an emitter to land
+      // on; the TransactionEvent and MeterValue emits belong to repositories that do
+      // not exist on the Drizzle side yet.
+      this.raise(ctx, created ? 'created' : 'updated', [toTransactionDto(finalTransaction)]);
+
+      return {
+        ...toTransactionDto(finalTransaction),
+        meterValues: createdMeterValues,
+      };
+    });
+  }
+
+  async createTransactionByStartTransaction(
+    tenantId: number,
+    request: OCPP1_6.StartTransactionRequest,
+    ocppConnectionName: string,
+  ): Promise<TransactionDto> {
+    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    if (stationId === undefined) {
+      throw new Error(
+        `Cannot start a transaction: no charging station named ` +
+          `'${ocppConnectionName}' exists in tenant ${tenantId}.`,
+      );
+    }
+    const locationId = await this.readStationLocationId(tenantId, ocppConnectionName);
+
+    // Allocated outside the write so a rollback does not hand the same id out twice.
+    const transactionId = await this.chargingStationSequence.getNextSequenceValue(
+      tenantId,
+      ocppConnectionName,
+      ChargingStationSequenceTypeEnum.transactionId,
+    );
+
+    const transactions = this.getTable(tenantId);
+    const connectors = this.getConnectorTable(tenantId);
+    const startTransactions = this.getStartTransactionTable(tenantId);
+
+    return await this.withAtomicWrite(async (ctx) => {
+      const connectorRows = (await ctx.db
+        .select()
+        .from(connectors)
+        .where(
+          and(
+            eq(connectors.connectorId, request.connectorId),
+            eq(connectors.stationId, stationId),
+            this.tenantFilter(connectors, tenantId),
+          ),
+        )
+        .limit(2)) as ConnectorEntity[];
+      const connector = this.onlyOne(
+        connectorRows,
+        `connectorId=${request.connectorId}, stationId=${stationId}`,
+      );
+      if (!connector) {
+        this.logger.error(`Unable to find connector ${request.connectorId}.`);
+        throw new Error(`Unable to find connector ${request.connectorId}.`);
+      }
+
+      const authorization = await this.findAuthorizationByIdToken(ctx, tenantId, request.idTag);
+      if (!authorization) {
+        this.logger.warn(`Authorization with idToken ${request.idTag} does not exist.`);
+      }
+
+      if (locationId === null) {
+        this.logger.warn(
+          `Charging station with ocppConnectionName ${ocppConnectionName} does not have a locationId. Transaction ${transactionId} will not be associated with a location, which may prevent it from being sent to upstream partners.`,
+        );
+      }
+
+      const insertedRows = (await ctx.db
+        .insert(transactions)
+        .values({
+          tenantId,
+          stationId,
+          locationId: locationId ?? null,
+          evseId: connector.evseId,
+          connectorId: connector.id,
+          tariffId: connector.tariffId,
+          isActive: true,
+          transactionId: transactionId.toString(),
+          authorizationId: authorization ? authorization.id : null,
+          meterStart: (request.meterStart / 1000).toString(), // Convert Wh to kWh
+          startTime: new Date(request.timestamp),
+        })
+        .returning()) as TransactionEntity[];
+      const newTransaction = insertedRows[0];
+
+      const startRows = (await ctx.db
+        .insert(startTransactions)
+        .values({
+          tenantId,
+          ocppConnectionName,
+          transactionDatabaseId: newTransaction.id,
+          transactionCreatedAt: newTransaction.createdAt,
+          connectorDatabaseId: connector.id,
+          idTokenDatabaseId: authorization ? authorization.id : null,
+          meterStart: request.meterStart,
+          timestamp: new Date(request.timestamp),
+          reservationId: request.reservationId ?? null,
+        })
+        .returning()) as StartTransactionEntity[];
+
+      this.raise(ctx, 'created', [toTransactionDto(newTransaction)]);
+
+      return {
+        ...toTransactionDto(newTransaction),
+        startTransaction: toStartTransactionDto(startRows[0]),
+      };
+    });
+  }
+
+  async updateTransactionByMeterValues(
+    tenantId: number,
+    meterValues: MeterValueDto[],
+    ocppConnectionName: string,
+    transactionId: number,
+  ): Promise<void> {
+    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    if (stationId === undefined) {
+      this.logger.error(
+        `Transaction ${transactionId} on station ${ocppConnectionName} does not exist.`,
+      );
+      return;
+    }
+
+    const transactions = this.getTable(tenantId);
+    const meterValueRows = this.getMeterValueTable(tenantId);
+
+    await this.withAtomicWrite(async (ctx) => {
+      const rows = (await ctx.db
+        .select()
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.stationId, stationId),
+            eq(transactions.transactionId, transactionId.toString()),
+            this.tenantFilter(transactions, tenantId),
+          ),
+        )
+        .limit(2)) as TransactionEntity[];
+      const row = this.onlyOne(
+        rows,
+        `stationId=${stationId}, transactionId=${transactionId.toString()}`,
+      );
+      if (!row) {
+        this.logger.error(
+          `Transaction ${transactionId} on station ${ocppConnectionName} does not exist.`,
+        );
+        return;
+      }
+      const transaction = toTransactionDto(row);
+
+      // Sequentially, not Promise.all: one pg transaction cannot interleave statements.
+      for (const meterValue of meterValues) {
+        await this.meterValue.insertRow(
+          tenantId,
+          {
+            transactionDatabaseId: row.id,
+            transactionCreatedAt: row.createdAt,
+            transactionId: row.transactionId,
+            tariffId: row.tariffId,
+            connectorId: row.connectorId,
+            sampledValue: meterValue.sampledValue,
+            timestamp: new Date(meterValue.timestamp),
+          },
+          ctx.db,
+        );
+      }
+
+      const meterStart =
+        transaction.meterStart == null
+          ? MeterValueUtils.getMeterStart(meterValues)
+          : transaction.meterStart;
+      const totalKwh = MeterValueUtils.getTotalKwh(
+        meterValues,
+        transaction.totalKwh ?? 0,
+        meterStart ?? undefined,
+      );
+
+      await ctx.db
+        .update(transactions)
+        .set({
+          totalKwh: totalKwh.toString(),
+          ...(transaction.meterStart == null ? { meterStart: meterStart?.toString() ?? null } : {}),
+          timeSpentCharging: elapsedSecondsSinceStart(transaction.startTime, meterValues),
+          updatedAt: new Date(),
+        })
+        .where(and(eq(transactions.id, row.id), this.tenantFilter(transactions, tenantId)));
     });
   }
 }

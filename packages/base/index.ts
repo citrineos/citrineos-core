@@ -70,7 +70,12 @@ export type { IAuthenticator } from './src/interfaces/router/authenticator.js';
 export type { INetworkConnection } from './src/interfaces/router/i-network-connection.js';
 export type { IMessageRouter } from './src/interfaces/router/router.js';
 export type { IVatProvider } from './src/interfaces/vat/index.js';
+export type { IRoleProvider } from './src/interfaces/roles/i-role-provider.js';
 export { buildEndpoints } from './src/util/endpoints/build-endpoints.js';
+export {
+  commandPermissionName,
+  messagePermissionName,
+} from './src/util/endpoints/permission-name.js';
 export { buildMessageEndpoints } from './src/util/endpoints/build-message-endpoints.js';
 export { forwardMessageEndpoint } from './src/util/endpoints/forward-message-endpoint.js';
 
@@ -130,7 +135,6 @@ export {
   OCPP2_1_CALL_SCHEMA_RECORD,
 } from './src/interfaces/schema/mapping-schema.js';
 
-export { AuthorizationSecurity } from './src/interfaces/api/authorization-security.js';
 export { UnauthorizedError } from './src/interfaces/api/exception/unauthorized-error.js';
 export { UnauthorizedException } from './src/interfaces/api/exceptions/unauthorized-exception.js';
 export { HttpHeader } from './src/interfaces/api/http-header.js';

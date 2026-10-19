@@ -102,6 +102,7 @@ export interface OperatorCanParams extends CanParams {
     id?: BaseKey;
     accessType?: AccessType;
     commandType?: CommandType;
+    permission?: string | string[];
   };
 }
 

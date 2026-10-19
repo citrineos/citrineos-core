@@ -6,8 +6,9 @@ import {
   type IAuthorizationRepository,
   type IConnectorRepository,
   type IEvseRepository,
+  type IMeterValueRepository,
   type IReservationRepository,
-  type ITransactionEventRepository,
+  type ITransactionRepository,
 } from '@citrineos/dal';
 import { TransactionService } from '@modules/transactions/transaction-service.js';
 import {
@@ -17,23 +18,23 @@ import {
 import { anAuthorization } from './providers/authorization-provider.js';
 import { anIdToken } from './providers/id-token-provider.js';
 
-import { faker } from '@faker-js/faker';
-import { beforeEach, describe, expect, it, type Mocked, vi } from 'vitest';
-import { createTestContainer, getTestInstance } from '@test/test-container.js';
-import { aMessageContext } from './providers/message-context-provider.js';
-import { aTransaction, aTransactionEventRequest } from './providers/transaction-provider.js';
 import {
   AuthorizationAttemptReasonEnum,
   AuthorizationStatusEnum,
+  type AuthorizationStatusEnumType,
   type ConnectorDto,
   type EvseDto,
+  type MeterValueDto,
   OCPP1_6,
   OCPP2_0_1,
   OCPP2_1,
-  type AuthorizationStatusEnumType,
-  type MeterValueDto,
   type TransactionDto,
 } from '@citrineos/types';
+import { faker } from '@faker-js/faker';
+import { createTestContainer, getTestInstance } from '@test/test-container.js';
+import { beforeEach, describe, expect, it, type Mocked, vi } from 'vitest';
+import { aMessageContext } from './providers/message-context-provider.js';
+import { aTransaction, aTransactionEventRequest } from './providers/transaction-provider.js';
 
 describe('TransactionService', () => {
   // idToken of the group Authorization that groupAuthorizationId points at.
@@ -42,7 +43,7 @@ describe('TransactionService', () => {
   const { container } = createTestContainer();
   let transactionService: TransactionService;
   let authorizationRepository: Mocked<IAuthorizationRepository>;
-  let transactionEventRepository: Mocked<ITransactionEventRepository>;
+  let transactionRepositoryMock: Mocked<IMeterValueRepository & ITransactionRepository>;
   let locationRepository: Mocked<IConnectorRepository & IEvseRepository>;
   let reservationRepository: Mocked<IReservationRepository>;
   let authorizer: Mocked<IAuthorizer>;
@@ -54,10 +55,10 @@ describe('TransactionService', () => {
       readOnlyOneByQuerystring: vi.fn().mockResolvedValue({ idToken: PARENT_ID_TAG }),
     } as unknown as Mocked<IAuthorizationRepository>;
 
-    transactionEventRepository = {
+    transactionRepositoryMock = {
       readAllActiveTransactionsByAuthorizationId: vi.fn(),
       updateTransactionByStationIdAndTransactionId: vi.fn(),
-    } as unknown as Mocked<ITransactionEventRepository>;
+    } as unknown as Mocked<IMeterValueRepository & ITransactionRepository>;
 
     locationRepository = {
       readConnectorByStationIdAndOcpp16ConnectorId: vi.fn(),
@@ -75,8 +76,8 @@ describe('TransactionService', () => {
     } as Mocked<IAuthorizer>;
 
     transactionService = getTestInstance(container, TransactionService, {
-      transactionEventRepository,
-      transactionRepository: transactionEventRepository,
+      meterValueRepository: transactionRepositoryMock,
+      transactionRepository: transactionRepositoryMock,
       authorizationRepository,
       evseRepository: locationRepository,
       connectorRepository: locationRepository,
@@ -209,7 +210,7 @@ describe('TransactionService', () => {
       auth.status = AuthorizationStatusEnum.Accepted;
     });
     authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
-    transactionEventRepository.readAllActiveTransactionsByAuthorizationId.mockResolvedValue([
+    transactionRepositoryMock.readAllActiveTransactionsByAuthorizationId.mockResolvedValue([
       aTransaction(),
       aTransaction(),
     ]);
@@ -236,7 +237,7 @@ describe('TransactionService', () => {
       auth.status = AuthorizationStatusEnum.Accepted;
     });
     authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
-    transactionEventRepository.readAllActiveTransactionsByAuthorizationId.mockResolvedValue([
+    transactionRepositoryMock.readAllActiveTransactionsByAuthorizationId.mockResolvedValue([
       aTransaction(),
       aTransaction(),
     ]);
@@ -262,7 +263,7 @@ describe('TransactionService', () => {
       auth.status = AuthorizationStatusEnum.Accepted;
     });
     authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
-    transactionEventRepository.readAllActiveTransactionsByAuthorizationId.mockResolvedValue([]);
+    transactionRepositoryMock.readAllActiveTransactionsByAuthorizationId.mockResolvedValue([]);
     authorizer.authorize.mockResolvedValue(AuthorizationStatusEnum.Accepted);
     realTimeAuthorizer.authorize.mockResolvedValue(AuthorizationStatusEnum.Accepted);
 
@@ -285,7 +286,7 @@ describe('TransactionService', () => {
     it('should return Accepted status when idToken exists and idTokenInfo is valid', async () => {
       const authorization = anAuthorization();
       authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
-      transactionEventRepository.readAllActiveTransactionsByAuthorizationId.mockResolvedValue([]);
+      transactionRepositoryMock.readAllActiveTransactionsByAuthorizationId.mockResolvedValue([]);
       authorizer.authorize.mockResolvedValue(AuthorizationStatusEnum.Accepted);
       realTimeAuthorizer.authorize.mockResolvedValue(AuthorizationStatusEnum.Accepted);
 
@@ -346,7 +347,7 @@ describe('TransactionService', () => {
         auth.status = undefined as unknown as AuthorizationStatusEnumType;
       });
       authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
-      transactionEventRepository.readAllActiveTransactionsByAuthorizationId.mockResolvedValue([]);
+      transactionRepositoryMock.readAllActiveTransactionsByAuthorizationId.mockResolvedValue([]);
       authorizer.authorize.mockResolvedValue(AuthorizationStatusEnum.Accepted);
       realTimeAuthorizer.authorize.mockResolvedValue(AuthorizationStatusEnum.Accepted);
 
@@ -366,7 +367,7 @@ describe('TransactionService', () => {
         auth.status = undefined as unknown as AuthorizationStatusEnumType;
       });
       authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
-      transactionEventRepository.readAllActiveTransactionsByAuthorizationId.mockResolvedValue([]);
+      transactionRepositoryMock.readAllActiveTransactionsByAuthorizationId.mockResolvedValue([]);
       // A permissive real-time authorizer must not be able to rescue a statusless token, and the
       // rejection has to happen before we spend a network round trip asking it.
       realTimeAuthorizer.authorize.mockResolvedValue(AuthorizationStatusEnum.Accepted);
@@ -386,7 +387,7 @@ describe('TransactionService', () => {
     it('should return ConcurrentTx status when an active transaction exists', async () => {
       const authorization = anAuthorization();
       authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
-      transactionEventRepository.readAllActiveTransactionsByAuthorizationId.mockResolvedValue([
+      transactionRepositoryMock.readAllActiveTransactionsByAuthorizationId.mockResolvedValue([
         aTransaction(),
       ]);
 
@@ -408,7 +409,7 @@ describe('TransactionService', () => {
         auth.concurrentTransaction = true;
       });
       authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
-      transactionEventRepository.readAllActiveTransactionsByAuthorizationId.mockResolvedValue([
+      transactionRepositoryMock.readAllActiveTransactionsByAuthorizationId.mockResolvedValue([
         aTransaction(),
       ]);
       authorizer.authorize.mockResolvedValue(AuthorizationStatusEnum.Accepted);
@@ -428,7 +429,7 @@ describe('TransactionService', () => {
 
   describe('TransactionService.deactivateOtherActiveTransactionsAtEvse', () => {
     let transactionService: TransactionService;
-    let transactionEventRepository: Mocked<ITransactionEventRepository>;
+    let transactionRepositoryMock: Mocked<IMeterValueRepository & ITransactionRepository>;
     let locationRepository: Mocked<IConnectorRepository & IEvseRepository>;
     let realTimeAuthorizer: Mocked<IAuthorizer>;
 
@@ -436,12 +437,12 @@ describe('TransactionService', () => {
     const TRANSACTION_ID = 'txn-new-001';
 
     beforeEach(() => {
-      transactionEventRepository = {
+      transactionRepositoryMock = {
         readAllActiveTransactionsByAuthorizationId: vi.fn(),
         deactivateActiveTransactionsByStationIdAndEvseId: vi
           .fn()
           .mockResolvedValue([{ id: 1, transactionId: 'txn-old', isActive: false }]),
-      } as unknown as Mocked<ITransactionEventRepository>;
+      } as unknown as Mocked<IMeterValueRepository & ITransactionRepository>;
 
       locationRepository = {
         readConnectorByStationIdAndOcpp16ConnectorId: vi.fn(),
@@ -454,8 +455,8 @@ describe('TransactionService', () => {
       } as Mocked<IAuthorizer>;
 
       transactionService = getTestInstance(container, TransactionService, {
-        transactionEventRepository,
-        transactionRepository: transactionEventRepository,
+        meterValueRepository: transactionRepositoryMock,
+        transactionRepository: transactionRepositoryMock,
         authorizationRepository: {} as unknown as IAuthorizationRepository,
         evseRepository: locationRepository,
         connectorRepository: locationRepository,
@@ -484,10 +485,10 @@ describe('TransactionService', () => {
           evseTypeId,
         );
         expect(
-          transactionEventRepository.deactivateActiveTransactionsByStationIdAndEvseId,
+          transactionRepositoryMock.deactivateActiveTransactionsByStationIdAndEvseId,
         ).toHaveBeenCalledOnce();
         expect(
-          transactionEventRepository.deactivateActiveTransactionsByStationIdAndEvseId,
+          transactionRepositoryMock.deactivateActiveTransactionsByStationIdAndEvseId,
         ).toHaveBeenCalledWith(DEFAULT_TENANT_ID, STATION_ID, evse.id, TRANSACTION_ID);
       });
 
@@ -502,7 +503,7 @@ describe('TransactionService', () => {
         );
 
         expect(
-          transactionEventRepository.deactivateActiveTransactionsByStationIdAndEvseId,
+          transactionRepositoryMock.deactivateActiveTransactionsByStationIdAndEvseId,
         ).not.toHaveBeenCalled();
       });
     });
@@ -531,10 +532,10 @@ describe('TransactionService', () => {
           locationRepository.readConnectorByStationIdAndOcpp16ConnectorId,
         ).toHaveBeenCalledWith(DEFAULT_TENANT_ID, STATION_ID, connectorId);
         expect(
-          transactionEventRepository.deactivateActiveTransactionsByStationIdAndEvseId,
+          transactionRepositoryMock.deactivateActiveTransactionsByStationIdAndEvseId,
         ).toHaveBeenCalledOnce();
         expect(
-          transactionEventRepository.deactivateActiveTransactionsByStationIdAndEvseId,
+          transactionRepositoryMock.deactivateActiveTransactionsByStationIdAndEvseId,
         ).toHaveBeenCalledWith(DEFAULT_TENANT_ID, STATION_ID, connector.evseId, TRANSACTION_ID);
       });
 
@@ -557,7 +558,7 @@ describe('TransactionService', () => {
         );
 
         expect(
-          transactionEventRepository.deactivateActiveTransactionsByStationIdAndEvseId,
+          transactionRepositoryMock.deactivateActiveTransactionsByStationIdAndEvseId,
         ).toHaveBeenCalledWith(DEFAULT_TENANT_ID, STATION_ID, 77, TRANSACTION_ID);
       });
 
@@ -574,7 +575,7 @@ describe('TransactionService', () => {
         );
 
         expect(
-          transactionEventRepository.deactivateActiveTransactionsByStationIdAndEvseId,
+          transactionRepositoryMock.deactivateActiveTransactionsByStationIdAndEvseId,
         ).not.toHaveBeenCalled();
       });
     });
@@ -582,7 +583,7 @@ describe('TransactionService', () => {
 
   describe('updateTransactionStatus', () => {
     it('sets isActive on the transaction named in the GetTransactionStatusRequest', async () => {
-      transactionEventRepository.updateTransactionByStationIdAndTransactionId = vi
+      transactionRepositoryMock.updateTransactionByStationIdAndTransactionId = vi
         .fn()
         .mockResolvedValue(aTransaction());
 
@@ -594,12 +595,12 @@ describe('TransactionService', () => {
       );
 
       expect(
-        transactionEventRepository.updateTransactionByStationIdAndTransactionId,
+        transactionRepositoryMock.updateTransactionByStationIdAndTransactionId,
       ).toHaveBeenCalledWith(DEFAULT_TENANT_ID, { isActive: false }, 'tx-1', 'cs-001');
     });
 
     it('updates nothing without the GetTransactionStatusRequest', async () => {
-      transactionEventRepository.updateTransactionByStationIdAndTransactionId = vi.fn();
+      transactionRepositoryMock.updateTransactionByStationIdAndTransactionId = vi.fn();
 
       await transactionService.updateTransactionStatus(
         DEFAULT_TENANT_ID,
@@ -609,7 +610,7 @@ describe('TransactionService', () => {
       );
 
       expect(
-        transactionEventRepository.updateTransactionByStationIdAndTransactionId,
+        transactionRepositoryMock.updateTransactionByStationIdAndTransactionId,
       ).not.toHaveBeenCalled();
     });
   });
@@ -666,7 +667,7 @@ describe('TransactionService', () => {
       // Earliest reading is the baseline, so the energy drawn is 5 - 1.
       expect(totalKwh).toBe(4);
       expect(
-        transactionEventRepository.updateTransactionByStationIdAndTransactionId,
+        transactionRepositoryMock.updateTransactionByStationIdAndTransactionId,
       ).toHaveBeenCalledWith(DEFAULT_TENANT_ID, { meterStart: 1, totalKwh: 4 }, 'T-7', STATION);
     });
 
@@ -683,7 +684,7 @@ describe('TransactionService', () => {
       // 5 - 2, not 5 - 1: a meterStart already recorded is never recomputed.
       expect(totalKwh).toBe(3);
       expect(
-        transactionEventRepository.updateTransactionByStationIdAndTransactionId,
+        transactionRepositoryMock.updateTransactionByStationIdAndTransactionId,
       ).toHaveBeenCalledWith(DEFAULT_TENANT_ID, { totalKwh: 3 }, 'T-7', STATION);
     });
 
@@ -727,7 +728,7 @@ describe('TransactionService', () => {
       );
 
       const [, , transactionId, ocppConnectionName] =
-        transactionEventRepository.updateTransactionByStationIdAndTransactionId.mock.calls[0];
+        transactionRepositoryMock.updateTransactionByStationIdAndTransactionId.mock.calls[0];
       expect(transactionId).toBe('T-99');
       expect(ocppConnectionName).toBe(STATION);
     });
@@ -759,7 +760,7 @@ describe('TransactionService', () => {
     }
 
     beforeEach(() => {
-      transactionEventRepository.readAllActiveTransactionsByAuthorizationId.mockResolvedValue([]);
+      transactionRepositoryMock.readAllActiveTransactionsByAuthorizationId.mockResolvedValue([]);
       authorizer.authorize.mockResolvedValue(AuthorizationStatusEnum.Accepted);
       realTimeAuthorizer.authorize.mockResolvedValue(AuthorizationStatusEnum.Accepted);
     });
@@ -808,7 +809,7 @@ describe('TransactionService', () => {
           auth.concurrentTransaction = false;
         }),
       ]);
-      transactionEventRepository.readAllActiveTransactionsByAuthorizationId.mockResolvedValue([
+      transactionRepositoryMock.readAllActiveTransactionsByAuthorizationId.mockResolvedValue([
         aTransaction(),
       ]);
 

@@ -15,7 +15,6 @@ import {
 import { AuthorizationClass } from '@lib/cls/authorization-dto';
 import { AUTHORIZATIONS_LIST_QUERY } from '@lib/queries/authorizations';
 import { ActionType, ResourceType } from '@lib/utils/access-types';
-import { AccessDeniedFallback } from '@lib/utils/access-denied-fallback';
 import { DETAIL_TAB_STATE, EMPTY_FILTER } from '@lib/utils/consts';
 import { getPlainToInstanceOptions } from '@lib/utils/tables';
 import { CanAccess, useTranslate } from '@refinedev/core';
@@ -105,11 +104,7 @@ const AuthorizationsTable = () => {
           </CanAccess>
         </div>
       </div>
-      <CanAccess
-        resource={ResourceType.AUTHORIZATIONS}
-        action={ActionType.LIST}
-        fallback={<AccessDeniedFallback />}
-      >
+      <CanAccess resource={ResourceType.AUTHORIZATIONS} action={ActionType.LIST}>
         <Table<AuthorizationDto>
           refineCoreProps={{
             resource: ResourceType.AUTHORIZATIONS,

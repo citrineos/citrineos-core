@@ -55,6 +55,7 @@ full stack (server + UI + Hasura) together, see the [root README](../../README.m
   - [Add an Authorization (ID Token)](#add-an-authorization-id-token)
   - [Start the Charging Station (EVerest)](#start-the-charging-station-everest)
 - [Usage](#usage)
+- [Signing In Locally --- localDev mode](#signing-in-locally----localdev-mode)
 - [Hasura Authentication](#hasura-authentication)
 - [Related Documentation](#related-documentation)
 - [Contributing](#contributing)
@@ -403,6 +404,15 @@ Once running, the Operator UI allows you to:
 - Monitor transactions and sessions
 - Trigger charging station commands (via CitrineOS Core)
 - Query and manage data through Hasura-backed GraphQL APIs
+
+## Signing In Locally --- localDev mode
+
+In `localDev` mode, the default for local work, core mints its own tokens. The login page shows a role picker
+listing the roles from the seed file, and the token you receive carries the role you chose, so the UI gates
+exactly as it would against a real provider.
+
+Core generates a fresh signing key each time it starts, which invalidates any token from a previous run. The
+first page load after restarting the stack returns you to the login page.
 
 ## Hasura Authentication
 

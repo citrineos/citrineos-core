@@ -95,7 +95,6 @@ Deliberate — don't "fix" these:
 | Thing                  | Why                                                                                                                                                       |
 | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `TlsCredentialManager` | per-config private internal helper inside `WebsocketNetworkConnection`                                                                                    |
-| `RbacRulesLoader`      | private internal helper inside `OIDCAuthProvider`                                                                                                         |
 | `HealthCheckService`   | depends on `networkConnection`; resolving it through the container would start the websocket servers in modules-only mode, so it's built in the bootstrap |
 
 ## Tests
@@ -166,12 +165,28 @@ A service used across modules or by the network stack.
 ```ts
 realTimeAuthorizer: asClass(RealTimeAuthorizer).singleton(),
 
-apiAuthProvider: asFunction(({ config, logger }): IApiAuthProvider => {
-  if (config.auth.oidc) return new OIDCAuthProvider(config.auth.oidc, logger);
-  if (config.auth.localBypass) return new LocalBypassAuthProvider(logger);
-  throw new Error('No valid API authentication provider configured');
+apiAuthProvider: asFunction((cradle): IApiAuthProvider => {
+  const { config, logger, policyStore } = cradle;
+  switch (config.auth.mode) {
+    case 'jwt':
+      return new JwtAuthProvider(config.auth.jwt, policyStore, logger);
+    case 'localDev':
+      return new JwtAuthProvider(
+        { publicKey: cradle.devKeyPair.publicKey /* … */ },
+        policyStore,
+        logger,
+      );
+    case 'localBypass':
+      return new LocalBypassAuthProvider(config.auth.localBypass.roles, logger);
+  }
 }).singleton(),
 ```
+
+Note the factory taking `cradle` rather than destructuring it. Under `InjectionMode.PROXY` every name you
+destructure is resolved immediately, so pulling `devKeyPair` out in the parameter list would generate an RSA
+keypair in all three modes. Reaching it through `cradle` inside the branch that needs it defers resolution to
+the one mode that uses it. Destructure what every path needs; reach through the cradle for what only one path
+does.
 
 ### …a module-internal service
 
