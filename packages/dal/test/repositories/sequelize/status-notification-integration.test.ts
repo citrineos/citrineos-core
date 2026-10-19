@@ -21,6 +21,7 @@ let pgContainer: StartedTestContainer;
 let sequelizeInstance: Sequelize;
 let locationRepository: SequelizeLocationRepository;
 let stationId: number;
+let evseId: number;
 
 beforeAll(async () => {
   pgContainer = await new GenericContainer('postgis/postgis:16-3.4-alpine')
@@ -76,6 +77,7 @@ beforeEach(async () => {
     tenantId: DEFAULT_TENANT_ID,
     stationId,
   });
+  evseId = evse.id;
   for (const connectorId of [1, 2]) {
     await Connector.create({
       tenantId: DEFAULT_TENANT_ID,
@@ -147,26 +149,154 @@ describe('SequelizeLocationRepository', () => {
       });
     });
 
-    it('keeps a latest status notification for each connector of the station', async () => {
-      for (const connectorId of [1, 2]) {
-        await locationRepository.addStatusNotificationToChargingStation(
+    it('links the StatusNotification to the Connector it updated', async () => {
+      const connector = await Connector.findOne({ where: { stationId, connectorId: 2 } });
+
+      await locationRepository.addStatusNotificationToChargingStation(
+        DEFAULT_TENANT_ID,
+        OCPP_CONNECTION_NAME,
+        StatusNotification.build({
+          tenantId: DEFAULT_TENANT_ID,
+          evseId: 1,
+          connectorId: 2,
+          connectorDatabaseId: connector!.id,
+          connectorStatus: 'Available',
+          timestamp: TIMESTAMP,
+        }),
+      );
+
+      const [row] = await StatusNotification.findAll({ include: [Connector] });
+      expect(row.connectorId).toBe(2);
+      expect(row.connector!.id).toBe(connector!.id);
+    });
+  });
+
+  describe('addOcpp16ConnectorStatusNotification', () => {
+    it('updates the connector and links it to the status both ways', async () => {
+      const existing = await Connector.findOne({ where: { stationId, connectorId: 2 } });
+
+      const { statusNotification, connector } =
+        await locationRepository.addOcpp16ConnectorStatusNotification(
           DEFAULT_TENANT_ID,
           OCPP_CONNECTION_NAME,
-          StatusNotification.build({
+          { tenantId: DEFAULT_TENANT_ID, stationId, evseId, connectorId: 2, status: 'Faulted' },
+          {
+            tenantId: DEFAULT_TENANT_ID,
+            connectorId: 2,
+            connectorStatus: 'Faulted',
+            timestamp: TIMESTAMP,
+          },
+        );
+
+      expect(connector.id).toBe(existing!.id);
+      expect(connector.status).toBe('Faulted');
+      expect(connector.latestStatusNotificationId).toBe(statusNotification.id);
+      expect(statusNotification.connectorDatabaseId).toBe(existing!.id);
+    });
+
+    it('moves the connector pointer to a newer status notification', async () => {
+      const connector = { tenantId: DEFAULT_TENANT_ID, stationId, evseId, connectorId: 1 };
+      const statusNotification = {
+        tenantId: DEFAULT_TENANT_ID,
+        connectorId: 1,
+        timestamp: TIMESTAMP,
+      };
+
+      await locationRepository.addOcpp16ConnectorStatusNotification(
+        DEFAULT_TENANT_ID,
+        OCPP_CONNECTION_NAME,
+        connector,
+        { ...statusNotification, connectorStatus: 'Occupied' },
+      );
+      const { statusNotification: newer } =
+        await locationRepository.addOcpp16ConnectorStatusNotification(
+          DEFAULT_TENANT_ID,
+          OCPP_CONNECTION_NAME,
+          connector,
+          { ...statusNotification, connectorStatus: 'Available' },
+        );
+
+      const row = await Connector.findOne({
+        where: { stationId, connectorId: 1 },
+        include: [{ model: StatusNotification, as: 'latestStatusNotification' }],
+      });
+      expect(row!.latestStatusNotificationId).toBe(newer.id);
+      expect(row!.latestStatusNotification!.connectorStatus).toBe('Available');
+      expect(await StatusNotification.count()).toBe(2);
+    });
+
+    it('rolls the connector update back when the status notification cannot be saved', async () => {
+      const existing = await Connector.findOne({ where: { stationId, connectorId: 2 } });
+
+      await expect(
+        locationRepository.addOcpp16ConnectorStatusNotification(
+          DEFAULT_TENANT_ID,
+          OCPP_CONNECTION_NAME,
+          { tenantId: DEFAULT_TENANT_ID, stationId, evseId, connectorId: 2, status: 'Faulted' },
+          {
+            tenantId: DEFAULT_TENANT_ID,
+            connectorId: 2,
+            connectorStatus: 'Faulted',
+            timestamp: TIMESTAMP,
+            info: 'x'.repeat(300),
+          },
+        ),
+      ).rejects.toThrow();
+
+      const row = await Connector.findByPk(existing!.id);
+      expect(row!.status).toBe(existing!.status);
+      expect(row!.latestStatusNotificationId).toBeNull();
+      expect(await StatusNotification.count()).toBe(0);
+    });
+  });
+
+  describe('addOcpp2ConnectorStatusNotification', () => {
+    it('creates an unknown connector and links it to the status both ways', async () => {
+      const { statusNotification, connector } =
+        await locationRepository.addOcpp2ConnectorStatusNotification(
+          DEFAULT_TENANT_ID,
+          OCPP_CONNECTION_NAME,
+          { tenantId: DEFAULT_TENANT_ID, stationId, evseId, evseTypeConnectorId: 3 },
+          {
             tenantId: DEFAULT_TENANT_ID,
             evseId: 1,
-            connectorId,
+            connectorId: 3,
             connectorStatus: 'Available',
             timestamp: TIMESTAMP,
-          }),
+          },
         );
-      }
 
-      const latest = await locationRepository.latestStatusNotification.readAllByQuery(
-        DEFAULT_TENANT_ID,
-        { where: { stationId }, include: [StatusNotification] },
-      );
-      expect(latest.map((l) => l.statusNotification.connectorId).sort()).toEqual([1, 2]);
+      expect(await Connector.count()).toBe(3);
+      expect(connector.evseTypeConnectorId).toBe(3);
+      expect(connector.latestStatusNotificationId).toBe(statusNotification.id);
+      expect(statusNotification.connectorDatabaseId).toBe(connector.id);
+    });
+  });
+
+  describe('addOcpp16StationStatusNotification', () => {
+    it('points every connector at the status and keeps their own numbers', async () => {
+      const { statusNotification, connectors } =
+        await locationRepository.addOcpp16StationStatusNotification(
+          DEFAULT_TENANT_ID,
+          OCPP_CONNECTION_NAME,
+          { tenantId: DEFAULT_TENANT_ID, connectorId: undefined, status: 'Unavailable' },
+          {
+            tenantId: DEFAULT_TENANT_ID,
+            connectorId: 0,
+            connectorStatus: 'Unavailable',
+            timestamp: TIMESTAMP,
+          },
+        );
+
+      expect(statusNotification.connectorDatabaseId ?? null).toBeNull();
+      expect(connectors).toHaveLength(2);
+      const rows = await Connector.findAll({ order: [['connectorId', 'ASC']] });
+      expect(rows.map((r) => r.connectorId)).toEqual([1, 2]);
+      expect(rows.map((r) => r.status)).toEqual(['Unavailable', 'Unavailable']);
+      expect(rows.map((r) => r.latestStatusNotificationId)).toEqual([
+        statusNotification.id,
+        statusNotification.id,
+      ]);
     });
   });
 });

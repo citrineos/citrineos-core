@@ -7,6 +7,8 @@ export { initSwagger } from './swagger.js';
 
 export { AdminApi } from './admin-api.js';
 export { CommandsApi } from './commands-api.js';
+export { PermissionsApi } from './permissions-api.js';
+export { DevApi, DEV_ENDPOINT_PREFIX } from './dev-api.js';
 export { OcppMessageApi } from './ocpp-message-api.js';
 export { WebPaymentApi } from './web-payment-api.js';
 export { registerApiServices } from './register.js';

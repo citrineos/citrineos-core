@@ -30,6 +30,7 @@ import type {
   ISubscriptionRepository,
   ITariffRepository,
   ITenantRepository,
+  IMeterValueRepository,
   ITransactionEventRepository,
   ITransactionRepository,
   IVariableAttributeRepository,
@@ -45,6 +46,7 @@ import {
   DrizzleComponentRepository,
   DrizzleConnectorRepository,
   DrizzleLocationRepository,
+  DrizzleMeterValueRepository,
   DrizzleStatusNotificationRepository,
   DrizzleEvseRepository,
   DrizzleDeleteCertificateAttemptRepository,
@@ -56,6 +58,7 @@ import {
   DrizzleServerNetworkProfileRepository,
   DrizzleSubscriptionRepository,
   DrizzleTransactionRepository,
+  DrizzleTransactionEventRepository,
   DrizzleTariffRepository,
   DrizzleTenantRepository,
   DrizzleVariableAttributeRepository,
@@ -109,6 +112,7 @@ export class RepositoryStore {
   securityEventRepository: ISecurityEventRepository;
   subscriptionRepository: ISubscriptionRepository;
   tariffRepository: ITariffRepository;
+  meterValueRepository: IMeterValueRepository;
   transactionEventRepository: ITransactionEventRepository;
   transactionRepository: ITransactionRepository;
   variableMonitoringRepository: IVariableMonitoringRepository;
@@ -147,11 +151,6 @@ export class RepositoryStore {
       logger,
       sequelizeInstance,
     });
-    this.transactionEventRepository = new SequelizeTransactionEventRepository({
-      config,
-      logger,
-      sequelizeInstance,
-    });
     if (process.env.CITRINEOS_USE_DRIZZLE === 'true') {
       this.authorizationRepository = new DrizzleAuthorizationRepository({ config, logger });
       // Order matters: component -> variableAttribute -> boot, each injected into the next.
@@ -177,7 +176,8 @@ export class RepositoryStore {
         config,
         logger,
       });
-      this.connectorRepository = new DrizzleConnectorRepository({ config, logger });
+      const connectorRepository = new DrizzleConnectorRepository({ config, logger });
+      this.connectorRepository = connectorRepository;
       this.deleteCertificateAttemptRepository = new DrizzleDeleteCertificateAttemptRepository({
         config,
         logger,
@@ -202,11 +202,14 @@ export class RepositoryStore {
       this.statusNotificationRepository = new DrizzleStatusNotificationRepository({
         config,
         logger,
+        connectorRepository,
       });
       this.subscriptionRepository = new DrizzleSubscriptionRepository({ config, logger });
       this.tenantRepository = new DrizzleTenantRepository({ config, logger });
       this.tariffRepository = new DrizzleTariffRepository({ config, logger });
+      this.meterValueRepository = new DrizzleMeterValueRepository({ config, logger });
       this.transactionRepository = new DrizzleTransactionRepository({ config, logger });
+      this.transactionEventRepository = new DrizzleTransactionEventRepository({ config, logger });
       this.variableCharacteristicsRepository = new DrizzleVariableCharacteristicsRepository({
         config,
         logger,
@@ -292,7 +295,14 @@ export class RepositoryStore {
       this.variableAttributeRepository = deviceModel;
       this.variableCharacteristicsRepository = deviceModel;
       // Transaction cluster
-      this.transactionRepository = this.transactionEventRepository;
+      const transactionEvent = new SequelizeTransactionEventRepository({
+        config,
+        logger,
+        sequelizeInstance,
+      });
+      this.transactionEventRepository = transactionEvent;
+      this.transactionRepository = transactionEvent;
+      this.meterValueRepository = transactionEvent;
     }
 
     this.variableMonitoringRepository = new SequelizeVariableMonitoringRepository({

@@ -15,7 +15,6 @@ import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
 import { OCPPVersion } from '@citrineos/types';
 import { EvseType } from '../../../index.js';
-import { LatestStatusNotification } from '@dal/models/location/latest-status-notification.js';
 import {
   DrizzleChargingStationRepository,
   toChargingStationDto,
@@ -23,10 +22,6 @@ import {
 import { DrizzleConnectorRepository, toConnectorDto } from '@dal/repositories/drizzle/connector.js';
 import { DrizzleEvseRepository, toEvseDto } from '@dal/repositories/drizzle/evse.js';
 import { DrizzleEvseTypeRepository, toEvseTypeDto } from '@dal/repositories/drizzle/evse-type.js';
-import {
-  DrizzleLatestStatusNotificationRepository,
-  toLatestStatusNotificationDto,
-} from '@dal/repositories/drizzle/latest-status-notification.js';
 import { DrizzleLocationRepository, toLocationDto } from '@dal/repositories/drizzle/location.js';
 import {
   DrizzleStatusNotificationRepository,
@@ -36,7 +31,6 @@ import type { ChargingStationEntity } from '@dal/db/drizzle/schema/charging-stat
 import type { ConnectorEntity } from '@dal/db/drizzle/schema/connector.js';
 import type { EvseEntity } from '@dal/db/drizzle/schema/evse.js';
 import type { EvseTypeEntity } from '@dal/db/drizzle/schema/evse-type.js';
-import type { LatestStatusNotificationEntity } from '@dal/db/drizzle/schema/latest-status-notification.js';
 import type { LocationEntity } from '@dal/db/drizzle/schema/location.js';
 import type { StatusNotificationEntity } from '@dal/db/drizzle/schema/status-notification.js';
 import { type PgHarness, resetDb, startPgHarness } from '../../utils/pg-harness.js';
@@ -88,6 +82,10 @@ beforeEach(async () => {
 });
 
 const deps = () => ({ config: h.config, drizzleInstance: db });
+
+const statusNotificationRepository = (
+  connectorRepository = new DrizzleConnectorRepository(deps()),
+) => new DrizzleStatusNotificationRepository({ ...deps(), connectorRepository });
 
 async function aLocation(
   tenantId: number,
@@ -501,7 +499,7 @@ describe('DrizzleConnectorRepository', () => {
 
 describe('DrizzleStatusNotificationRepository', () => {
   it('findById maps the OCPP payload fields', async () => {
-    const repo = new DrizzleStatusNotificationRepository(deps());
+    const repo = statusNotificationRepository();
     const station = await aStation(TENANT);
     const sn = (await StatusNotification.create({
       tenantId: TENANT,
@@ -527,7 +525,7 @@ describe('DrizzleStatusNotificationRepository', () => {
   });
 
   it('findAll returns only the calling tenant rows', async () => {
-    const repo = new DrizzleStatusNotificationRepository(deps());
+    const repo = statusNotificationRepository();
     await StatusNotification.create({
       tenantId: TENANT,
       connectorStatus: 'Available',
@@ -548,7 +546,7 @@ describe('DrizzleStatusNotificationRepository', () => {
   });
 
   it('addStatusNotificationToChargingStation returns the saved row with its id', async () => {
-    const repo = new DrizzleStatusNotificationRepository(deps());
+    const repo = statusNotificationRepository();
     const { station, typeA, evse } = await aCommissionedStation(TENANT);
     const connector = await aConnector(TENANT, station.id, evse.id, typeA.databaseId, 1);
 
@@ -566,8 +564,141 @@ describe('DrizzleStatusNotificationRepository', () => {
     expect(saved.connectorStatus).toBe('Occupied');
   });
 
+  it('addStatusNotificationToChargingStation links the row to the Connector it updated', async () => {
+    const repo = statusNotificationRepository();
+    const { station, typeA, evse } = await aCommissionedStation(TENANT);
+    const connector = await aConnector(TENANT, station.id, evse.id, typeA.databaseId, 1);
+
+    const saved = await repo.addStatusNotificationToChargingStation(TENANT, STATION, {
+      timestamp: TS,
+      connectorStatus: 'Occupied',
+      evseId: 1,
+      connectorId: 1,
+      connectorDatabaseId: connector.id,
+    });
+
+    expect(saved.connectorDatabaseId).toBe(connector.id);
+    expect(saved.connectorId).toBe(1);
+    const row = await StatusNotification.findByPk(saved.id, { include: [Connector] });
+    expect(row!.connector!.id).toBe(connector.id);
+  });
+
+  it('addOcpp2ConnectorStatusNotification creates the connector and links it to the status both ways', async () => {
+    const repo = statusNotificationRepository();
+    const { station, evse } = await aCommissionedStation(TENANT);
+
+    const { statusNotification, connector } = await repo.addOcpp2ConnectorStatusNotification(
+      TENANT,
+      STATION,
+      {
+        tenantId: TENANT,
+        stationId: station.id,
+        evseId: evse.id,
+        evseTypeConnectorId: 1,
+        status: 'Occupied',
+        timestamp: TS,
+      },
+      { tenantId: TENANT, timestamp: TS, connectorStatus: 'Occupied', evseId: 1, connectorId: 1 },
+    );
+
+    expect(statusNotification.connectorDatabaseId).toBe(connector.id);
+    expect(statusNotification.connectorId).toBe(1);
+    const row = await Connector.findByPk(connector.id);
+    expect(row!.evseTypeConnectorId).toBe(1);
+    expect(row!.latestStatusNotificationId).toBe(statusNotification.id);
+  });
+
+  it('addOcpp16ConnectorStatusNotification updates the existing connector and emits its event after the commit', async () => {
+    const connectorRepository = new DrizzleConnectorRepository(deps());
+    const repo = statusNotificationRepository(connectorRepository);
+    const { station, typeA, evse } = await aCommissionedStation(TENANT);
+    const existing = await aConnector(TENANT, station.id, evse.id, typeA.databaseId, 1);
+    const updatedEvents: unknown[] = [];
+    connectorRepository.on('updated', (payload) => updatedEvents.push(payload));
+
+    const { statusNotification, connector } = await repo.addOcpp16ConnectorStatusNotification(
+      TENANT,
+      STATION,
+      {
+        tenantId: TENANT,
+        stationId: station.id,
+        evseId: evse.id,
+        connectorId: 1,
+        status: 'Faulted',
+      },
+      { tenantId: TENANT, timestamp: TS, connectorStatus: 'Faulted', connectorId: 1 },
+    );
+
+    expect(connector.id).toBe(existing.id);
+    expect(connector.status).toBe('Faulted');
+    expect(connector.latestStatusNotificationId).toBe(statusNotification.id);
+    expect(statusNotification.connectorDatabaseId).toBe(existing.id);
+    expect(await Connector.count()).toBe(1);
+    expect(updatedEvents).toHaveLength(2);
+  });
+
+  it('addOcpp16StationStatusNotification points every connector at the status and keeps their own numbers', async () => {
+    const repo = statusNotificationRepository();
+    const { station, typeA, typeB, evse } = await aCommissionedStation(TENANT);
+    await aConnector(TENANT, station.id, evse.id, typeA.databaseId, 1);
+    await aConnector(TENANT, station.id, evse.id, typeB.databaseId, 2);
+
+    const { statusNotification, connectors } = await repo.addOcpp16StationStatusNotification(
+      TENANT,
+      STATION,
+      { tenantId: TENANT, stationId: station.id, status: 'Unavailable' },
+      { tenantId: TENANT, timestamp: TS, connectorStatus: 'Unavailable', connectorId: 0 },
+    );
+
+    expect(statusNotification.connectorDatabaseId).toBeNull();
+    expect(connectors).toHaveLength(2);
+    const rows = await Connector.findAll({ order: [['connectorId', 'ASC']] });
+    expect(rows.map((r) => r.connectorId)).toEqual([1, 2]);
+    expect(rows.map((r) => r.status)).toEqual(['Unavailable', 'Unavailable']);
+    expect(rows.map((r) => r.latestStatusNotificationId)).toEqual([
+      statusNotification.id,
+      statusNotification.id,
+    ]);
+  });
+
+  it('rolls the connector update back when the status notification cannot be saved', async () => {
+    const connectorRepository = new DrizzleConnectorRepository(deps());
+    const repo = statusNotificationRepository(connectorRepository);
+    const { station, typeA, evse } = await aCommissionedStation(TENANT);
+    const existing = await aConnector(TENANT, station.id, evse.id, typeA.databaseId, 1);
+    const updatedEvents: unknown[] = [];
+    connectorRepository.on('updated', (payload) => updatedEvents.push(payload));
+
+    await expect(
+      repo.addOcpp16ConnectorStatusNotification(
+        TENANT,
+        STATION,
+        {
+          tenantId: TENANT,
+          stationId: station.id,
+          evseId: evse.id,
+          connectorId: 1,
+          status: 'Faulted',
+        },
+        {
+          tenantId: TENANT,
+          timestamp: TS,
+          connectorStatus: 'Faulted',
+          connectorId: 1,
+          info: 'x'.repeat(300),
+        },
+      ),
+    ).rejects.toThrow();
+
+    const row = await Connector.findByPk(existing.id);
+    expect(row!.status).toBe('Available');
+    expect(row!.latestStatusNotificationId).toBeNull();
+    expect(await StatusNotification.count()).toBe(0);
+    expect(updatedEvents).toHaveLength(0);
+  });
+
   it('updateById rejects clearing tenantId', async () => {
-    const repo = new DrizzleStatusNotificationRepository(deps());
+    const repo = statusNotificationRepository();
     const sn = (await StatusNotification.create({
       tenantId: TENANT,
       connectorStatus: 'Available',
@@ -577,58 +708,6 @@ describe('DrizzleStatusNotificationRepository', () => {
       /Failed query: update "StatusNotifications"/,
     );
     expect((await repo.findById(TENANT, sn.id))!.tenantId).toBe(TENANT);
-  });
-});
-
-describe('DrizzleLatestStatusNotificationRepository', () => {
-  async function aPointer(tenantId: number) {
-    const station = await aStation(tenantId);
-    const sn = (await StatusNotification.create({
-      tenantId,
-      stationId: station.id,
-      connectorStatus: 'Available',
-    } as any)) as unknown as { id: number };
-    const lsn = (await LatestStatusNotification.create({
-      tenantId,
-      stationId: station.id,
-      statusNotificationId: sn.id,
-    } as any)) as unknown as { id: number };
-    return { station, sn, lsn };
-  }
-
-  it('findById maps the pointer row and is tenant-scoped', async () => {
-    const repo = new DrizzleLatestStatusNotificationRepository(deps());
-    const { station, sn, lsn } = await aPointer(TENANT);
-
-    const dto = await repo.findById(TENANT, lsn.id);
-
-    expect(dto!.stationId).toBe(station.id);
-    // The column is an integer FK in the DB; compare numerically.
-    expect(Number(dto!.statusNotificationId)).toBe(sn.id);
-    expect(dto!.statusNotification).toBeUndefined();
-    expect(dto!.tenantId).toBe(TENANT);
-    expect(await repo.findById(OTHER_TENANT, lsn.id)).toBeUndefined();
-  });
-
-  it('updateById repoints to a newer status notification', async () => {
-    const repo = new DrizzleLatestStatusNotificationRepository(deps());
-    const { lsn } = await aPointer(TENANT);
-    const sn2 = (await StatusNotification.create({
-      tenantId: TENANT,
-      connectorStatus: 'Charging',
-    } as any)) as unknown as { id: number };
-
-    const updated = await repo.updateById(TENANT, lsn.id, { statusNotificationId: sn2.id });
-    expect(Number(updated!.statusNotificationId)).toBe(sn2.id);
-  });
-
-  it('updateById rejects an unknown stationId FK', async () => {
-    const repo = new DrizzleLatestStatusNotificationRepository(deps());
-    const { lsn } = await aPointer(TENANT);
-
-    await expect(repo.updateById(TENANT, lsn.id, { stationId: 987654 })).rejects.toThrow(
-      /Failed query: update "LatestStatusNotifications"/,
-    );
   });
 });
 
@@ -799,22 +878,5 @@ describe('location cluster row-to-DTO mappers', () => {
     expect(dto.connectorId).toBe(0);
     expect(dto.errorCode).toBe('GroundFailure');
     expect(dto.chargingStation).toBeUndefined();
-  });
-
-  it('toLatestStatusNotificationDto defaults a null pointer to 0', () => {
-    const dto = toLatestStatusNotificationDto({
-      id: 6,
-      stationId: 8,
-      statusNotificationId: null,
-      tenantId: TENANT,
-      ...timestamps,
-    } as LatestStatusNotificationEntity);
-
-    expect(dto.stationId).toBe(8);
-    // DTO types statusNotificationId as a required int.
-    expect(dto.statusNotificationId).toBe(0);
-    expect(dto.chargingStation).toBeUndefined();
-    expect(dto.statusNotification).toBeUndefined();
-    expect(dto.createdAt).toEqual(timestamps.createdAt);
   });
 });

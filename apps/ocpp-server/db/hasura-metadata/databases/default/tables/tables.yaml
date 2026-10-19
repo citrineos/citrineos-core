@@ -24,7 +24,6 @@
 - '!include public_Evses.yaml'
 - '!include public_InstallCertificateAttempts.yaml'
 - '!include public_InstalledCertificates.yaml'
-- '!include public_LatestStatusNotifications.yaml'
 - '!include public_LocalListAuthorizations.yaml'
 - '!include public_LocalListVersionAuthorizations.yaml'
 - '!include public_LocalListVersions.yaml'

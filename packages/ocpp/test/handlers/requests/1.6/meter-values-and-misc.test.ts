@@ -13,7 +13,7 @@ import {
   OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/types';
-import type { ITransactionEventRepository } from '@citrineos/dal';
+import type { ITransactionRepository } from '@citrineos/dal';
 import {
   DataTransferRequestOcpp16Handler,
   HeartbeatRequestOcpp16Handler,
@@ -61,8 +61,7 @@ describe('MeterValuesRequestOcpp16Handler', () => {
     const handler = new MeterValuesRequestOcpp16Handler({
       logger,
       ocppSender,
-      transactionEventRepository:
-        transactionEventRepository as unknown as ITransactionEventRepository,
+      transactionRepository: transactionEventRepository as unknown as ITransactionRepository,
     });
 
     return { handler, ocppSender, transactionEventRepository, logger };

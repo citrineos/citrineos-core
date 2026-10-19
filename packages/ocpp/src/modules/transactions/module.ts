@@ -3,10 +3,9 @@
 // SPDX-License-Identifier: Apache-2.0
 import { AbstractHandler, AbstractModule, type OcppModuleDependencies } from '@citrineos/base';
 import { EventGroup } from '@citrineos/types';
-import type { ITariffRepository, ITransactionEventRepository } from '@citrineos/dal';
+import type { ITariffRepository } from '@citrineos/dal';
 
 export interface TransactionsModuleDependencies extends OcppModuleDependencies {
-  transactionEventRepository: ITransactionEventRepository;
   tariffRepository: ITariffRepository;
   transactionsHandlers: AbstractHandler[];
 }
@@ -15,7 +14,6 @@ export interface TransactionsModuleDependencies extends OcppModuleDependencies {
  * Component that handles transaction related messages.
  */
 export class TransactionsModule extends AbstractModule {
-  protected _transactionEventRepository: ITransactionEventRepository;
   protected _tariffRepository: ITariffRepository;
 
   constructor({
@@ -26,7 +24,6 @@ export class TransactionsModule extends AbstractModule {
     logger,
     ocppValidator,
     ocppSender,
-    transactionEventRepository,
     tariffRepository,
     transactionsHandlers,
   }: TransactionsModuleDependencies) {
@@ -41,12 +38,7 @@ export class TransactionsModule extends AbstractModule {
       ocppValidator,
       transactionsHandlers,
     );
-    this._transactionEventRepository = transactionEventRepository;
     this._tariffRepository = tariffRepository;
-  }
-
-  get transactionEventRepository(): ITransactionEventRepository {
-    return this._transactionEventRepository;
   }
 
   get tariffRepository(): ITariffRepository {

@@ -94,8 +94,6 @@ import type {
   ChargingProfile,
   CompositeSchedule,
 } from '../models/charging-profile/index.js';
-import type { ChargingStationSecurityInfo } from '../models/charging-station-security-info.js';
-import type { ChargingStationNetworkProfile } from '../models/location/charging-station-network-profile.js';
 import type { EventData, VariableMonitoring } from '../models/variable-monitoring/index.js';
 
 export type AsyncJobStatusUpdate = Partial<
@@ -320,12 +318,40 @@ export interface IChargingStationRepository {
   ): Promise<void>;
 }
 
+export interface ConnectorStatusNotificationResult {
+  statusNotification: StatusNotificationDto;
+  connector: ConnectorDto;
+}
+
+export interface StationStatusNotificationResult {
+  statusNotification: StatusNotificationDto;
+  connectors: ConnectorDto[];
+}
+
 export interface IStatusNotificationRepository {
   addStatusNotificationToChargingStation(
     tenantId: number,
     ocppConnectionName: string,
     statusNotification: StatusNotificationDto,
   ): Promise<StatusNotificationDto>;
+  addOcpp2ConnectorStatusNotification(
+    tenantId: number,
+    ocppConnectionName: string,
+    connector: ConnectorDto & { evseTypeConnectorId: number },
+    statusNotification: StatusNotificationDto,
+  ): Promise<ConnectorStatusNotificationResult>;
+  addOcpp16ConnectorStatusNotification(
+    tenantId: number,
+    ocppConnectionName: string,
+    connector: ConnectorDto & { connectorId: number },
+    statusNotification: StatusNotificationDto,
+  ): Promise<ConnectorStatusNotificationResult>;
+  addOcpp16StationStatusNotification(
+    tenantId: number,
+    ocppConnectionName: string,
+    connector: Partial<ConnectorDto>,
+    statusNotification: StatusNotificationDto,
+  ): Promise<StationStatusNotificationResult>;
 }
 
 export interface IConnectorRepository {
@@ -432,21 +458,11 @@ export interface ITransactionRepository {
     evseId: number,
     excludeTransactionId: string,
   ): Promise<TransactionDto[]>;
-}
-
-export interface ITransactionEventRepository extends ITransactionRepository {
   createOrUpdateTransactionByTransactionEventAndStationId(
     tenantId: number,
     value: OCPP2_request_types.TransactionEventRequest,
     ocppConnectionName: string,
   ): Promise<TransactionDto>;
-  createMeterValue(
-    tenantId: number,
-    value: OCPP2_common_types.MeterValueType,
-    transactionDatabaseId?: number | null,
-    transactionId?: string | null,
-    tariffId?: number | null,
-  ): Promise<MeterValueDto>;
   createTransactionByStartTransaction(
     tenantId: number,
     request: OCPP1_6.StartTransactionRequest,
@@ -458,11 +474,6 @@ export interface ITransactionEventRepository extends ITransactionRepository {
     ocppConnectionName: string,
     transactionId: number,
   ): Promise<void>;
-  readAllByStationIdAndTransactionId(
-    tenantId: number,
-    ocppConnectionName: string,
-    transactionId: string,
-  ): Promise<TransactionEventDto[]>;
   createStopTransaction(
     tenantId: number,
     transactionDatabaseId: number,
@@ -473,6 +484,24 @@ export interface ITransactionEventRepository extends ITransactionRepository {
     reason?: string,
     idTokenDatabaseId?: number,
   ): Promise<StopTransactionDto>;
+}
+
+export interface IMeterValueRepository {
+  createMeterValue(
+    tenantId: number,
+    value: OCPP2_common_types.MeterValueType,
+    transactionDatabaseId?: number | null,
+    transactionId?: string | null,
+    tariffId?: number | null,
+  ): Promise<MeterValueDto>;
+}
+
+export interface ITransactionEventRepository {
+  readAllByStationIdAndTransactionId(
+    tenantId: number,
+    ocppConnectionName: string,
+    transactionId: string,
+  ): Promise<TransactionEventDto[]>;
 }
 
 export interface IVariableMonitoringRepository extends CrudRepository<VariableMonitoring> {

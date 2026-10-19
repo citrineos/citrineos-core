@@ -19,7 +19,6 @@ import {
 } from '@citrineos/types';
 import {
   type IAuthorizationRepository,
-  type ITransactionEventRepository,
   type ITransactionRepository,
   StartTransaction,
   Transaction,
@@ -36,7 +35,6 @@ import {
 export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
   protected _authorizationRepository: IAuthorizationRepository;
-  protected _transactionEventRepository: ITransactionEventRepository;
   protected _transactionRepository: ITransactionRepository;
   protected _costCalculator: CostCalculator;
   protected _authorizationAttemptService: Pick<AuthorizationAttemptService, 'record'>;
@@ -45,14 +43,12 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
     logger,
     ocppSender,
     authorizationRepository,
-    transactionEventRepository,
     transactionRepository,
     costCalculator,
     authorizationAttemptService,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
     authorizationRepository: IAuthorizationRepository;
-    transactionEventRepository: ITransactionEventRepository;
     transactionRepository: ITransactionRepository;
     costCalculator: CostCalculator;
     authorizationAttemptService: Pick<AuthorizationAttemptService, 'record'>;
@@ -61,7 +57,6 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
 
     this._ocppSender = ocppSender;
     this._authorizationRepository = authorizationRepository;
-    this._transactionEventRepository = transactionEventRepository;
     this._transactionRepository = transactionRepository;
     this._costCalculator = costCalculator;
     this._authorizationAttemptService = authorizationAttemptService;
@@ -185,7 +180,7 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
     // reason is Local either way.
     const stoppedReason = request.reason ?? OCPP1_6.StopTransactionRequestReason.Local;
 
-    const stopTransaction = await this._transactionEventRepository.createStopTransaction(
+    const stopTransaction = await this._transactionRepository.createStopTransaction(
       tenantId,
       transaction.id,
       ocppConnectionName,

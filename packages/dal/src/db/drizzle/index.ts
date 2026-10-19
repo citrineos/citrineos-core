@@ -87,8 +87,19 @@ export {
   DrizzleInstalledCertificateRepository,
   toInstalledCertificateDto,
 } from '../../repositories/drizzle/installed-certificate.js';
-export { toLatestStatusNotificationDto } from '../../repositories/drizzle/latest-status-notification.js';
 export { DrizzleLocationRepository, toLocationDto } from '../../repositories/drizzle/location.js';
+export {
+  DrizzleMeterValueRepository,
+  toMeterValueDto,
+} from '../../repositories/drizzle/meter-value.js';
+export {
+  meterValueTable,
+  tenantMeterValueTable,
+  MeterValueEntitySchema,
+  MeterValueEntityInsertSchema,
+  type MeterValueEntity,
+  type MeterValueEntityInsert,
+} from './schema/meter-value.js';
 export {
   DrizzleMessageInfoRepository,
   toMessageInfoDto,
@@ -132,6 +143,10 @@ export {
   DrizzleTransactionRepository,
   toTransactionDto,
 } from '../../repositories/drizzle/transaction.js';
+export {
+  DrizzleTransactionEventRepository,
+  toTransactionEventDto,
+} from '../../repositories/drizzle/transaction-event.js';
 export {
   DrizzleVariableAttributeRepository,
   toVariableAttributeDto,
@@ -250,14 +265,6 @@ export {
   type InstalledCertificateEntity,
   type InstalledCertificateEntityInsert,
 } from './schema/installed-certificate.js';
-export {
-  LatestStatusNotificationEntityInsertSchema,
-  LatestStatusNotificationEntitySchema,
-  latestStatusNotificationTable,
-  tenantLatestStatusNotificationTable,
-  type LatestStatusNotificationEntity,
-  type LatestStatusNotificationEntityInsert,
-} from './schema/latest-status-notification.js';
 export {
   LocationEntityInsertSchema,
   LocationEntitySchema,

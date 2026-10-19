@@ -22,13 +22,13 @@ import {
   type AuthorizationAttemptService,
   newAuthorizationDecision,
 } from '@services/authorization-attempts/index.js';
-import type { IConnectorRepository, ITransactionEventRepository } from '@citrineos/dal';
+import type { IConnectorRepository, ITransactionRepository } from '@citrineos/dal';
 
 @AsRequestHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.StartTransaction)
 export class StartTransactionRequestOcpp16Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
   protected _connectorRepository: IConnectorRepository;
-  protected _transactionEventRepository: ITransactionEventRepository;
+  protected _transactionRepository: ITransactionRepository;
   protected _transactionService: TransactionService;
   protected _authorizationAttemptService: Pick<AuthorizationAttemptService, 'record'>;
 
@@ -36,13 +36,13 @@ export class StartTransactionRequestOcpp16Handler extends AbstractHandler {
     logger,
     ocppSender,
     connectorRepository,
-    transactionEventRepository,
+    transactionRepository,
     transactionService,
     authorizationAttemptService,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
     connectorRepository: IConnectorRepository;
-    transactionEventRepository: ITransactionEventRepository;
+    transactionRepository: ITransactionRepository;
     transactionService: TransactionService;
     authorizationAttemptService: Pick<AuthorizationAttemptService, 'record'>;
   }) {
@@ -50,7 +50,7 @@ export class StartTransactionRequestOcpp16Handler extends AbstractHandler {
 
     this._ocppSender = ocppSender;
     this._connectorRepository = connectorRepository;
-    this._transactionEventRepository = transactionEventRepository;
+    this._transactionRepository = transactionRepository;
     this._transactionService = transactionService;
     this._authorizationAttemptService = authorizationAttemptService;
   }
@@ -91,11 +91,12 @@ export class StartTransactionRequestOcpp16Handler extends AbstractHandler {
     } else {
       try {
         // Create transaction
-        newTransaction = await this._transactionEventRepository.createTransactionByStartTransaction(
-          tenantId,
-          request,
-          ocppConnectionName,
-        );
+        newTransaction =
+          await this._transactionRepository.createTransactionByStartTransaction(
+            tenantId,
+            request,
+            ocppConnectionName,
+          );
         response.transactionId = parseInt(newTransaction.transactionId);
       } catch (error) {
         const errorMessage = (error as Error).message || '';

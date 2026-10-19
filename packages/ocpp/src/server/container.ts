@@ -8,6 +8,7 @@ import type { FastifyInstance } from 'fastify';
 
 // -- Config & Base --
 import {
+  DEFAULT_TENANT_ID,
   type IApiAuthProvider,
   type ICache,
   type IFileStorage,
@@ -36,6 +37,7 @@ import {
   DrizzleComponentRepository,
   DrizzleConnectorRepository,
   DrizzleLocationRepository,
+  DrizzleMeterValueRepository,
   DrizzleStatusNotificationRepository,
   DrizzleEvseRepository,
   DrizzleDeleteCertificateAttemptRepository,
@@ -52,6 +54,7 @@ import {
   DrizzleSubscriptionRepository,
   DrizzleTariffRepository,
   DrizzleTenantRepository,
+  DrizzleTransactionEventRepository,
   DrizzleTransactionRepository,
   DrizzleVariableAttributeRepository,
   DrizzleVariableCharacteristicsRepository,
@@ -87,10 +90,12 @@ import {
   SequelizeVariableMonitoringRepository,
 } from '@citrineos/dal';
 import { AdminApi } from '@/apis/admin-api.js';
+import { PermissionsApi } from '@/apis/permissions-api.js';
+import { DevApi } from '@/apis/dev-api.js';
 import { CommandsApi } from '@/apis/commands-api.js';
 import { OcppMessageApi } from '@/apis/ocpp-message-api.js';
 import { WebPaymentApi } from '@/apis/web-payment-api.js';
-import { registerApiServices } from '@/apis/register.js';
+import { buildPermissionCatalog, registerApiServices } from '@/apis/register.js';
 import {
   CaliforniaPricingModule,
   registerCaliforniaPricingServices,
@@ -111,7 +116,10 @@ import {
 } from '@modules/smart-charging/index.js';
 import { TenantModule } from '@modules/tenant/index.js';
 import { registerTransactionsServices, TransactionsModule } from '@modules/transactions/index.js';
-import { LocalBypassAuthProvider, OIDCAuthProvider } from '@/apis/index.js';
+import { JwtAuthProvider, LocalBypassAuthProvider } from '@/apis/index.js';
+import { PolicyStore } from '@/apis/authorization/policy/policy-store.js';
+import { SeedFileRoleProvider } from '@/apis/authorization/policy/seed-file-role-provider.js';
+import { DevKeyPair, DEV_ISSUER } from '@/apis/authorization/dev/dev-key-pair.js';
 import {
   AuthorizationAttemptService,
   CertificateAuthorityService,
@@ -386,6 +394,9 @@ function registerRepositories(container: AwilixContainer): void {
     transactionRepository: asFunction(
       ({ transactionEventRepository }) => transactionEventRepository,
     ).singleton(),
+    meterValueRepository: asFunction(
+      ({ transactionEventRepository }) => transactionEventRepository,
+    ).singleton(),
   });
 
   if (process.env.CITRINEOS_USE_DRIZZLE === 'true') {
@@ -434,6 +445,8 @@ function registerRepositories(container: AwilixContainer): void {
       serverNetworkProfileRepository: asClass(DrizzleServerNetworkProfileRepository).singleton(),
       tariffRepository: asClass(DrizzleTariffRepository).singleton(),
       tenantRepository: asClass(DrizzleTenantRepository).singleton(),
+      meterValueRepository: asClass(DrizzleMeterValueRepository).singleton(),
+      transactionEventRepository: asClass(DrizzleTransactionEventRepository).singleton(),
       transactionRepository: asClass(DrizzleTransactionRepository).singleton(),
       componentRepository: asClass(DrizzleComponentRepository).singleton(),
       variableAttributeRepository: asClass(DrizzleVariableAttributeRepository).singleton(),
@@ -463,19 +476,44 @@ function registerServices(container: AwilixContainer): void {
     realTimeAuthorizer: asClass(RealTimeAuthorizer).singleton(),
     authorizationAttemptService: asClass(AuthorizationAttemptService).singleton(),
     authorizers: asValue([]),
-    apiAuthProvider: asFunction(({ config, logger }): IApiAuthProvider => {
-      const oidc = (config as SystemConfig).auth.oidc;
-      if (oidc) {
-        const { cacheTimeSeconds, ...rest } = oidc;
-        return new OIDCAuthProvider(
-          { ...rest, ...(cacheTimeSeconds && { cacheTime: cacheTimeSeconds * 1000 }) },
-          logger,
-        );
+    permissionCatalog: asValue(buildPermissionCatalog()),
+    roleProvider: asClass(SeedFileRoleProvider).singleton(),
+    policyStore: asClass(PolicyStore).singleton(),
+    devKeyPair: asClass(DevKeyPair).singleton(),
+    apiAuthProvider: asFunction((cradle): IApiAuthProvider => {
+      const { config, logger, policyStore } = cradle;
+      const auth = (config as SystemConfig).auth;
+      switch (auth.mode) {
+        case 'jwt': {
+          if (!auth.jwt) {
+            throw new Error("auth.jwt must be provided when auth.mode is 'jwt'");
+          }
+          const { cacheTimeSeconds, ...rest } = auth.jwt;
+          return new JwtAuthProvider(
+            {
+              ...rest,
+              defaultTenantId: String(DEFAULT_TENANT_ID),
+              ...(cacheTimeSeconds && { cacheTime: cacheTimeSeconds * 1000 }),
+            },
+            policyStore,
+            logger,
+          );
+        }
+        case 'localDev':
+          return new JwtAuthProvider(
+            {
+              publicKey: cradle.devKeyPair.publicKey,
+              issuer: DEV_ISSUER,
+              rolesClaim: auth.jwt?.rolesClaim ?? 'roles',
+              tenantClaim: auth.jwt?.tenantClaim ?? 'tenant_id',
+              defaultTenantId: String(DEFAULT_TENANT_ID),
+            },
+            policyStore,
+            logger,
+          );
+        case 'localBypass':
+          return new LocalBypassAuthProvider(auth.localBypass.roles, logger);
       }
-      if ((config as SystemConfig).auth.localBypass) {
-        return new LocalBypassAuthProvider(logger);
-      }
-      throw new Error('No valid API authentication provider configured');
     }).singleton(),
   });
 }
@@ -561,6 +599,8 @@ function registerModules(container: AwilixContainer): void {
 function registerApis(container: AwilixContainer): void {
   container.register({
     commandsApi: asClass(CommandsApi).scoped(),
+    permissionsApi: asClass(PermissionsApi).scoped(),
+    devApi: asClass(DevApi).scoped(),
     ocppMessageApi: asClass(OcppMessageApi).scoped(),
     webPaymentApi: asClass(WebPaymentApi).scoped(),
   });

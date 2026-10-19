@@ -27,7 +27,6 @@ export * from './evse.js';
 export * from './evse-type.js';
 export * from './install-certificate-attempt.js';
 export * from './installed-certificate.js';
-export * from './latest-status-notification.js';
 export * from './local-list-authorization.js';
 export * from './local-list-version.js';
 export * from './local-list-version-authorization.js';

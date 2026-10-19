@@ -251,23 +251,17 @@ export const StationPreviewPanel: React.FC<StationPreviewPanelProps> = ({
               </CollapsibleContent>
             </Collapsible>
 
-            <CanAccess
-              resource={ResourceType.CHARGING_STATIONS}
-              action={ActionType.COMMAND}
-              params={{ id: station.id }}
+            <Button
+              className="mt-2"
+              onClick={openOtherCommands}
+              disabled={!station.isOnline}
+              title={
+                station.isOnline ? undefined : translate('ChargingStations.commandsUnavailable')
+              }
             >
-              <Button
-                className="mt-2"
-                onClick={openOtherCommands}
-                disabled={!station.isOnline}
-                title={
-                  station.isOnline ? undefined : translate('ChargingStations.commandsUnavailable')
-                }
-              >
-                <MoreHorizontal className="mr-2 h-4 w-4" />
-                {translate('ChargingStations.otherCommands')}
-              </Button>
-            </CanAccess>
+              <MoreHorizontal className="mr-2 h-4 w-4" />
+              {translate('ChargingStations.otherCommands')}
+            </Button>
           </div>
         )}
       </ScrollArea>

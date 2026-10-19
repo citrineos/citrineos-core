@@ -199,7 +199,7 @@ describe('OCPP 1.6 MeterValues on a station whose connector number is not a data
   function aHandler() {
     return getTestInstance(container, MeterValuesRequestOcpp16Handler, {
       ocppSender: makeMockOcppSender(),
-      transactionEventRepository: new SequelizeTransactionEventRepository({
+      transactionRepository: new SequelizeTransactionEventRepository({
         config,
         logger: undefined,
         sequelizeInstance,
