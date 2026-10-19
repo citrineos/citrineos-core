@@ -1005,10 +1005,7 @@ export class DrizzleTransactionRepository
       // TransactionEvents one. Only the transaction-level emit has an emitter to land
       // on; the TransactionEvent and MeterValue emits belong to repositories that do
       // not exist on the Drizzle side yet.
-      ctx.events.push({
-        name: created ? 'created' : 'updated',
-        payload: [toTransactionDto(finalTransaction)],
-      });
+      this.raise(ctx, created ? 'created' : 'updated', [toTransactionDto(finalTransaction)]);
 
       return {
         ...toTransactionDto(finalTransaction),
@@ -1107,7 +1104,7 @@ export class DrizzleTransactionRepository
         })
         .returning()) as StartTransactionEntity[];
 
-      ctx.events.push({ name: 'created', payload: [toTransactionDto(newTransaction)] });
+      this.raise(ctx, 'created', [toTransactionDto(newTransaction)]);
 
       return {
         ...toTransactionDto(newTransaction),
