@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 'use client';
 
-import React from 'react';
 import {
   AuthorizationAttemptProps,
   AuthorizationAttemptReasonSchema,
@@ -12,8 +11,6 @@ import {
   IdTokenEnum,
   OCPP_CallAction,
 } from '@citrineos/types';
-import type { CrudFilters } from '@refinedev/core';
-import type { CellContext } from '@tanstack/react-table';
 import { MenuSection } from '@lib/client/components/main-menu/main-menu';
 import { TableCellLink } from '@lib/client/components/table-cell-link';
 import { TimestampDisplay } from '@lib/client/components/timestamp-display';
@@ -22,6 +19,8 @@ import { AuthorizationAttemptClass } from '@lib/cls/authorization-attempt-dto';
 import type { ColumnConfiguration } from '@lib/utils/column-configuration';
 import { EMPTY_VALUE } from '@lib/utils/consts';
 import { chargingStationPath } from '@lib/utils/resource-paths';
+import type { CrudFilters } from '@refinedev/core';
+import type { CellContext } from '@tanstack/react-table';
 
 type TranslateFn = (key: string, options?: any) => string;
 
@@ -34,6 +33,7 @@ export const authorizationAttemptStationIdField = `ChargingStation.${ChargingSta
 export const unmatchedAttemptsFilter: CrudFilters = [
   { field: AuthorizationAttemptProps.authorizationId, operator: 'null', value: true },
   {
+    key: 'unmatchedTokenType',
     operator: 'or',
     value: [
       { field: AuthorizationAttemptProps.idTokenType, operator: 'null', value: true },
