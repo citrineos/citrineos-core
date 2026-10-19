@@ -74,6 +74,29 @@ describe('DeviceModelService.provisionVariableAttributes', () => {
     expect(updateResultByStationId).not.toHaveBeenCalled();
   });
 
+  it('overwrites existing WriteOnly values for CSMS-initiated provisioning (#232)', async () => {
+    await service.provisionVariableAttributes(
+      tenantId,
+      ocppConnectionName,
+      aReportData([
+        {
+          type: AttributeEnum.Actual,
+          value: 'new-password',
+          mutability: MutabilityEnum.WriteOnly,
+        },
+      ] as OCPP2_common_types.ReportDataType['variableAttribute']),
+      true,
+    );
+
+    expect(createOrUpdateDeviceModelByStationId).toHaveBeenCalledWith(
+      tenantId,
+      expect.anything(),
+      ocppConnectionName,
+      expect.any(String),
+      true,
+    );
+  });
+
   it('records acceptance for each attribute when the value is already set on the charger', async () => {
     await service.provisionVariableAttributes(
       tenantId,

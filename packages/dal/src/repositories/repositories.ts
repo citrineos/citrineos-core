@@ -141,6 +141,13 @@ export interface IDeviceModelRepository
     value: OCPP2_common_types.ReportDataType,
     ocppConnectionName: string,
     isoTimestamp: string,
+    /**
+     * When true, the incoming value overwrites an existing WriteOnly
+     * attribute. CSMS-initiated provisioning (e.g. setStationPassword)
+     * must pass true: the B08.FR.03 protection is meant for reports from
+     * the Charging Station, not for writes the CSMS itself performs.
+     */
+    overwriteWriteOnly?: boolean,
   ): Promise<VariableAttributeDto[]>;
   createOrUpdateByGetVariablesResultAndStationId(
     tenantId: number,
