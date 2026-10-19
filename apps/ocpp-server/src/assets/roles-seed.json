@@ -13,7 +13,9 @@
         "show"
       ],
       "Authorizations": ["list", "show", "create", "edit", "delete"],
+      "AuthorizationAttempts": ["list"],
       "Transactions": ["access:events", "edit", "list", "show"],
+      "NetworkAlerts": ["list", "show"],
       "Tariffs": ["list", "show", "create", "edit", "delete"],
       "TenantPartners": ["list", "show", "create", "edit", "delete"]
     },
@@ -108,7 +110,9 @@
         "list"
       ],
       "Authorizations": ["create", "edit", "list", "show"],
+      "AuthorizationAttempts": ["list"],
       "Transactions": ["access:events", "list", "show"],
+      "NetworkAlerts": ["list", "show"],
       "Tariffs": ["create", "edit", "list", "show"],
       "TenantPartners": ["create", "edit", "list", "show"]
     },
@@ -199,6 +203,8 @@
   "admin_partner": {
     "resources": {
       "Authorizations": ["list", "show", "create", "edit", "delete"],
+      "AuthorizationAttempts": ["list"],
+      "NetworkAlerts": ["list", "show"],
       "ChargingStations": [
         "access:configuration",
         "access:ocpp-messages",
