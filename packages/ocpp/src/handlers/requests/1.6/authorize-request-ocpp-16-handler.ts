@@ -166,16 +166,18 @@ export class AuthorizeRequestOcpp16Handler extends AbstractHandler {
     response: OCPP1_6.AuthorizeResponse,
     decision: AuthorizationDecision,
   ): Promise<IMessageConfirmation> {
+    // Sending replaces the message's payload and context with the response's.
+    const { context, payload: request } = message;
     recordAuthorizeResult({
       status: response.idTagInfo.status,
       ocppVersion: String(message.protocol),
       action: 'Authorize',
     });
     const confirmation = await this._ocppSender.sendCallResultWithMessage(message, response);
-    await this._authorizationAttemptService.record(message.context, {
+    await this._authorizationAttemptService.record(context, {
       ocppVersion: message.protocol,
-      action: message.action,
-      idToken: message.payload.idTag,
+      action: OCPP_CallAction.Authorize,
+      idToken: request.idTag,
       decision,
       responseStatus: response.idTagInfo.status,
     });

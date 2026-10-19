@@ -20,8 +20,9 @@ import type { IAuthorizationRepository, IVariableAttributeRepository } from '@ci
 import { AuthorizeRequestOcpp201Handler } from '@handlers/index.js';
 import {
   createTestContainer,
-  makeMockOcppSender,
   makeMockAuthorizationAttemptService,
+  makeRewritingOcppSender,
+  type MockOcppSender,
 } from '@test/test-container.js';
 import type { CertificateAuthorityService } from '@services/index.js';
 
@@ -58,7 +59,7 @@ function makeHandler(options: {
   evseIds?: ReturnType<typeof anAttribute>[];
 }) {
   const { logger } = createTestContainer();
-  const ocppSender = makeMockOcppSender();
+  const ocppSender = makeRewritingOcppSender();
 
   const authorizationRepository = {
     readOnlyOneByQuerystring: vi.fn().mockResolvedValue(options.authorization),
@@ -89,9 +90,7 @@ function makeHandler(options: {
   return { handler, ocppSender, authorizationAttemptService };
 }
 
-function sentResponse(
-  ocppSender: ReturnType<typeof makeMockOcppSender>,
-): OCPP2_0_1.AuthorizeResponse {
+function sentResponse(ocppSender: MockOcppSender): OCPP2_0_1.AuthorizeResponse {
   expect(ocppSender.sendCallResultWithMessage).toHaveBeenCalledOnce();
   return ocppSender.sendCallResultWithMessage.mock.calls[0][1] as OCPP2_0_1.AuthorizeResponse;
 }
@@ -230,9 +229,11 @@ describe('AuthorizeRequestOcpp201Handler authorization attempts', () => {
     });
     const message = makeMessage(request);
 
+    const { context } = message;
+
     await handler.handle(message);
 
-    expect(authorizationAttemptService.record).toHaveBeenCalledWith(message.context, {
+    expect(authorizationAttemptService.record).toHaveBeenCalledWith(context, {
       ocppVersion: OCPPVersion.OCPP2_0_1,
       action: OCPP_CallAction.Authorize,
       idToken: 'TAG001',

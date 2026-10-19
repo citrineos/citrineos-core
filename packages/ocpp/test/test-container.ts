@@ -8,6 +8,8 @@ import {
   type AwilixContainer,
   type Constructor,
 } from 'awilix';
+import { type IMessage, type OcppError } from '@citrineos/base';
+import { MessageOrigin, MessageState, type OcppRequest, type OcppResponse } from '@citrineos/types';
 import { type ILogObj, type Logger } from 'tslog';
 import { vi, type Mock } from 'vitest';
 
@@ -71,6 +73,30 @@ export function makeMockOcppSender(): MockOcppSender {
     sendCall: vi.fn().mockResolvedValue({ success: true }),
     sendCallResultWithMessage: vi.fn().mockResolvedValue({ success: true }),
     sendCallErrorWithMessage: vi.fn().mockResolvedValue({ success: true }),
+  };
+}
+
+/**
+ * {@link makeMockOcppSender}, except that a response rewrites the message it answers the way the
+ * real sender does: the message leaves carrying the response's payload and state, a CSMS origin,
+ * and a context with a new timestamp. A handler that reads the request back off the message after
+ * responding fails against this, as it does in production.
+ */
+export function makeRewritingOcppSender(): MockOcppSender {
+  const respond = async (
+    message: IMessage<OcppRequest | OcppResponse | OcppError>,
+    payload: OcppResponse | OcppError,
+  ) => {
+    message.origin = MessageOrigin.ChargingStationManagementSystem;
+    message.context = { ...message.context, timestamp: new Date(0).toISOString() };
+    message.payload = payload;
+    message.state = MessageState.Response;
+    return { success: true };
+  };
+  return {
+    sendCall: vi.fn().mockResolvedValue({ success: true }),
+    sendCallResultWithMessage: vi.fn(respond),
+    sendCallErrorWithMessage: vi.fn(respond),
   };
 }
 

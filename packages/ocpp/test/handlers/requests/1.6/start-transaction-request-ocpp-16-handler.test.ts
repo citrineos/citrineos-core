@@ -18,8 +18,8 @@ import type { IConnectorRepository, ITransactionEventRepository } from '@citrine
 import { StartTransactionRequestOcpp16Handler } from '@handlers/index.js';
 import {
   createTestContainer,
-  makeMockOcppSender,
   makeMockAuthorizationAttemptService,
+  makeRewritingOcppSender,
 } from '@test/test-container.js';
 
 function makeMessage<T extends OcppRequest>(payload: T): IMessage<T> {
@@ -47,7 +47,7 @@ function makeHandler(
   } = {},
 ) {
   const { logger } = createTestContainer();
-  const ocppSender = makeMockOcppSender();
+  const ocppSender = makeRewritingOcppSender();
 
   const connectorRepository = {
     readConnectorByStationIdAndOcpp16ConnectorId: vi.fn().mockResolvedValue({
@@ -213,9 +213,11 @@ describe('StartTransactionRequestOcpp16Handler', () => {
       });
       const message = makeMessage(payload);
 
+      const { context } = message;
+
       await handler.handle(message);
 
-      expect(authorizationAttemptService.record).toHaveBeenCalledWith(message.context, {
+      expect(authorizationAttemptService.record).toHaveBeenCalledWith(context, {
         ocppVersion: OCPPVersion.OCPP1_6,
         action: OCPP_CallAction.StartTransaction,
         idToken: 'TAG001',

@@ -20,8 +20,8 @@ import { Transaction } from '@citrineos/dal';
 import { StopTransactionRequestOcpp16Handler } from '@handlers/index.js';
 import {
   createTestContainer,
-  makeMockOcppSender,
   makeMockAuthorizationAttemptService,
+  makeRewritingOcppSender,
 } from '@test/test-container.js';
 
 const STATION_DB_ID = vi.hoisted(() => 4242);
@@ -71,7 +71,7 @@ function makeHandler(
   authorizations: ReturnType<typeof anAuthorization>[] = [anAuthorization()],
 ) {
   const { logger } = createTestContainer();
-  const ocppSender = makeMockOcppSender();
+  const ocppSender = makeRewritingOcppSender();
 
   const authorizationRepository = {
     readAllByQuerystring: vi.fn().mockResolvedValue(authorizations),
@@ -297,9 +297,11 @@ describe('StopTransactionRequestOcpp16Handler', () => {
       const { handler, authorizationAttemptService } = makeHandler(transaction, [authorization]);
       const message = makeMessage(request);
 
+      const { context } = message;
+
       await handler.handle(message);
 
-      expect(authorizationAttemptService.record).toHaveBeenCalledWith(message.context, {
+      expect(authorizationAttemptService.record).toHaveBeenCalledWith(context, {
         ocppVersion: OCPPVersion.OCPP1_6,
         action: OCPP_CallAction.StopTransaction,
         idToken: 'TAG001',

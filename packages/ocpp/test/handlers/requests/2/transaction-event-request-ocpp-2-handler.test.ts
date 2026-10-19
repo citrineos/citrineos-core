@@ -20,8 +20,8 @@ import type { ITransactionEventRepository } from '@citrineos/dal';
 import { TransactionEventRequestOcpp2Handler } from '@handlers/index.js';
 import {
   createTestContainer,
-  makeMockOcppSender,
   makeMockAuthorizationAttemptService,
+  makeRewritingOcppSender,
 } from '@test/test-container.js';
 import { describe, expect, it, type Mock, vi } from 'vitest';
 
@@ -64,7 +64,7 @@ function makeHandler(
   } = {},
 ) {
   const { logger } = createTestContainer();
-  const ocppSender = makeMockOcppSender();
+  const ocppSender = makeRewritingOcppSender();
 
   const transactionRepository = {
     createOrUpdateTransactionByTransactionEventAndStationId: vi.fn().mockResolvedValue({
@@ -1367,12 +1367,14 @@ describe('TransactionEventRequestOcpp2Handler', () => {
       });
       const message = makeMessage(startedWithToken);
 
+      const { context } = message;
+
       await handler.handle(message);
 
       const transaction = await vi.mocked(
         transactionEventRepository.createOrUpdateTransactionByTransactionEventAndStationId,
       ).mock.results[0].value;
-      expect(authorizationAttemptService.record).toHaveBeenCalledWith(message.context, {
+      expect(authorizationAttemptService.record).toHaveBeenCalledWith(context, {
         ocppVersion: OCPPVersion.OCPP2_0_1,
         action: OCPP_CallAction.TransactionEvent,
         idToken: 'TOKEN-1',

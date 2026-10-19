@@ -67,6 +67,8 @@ export class StartTransactionRequestOcpp16Handler extends AbstractHandler {
     const tenantId = message.context.tenantId;
     const ocppConnectionName = message.context.ocppConnectionName;
     const request = message.payload;
+    // Sending replaces the message's payload and context with the response's.
+    const context = message.context;
 
     // Authorize
     const decision = newAuthorizationDecision();
@@ -112,7 +114,7 @@ export class StartTransactionRequestOcpp16Handler extends AbstractHandler {
       await this._ocppSender.sendCallResultWithMessage(message, response);
     }
 
-    await this._authorizationAttemptService.record(message.context, {
+    await this._authorizationAttemptService.record(context, {
       ocppVersion: message.protocol,
       action: message.action,
       idToken: request.idTag,

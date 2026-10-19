@@ -15,6 +15,7 @@ import {
   CacheNamespace,
   type ICache,
   type IMessage,
+  type IMessageContext,
   type IOcppSender,
   OcppError,
   recordAuthorizeResult,
@@ -131,6 +132,8 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
     const isOcpp21 = message.protocol === OCPPVersion.OCPP2_1;
 
     const transactionEvent = message.payload;
+    // Sending replaces the message's payload and context with the response's.
+    const context = message.context;
     const transactionId = transactionEvent.transactionInfo.transactionId;
     let authorizationResponse: OCPP2_response_types.TransactionEventResponse | undefined =
       undefined;
@@ -172,7 +175,9 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
         );
         await this._ocppSender.sendCallResultWithMessage(message, authorizationResponse ?? {});
         await this._recordAuthorizationAttempt(
-          message,
+          message.protocol,
+          context,
+          transactionEvent,
           decision,
           authorizationResponse,
           existingTransaction,
@@ -199,7 +204,13 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
           ),
         );
         decision.reason = AuthorizationAttemptReasonEnum.Error;
-        await this._recordAuthorizationAttempt(message, decision, undefined);
+        await this._recordAuthorizationAttempt(
+          message.protocol,
+          context,
+          transactionEvent,
+          decision,
+          undefined,
+        );
         return;
       }
       throw error;
@@ -649,7 +660,14 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
       this.createHandlerSentMessageLog('TransactionEventResponse'),
       messageConfirmation,
     );
-    await this._recordAuthorizationAttempt(message, decision, response, transaction);
+    await this._recordAuthorizationAttempt(
+      message.protocol,
+      context,
+      transactionEvent,
+      decision,
+      response,
+      transaction,
+    );
 
     // If the transaction is accepted and interval is set, start the cost update
     if (
@@ -668,18 +686,19 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
   }
 
   private async _recordAuthorizationAttempt(
-    message: IMessage<OCPP2_request_types.TransactionEventRequest>,
+    ocppVersion: string,
+    context: IMessageContext,
+    transactionEvent: OCPP2_request_types.TransactionEventRequest,
     decision: AuthorizationDecision,
     response: OCPP2_response_types.TransactionEventResponse | undefined,
     transaction?: TransactionDto,
   ): Promise<void> {
-    const transactionEvent = message.payload;
     if (!transactionEvent.idToken) {
       return;
     }
-    await this._authorizationAttemptService.record(message.context, {
-      ocppVersion: message.protocol,
-      action: message.action,
+    await this._authorizationAttemptService.record(context, {
+      ocppVersion,
+      action: OCPP_CallAction.TransactionEvent,
       idToken: transactionEvent.idToken.idToken,
       idTokenType: transactionEvent.idToken.type,
       decision,

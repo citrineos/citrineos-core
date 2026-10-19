@@ -19,8 +19,9 @@ import type { IAuthorizationRepository } from '@citrineos/dal';
 import { AuthorizeRequestOcpp16Handler } from '@handlers/index.js';
 import {
   createTestContainer,
-  makeMockOcppSender,
   makeMockAuthorizationAttemptService,
+  makeRewritingOcppSender,
+  type MockOcppSender,
 } from '@test/test-container.js';
 
 function makeMessage<T extends OcppRequest>(payload: T): IMessage<T> {
@@ -42,7 +43,7 @@ function makeMessage<T extends OcppRequest>(payload: T): IMessage<T> {
 
 function makeHandler(authorizations: unknown[]) {
   const { logger } = createTestContainer();
-  const ocppSender = makeMockOcppSender();
+  const ocppSender = makeRewritingOcppSender();
 
   const authorizationRepository = {
     readAllByQuerystring: vi.fn().mockResolvedValue(authorizations),
@@ -67,9 +68,7 @@ function makeHandler(authorizations: unknown[]) {
 }
 
 /** Pulls the AuthorizeResponse out of the single sendCallResultWithMessage call. */
-function sentResponse(
-  ocppSender: ReturnType<typeof makeMockOcppSender>,
-): OCPP1_6.AuthorizeResponse {
+function sentResponse(ocppSender: MockOcppSender): OCPP1_6.AuthorizeResponse {
   expect(ocppSender.sendCallResultWithMessage).toHaveBeenCalledOnce();
   return ocppSender.sendCallResultWithMessage.mock.calls[0][1] as OCPP1_6.AuthorizeResponse;
 }
@@ -111,9 +110,11 @@ describe('AuthorizeRequestOcpp16Handler', () => {
       const { handler, authorizationAttemptService } = makeHandler([authorization]);
       const message = makeMessage(request);
 
+      const { context } = message;
+
       await handler.handle(message);
 
-      expect(authorizationAttemptService.record).toHaveBeenCalledWith(message.context, {
+      expect(authorizationAttemptService.record).toHaveBeenCalledWith(context, {
         ocppVersion: OCPPVersion.OCPP1_6,
         action: OCPP_CallAction.Authorize,
         idToken: 'TAG001',

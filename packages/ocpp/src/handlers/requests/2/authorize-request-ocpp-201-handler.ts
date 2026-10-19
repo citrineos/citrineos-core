@@ -8,6 +8,7 @@ import {
   type IAuthorizer,
   type IMessage,
   type IMessageConfirmation,
+  type IMessageContext,
   type IOcppSender,
   OcppError,
   recordAuthorizeResult,
@@ -116,7 +117,9 @@ export class AuthorizeRequestOcpp201Handler extends AbstractHandler {
       this._logger.error('Token validation failed:', tokenValidation.errorMessage);
       await this._ocppSender.sendCallErrorWithMessage(message, error);
       decision.reason = AuthorizationAttemptReasonEnum.InvalidTokenFormat;
-      await this._recordAttempt(message, decision, undefined, { errorCode: error.errorCode });
+      await this._recordAttempt(message.protocol, context, request, decision, undefined, {
+        errorCode: error.errorCode,
+      });
       return;
     }
 
@@ -369,6 +372,8 @@ export class AuthorizeRequestOcpp201Handler extends AbstractHandler {
     response: OCPP2_response_types.AuthorizeResponse,
     decision: AuthorizationDecision,
   ): Promise<IMessageConfirmation> {
+    // Sending replaces the message's payload and context with the response's.
+    const { context, payload: request } = message;
     recordAuthorizeResult({
       status: response.idTokenInfo.status,
       ocppVersion: String(message.protocol),
@@ -376,7 +381,9 @@ export class AuthorizeRequestOcpp201Handler extends AbstractHandler {
     });
     const confirmation = await this._ocppSender.sendCallResultWithMessage(message, response);
     await this._recordAttempt(
-      message,
+      message.protocol,
+      context,
+      request,
       decision,
       response.idTokenInfo.status,
       response.certificateStatus ? { certificateStatus: response.certificateStatus } : undefined,
@@ -385,16 +392,18 @@ export class AuthorizeRequestOcpp201Handler extends AbstractHandler {
   }
 
   private _recordAttempt(
-    message: IMessage<OCPP2_request_types.AuthorizeRequest>,
+    ocppVersion: string,
+    context: IMessageContext,
+    request: OCPP2_request_types.AuthorizeRequest,
     decision: AuthorizationDecision,
     responseStatus: string | undefined,
     details?: Record<string, unknown>,
   ): Promise<void> {
-    return this._authorizationAttemptService.record(message.context, {
-      ocppVersion: message.protocol,
-      action: message.action,
-      idToken: message.payload.idToken.idToken,
-      idTokenType: message.payload.idToken.type,
+    return this._authorizationAttemptService.record(context, {
+      ocppVersion,
+      action: OCPP_CallAction.Authorize,
+      idToken: request.idToken.idToken,
+      idTokenType: request.idToken.type,
       decision,
       responseStatus,
       details,

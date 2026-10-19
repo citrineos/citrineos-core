@@ -76,6 +76,8 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
     const tenantId = message.context.tenantId;
     const ocppConnectionName = message.context.ocppConnectionName;
     const request = message.payload;
+    // Sending replaces the message's payload and context with the response's.
+    const context = message.context;
 
     const authorizations: AuthorizationDto[] = request.idTag
       ? await this._authorizationRepository.readAllByQuerystring(tenantId, {
@@ -154,7 +156,7 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
     });
 
     if (request.idTag) {
-      await this._authorizationAttemptService.record(message.context, {
+      await this._authorizationAttemptService.record(context, {
         ocppVersion: message.protocol,
         action: message.action,
         idToken: request.idTag,
