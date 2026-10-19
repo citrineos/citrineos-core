@@ -9,6 +9,7 @@ import {
   type IOcppSender,
   recordAuthorizeResult,
 } from '@citrineos/base';
+import type { IConnectorRepository, ITransactionEventRepository } from '@citrineos/dal';
 import {
   AuthorizationAttemptReasonEnum,
   type HandlerProperties,
@@ -22,7 +23,6 @@ import {
   type AuthorizationAttemptService,
   newAuthorizationDecision,
 } from '@services/authorization-attempts/index.js';
-import type { IConnectorRepository, ITransactionEventRepository } from '@citrineos/dal';
 
 @AsRequestHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.StartTransaction)
 export class StartTransactionRequestOcpp16Handler extends AbstractHandler {
