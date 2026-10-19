@@ -9,6 +9,7 @@ import {
   type IOcppSender,
 } from '@citrineos/base';
 import {
+  AuthorizationAttemptReasonEnum,
   type AuthorizationDto,
   AuthorizationStatusEnum,
   type HandlerProperties,
@@ -26,6 +27,10 @@ import {
 import { OCPP1_6_Mapper } from '@citrineos/dal';
 import { stationIdFilter } from '@citrineos/dal';
 import type { CostCalculator } from '@modules/transactions/cost-calculator.js';
+import {
+  type AuthorizationAttemptService,
+  newAuthorizationDecision,
+} from '@services/authorization-attempts/index.js';
 
 @AsRequestHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.StopTransaction)
 export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
@@ -34,6 +39,7 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
   protected _transactionEventRepository: ITransactionEventRepository;
   protected _transactionRepository: ITransactionRepository;
   protected _costCalculator: CostCalculator;
+  protected _authorizationAttemptService: Pick<AuthorizationAttemptService, 'record'>;
 
   constructor({
     logger,
@@ -42,12 +48,14 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
     transactionEventRepository,
     transactionRepository,
     costCalculator,
+    authorizationAttemptService,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
     authorizationRepository: IAuthorizationRepository;
     transactionEventRepository: ITransactionEventRepository;
     transactionRepository: ITransactionRepository;
     costCalculator: CostCalculator;
+    authorizationAttemptService: Pick<AuthorizationAttemptService, 'record'>;
   }) {
     super(logger);
 
@@ -56,6 +64,7 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
     this._transactionEventRepository = transactionEventRepository;
     this._transactionRepository = transactionRepository;
     this._costCalculator = costCalculator;
+    this._authorizationAttemptService = authorizationAttemptService;
   }
 
   async handle(
@@ -79,17 +88,26 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
     const authorization: AuthorizationDto | undefined =
       authorizations.length === 1 ? authorizations[0] : undefined;
 
+    const decision = newAuthorizationDecision();
+    decision.authorization = authorization;
     let idTokenInfoStatus = authorization?.status;
     if (authorization === undefined && request.idTag) {
       // Unknown idTag, fallback to Invalid
       idTokenInfoStatus = 'Invalid';
-    }
-    if (
-      idTokenInfoStatus === AuthorizationStatusEnum.Accepted &&
+      decision.reason =
+        authorizations.length > 1
+          ? AuthorizationAttemptReasonEnum.MultipleFound
+          : AuthorizationAttemptReasonEnum.NotFound;
+    } else if (idTokenInfoStatus !== AuthorizationStatusEnum.Accepted) {
+      decision.reason = AuthorizationAttemptReasonEnum.StoredStatus;
+    } else if (
       authorization?.cacheExpiryDateTime &&
       new Date() > new Date(authorization.cacheExpiryDateTime)
     ) {
       idTokenInfoStatus = AuthorizationStatusEnum.Expired;
+      decision.reason = AuthorizationAttemptReasonEnum.CacheExpired;
+    } else {
+      decision.reason = AuthorizationAttemptReasonEnum.Accepted;
     }
     switch (idTokenInfoStatus) {
       case AuthorizationStatusEnum.Accepted:
@@ -134,6 +152,18 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
       },
       include: [StartTransaction],
     });
+
+    if (request.idTag) {
+      await this._authorizationAttemptService.record(message.context, {
+        ocppVersion: message.protocol,
+        action: message.action,
+        idToken: request.idTag,
+        decision,
+        responseStatus: stopTransactionResponse.idTagInfo?.status,
+        transaction,
+        transactionId: request.transactionId.toString(),
+      });
+    }
 
     if (!transaction) {
       this._logger.error(`Transaction ${request.transactionId} not found.`);

@@ -9,6 +9,7 @@ import {
   type IOcppSender,
 } from '@citrineos/base';
 import {
+  AuthorizationAttemptReasonEnum,
   ChargingLimitSourceEnum,
   ChargingProfilePurposeEnum,
   ChargingStationSequenceTypeEnum,
@@ -24,6 +25,7 @@ import {
 } from '@citrineos/types';
 import type { IChargingProfileRepository } from '@citrineos/dal';
 import { IdGenerator } from '@util/index.js';
+import type { AuthorizationAttemptService } from '@services/authorization-attempts/index.js';
 
 @AsResponseHandler(OCPP_2_VER_LIST, OCPP_CallAction.RequestStartTransaction)
 export class RequestStartTransactionResponseOcpp2Handler extends AbstractHandler {
@@ -31,6 +33,7 @@ export class RequestStartTransactionResponseOcpp2Handler extends AbstractHandler
   protected _ocppSender: IOcppSender;
   protected _chargingProfileRepository: IChargingProfileRepository;
   protected _idGenerator: IdGenerator;
+  protected _authorizationAttemptService: Pick<AuthorizationAttemptService, 'recordRemoteStart'>;
 
   constructor({
     logger,
@@ -38,17 +41,20 @@ export class RequestStartTransactionResponseOcpp2Handler extends AbstractHandler
     ocppSender,
     chargingProfileRepository,
     idGenerator,
+    authorizationAttemptService,
   }: AbstractHandlerDependencies & {
     config: SystemConfig;
     ocppSender: IOcppSender;
     chargingProfileRepository: IChargingProfileRepository;
     idGenerator: IdGenerator;
+    authorizationAttemptService: Pick<AuthorizationAttemptService, 'recordRemoteStart'>;
   }) {
     super(logger);
     this._config = config;
     this._ocppSender = ocppSender;
     this._chargingProfileRepository = chargingProfileRepository;
     this._idGenerator = idGenerator;
+    this._authorizationAttemptService = authorizationAttemptService;
   }
 
   async handle(
@@ -59,6 +65,19 @@ export class RequestStartTransactionResponseOcpp2Handler extends AbstractHandler
       this.createHandlerReceivedMessageLog('RequestStartTransactionResponse'),
       message,
       props,
+    );
+
+    await this._authorizationAttemptService.recordRemoteStart(
+      message.context,
+      message.protocol,
+      message.action,
+      message.request,
+      {
+        reason: AuthorizationAttemptReasonEnum.StationResponded,
+        responseStatus: message.payload.status,
+        details: message.payload.statusInfo ? { statusInfo: message.payload.statusInfo } : null,
+        transactionId: message.payload.transactionId,
+      },
     );
 
     if (message.payload.status === RequestStartStopStatusEnum.Accepted) {

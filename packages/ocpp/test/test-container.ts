@@ -126,3 +126,19 @@ export function getTestInstance<T extends AnyClass>(
   });
   return container.resolve<InstanceType<T>>(TARGET_KEY);
 }
+
+export type MockAuthorizationAttemptService = {
+  record: Mock;
+  recordRemoteStart: Mock;
+};
+
+/**
+ * Every handler that evaluates or sends an idToken records the attempt; this stands in for the
+ * service so a test can assert on what was recorded.
+ */
+export function makeMockAuthorizationAttemptService(): MockAuthorizationAttemptService {
+  return {
+    record: vi.fn().mockResolvedValue(undefined),
+    recordRemoteStart: vi.fn().mockResolvedValue(undefined),
+  };
+}

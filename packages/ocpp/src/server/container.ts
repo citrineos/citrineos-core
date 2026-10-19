@@ -24,6 +24,7 @@ import {
   DefaultDrizzleInstance,
   DefaultSequelizeInstance,
   DrizzleAsyncJobStatusRepository,
+  DrizzleAuthorizationAttemptRepository,
   DrizzleAuthorizationRepository,
   DrizzleBootRepository,
   DrizzleCertificateRepository,
@@ -55,6 +56,7 @@ import {
   DrizzleVariableAttributeRepository,
   DrizzleVariableCharacteristicsRepository,
   SequelizeAsyncJobStatusRepository,
+  SequelizeAuthorizationAttemptRepository,
   SequelizeAuthorizationRepository,
   SequelizeBootRepository,
   SequelizeCertificateRepository,
@@ -111,6 +113,7 @@ import { TenantModule } from '@modules/tenant/index.js';
 import { registerTransactionsServices, TransactionsModule } from '@modules/transactions/index.js';
 import { LocalBypassAuthProvider, OIDCAuthProvider } from '@/apis/index.js';
 import {
+  AuthorizationAttemptService,
   CertificateAuthorityService,
   DeviceModelService,
   InstallCertificateHelperService,
@@ -326,6 +329,7 @@ function registerRepositories(container: AwilixContainer): void {
   container.register({
     asyncJobStatusRepository: asClass(SequelizeAsyncJobStatusRepository).singleton(),
     authorizationRepository: asClass(SequelizeAuthorizationRepository).singleton(),
+    authorizationAttemptRepository: asClass(SequelizeAuthorizationAttemptRepository).singleton(),
     bootRepository: asClass(SequelizeBootRepository).singleton(),
     certificateRepository: asClass(SequelizeCertificateRepository).singleton(),
     changeConfigurationRepository: asClass(SequelizeChangeConfigurationRepository).singleton(),
@@ -394,6 +398,7 @@ function registerRepositories(container: AwilixContainer): void {
 
       asyncJobStatusRepository: asClass(DrizzleAsyncJobStatusRepository).singleton(),
       authorizationRepository: asClass(DrizzleAuthorizationRepository).singleton(),
+      authorizationAttemptRepository: asClass(DrizzleAuthorizationAttemptRepository).singleton(),
       bootRepository: asClass(DrizzleBootRepository).singleton(),
       certificateRepository: asClass(DrizzleCertificateRepository).singleton(),
       changeConfigurationRepository: asClass(DrizzleChangeConfigurationRepository).singleton(),
@@ -456,6 +461,7 @@ function registerServices(container: AwilixContainer): void {
     networkAlertSweeper: asClass(NetworkAlertSweeper).singleton(),
     smartChargingService: asClass(InternalSmartCharging).singleton(),
     realTimeAuthorizer: asClass(RealTimeAuthorizer).singleton(),
+    authorizationAttemptService: asClass(AuthorizationAttemptService).singleton(),
     authorizers: asValue([]),
     apiAuthProvider: asFunction(({ config, logger }): IApiAuthProvider => {
       const oidc = (config as SystemConfig).auth.oidc;

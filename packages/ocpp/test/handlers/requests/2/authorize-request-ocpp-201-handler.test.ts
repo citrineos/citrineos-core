@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { type IAuthorizer, type IMessage, DEFAULT_TENANT_ID } from '@citrineos/base';
 import {
   type OcppRequest,
+  AuthorizationAttemptReasonEnum,
   AuthorizationStatusEnum,
   EventGroup,
   IdTokenEnum,
@@ -17,7 +18,11 @@ import {
 } from '@citrineos/types';
 import type { IAuthorizationRepository, IVariableAttributeRepository } from '@citrineos/dal';
 import { AuthorizeRequestOcpp201Handler } from '@handlers/index.js';
-import { createTestContainer, makeMockOcppSender } from '@test/test-container.js';
+import {
+  createTestContainer,
+  makeMockOcppSender,
+  makeMockAuthorizationAttemptService,
+} from '@test/test-container.js';
 import type { CertificateAuthorityService } from '@services/index.js';
 
 function makeMessage<T extends OcppRequest>(payload: T): IMessage<T> {
@@ -48,7 +53,7 @@ function anAttribute(evseId: number, value: string) {
 }
 
 function makeHandler(options: {
-  authorization: Record<string, unknown>;
+  authorization?: Record<string, unknown>;
   connectorTypes?: ReturnType<typeof anAttribute>[];
   evseIds?: ReturnType<typeof anAttribute>[];
 }) {
@@ -68,7 +73,10 @@ function makeHandler(options: {
     }),
   };
 
+  const authorizationAttemptService = makeMockAuthorizationAttemptService();
+
   const handler = new AuthorizeRequestOcpp201Handler({
+    authorizationAttemptService,
     logger,
     ocppSender,
     certificateAuthorityService: {} as unknown as CertificateAuthorityService,
@@ -78,7 +86,7 @@ function makeHandler(options: {
       variableAttributeRepository as unknown as IVariableAttributeRepository,
   } as never);
 
-  return { handler, ocppSender };
+  return { handler, ocppSender, authorizationAttemptService };
 }
 
 function sentResponse(
@@ -212,5 +220,86 @@ describe('AuthorizeRequestOcpp201Handler EVSE restrictions', () => {
     const response = sentResponse(ocppSender);
     expect(response.idTokenInfo.status).toBe(AuthorizationStatusEnum.Accepted);
     expect(response.idTokenInfo.evseId).toBeUndefined();
+  });
+});
+
+describe('AuthorizeRequestOcpp201Handler authorization attempts', () => {
+  it('records an accepted idToken with its type and the Authorization it matched', async () => {
+    const { handler, authorizationAttemptService } = makeHandler({
+      authorization: acceptedAuthorization,
+    });
+    const message = makeMessage(request);
+
+    await handler.handle(message);
+
+    expect(authorizationAttemptService.record).toHaveBeenCalledWith(message.context, {
+      ocppVersion: OCPPVersion.OCPP2_0_1,
+      action: OCPP_CallAction.Authorize,
+      idToken: 'TAG001',
+      idTokenType: OCPP2_0_1.IdTokenEnumType.Central,
+      decision: {
+        reason: AuthorizationAttemptReasonEnum.Accepted,
+        authorization: acceptedAuthorization,
+      },
+      responseStatus: AuthorizationStatusEnum.Accepted,
+      details: undefined,
+    });
+  });
+
+  it.each([
+    ['an unknown idToken', undefined, AuthorizationAttemptReasonEnum.NotFound],
+    [
+      'a Blocked Authorization',
+      { ...acceptedAuthorization, status: AuthorizationStatusEnum.Blocked },
+      AuthorizationAttemptReasonEnum.StoredStatus,
+    ],
+    [
+      'an EVSE restriction no EVSE meets',
+      { ...acceptedAuthorization, allowedConnectorTypes: ['cMCS'] },
+      AuthorizationAttemptReasonEnum.NotAllowedTypeEVSE,
+    ],
+  ])('records why %s was refused', async (_label, authorization, reason) => {
+    const { handler, authorizationAttemptService } = makeHandler({
+      authorization,
+      connectorTypes: [anAttribute(1, 'cCCS2')],
+    });
+
+    await handler.handle(makeMessage(request));
+
+    expect(authorizationAttemptService.record).toHaveBeenCalledOnce();
+    expect(authorizationAttemptService.record.mock.calls[0][1].decision.reason).toBe(reason);
+  });
+
+  it('records a malformed idToken it answered with a CallError', async () => {
+    const { handler, ocppSender, authorizationAttemptService } = makeHandler({
+      authorization: acceptedAuthorization,
+    });
+
+    await handler.handle(
+      makeMessage({
+        idToken: { idToken: 'not-hex', type: OCPP2_0_1.IdTokenEnumType.ISO14443 },
+      }),
+    );
+
+    expect(ocppSender.sendCallErrorWithMessage).toHaveBeenCalledOnce();
+    expect(authorizationAttemptService.record.mock.calls[0][1]).toMatchObject({
+      idToken: 'not-hex',
+      decision: { reason: AuthorizationAttemptReasonEnum.InvalidTokenFormat },
+      responseStatus: undefined,
+      details: { errorCode: 'PropertyConstraintViolation' },
+    });
+  });
+
+  it('records a NoAuthorization idToken', async () => {
+    const { handler, authorizationAttemptService } = makeHandler({});
+
+    await handler.handle(
+      makeMessage({ idToken: { idToken: '', type: OCPP2_0_1.IdTokenEnumType.NoAuthorization } }),
+    );
+
+    expect(authorizationAttemptService.record.mock.calls[0][1]).toMatchObject({
+      decision: { reason: AuthorizationAttemptReasonEnum.NoAuthorization },
+      responseStatus: AuthorizationStatusEnum.Accepted,
+    });
   });
 });

@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { type IMessage, DEFAULT_TENANT_ID } from '@citrineos/base';
 import {
   type OcppRequest,
+  AuthorizationAttemptReasonEnum,
   EventGroup,
   MessageOrigin,
   MessageState,
@@ -15,7 +16,11 @@ import {
 } from '@citrineos/types';
 import type { IConnectorRepository, ITransactionEventRepository } from '@citrineos/dal';
 import { StartTransactionRequestOcpp16Handler } from '@handlers/index.js';
-import { createTestContainer, makeMockOcppSender } from '@test/test-container.js';
+import {
+  createTestContainer,
+  makeMockOcppSender,
+  makeMockAuthorizationAttemptService,
+} from '@test/test-container.js';
 
 function makeMessage<T extends OcppRequest>(payload: T): IMessage<T> {
   return {
@@ -66,7 +71,10 @@ function makeHandler(
     ...overrides.transactionService,
   };
 
+  const authorizationAttemptService = makeMockAuthorizationAttemptService();
+
   const handler = new StartTransactionRequestOcpp16Handler({
+    authorizationAttemptService,
     logger,
     ocppSender,
     connectorRepository: connectorRepository as unknown as IConnectorRepository,
@@ -81,6 +89,7 @@ function makeHandler(
     connectorRepository,
     transactionEventRepository,
     transactionService,
+    authorizationAttemptService,
   };
 }
 
@@ -169,6 +178,69 @@ describe('StartTransactionRequestOcpp16Handler', () => {
       );
 
       expect(transactionService.deactivateOtherActiveTransactionsAtEvse).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('authorization attempts', () => {
+    const payload: OCPP1_6.StartTransactionRequest = {
+      connectorId: 1,
+      idTag: 'TAG001',
+      meterStart: 0,
+      timestamp: new Date().toISOString(),
+    };
+
+    function acceptingTransactionService() {
+      return {
+        authorizeOcpp16IdToken: vi.fn(
+          async (_context: unknown, _idTag: string, _connectorId: number, decision) => {
+            decision.reason = AuthorizationAttemptReasonEnum.Accepted;
+            return {
+              idTagInfo: { status: OCPP1_6.StartTransactionResponseStatus.Accepted },
+              transactionId: 0,
+            };
+          },
+        ),
+      };
+    }
+
+    it('records the accepted idTag against the transaction it started', async () => {
+      const transaction = { id: 9, transactionId: '100', createdAt: new Date() };
+      const { handler, authorizationAttemptService } = makeHandler({
+        transactionService: acceptingTransactionService(),
+        transactionEventRepository: {
+          createTransactionByStartTransaction: vi.fn().mockResolvedValue(transaction),
+        },
+      });
+      const message = makeMessage(payload);
+
+      await handler.handle(message);
+
+      expect(authorizationAttemptService.record).toHaveBeenCalledWith(message.context, {
+        ocppVersion: OCPPVersion.OCPP1_6,
+        action: OCPP_CallAction.StartTransaction,
+        idToken: 'TAG001',
+        decision: { reason: AuthorizationAttemptReasonEnum.Accepted },
+        responseStatus: OCPP1_6.StartTransactionResponseStatus.Accepted,
+        connectorId: 1,
+        transaction,
+      });
+    });
+
+    it('records an Error when the accepted transaction could not be created', async () => {
+      const { handler, authorizationAttemptService } = makeHandler({
+        transactionService: acceptingTransactionService(),
+        transactionEventRepository: {
+          createTransactionByStartTransaction: vi.fn().mockRejectedValue(new Error('db down')),
+        },
+      });
+
+      await handler.handle(makeMessage(payload));
+
+      expect(authorizationAttemptService.record.mock.calls[0][1]).toMatchObject({
+        decision: { reason: AuthorizationAttemptReasonEnum.Error },
+        responseStatus: OCPP1_6.StartTransactionResponseStatus.Invalid,
+        transaction: undefined,
+      });
     });
   });
 });

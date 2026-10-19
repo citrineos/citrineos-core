@@ -8,6 +8,8 @@ import type {
   AsyncJobDto,
   AttributeEnumType,
   AuthorizationCreate,
+  AuthorizationAttemptCreate,
+  AuthorizationAttemptDto,
   AuthorizationDto,
   BootCreate,
   BootDto,
@@ -776,6 +778,15 @@ export interface INetworkAlertRepository {
 
 export interface INetworkAlertConfigRepository {
   readByTenant(tenantId: number): Promise<NetworkAlertConfigDto[]>;
+}
+
+/** Append-only: attempts are recorded, never changed. */
+export interface IAuthorizationAttemptRepository {
+  createAuthorizationAttempt(
+    tenantId: number,
+    ocppConnectionName: string,
+    attempt: Omit<AuthorizationAttemptCreate, 'stationId' | 'tenantId'>,
+  ): Promise<AuthorizationAttemptDto>;
 }
 
 export interface IWebsocketEventRepository {

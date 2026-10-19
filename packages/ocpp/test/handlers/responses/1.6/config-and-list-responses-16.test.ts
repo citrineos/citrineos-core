@@ -4,6 +4,7 @@
 
 import { type IMessage, DEFAULT_TENANT_ID } from '@citrineos/base';
 import {
+  AuthorizationAttemptReasonEnum,
   type OcppRequest,
   type OcppResponse,
   ChargingLimitSourceEnum,
@@ -32,6 +33,8 @@ import {
   getTestInstance,
   makeMockOcppSender,
   type MockOcppSender,
+  makeMockAuthorizationAttemptService,
+  type MockAuthorizationAttemptService,
 } from '@test/test-container.js';
 import type { Mocked } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -247,6 +250,7 @@ describe('RemoteStartTransactionResponseOcpp16Handler', () => {
   let handler: RemoteStartTransactionResponseOcpp16Handler;
   let chargingProfileRepository: Mocked<IChargingProfileRepository>;
   let originalRequest: OCPP1_6.RemoteStartTransactionRequest | undefined;
+  let authorizationAttemptService: MockAuthorizationAttemptService;
 
   function build(request: OCPP1_6.RemoteStartTransactionRequest | undefined) {
     const { container } = createTestContainer();
@@ -254,10 +258,29 @@ describe('RemoteStartTransactionResponseOcpp16Handler', () => {
       createOrUpdateChargingProfile: vi.fn().mockResolvedValue({}),
     } as unknown as Mocked<IChargingProfileRepository>;
     originalRequest = request;
+    authorizationAttemptService = makeMockAuthorizationAttemptService();
     handler = getTestInstance(container, RemoteStartTransactionResponseOcpp16Handler, {
+      authorizationAttemptService,
       chargingProfileRepository,
     });
   }
+
+  it.each([
+    OCPP1_6.RemoteStartTransactionResponseStatus.Accepted,
+    OCPP1_6.RemoteStartTransactionResponseStatus.Rejected,
+  ])('records the station answering %s as an authorization attempt', async (status) => {
+    build(remoteStartRequest);
+
+    await respond(status);
+
+    expect(authorizationAttemptService.recordRemoteStart).toHaveBeenCalledWith(
+      expect.objectContaining({ correlationId: CORRELATION_ID, ocppConnectionName: STATION }),
+      OCPPVersion.OCPP1_6,
+      OCPP_CallAction.RemoteStartTransaction,
+      remoteStartRequest,
+      { reason: AuthorizationAttemptReasonEnum.StationResponded, responseStatus: status },
+    );
+  });
 
   function respond(status: OCPP1_6.RemoteStartTransactionResponseStatus) {
     return handler.handle(

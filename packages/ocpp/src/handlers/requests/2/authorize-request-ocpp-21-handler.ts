@@ -14,6 +14,7 @@ import {
 } from '@citrineos/base';
 import {
   AttributeEnum,
+  AuthorizationAttemptReasonEnum,
   AuthorizationStatusEnum,
   type AuthorizationStatusEnumType,
   AuthorizeCertificateStatusEnum,
@@ -22,14 +23,17 @@ import {
   IdTokenEnum,
   OCPP2_1,
   OCPP_CallAction,
-  type OcppRequest,
-  type OcppResponse,
   OCPPVersion,
   OCPP2_request_types,
   OCPP2_response_types,
   type VariableAttributeDto,
 } from '@citrineos/types';
-import { CertificateAuthorityService } from '@services/index.js';
+import {
+  type AuthorizationAttemptService,
+  type AuthorizationDecision,
+  CertificateAuthorityService,
+  newAuthorizationDecision,
+} from '@services/index.js';
 import { validateOcpp21IdToken } from '@util/index.js';
 import {
   type IAuthorizationRepository,
@@ -45,6 +49,7 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
   protected _authorizers: IAuthorizer[];
   protected _authorizationRepository: IAuthorizationRepository;
   protected _variableAttributeRepository: IVariableAttributeRepository;
+  protected _authorizationAttemptService: Pick<AuthorizationAttemptService, 'record'>;
   protected _tariffRepository: ITariffRepository;
 
   constructor({
@@ -54,6 +59,7 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
     authorizers,
     authorizationRepository,
     variableAttributeRepository,
+    authorizationAttemptService,
     tariffRepository,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
@@ -61,6 +67,7 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
     authorizers: IAuthorizer[];
     authorizationRepository: IAuthorizationRepository;
     variableAttributeRepository: IVariableAttributeRepository;
+    authorizationAttemptService: Pick<AuthorizationAttemptService, 'record'>;
     tariffRepository: ITariffRepository;
   }) {
     super(logger);
@@ -69,6 +76,7 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
     this._authorizers = authorizers;
     this._authorizationRepository = authorizationRepository;
     this._variableAttributeRepository = variableAttributeRepository;
+    this._authorizationAttemptService = authorizationAttemptService;
     this._tariffRepository = tariffRepository;
   }
 
@@ -80,6 +88,7 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
 
     const request: OCPP2_request_types.AuthorizeRequest = message.payload;
     const context = message.context;
+    const decision = newAuthorizationDecision();
     let response = {
       idTokenInfo: {
         status: AuthorizationStatusEnum.Unknown,
@@ -104,6 +113,8 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
 
       this._logger.error('Token validation failed:', tokenValidation.errorMessage);
       await this._ocppSender.sendCallErrorWithMessage(message, error);
+      decision.reason = AuthorizationAttemptReasonEnum.InvalidTokenFormat;
+      await this._recordAttempt(message, decision, undefined, { errorCode: error.errorCode });
       return;
     }
 
@@ -114,7 +125,8 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
           status: AuthorizationStatusEnum.Accepted,
         },
       } as OCPP2_response_types.AuthorizeResponse;
-      await this._sendAuthorizeResult(message, response);
+      decision.reason = AuthorizationAttemptReasonEnum.NoAuthorization;
+      await this._sendAuthorizeResult(message, response, decision);
       return;
     }
 
@@ -134,6 +146,7 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
           );
       }
       if (response.certificateStatus !== AuthorizeCertificateStatusEnum.Accepted) {
+        decision.reason = AuthorizationAttemptReasonEnum.CertificateRejected;
         response = {
           ...response,
           idTokenInfo: {
@@ -143,7 +156,7 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
                 : AuthorizationStatusEnum.Invalid,
           },
         } as OCPP2_response_types.AuthorizeResponse;
-        const messageConfirmation = await this._sendAuthorizeResult(message, response);
+        const messageConfirmation = await this._sendAuthorizeResult(message, response, decision);
         this._logger.debug(
           this.createHandlerSentMessageLog('Authorize 2.1 Response'),
           messageConfirmation,
@@ -160,6 +173,7 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
       },
     );
 
+    decision.authorization = authorization;
     if (authorization) {
       // Use flat fields directly instead of authorization.idTokenInfo
       const idTokenInfo = OCPP2_1_Mapper.AuthorizationMapper.toIdTokenInfo(authorization);
@@ -168,6 +182,7 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
           idTokenInfo.cacheExpiryDateTime &&
           new Date() > new Date(idTokenInfo.cacheExpiryDateTime)
         ) {
+          decision.reason = AuthorizationAttemptReasonEnum.CacheExpired;
           response = {
             ...response,
             idTokenInfo: {
@@ -196,6 +211,7 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
             }
           }
           if (evseIds && evseIds.size === 0) {
+            decision.reason = AuthorizationAttemptReasonEnum.NotAllowedTypeEVSE;
             response = {
               ...response,
               idTokenInfo: {
@@ -231,6 +247,7 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
               }
             }
             if (evseIds && evseIds.size === 0) {
+              decision.reason = AuthorizationAttemptReasonEnum.NotAtThisLocation;
               response = {
                 ...response,
                 idTokenInfo: {
@@ -241,6 +258,7 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
               } as OCPP2_response_types.AuthorizeResponse;
             } else {
               // TODO: Determine how to check for NotAtThisTime
+              decision.reason = AuthorizationAttemptReasonEnum.Accepted;
               response.idTokenInfo = idTokenInfo;
               const evseId: number[] = [...(evseIds ? evseIds.values() : [])];
               if (evseId.length > 0) {
@@ -260,6 +278,9 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
           );
           response.idTokenInfo.status =
             OCPP2_1_Mapper.AuthorizationMapper.fromAuthorizationStatusEnumType(result);
+          if (result !== AuthorizationStatusEnum.Accepted) {
+            decision.reason = AuthorizationAttemptReasonEnum.AuthorizerRejected;
+          }
         }
 
         // C17 - Prepaid card authorization (OCPP 2.1 only)
@@ -275,6 +296,7 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
             );
           } else {
             // C17.FR.02: Prepaid token with zero or negative balance
+            decision.reason = AuthorizationAttemptReasonEnum.NoCredit;
             response.idTokenInfo.status =
               OCPP2_1_Mapper.AuthorizationMapper.fromAuthorizationStatusEnumType(
                 AuthorizationStatusEnum.NoCredit,
@@ -287,12 +309,14 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
         }
       } else {
         // Blocked, Expired, Invalid, NoCredit, Unknown
+        decision.reason = AuthorizationAttemptReasonEnum.StoredStatus;
         response.idTokenInfo = idTokenInfo;
       }
     } else {
       // Status is Unknown if no authorization found
+      decision.reason = AuthorizationAttemptReasonEnum.NotFound;
       this._cancelContractIfNotAuthorized(response);
-      const messageConfirmation = await this._sendAuthorizeResult(message, response);
+      const messageConfirmation = await this._sendAuthorizeResult(message, response, decision);
       this._logger.debug(
         this.createHandlerSentMessageLog('Authorize 2.1 Response'),
         messageConfirmation,
@@ -331,7 +355,7 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
     }
 
     this._cancelContractIfNotAuthorized(response);
-    const messageConfirmation = await this._sendAuthorizeResult(message, response);
+    const messageConfirmation = await this._sendAuthorizeResult(message, response, decision);
     this._logger.debug(
       this.createHandlerSentMessageLog('Authorize 2.1 Response'),
       messageConfirmation,
@@ -360,18 +384,40 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
   /**
    * Records the Authorize decision, then sends the CallResult.
    */
-  private _sendAuthorizeResult(
-    message: IMessage<OcppRequest>,
-    response: OcppResponse,
+  private async _sendAuthorizeResult(
+    message: IMessage<OCPP2_request_types.AuthorizeRequest>,
+    response: OCPP2_response_types.AuthorizeResponse,
+    decision: AuthorizationDecision,
   ): Promise<IMessageConfirmation> {
-    const status =
-      (response as { idTokenInfo?: { status?: unknown } }).idTokenInfo?.status ??
-      (response as { idTagInfo?: { status?: unknown } }).idTagInfo?.status;
     recordAuthorizeResult({
-      status,
+      status: response.idTokenInfo.status,
       ocppVersion: String(message.protocol),
       action: 'Authorize',
     });
-    return this._ocppSender.sendCallResultWithMessage(message, response);
+    const confirmation = await this._ocppSender.sendCallResultWithMessage(message, response);
+    await this._recordAttempt(
+      message,
+      decision,
+      response.idTokenInfo.status,
+      response.certificateStatus ? { certificateStatus: response.certificateStatus } : undefined,
+    );
+    return confirmation;
+  }
+
+  private _recordAttempt(
+    message: IMessage<OCPP2_request_types.AuthorizeRequest>,
+    decision: AuthorizationDecision,
+    responseStatus: string | undefined,
+    details?: Record<string, unknown>,
+  ): Promise<void> {
+    return this._authorizationAttemptService.record(message.context, {
+      ocppVersion: message.protocol,
+      action: message.action,
+      idToken: message.payload.idToken.idToken,
+      idTokenType: message.payload.idToken.type,
+      decision,
+      responseStatus,
+      details,
+    });
   }
 }

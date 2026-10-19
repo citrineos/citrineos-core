@@ -14,6 +14,7 @@ export {
 } from '../../models/device-model/index.js';
 export {
   Authorization,
+  AuthorizationAttempt,
   LocalListAuthorization,
   LocalListVersion,
   SendLocalList,
@@ -86,6 +87,7 @@ export {
   type SequelizeRepositoryDependencies,
 } from '../../repositories/sequelize/base.js';
 export { SequelizeAuthorizationRepository } from '../../repositories/sequelize/authorization.js';
+export { SequelizeAuthorizationAttemptRepository } from '../../repositories/sequelize/authorization-attempt.js';
 export { SequelizeBootRepository } from '../../repositories/sequelize/boot.js';
 export { SequelizeDeviceModelRepository } from '../../repositories/sequelize/device-model.js';
 export { SequelizeLocalAuthListRepository } from '../../repositories/sequelize/local-auth-list.js';

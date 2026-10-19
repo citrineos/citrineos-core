@@ -94,6 +94,7 @@ export * as OCPP2_common_types from './src/ocpp/rpc/2/types.js';
 export type { UpdateChargingStationPasswordRequest } from './src/ocpp/model/UpdateChargingStationPasswordRequest.js';
 
 export * from './src/interfaces/dto/async-job-dto.js';
+export * from './src/interfaces/dto/authorization-attempt-dto.js';
 export * from './src/interfaces/dto/authorization-dto.js';
 export * from './src/interfaces/dto/boot-dto.js';
 export * from './src/interfaces/dto/certificate-dto.js';
@@ -141,6 +142,7 @@ export * from './src/interfaces/dto/tenant-partner-dto.js';
 export * from './src/interfaces/dto/transaction-dto.js';
 export * from './src/interfaces/dto/transaction-event-dto.js';
 export * from './src/interfaces/dto/types/authorization.js';
+export * from './src/interfaces/dto/types/authorization-attempt.js';
 export * from './src/interfaces/dto/types/base-dto.js';
 export * from './src/interfaces/dto/types/charging-parameters.js';
 export * from './src/interfaces/dto/types/enums.js';

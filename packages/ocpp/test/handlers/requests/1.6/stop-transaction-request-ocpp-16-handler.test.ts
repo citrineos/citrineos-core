@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { type IMessage, DEFAULT_TENANT_ID } from '@citrineos/base';
 import {
   type OcppRequest,
+  AuthorizationAttemptReasonEnum,
   AuthorizationStatusEnum,
   EventGroup,
   MessageOrigin,
@@ -17,7 +18,11 @@ import {
 import type { IAuthorizationRepository, ITransactionEventRepository } from '@citrineos/dal';
 import { Transaction } from '@citrineos/dal';
 import { StopTransactionRequestOcpp16Handler } from '@handlers/index.js';
-import { createTestContainer, makeMockOcppSender } from '@test/test-container.js';
+import {
+  createTestContainer,
+  makeMockOcppSender,
+  makeMockAuthorizationAttemptService,
+} from '@test/test-container.js';
 
 const STATION_DB_ID = vi.hoisted(() => 4242);
 vi.mock('@citrineos/dal', async (importOriginal) => ({
@@ -91,7 +96,10 @@ function makeHandler(
     .spyOn(Transaction, 'findOne')
     .mockResolvedValue(transaction as unknown as Transaction);
 
+  const authorizationAttemptService = makeMockAuthorizationAttemptService();
+
   const handler = new StopTransactionRequestOcpp16Handler({
+    authorizationAttemptService,
     logger,
     ocppSender,
     authorizationRepository: authorizationRepository as unknown as IAuthorizationRepository,
@@ -101,7 +109,14 @@ function makeHandler(
     costCalculator,
   } as never);
 
-  return { handler, ocppSender, transactionEventRepository, costCalculator, findOne };
+  return {
+    handler,
+    ocppSender,
+    transactionEventRepository,
+    costCalculator,
+    findOne,
+    authorizationAttemptService,
+  };
 }
 
 const request: OCPP1_6.StopTransactionRequest = {
@@ -273,5 +288,61 @@ describe('StopTransactionRequestOcpp16Handler', () => {
         sampledValue: [expect.objectContaining({ value: 25000 })],
       }),
     ]);
+  });
+
+  describe('authorization attempts', () => {
+    it('records the idTag against the transaction it stopped', async () => {
+      const transaction = aTransaction(true);
+      const authorization = anAuthorization();
+      const { handler, authorizationAttemptService } = makeHandler(transaction, [authorization]);
+      const message = makeMessage(request);
+
+      await handler.handle(message);
+
+      expect(authorizationAttemptService.record).toHaveBeenCalledWith(message.context, {
+        ocppVersion: OCPPVersion.OCPP1_6,
+        action: OCPP_CallAction.StopTransaction,
+        idToken: 'TAG001',
+        decision: { reason: AuthorizationAttemptReasonEnum.Accepted, authorization },
+        responseStatus: OCPP1_6.StopTransactionResponseStatus.Accepted,
+        transaction,
+        transactionId: '100',
+      });
+    });
+
+    it('records the attempt even when the transaction is unknown', async () => {
+      const { handler, authorizationAttemptService } = makeHandler(null, []);
+
+      await handler.handle(makeMessage(request));
+
+      expect(authorizationAttemptService.record.mock.calls[0][1]).toMatchObject({
+        decision: { reason: AuthorizationAttemptReasonEnum.NotFound },
+        responseStatus: OCPP1_6.StopTransactionResponseStatus.Invalid,
+        transaction: null,
+        transactionId: '100',
+      });
+    });
+
+    it('records an expired cache entry', async () => {
+      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const { handler, authorizationAttemptService } = makeHandler(aTransaction(true), [
+        anAuthorization({ cacheExpiryDateTime: yesterday }),
+      ]);
+
+      await handler.handle(makeMessage(request));
+
+      expect(authorizationAttemptService.record.mock.calls[0][1].decision.reason).toBe(
+        AuthorizationAttemptReasonEnum.CacheExpired,
+      );
+    });
+
+    it('records nothing when the station presented no idTag', async () => {
+      const { idTag: _, ...withoutIdTag } = request;
+      const { handler, authorizationAttemptService } = makeHandler(aTransaction(true));
+
+      await handler.handle(makeMessage(withoutIdTag));
+
+      expect(authorizationAttemptService.record).not.toHaveBeenCalled();
+    });
   });
 });
