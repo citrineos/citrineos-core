@@ -151,6 +151,36 @@ describe('RabbitMqModuleReceiver', () => {
         vi.mocked(mockChannel.consume).mock.invocationCallOrder[0],
       );
     });
+
+    it('should not duplicate a consumer when connection recovery follows channel recovery', async () => {
+      const connectionManager = aMockConnectionManager();
+      const initialChannel = aMockAmqpChannel();
+      const replacementChannel = aMockAmqpChannel();
+      const channelManager = aMockChannelManager(initialChannel, connectionManager);
+      const recovering = getTestInstance(container, RabbitMqModuleReceiver, {
+        config: aSystemConfigWithAmqp(),
+        channelManager,
+        deadLetterPublisher: aMockDeadLetterPublisher(),
+        module: undefined,
+      });
+
+      await recovering.subscribe('Recovering', [OCPP_CallAction.Heartbeat], {
+        state: MessageState.Response.toString(),
+      });
+      vi.mocked(channelManager.getChannel).mockResolvedValue(replacementChannel);
+
+      channelManager.emit('channelInvalidated', 'module-receiver-Recovering');
+      await vi.waitFor(() => expect(replacementChannel.consume).toHaveBeenCalledTimes(1));
+
+      const connected = connectionManager.on.mock.calls.find(
+        ([event]) => event === 'connected',
+      )?.[1] as () => Promise<void>;
+      await connected();
+
+      expect(replacementChannel.consume).toHaveBeenCalledTimes(1);
+      await recovering.unsubscribe('Recovering');
+      expect(replacementChannel.cancel).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('unsubscribe()', () => {
@@ -338,22 +368,24 @@ describe('RabbitMqModuleReceiver', () => {
 
     it('should restore the catch-up consumer after a reconnect', async () => {
       const connectionManager = aMockConnectionManager();
+      const channelManager = aMockChannelManager(mockChannel, connectionManager);
       const reconnecting = getTestInstance(container, RabbitMqModuleReceiver, {
         config: aSystemConfigWithAmqp(),
-        channelManager: aMockChannelManager(mockChannel, connectionManager),
+        channelManager,
         deadLetterPublisher: aMockDeadLetterPublisher(),
         module: undefined,
       });
       await reconnecting.subscribe(REQUESTS, [OCPP_CallAction.TransactionEvent], REQUEST_FILTER);
-      (mockChannel.consume as any).mockClear();
+      const replacement = aMockAmqpChannel();
+      vi.mocked(channelManager.getChannel).mockResolvedValue(replacement);
 
       const [, onConnected] = connectionManager.on.mock.calls.find(
         ([event]) => event === 'connected',
       ) ?? [undefined, async () => {}];
       await onConnected();
 
-      expect(mockChannel.consume).toHaveBeenCalledWith(REQUESTS_QUEUE, expect.any(Function));
-      expect(mockChannel.consume).toHaveBeenCalledWith(CATCH_UP_QUEUE, expect.any(Function));
+      expect(replacement.consume).toHaveBeenCalledWith(REQUESTS_QUEUE, expect.any(Function));
+      expect(replacement.consume).toHaveBeenCalledWith(CATCH_UP_QUEUE, expect.any(Function));
     });
   });
 });

@@ -35,6 +35,7 @@ export class RabbitMqModuleReceiver extends RabbitMqReceiver {
   protected _catchUpConsumers = new Set<string>();
 
   protected _consumerTags = new Map<string, string[]>();
+  protected _consumerChannels = new Map<string, amqplib.Channel>();
   protected _moduleSubscriptions = new Map<
     string,
     Array<{ actions?: CallAction[]; filter?: Record<string, string> }>
@@ -54,14 +55,23 @@ export class RabbitMqModuleReceiver extends RabbitMqReceiver {
   protected async _onReconnect(): Promise<void> {
     if (this._moduleSubscriptions.size === 0) return;
 
-    // Old consumer tags reference a dead channel — reset before re-subscribing
-    this._consumerTags.clear();
-    this._catchUpConsumers.clear();
-
     let restored = 0;
     for (const [identifier, subscriptions] of this._moduleSubscriptions) {
-      for (const { actions, filter } of subscriptions) {
-        await this._subscribePerIdentifierQueue(identifier, actions, filter);
+      if (this._isStopping) return;
+      const channel = await this._channelManager.getChannel(this._channelId(identifier));
+      if (this._hasCurrentConsumers(identifier, subscriptions, channel)) continue;
+      await this._discardPartialConsumers(identifier, channel);
+      this._consumerTags.delete(identifier);
+      this._consumerChannels.delete(identifier);
+      this._catchUpConsumers.delete(identifier);
+      for (const subscription of subscriptions) {
+        if (!this._moduleSubscriptions.get(identifier)?.includes(subscription)) continue;
+        await this._subscribePerIdentifierQueue(
+          identifier,
+          subscription.actions,
+          subscription.filter,
+          subscription,
+        );
         restored++;
       }
     }
@@ -69,6 +79,51 @@ export class RabbitMqModuleReceiver extends RabbitMqReceiver {
     this._logger.info(
       `[module-queues] Reinitialized ${this._moduleSubscriptions.size} queue(s) after reconnect ` +
         `(${restored} subscription(s) restored)`,
+    );
+  }
+
+  protected async _onChannelInvalidated(channelId: string): Promise<void> {
+    if (!channelId.startsWith(RabbitMqModuleReceiver.CHANNEL_PREFIX)) return;
+    const identifier = channelId.slice(RabbitMqModuleReceiver.CHANNEL_PREFIX.length);
+    const subscriptions = this._moduleSubscriptions.get(identifier);
+    if (!subscriptions?.length || this._isStopping) return;
+
+    const replacement = await this._channelManager.getChannel(channelId);
+    if (this._isStopping || this._hasCurrentConsumers(identifier, subscriptions, replacement))
+      return;
+    await this._discardPartialConsumers(identifier, replacement);
+    this._consumerTags.delete(identifier);
+    this._consumerChannels.delete(identifier);
+    this._catchUpConsumers.delete(identifier);
+
+    for (const subscription of subscriptions) {
+      if (!this._moduleSubscriptions.get(identifier)?.includes(subscription)) continue;
+      if (this._isStopping) return;
+      await this._subscribePerIdentifierQueue(
+        identifier,
+        subscription.actions,
+        subscription.filter,
+        subscription,
+      );
+    }
+    if (!this._isStopping) {
+      this._logger.info(`[module-queues] Restored channel ${channelId} after channel failure`);
+    }
+  }
+
+  private _hasCurrentConsumers(
+    identifier: string,
+    subscriptions: Array<{ actions?: CallAction[]; filter?: Record<string, string> }>,
+    channel: amqplib.Channel,
+  ): boolean {
+    const expectedCatchUp = subscriptions.some(
+      ({ filter }) => filter?.state !== MessageState.Response.toString(),
+    );
+    const expectedTags = subscriptions.length + Number(expectedCatchUp);
+    return (
+      this._consumerChannels.get(identifier) === channel &&
+      this._consumerTags.get(identifier)?.length === expectedTags &&
+      this._catchUpConsumers.has(identifier) === expectedCatchUp
     );
   }
 
@@ -94,16 +149,18 @@ export class RabbitMqModuleReceiver extends RabbitMqReceiver {
       return true;
     }
 
+    const subscription = { actions, filter };
     const existing = this._moduleSubscriptions.get(identifier) ?? [];
-    this._moduleSubscriptions.set(identifier, [...existing, { actions, filter }]);
+    this._moduleSubscriptions.set(identifier, [...existing, subscription]);
 
-    return this._subscribePerIdentifierQueue(identifier, actions, filter);
+    return this._subscribePerIdentifierQueue(identifier, actions, filter, subscription);
   }
 
   protected async _subscribePerIdentifierQueue(
     identifier: string,
     actions?: CallAction[],
     filter?: { [k: string]: string },
+    expectedSubscription?: { actions?: CallAction[]; filter?: Record<string, string> },
   ): Promise<boolean> {
     const queueName = `${RabbitMqModuleReceiver.QUEUE_PREFIX}${identifier}`;
 
@@ -145,8 +202,21 @@ export class RabbitMqModuleReceiver extends RabbitMqReceiver {
     }
 
     const consumerTag = await this._consume(channel, queueName, this._prefetch);
+    if (this._isStopping) {
+      if (consumerTag) await channel.cancel(consumerTag).catch(() => undefined);
+      return true;
+    }
+    if (
+      expectedSubscription &&
+      !this._moduleSubscriptions.get(identifier)?.includes(expectedSubscription)
+    ) {
+      if (consumerTag) await channel.cancel(consumerTag).catch(() => undefined);
+      return true;
+    }
+    if (!consumerTag) return true;
     const existing = this._consumerTags.get(identifier) ?? [];
     this._consumerTags.set(identifier, [...existing, consumerTag]);
+    this._consumerChannels.set(identifier, channel);
 
     if (filter.state !== MessageState.Response.toString()) {
       await this._consumeCatchUpQueue(identifier, queueName, channel);
@@ -170,6 +240,11 @@ export class RabbitMqModuleReceiver extends RabbitMqReceiver {
       exclusive: false,
     });
     const consumerTag = await this._consume(channel, catchUpQueue, this._catchUpPrefetch);
+    if (this._isStopping || !this._moduleSubscriptions.has(identifier)) {
+      if (consumerTag) await channel.cancel(consumerTag).catch(() => undefined);
+      return;
+    }
+    if (!consumerTag) return;
     this._consumerTags.set(identifier, [
       ...(this._consumerTags.get(identifier) ?? []),
       consumerTag,
@@ -208,6 +283,8 @@ export class RabbitMqModuleReceiver extends RabbitMqReceiver {
   async unsubscribe(identifier: string): Promise<boolean> {
     this._moduleSubscriptions.delete(identifier);
     this._catchUpConsumers.delete(identifier);
+    const queueName = `${RabbitMqModuleReceiver.QUEUE_PREFIX}${identifier}`;
+    this._catchUpQueues.delete(queueName);
 
     const channel = await this._channelManager.getChannel(this._channelId(identifier));
     if (!channel) {
@@ -221,6 +298,7 @@ export class RabbitMqModuleReceiver extends RabbitMqReceiver {
         this._logger.debug(`Unsubscribed from ${identifier} with consumer tag ${consumerTag}.`);
       }
       this._consumerTags.delete(identifier);
+      this._consumerChannels.delete(identifier);
       return true;
     } else {
       this._logger.warn(`No consumer tag found for ${identifier} during unsubscribe.`);
@@ -229,6 +307,7 @@ export class RabbitMqModuleReceiver extends RabbitMqReceiver {
   }
 
   async shutdown(): Promise<void> {
+    this._stopRecovery();
     for (const [identifier, consumerTags] of this._consumerTags) {
       const channel = await this._channelManager.getChannel(this._channelId(identifier));
       if (channel) {
@@ -245,9 +324,25 @@ export class RabbitMqModuleReceiver extends RabbitMqReceiver {
         }
       }
     }
+    this._consumerTags.clear();
+    this._consumerChannels.clear();
   }
 
   protected _channelId(identifier: string): string {
     return `${RabbitMqModuleReceiver.CHANNEL_PREFIX}${identifier}`;
+  }
+
+  private async _discardPartialConsumers(
+    identifier: string,
+    channel: amqplib.Channel,
+  ): Promise<void> {
+    if (this._consumerChannels.get(identifier) !== channel) return;
+    for (const consumerTag of this._consumerTags.get(identifier) ?? []) {
+      try {
+        await channel.cancel(consumerTag);
+      } catch {
+        // A partially restored consumer may already have disappeared with a channel failure.
+      }
+    }
   }
 }
