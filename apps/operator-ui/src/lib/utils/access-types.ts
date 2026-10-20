@@ -23,6 +23,7 @@ export type User = {
 
 export enum ResourceType {
   AUTHORIZATIONS = 'Authorizations',
+  AUTHORIZATION_ATTEMPTS = 'AuthorizationAttempts',
   BOOTS = 'Boots',
   SECURITY_EVENTS = 'SecurityEvents',
   CHARGING_STATIONS = 'ChargingStations',

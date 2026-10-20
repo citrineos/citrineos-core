@@ -1,7 +1,12 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { SignedMeterValuesUtil } from '@services/index.js';
+import {
+  type AuthorizationAttemptService,
+  type AuthorizationDecision,
+  newAuthorizationDecision,
+  SignedMeterValuesUtil,
+} from '@services/index.js';
 import type { VariableAttributeDto } from '@citrineos/types';
 import {
   AbstractHandler,
@@ -10,12 +15,14 @@ import {
   CacheNamespace,
   type ICache,
   type IMessage,
+  type IMessageContext,
   type IOcppSender,
   OcppError,
   recordAuthorizeResult,
 } from '@citrineos/base';
 import {
   AttributeEnum,
+  AuthorizationAttemptReasonEnum,
   AuthorizationStatusEnum,
   ErrorCode,
   EventGroup,
@@ -57,6 +64,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
   protected _transactionEventRepository: ITransactionEventRepository;
   protected _transactionRepository: ITransactionRepository;
   protected _transactionService: TransactionService;
+  protected _authorizationAttemptService: Pick<AuthorizationAttemptService, 'record'>;
 
   private readonly _costUpdatedInterval: number | undefined;
   private readonly _sendCostUpdatedOnMeterValue: boolean | undefined;
@@ -74,6 +82,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
     transactionEventRepository,
     transactionRepository,
     transactionService,
+    authorizationAttemptService,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
     cache: ICache;
@@ -86,6 +95,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
     transactionEventRepository: ITransactionEventRepository;
     transactionRepository: ITransactionRepository;
     transactionService: TransactionService;
+    authorizationAttemptService: Pick<AuthorizationAttemptService, 'record'>;
   }) {
     super(logger);
 
@@ -99,6 +109,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
     this._transactionEventRepository = transactionEventRepository;
     this._transactionRepository = transactionRepository;
     this._transactionService = transactionService;
+    this._authorizationAttemptService = authorizationAttemptService;
 
     this._sendCostUpdatedOnMeterValue = config.transactions.sendCostUpdatedOnMeterValue;
     this._costUpdatedInterval = config.transactions.costUpdatedInterval;
@@ -121,22 +132,27 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
     const isOcpp21 = message.protocol === OCPPVersion.OCPP2_1;
 
     const transactionEvent = message.payload;
+    // Sending replaces the message's payload and context with the response's.
+    const context = message.context;
     const transactionId = transactionEvent.transactionInfo.transactionId;
     let authorizationResponse: OCPP2_response_types.TransactionEventResponse | undefined =
       undefined;
     let transaction: TransactionDto | undefined = undefined;
+    const decision = newAuthorizationDecision();
     if (transactionEvent.idToken) {
       if (isOcpp21) {
         authorizationResponse = await this._transactionService.authorizeOcpp21IdToken(
           tenantId,
           transactionEvent,
           message.context,
+          decision,
         );
       } else {
         authorizationResponse = await this._transactionService.authorizeOcpp201IdToken(
           tenantId,
           transactionEvent,
           message.context,
+          decision,
         );
       }
 
@@ -158,6 +174,14 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
           `Received ${transactionEvent.eventType} for already-ended transaction ${transactionId} on ${ocppConnectionName}. Ignoring.`,
         );
         await this._ocppSender.sendCallResultWithMessage(message, authorizationResponse ?? {});
+        await this._recordAuthorizationAttempt(
+          message.protocol,
+          context,
+          transactionEvent,
+          decision,
+          authorizationResponse,
+          existingTransaction,
+        );
         return;
       }
     }
@@ -178,6 +202,14 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
             ErrorCode.PropertyConstraintViolation,
             'Referenced entity does not exist.',
           ),
+        );
+        decision.reason = AuthorizationAttemptReasonEnum.Error;
+        await this._recordAuthorizationAttempt(
+          message.protocol,
+          context,
+          transactionEvent,
+          decision,
+          undefined,
         );
         return;
       }
@@ -628,6 +660,14 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
       this.createHandlerSentMessageLog('TransactionEventResponse'),
       messageConfirmation,
     );
+    await this._recordAuthorizationAttempt(
+      message.protocol,
+      context,
+      transactionEvent,
+      decision,
+      response,
+      transaction,
+    );
 
     // If the transaction is accepted and interval is set, start the cost update
     if (
@@ -643,6 +683,35 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
         message.protocol,
       );
     }
+  }
+
+  private async _recordAuthorizationAttempt(
+    ocppVersion: string,
+    context: IMessageContext,
+    transactionEvent: OCPP2_request_types.TransactionEventRequest,
+    decision: AuthorizationDecision,
+    response: OCPP2_response_types.TransactionEventResponse | undefined,
+    transaction?: TransactionDto,
+  ): Promise<void> {
+    if (!transactionEvent.idToken) {
+      return;
+    }
+    await this._authorizationAttemptService.record(context, {
+      ocppVersion,
+      action: OCPP_CallAction.TransactionEvent,
+      idToken: transactionEvent.idToken.idToken,
+      idTokenType: transactionEvent.idToken.type,
+      decision,
+      responseStatus: response?.idTokenInfo?.status,
+      details: {
+        eventType: transactionEvent.eventType,
+        triggerReason: transactionEvent.triggerReason,
+      },
+      evseId: transactionEvent.evse?.id,
+      connectorId: transactionEvent.evse?.connectorId,
+      transaction,
+      transactionId: transactionEvent.transactionInfo.transactionId,
+    });
   }
 
   /**

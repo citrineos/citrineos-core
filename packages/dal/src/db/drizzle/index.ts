@@ -19,6 +19,10 @@ export {
   toAuthorizationDto,
 } from '../../repositories/drizzle/authorization.js';
 export {
+  DrizzleAuthorizationAttemptRepository,
+  toAuthorizationAttemptDto,
+} from '../../repositories/drizzle/authorization-attempt.js';
+export {
   DrizzleRepository,
   DrizzleTenantScopedRepository,
   type CitrineTable,
@@ -156,6 +160,13 @@ export {
   toWebsocketEventDto,
 } from '../../repositories/drizzle/websocket-event.js';
 export { registeredTableNames, registeredTables, type RegisteredTable } from './schema-registry.js';
+export {
+  AuthorizationAttemptEntityInsertSchema,
+  AuthorizationAttemptEntitySchema,
+  authorizationAttemptTable,
+  type AuthorizationAttemptEntity,
+  type AuthorizationAttemptEntityInsert,
+} from './schema/authorization-attempt.js';
 export {
   AuthorizationEntityInsertSchema,
   AuthorizationEntitySchema,

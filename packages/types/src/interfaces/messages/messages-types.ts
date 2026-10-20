@@ -119,6 +119,7 @@ export const CallEventSchema = z.object({
   correlationId: z.string(),
   action: z.string(),
   protocol: OCPPVersionSchema,
+  request: z.any().optional(),
 });
 
 export const MessagesEventSchema = z.discriminatedUnion('kind', [

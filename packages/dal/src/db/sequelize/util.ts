@@ -9,6 +9,7 @@ import { Sequelize } from 'sequelize-typescript';
 import type { ILogObj, Logger } from 'tslog';
 import { AsyncJobStatus } from '../../models/async-job/async-job-status.js';
 import { Authorization } from '../../models/authorization/authorization.js';
+import { AuthorizationAttempt } from '../../models/authorization/authorization-attempt.js';
 import { LocalListAuthorization } from '../../models/authorization/local-list-authorization.js';
 import { LocalListVersion } from '../../models/authorization/local-list-version.js';
 import { LocalListVersionAuthorization } from '../../models/authorization/local-list-version-authorization.js';
@@ -157,6 +158,7 @@ export class DefaultSequelizeInstance {
       models: [
         AsyncJobStatus,
         Authorization,
+        AuthorizationAttempt,
         Boot,
         Certificate,
         InstalledCertificate,
