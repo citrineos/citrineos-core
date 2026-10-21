@@ -11,6 +11,9 @@ object_relationships:
   - name: Evse
     using:
       foreign_key_constraint_on: evseId
+  - name: LatestStatusNotification
+    using:
+      foreign_key_constraint_on: latestStatusNotificationId
   - name: Tariff
     using:
       foreign_key_constraint_on: tariffId

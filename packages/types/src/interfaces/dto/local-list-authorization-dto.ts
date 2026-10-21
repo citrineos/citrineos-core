@@ -23,7 +23,6 @@ export const LocalListAuthorizationSchema = BaseSchema.extend({
   groupAuthorization: z.lazy(() => AuthorizationSchema).optional(),
   authorizationId: z.number().int().optional(),
   authorization: z.lazy(() => AuthorizationSchema).optional(),
-  customData: z.any().nullable().optional(),
 });
 
 export type LocalListAuthorizationDto = z.infer<typeof LocalListAuthorizationSchema>;

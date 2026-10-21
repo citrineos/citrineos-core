@@ -11,7 +11,6 @@ import { ActionType, ChargingStationAccessType, ResourceType } from '@lib/utils/
 import { EVSESList } from '@lib/client/pages/charging-stations/detail/evses/evses-list';
 import { OCPPMessages } from '@lib/client/pages/charging-stations/detail/ocpp-messages';
 import { NetworkProfilesTab } from '@lib/client/pages/charging-stations/detail/network-profiles-tab';
-import { AccessDeniedFallback } from '@lib/utils/access-denied-fallback';
 import { Table } from '@lib/client/components/table';
 import { DEFAULT_SORTERS, DETAIL_TAB_STATE } from '@lib/utils/consts';
 import { GET_TRANSACTION_LIST_FOR_STATION } from '@lib/queries/transactions';
@@ -90,11 +89,6 @@ export const ChargingStationDetailTabsCard = ({ id }: { id: number }) => {
                 id,
                 accessType: ChargingStationAccessType.TOPOLOGY,
               }}
-              fallback={
-                <p className="text-muted-foreground">
-                  {translate('ChargingStations.tabs.noEvsesPermission')}
-                </p>
-              }
             >
               <EVSESList id={id} />
             </CanAccess>
@@ -108,11 +102,6 @@ export const ChargingStationDetailTabsCard = ({ id }: { id: number }) => {
                 id,
                 accessType: ChargingStationAccessType.OCPP_MESSAGES,
               }}
-              fallback={
-                <p className="text-muted-foreground">
-                  {translate('ChargingStations.tabs.noOcppLogsPermission')}
-                </p>
-              }
             >
               <OCPPMessages
                 stationId={id}
@@ -130,22 +119,13 @@ export const ChargingStationDetailTabsCard = ({ id }: { id: number }) => {
                 id,
                 accessType: ChargingStationAccessType.CONFIGURATION,
               }}
-              fallback={
-                <p className="text-muted-foreground">
-                  {translate('ChargingStations.tabs.noConfigurationsPermission')}
-                </p>
-              }
             >
               <ChargingStationConfiguration id={id} />
             </CanAccess>
           </TabsContent>
 
           <TabsContent value={ChargingStationDetailTabType.transactions} className={cardTabsStyle}>
-            <CanAccess
-              resource={ResourceType.TRANSACTIONS}
-              action={ActionType.LIST}
-              fallback={<AccessDeniedFallback />}
-            >
+            <CanAccess resource={ResourceType.TRANSACTIONS} action={ActionType.LIST}>
               <Table
                 refineCoreProps={{
                   resource: ResourceType.TRANSACTIONS,
@@ -178,11 +158,6 @@ export const ChargingStationDetailTabsCard = ({ id }: { id: number }) => {
               resource={ResourceType.CHARGING_STATIONS}
               action={ActionType.ACCESS}
               params={{ id, accessType: ChargingStationAccessType.CONFIGURATION }}
-              fallback={
-                <p className="text-muted-foreground">
-                  {translate('ChargingStations.tabs.noConfigurationsPermission')}
-                </p>
-              }
             >
               <NetworkProfilesTab id={id} />
             </CanAccess>

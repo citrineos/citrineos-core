@@ -11,7 +11,6 @@ import {
   AttributeEnum,
   type AttributeEnumType,
   type HandlerProperties,
-  MessageOrigin,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
   SetVariableStatusEnum,
@@ -20,35 +19,30 @@ import {
   OCPP2_response_types,
   type VariableAttributeDto,
 } from '@citrineos/types';
-import {
-  stationIdFilter,
-  type IDeviceModelRepository,
-  type IOCPPMessageRepository,
-} from '@citrineos/dal';
+import { type IVariableAttributeRepository } from '@citrineos/dal';
 
 type SetVariableDataMap = { [key: string]: OCPP2_common_types.SetVariableDataType };
 
 @AsResponseHandler(OCPP_2_VER_LIST, OCPP_CallAction.SetVariables)
 export class SetVariablesResponseOcpp2Handler extends AbstractHandler {
-  protected _deviceModelRepository: IDeviceModelRepository;
-  protected _ocppMessageRepository: IOCPPMessageRepository;
+  protected _variableAttributeRepository: IVariableAttributeRepository;
 
   constructor({
     logger,
-    deviceModelRepository,
-    ocppMessageRepository,
+    variableAttributeRepository,
   }: AbstractHandlerDependencies & {
-    deviceModelRepository: IDeviceModelRepository;
-    ocppMessageRepository: IOCPPMessageRepository;
+    variableAttributeRepository: IVariableAttributeRepository;
   }) {
     super(logger);
 
-    this._deviceModelRepository = deviceModelRepository;
-    this._ocppMessageRepository = ocppMessageRepository;
+    this._variableAttributeRepository = variableAttributeRepository;
   }
 
   async handle(
-    message: IMessage<OCPP2_response_types.SetVariablesResponse>,
+    message: IMessage<
+      OCPP2_response_types.SetVariablesResponse,
+      OCPP2_request_types.SetVariablesRequest
+    >,
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug(
@@ -58,13 +52,8 @@ export class SetVariablesResponseOcpp2Handler extends AbstractHandler {
     );
     const tenantId = message.context.tenantId;
     const ocppConnectionName = message.context.ocppConnectionName;
-    const correlationId = message.context.correlationId;
     const setVariablesDataMap: SetVariableDataMap =
-      await this.getSetVariablesDataMapFromOriginalSetVariablesRequest(
-        tenantId,
-        ocppConnectionName,
-        correlationId,
-      );
+      this.getSetVariablesDataMapFromOriginalSetVariablesRequest(message.request);
     for (const setVariableResultType of message.payload.setVariableResult) {
       await this.handleSetVariableResultType(
         tenantId,
@@ -76,25 +65,13 @@ export class SetVariablesResponseOcpp2Handler extends AbstractHandler {
     }
   }
 
-  protected async getSetVariablesDataMapFromOriginalSetVariablesRequest(
-    tenantId: number,
-    ocppConnectionName: string,
-    correlationId: string,
+  protected getSetVariablesDataMapFromOriginalSetVariablesRequest(
+    setVariablesRequest: OCPP2_request_types.SetVariablesRequest | undefined,
   ) {
     // map where key is `${component}-${componentInstance}-${variable}-${variableInstance}` and value is the SetVariableData
     const setVariablesDataMap: SetVariableDataMap = {};
-    const requestOcppMessage = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
-      where: {
-        tenantId,
-        stationId: await stationIdFilter(tenantId, ocppConnectionName),
-        correlationId,
-        origin: MessageOrigin.ChargingStationManagementSystem,
-      },
-    });
 
-    if (requestOcppMessage) {
-      const setVariablesRequest =
-        requestOcppMessage.payload as OCPP2_request_types.SetVariablesRequest;
+    if (setVariablesRequest) {
       const setVariableData = setVariablesRequest.setVariableData;
       setVariableData.forEach((setVariableData) => {
         const component = setVariableData.component.name;
@@ -145,7 +122,7 @@ export class SetVariablesResponseOcpp2Handler extends AbstractHandler {
         variableValue,
         attributeType,
       );
-      await this._deviceModelRepository.updateResultByStationId(
+      await this._variableAttributeRepository.updateResultByStationId(
         tenantId,
         setVariableResultType,
         ocppConnectionName,
@@ -168,7 +145,7 @@ export class SetVariablesResponseOcpp2Handler extends AbstractHandler {
     attributeType: AttributeEnumType,
   ): Promise<VariableAttributeDto | undefined> {
     let existingVariableAttribute =
-      await this._deviceModelRepository.findVariableAttributeByComponentAndVariable(
+      await this._variableAttributeRepository.findVariableAttributeByComponentAndVariable(
         tenantId,
         ocppConnectionName,
         attributeType,
@@ -177,7 +154,7 @@ export class SetVariablesResponseOcpp2Handler extends AbstractHandler {
       );
     if (!existingVariableAttribute) {
       const createdVariableAttributes =
-        await this._deviceModelRepository.createOrUpdateBySetVariablesDataAndStationId(
+        await this._variableAttributeRepository.createOrUpdateBySetVariablesDataAndStationId(
           tenantId,
           [
             {

@@ -13,7 +13,7 @@ import {
   type IAuthorizationRepository,
   type IChargingStationRepository,
   type IConnectorRepository,
-  type ITransactionEventRepository,
+  type ITransactionRepository,
 } from '@citrineos/dal';
 
 /**
@@ -32,7 +32,7 @@ export class GetTariffsRequestOcpp21Handler extends AbstractHandler {
   protected _authorizationRepository: IAuthorizationRepository;
   protected _chargingStationRepository: IChargingStationRepository;
   protected _connectorRepository: IConnectorRepository;
-  protected _transactionEventRepository: ITransactionEventRepository;
+  protected _transactionRepository: ITransactionRepository;
 
   constructor({
     logger,
@@ -40,13 +40,13 @@ export class GetTariffsRequestOcpp21Handler extends AbstractHandler {
     authorizationRepository,
     chargingStationRepository,
     connectorRepository,
-    transactionEventRepository,
+    transactionRepository,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
     authorizationRepository: IAuthorizationRepository;
     chargingStationRepository: IChargingStationRepository;
     connectorRepository: IConnectorRepository;
-    transactionEventRepository: ITransactionEventRepository;
+    transactionRepository: ITransactionRepository;
   }) {
     super(logger);
 
@@ -54,7 +54,7 @@ export class GetTariffsRequestOcpp21Handler extends AbstractHandler {
     this._authorizationRepository = authorizationRepository;
     this._chargingStationRepository = chargingStationRepository;
     this._connectorRepository = connectorRepository;
-    this._transactionEventRepository = transactionEventRepository;
+    this._transactionRepository = transactionRepository;
   }
 
   async handle(
@@ -152,7 +152,7 @@ export class GetTariffsRequestOcpp21Handler extends AbstractHandler {
       // I09.FR.06: DriverTariff with active transaction includes evseIds
       // Query active transactions to associate driver tariffs with EVSEs
       const activeTransactions =
-        await this._transactionEventRepository.readActiveTransactionsWithTariffAndEvseByStationId(
+        await this._transactionRepository.readActiveTransactionsWithTariffAndEvseByStationId(
           tenantId,
           ocppConnectionName,
           requestedEvseId > 0 ? requestedEvseId : undefined,

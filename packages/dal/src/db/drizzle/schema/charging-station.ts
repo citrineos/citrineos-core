@@ -35,6 +35,7 @@ function chargingStationColumns() {
       withTimezone: true,
       mode: 'date',
     }),
+    lastConnectedAt: timestamp('lastConnectedAt', { withTimezone: true, mode: 'date' }),
     chargePointVendor: varchar('chargePointVendor', { length: 20 }),
     chargePointModel: varchar('chargePointModel', { length: 20 }),
     chargePointSerialNumber: varchar('chargePointSerialNumber', { length: 25 }),

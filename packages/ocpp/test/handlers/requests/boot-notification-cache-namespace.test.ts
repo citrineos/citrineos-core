@@ -163,7 +163,7 @@ describe('BootNotification cache namespacing', () => {
         config: makeConfig(),
         bootNotificationService: bootNotificationService as any,
         configurationDeviceModelService: { updateDeviceModel: vi.fn() } as any,
-        deviceModelRepository: {} as any,
+        variableAttributeRepository: {} as any,
         chargingStationRepository: makeLocationRepository() as any,
       });
 

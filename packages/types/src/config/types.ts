@@ -2,7 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { RegistrationStatusEnum } from '@interfaces/dto/types/enums.js';
+import { ConnectorStatusEnumSchema, RegistrationStatusEnum } from '@interfaces/dto/types/enums.js';
+import {
+  NetworkAlertSeveritySchema,
+  type NetworkAlertType,
+} from '@interfaces/dto/types/network-alert.js';
 import { OCPPVersion, type OCPPVersionType } from '@ocpp/rpc/message.js';
 import { z } from 'zod';
 
@@ -217,8 +221,24 @@ export const configSchema = z.object({
             .object({
               router: z.number().int().min(0).default(100),
               module: z.number().int().min(0).default(10),
+              // Consumer on a module's catch-up queue, which takes Calls that outlived
+              // maxCallLengthSeconds before a module got to them.
+              moduleStale: z.number().int().min(0).default(1),
               messages: z.number().int().min(0).default(50),
               messagesDeadLetter: z.number().int().min(0).default(10),
+            })
+            .prefault({}),
+          // How long the router keeps re-emitting a message for a station no router holds
+          // before dead-lettering it as unroutable.
+          reemitMaxRetrySeconds: z.number().int().min(1).default(300),
+          deadLetterQueue: z
+            .object({
+              maxLength: z.number().int().min(1).default(100_000),
+              maxLengthBytes: z
+                .number()
+                .int()
+                .min(1)
+                .default(512 * 1024 * 1024),
             })
             .prefault({}),
         })
@@ -257,21 +277,38 @@ export const configSchema = z.object({
 
   auth: z
     .object({
-      oidc: z
+      mode: z.enum(['jwt', 'localDev', 'localBypass']).default('localDev'),
+      jwt: z
         .object({
           jwksUri: z.string(),
           issuer: z.string(),
-          audience: z.string(),
+          audience: z.string().optional(),
+          rolesClaim: z.string().default('roles'),
+          tenantClaim: z.string().default('tenant_id'),
           cacheTimeSeconds: z.number().int().min(1).optional(),
           rateLimit: z.boolean().default(true),
         })
         .optional(),
-      localBypass: z.boolean().default(false),
+      localDev: z
+        .object({
+          roles: z.array(z.string()).default(['admin']),
+          tokenTtlSeconds: z
+            .number()
+            .int()
+            .min(1)
+            .default(60 * 60 * 12),
+        })
+        .prefault({}),
+      localBypass: z
+        .object({
+          roles: z.array(z.string()).default(['admin']),
+        })
+        .prefault({}),
     })
-    .refine((o) => o.oidc || o.localBypass, {
-      message: 'Either oidc config or localBypass must be enabled',
+    .refine((o) => o.mode !== 'jwt' || !!o.jwt, {
+      message: "auth.jwt must be provided when auth.mode is 'jwt'",
     })
-    .prefault({ localBypass: true }),
+    .prefault({}),
   oidcClient: z
     .object({
       tokenUrl: z.string(),
@@ -323,12 +360,13 @@ export const configSchema = z.object({
     })
     .prefault({}),
 
-  rbac: z
+  roles: z
     .object({
-      rulesDir: z.string().optional(),
-      rulesFileName: z.string().default('rbac-rules.json'),
+      seedFile: z.string().default('roles-seed.json'),
+      refreshIntervalSeconds: z.number().int().min(1).default(60),
+      common: z.array(z.string()).default(['permissions.user.get']),
     })
-    .optional(),
+    .prefault({}),
 
   // logoPath is resolved from the process working directory, not from fileAccess.
   swagger: z
@@ -351,7 +389,7 @@ export const configSchema = z.object({
     .object({
       maxCallLengthSeconds: z.number().int().min(1).default(20),
       maxCachingSeconds: z.number().int().min(1).default(30),
-      staleCallMaxAgeSeconds: z.number().int().min(1).optional(),
+      staleCallMaxAgeSeconds: z.number().int().min(0).default(40),
       shutdownGracePeriodSeconds: z.number().int().min(1).default(30),
       realTimeAuthDefaultTimeoutSeconds: z.number().int().min(1).default(15),
       realTimeAuthRequestTimeoutSeconds: z.number().int().min(1).default(10),
@@ -376,6 +414,7 @@ export const configSchema = z.object({
       getBaseReportOnPending: z.boolean().default(true),
       bootWithRejectedVariables: z.boolean().default(false),
       autoAccept: z.boolean().default(true),
+      maxPendingCallsPerStation: z.number().int().min(1).default(5),
     })
     .prefault({}),
 
@@ -414,6 +453,75 @@ export const configSchema = z.object({
       enabled: z.boolean().default(false),
     })
     .prefault({}),
+
+  networkAlerts: z
+    .object({
+      sweepIntervalSeconds: z.number().int().min(1).default(30),
+      defaults: z
+        .object({
+          StationConnectivity: z
+            .object({
+              enabled: z.boolean().default(true),
+              rules: z
+                .object({
+                  disconnectSeverity: NetworkAlertSeveritySchema.default('Info'),
+                  frequentDisconnects: z
+                    .object({
+                      count: z.number().int().positive().default(5),
+                      windowSeconds: z.number().int().positive().default(3600),
+                      severity: NetworkAlertSeveritySchema.default('Warning'),
+                    })
+                    .prefault({}),
+                  offlineTooLong: z
+                    .object({
+                      seconds: z.number().int().positive().default(900),
+                      severity: NetworkAlertSeveritySchema.default('Critical'),
+                    })
+                    .prefault({}),
+                  missedHeartbeats: z.number().int().positive().default(2),
+                })
+                .prefault({}),
+            })
+            .prefault({}),
+          ConnectorStatus: z
+            .object({
+              enabled: z.boolean().default(true),
+              rules: z
+                .object({
+                  severityByStatus: z
+                    .partialRecord(ConnectorStatusEnumSchema, NetworkAlertSeveritySchema)
+                    .default({ Unavailable: 'Warning', Faulted: 'Critical' }),
+                })
+                .prefault({}),
+            })
+            .prefault({}),
+          OcppCallFailures: z
+            .object({
+              enabled: z.boolean().default(true),
+              rules: z
+                .object({
+                  severityByReason: z
+                    .object({
+                      CallError: NetworkAlertSeveritySchema.default('Warning'),
+                      Timeout: NetworkAlertSeveritySchema.default('Warning'),
+                      SendFailed: NetworkAlertSeveritySchema.default('Info'),
+                      Slow: NetworkAlertSeveritySchema.default('Warning'),
+                    })
+                    .prefault({}),
+                  criticalActions: z
+                    .array(z.string())
+                    .default(['TransactionEvent', 'StartTransaction', 'StopTransaction']),
+                  slowThresholdMs: z.number().int().positive().default(5000),
+                  slowSampleSize: z.number().int().positive().default(10),
+                  quietPeriodSeconds: z.number().int().positive().default(1800),
+                })
+                .prefault({}),
+            })
+            .prefault({}),
+        } satisfies Record<NetworkAlertType, z.ZodType>)
+        .prefault({}),
+    })
+    .prefault({}),
 });
 
 /** Post-parse config: every defaulted field is present. What `configSchema.parse()` returns. */
@@ -422,21 +530,12 @@ export type SystemConfig = z.infer<typeof configSchema>;
 /** Pre-parse config: defaulted fields are optional. What you hand-author or merge env vars into. */
 export type SystemConfigInput = z.input<typeof configSchema>;
 
-export const HttpMethodSchema = z.record(
-  z.string(), // HTTP method (GET, POST, etc., or * for all methods)
-  z.array(z.string()), // Array of role names required for this method
-);
+export const RoleDefinitionSchema = z.object({
+  resources: z.record(z.string(), z.array(z.string())).default({}),
+  permissions: z.array(z.string()).default([]),
+});
 
-export const UrlPatternSchema = z.record(
-  z.string(), // URL pattern (/api/users, /api/users/:id, etc.)
-  HttpMethodSchema,
-);
+export const RoleDefinitionsSchema = z.record(z.string(), RoleDefinitionSchema);
 
-export const TenantSchema = z.record(
-  z.string(), // Tenant ID
-  UrlPatternSchema,
-);
-
-export const RbacRulesSchema = TenantSchema;
-
-export type RbacRules = z.infer<typeof RbacRulesSchema>;
+export type RoleDefinition = z.infer<typeof RoleDefinitionSchema>;
+export type RoleDefinitions = z.infer<typeof RoleDefinitionsSchema>;

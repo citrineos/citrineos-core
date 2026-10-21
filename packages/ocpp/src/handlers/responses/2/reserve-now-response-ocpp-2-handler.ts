@@ -9,57 +9,45 @@ import {
 } from '@citrineos/base';
 import {
   type HandlerProperties,
-  MessageOrigin,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
   ReserveNowStatusEnum,
   type ReserveNowStatusEnumType,
+  OCPP2_request_types,
   OCPP2_response_types,
 } from '@citrineos/types';
-import type { IOCPPMessageRepository, IReservationRepository } from '@citrineos/dal';
-import { stationIdFilter } from '@citrineos/dal';
+import type { IReservationRepository } from '@citrineos/dal';
 
 @AsResponseHandler(OCPP_2_VER_LIST, OCPP_CallAction.ReserveNow)
 export class ReserveNowResponseOcpp2Handler extends AbstractHandler {
-  protected _ocppMessageRepository: IOCPPMessageRepository;
   protected _reservationRepository: IReservationRepository;
 
   constructor({
     logger,
-    ocppMessageRepository,
     reservationRepository,
   }: AbstractHandlerDependencies & {
-    ocppMessageRepository: IOCPPMessageRepository;
     reservationRepository: IReservationRepository;
   }) {
     super(logger);
-    this._ocppMessageRepository = ocppMessageRepository;
     this._reservationRepository = reservationRepository;
   }
 
   async handle(
-    message: IMessage<OCPP2_response_types.ReserveNowResponse>,
+    message: IMessage<
+      OCPP2_response_types.ReserveNowResponse,
+      OCPP2_request_types.ReserveNowRequest
+    >,
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.info(this.createHandlerReceivedMessageLog('ReserveNowResponse'), message, props);
 
-    const request = await this._ocppMessageRepository.readOnlyOneByQuery(message.context.tenantId, {
-      where: {
-        tenantId: message.context.tenantId,
-        stationId: await stationIdFilter(
-          message.context.tenantId,
-          message.context.ocppConnectionName,
-        ),
-        correlationId: message.context.correlationId,
-        origin: MessageOrigin.ChargingStationManagementSystem,
-      },
-    });
+    const request = message.request;
     if (request) {
       const status = message.payload.status as ReserveNowStatusEnumType;
       await this._reservationRepository.updateByStationAndReservationId(
         message.context.tenantId,
         message.context.ocppConnectionName,
-        request.payload.id,
+        request.id,
         {
           reserveStatus: status,
           isActive: status === ReserveNowStatusEnum.Accepted,

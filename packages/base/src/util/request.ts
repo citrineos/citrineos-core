@@ -52,6 +52,7 @@ export class RequestBuilder {
     origin: MessageOrigin,
     protocol: OCPPVersionType,
     timestamp: Date = new Date(),
+    request?: OcppRequest,
   ): IMessage<OcppResponse> {
     return {
       origin: origin,
@@ -66,6 +67,7 @@ export class RequestBuilder {
       state: MessageState.Response,
       protocol,
       payload,
+      request,
     };
   }
 

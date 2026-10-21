@@ -14,7 +14,6 @@ import {
 import { ChargingStationClass } from '@lib/cls/charging-station-dto';
 import { CHARGING_STATIONS_LIST_QUERY } from '@lib/queries/charging-stations';
 import { ActionType, ResourceType } from '@lib/utils/access-types';
-import { AccessDeniedFallback } from '@lib/utils/access-denied-fallback';
 import { DEFAULT_SORTERS, EMPTY_FILTER } from '@lib/utils/consts';
 import { getPlainToInstanceOptions } from '@lib/utils/tables';
 import { CanAccess, useTranslate } from '@refinedev/core';
@@ -79,11 +78,7 @@ export const ChargingStationsList = () => {
         </div>
       </div>
       {filterChips}
-      <CanAccess
-        resource={ResourceType.CHARGING_STATIONS}
-        action={ActionType.LIST}
-        fallback={<AccessDeniedFallback />}
-      >
+      <CanAccess resource={ResourceType.CHARGING_STATIONS} action={ActionType.LIST}>
         <Table<ChargingStationDto>
           refineCoreProps={{
             resource: ResourceType.CHARGING_STATIONS,

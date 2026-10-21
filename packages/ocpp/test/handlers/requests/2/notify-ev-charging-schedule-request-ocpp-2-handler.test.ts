@@ -60,7 +60,7 @@ function aNotifyEVChargingScheduleRequest(
 describe('NotifyEVChargingScheduleRequestOcpp2Handler', () => {
   const { logger } = createTestContainer();
   let handler: NotifyEVChargingScheduleRequestOcpp2Handler;
-  let transactionEventRepository: {
+  let transactionRepository: {
     getActiveTransactionByStationIdAndEvseId: ReturnType<typeof vi.fn>;
   };
   let chargingProfileRepository: {
@@ -75,7 +75,7 @@ describe('NotifyEVChargingScheduleRequestOcpp2Handler', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    transactionEventRepository = {
+    transactionRepository = {
       getActiveTransactionByStationIdAndEvseId: vi.fn().mockResolvedValue(TRANSACTION),
     };
     chargingProfileRepository = {
@@ -91,7 +91,7 @@ describe('NotifyEVChargingScheduleRequestOcpp2Handler', () => {
       mockDeps<typeof NotifyEVChargingScheduleRequestOcpp2Handler>({
         logger,
         ocppSender,
-        transactionEventRepository,
+        transactionRepository,
         chargingProfileRepository,
         variableAttributeRepository,
         smartChargingService,
@@ -113,8 +113,7 @@ describe('NotifyEVChargingScheduleRequestOcpp2Handler', () => {
       status: GenericStatusEnum.Accepted,
     });
     expect(ocppSender.sendCallResultWithMessage.mock.invocationCallOrder[0]).toBeLessThan(
-      transactionEventRepository.getActiveTransactionByStationIdAndEvseId.mock
-        .invocationCallOrder[0],
+      transactionRepository.getActiveTransactionByStationIdAndEvseId.mock.invocationCallOrder[0],
     );
   });
 
@@ -123,12 +122,12 @@ describe('NotifyEVChargingScheduleRequestOcpp2Handler', () => {
 
     await handler.handle(message);
 
-    expect(
-      transactionEventRepository.getActiveTransactionByStationIdAndEvseId,
-    ).toHaveBeenCalledOnce();
-    expect(
-      transactionEventRepository.getActiveTransactionByStationIdAndEvseId,
-    ).toHaveBeenCalledWith(DEFAULT_TENANT_ID, STATION_ID, EVSE_ID);
+    expect(transactionRepository.getActiveTransactionByStationIdAndEvseId).toHaveBeenCalledOnce();
+    expect(transactionRepository.getActiveTransactionByStationIdAndEvseId).toHaveBeenCalledWith(
+      DEFAULT_TENANT_ID,
+      STATION_ID,
+      EVSE_ID,
+    );
     expect(smartChargingService.checkLimitsOfChargingSchedule).toHaveBeenCalledOnce();
     expect(smartChargingService.checkLimitsOfChargingSchedule).toHaveBeenCalledWith(
       message.payload,
@@ -139,9 +138,7 @@ describe('NotifyEVChargingScheduleRequestOcpp2Handler', () => {
   });
 
   it('stops after the ack when no transaction is active on the evse', async () => {
-    transactionEventRepository.getActiveTransactionByStationIdAndEvseId.mockResolvedValue(
-      undefined,
-    );
+    transactionRepository.getActiveTransactionByStationIdAndEvseId.mockResolvedValue(undefined);
 
     await handler.handle(aNotifyEVChargingScheduleMessage(aNotifyEVChargingScheduleRequest()));
 

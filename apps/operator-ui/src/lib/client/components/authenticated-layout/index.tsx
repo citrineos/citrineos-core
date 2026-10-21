@@ -93,7 +93,7 @@ export default function AuthenticatedLayout({
     <div className="relative">
       <div className="min-h-screen ml-20 bg-cover bg-[url(/gradient.svg)] dark:bg-[url(/gradient-dark.svg)]">
         <MainMenu activeSection={activeSection as MenuSection} />
-        <div className="flex flex-col">
+        <div className="flex flex-col min-w-0">
           <AppModal />
           <main className={`content-container ${routeClassName}`}>
             <div className="content-outer-wrap">

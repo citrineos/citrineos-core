@@ -94,7 +94,11 @@ async function aTariff(tariffId: string, tenantId = TENANT_A) {
   return Tariff.create({ currency: 'EUR', pricePerKwh: 0.3, tariffId, tenantId } as any);
 }
 
-async function anEvse(evseTypeId: number, ocppConnectionName = STATION, tenantId = TENANT_A) {
+async function anEvse(
+  evseTypeId: number | null,
+  ocppConnectionName = STATION,
+  tenantId = TENANT_A,
+) {
   const stationId = await stationIdOf(ocppConnectionName, tenantId);
   return Evse.create({ tenantId, stationId, evseTypeId } as any);
 }
@@ -452,55 +456,6 @@ describe('SequelizeTransactionEventRepository', () => {
   });
 
   describe('transaction reads', () => {
-    it('readAllTransactionsByStationIdAndEvseAndChargingStates filters by evse, connector and state', async () => {
-      await aStation();
-      const evse1 = await anEvse(1);
-      const evse2 = await anEvse(2);
-      const connector = await Connector.create({
-        tenantId: TENANT_A,
-        stationId: await stationIdOf(),
-        evseId: evse1.id,
-        connectorId: 1,
-        evseTypeConnectorId: 1,
-        status: 'Available',
-        timestamp: T0,
-      } as any);
-      await aTransactionRow({
-        transactionId: 'T-1',
-        evseId: evse1.id,
-        connectorId: connector.id,
-        chargingState: 'Charging',
-      });
-      await aTransactionRow({
-        transactionId: 'T-2',
-        evseId: evse2.id,
-        chargingState: 'EVConnected',
-      });
-      const repo = makeRepo();
-
-      const charging = await repo.readAllTransactionsByStationIdAndEvseAndChargingStates(
-        TENANT_A,
-        STATION,
-        { id: 1, connectorId: 1 } as OCPP2_0_1.EVSEType,
-        [OCPP2_0_1.ChargingStateEnumType.Charging],
-      );
-      const all = await repo.readAllTransactionsByStationIdAndEvseAndChargingStates(
-        TENANT_A,
-        STATION,
-      );
-      const idle = await repo.readAllTransactionsByStationIdAndEvseAndChargingStates(
-        TENANT_A,
-        STATION,
-        undefined,
-        [OCPP2_0_1.ChargingStateEnumType.Idle],
-      );
-
-      expect(charging).toHaveLength(1);
-      expect(charging[0].transactionId).toBe('T-1');
-      expect(all).toHaveLength(2);
-      expect(idle).toHaveLength(0);
-    });
-
     it('readAllActiveTransactionsByAuthorizationId returns only the tenant active rows', async () => {
       await aStation();
       const auth = await anAuthorization();
@@ -542,49 +497,6 @@ describe('SequelizeTransactionEventRepository', () => {
       expect(found!.transactionEvents).toHaveLength(2);
       expect(found!.meterValues).toHaveLength(2);
       expect(await repo.findByTransactionId(TENANT_A, 'NOPE')).toBeUndefined();
-    });
-
-    it('getTransactions and getTransactionsCount honor the updatedAt window and limit', async () => {
-      await aStation();
-      await aTransactionRow({ transactionId: 'T-1' });
-      await sleep(25);
-      const boundary = new Date();
-      await sleep(25);
-      await aTransactionRow({ transactionId: 'T-2' });
-      const repo = makeRepo();
-
-      const all = await repo.getTransactions(TENANT_A);
-      const after = await repo.getTransactions(TENANT_A, boundary);
-      const before = await repo.getTransactions(TENANT_A, undefined, boundary);
-      const limited = await repo.getTransactions(TENANT_A, undefined, undefined, undefined, 1);
-      const offset = await repo.getTransactions(TENANT_A, undefined, undefined, 1);
-
-      expect(all).toHaveLength(2);
-      expect(after).toHaveLength(1);
-      expect(after[0].transactionId).toBe('T-2');
-      expect(before).toHaveLength(1);
-      expect(before[0].transactionId).toBe('T-1');
-      expect(limited).toHaveLength(1);
-      expect(offset).toHaveLength(1);
-
-      expect(await repo.getTransactionsCount(TENANT_A)).toBe(2);
-      expect(await repo.getTransactionsCount(TENANT_A, boundary)).toBe(1);
-      expect(await repo.getTransactionsCount(TENANT_A, undefined, boundary)).toBe(1);
-    });
-
-    it('getEvseIdsWithActiveTransactionByStationId lists evseTypeIds of active transactions only', async () => {
-      await aStation();
-      const evse = await anEvse(4);
-      await aTransactionRow({ transactionId: 'T-1', evseId: evse.id, isActive: true });
-      await aTransactionRow({ transactionId: 'T-2', evseId: evse.id, isActive: false });
-      await aTransactionRow({ transactionId: 'T-3', isActive: true });
-
-      const evseIds = await makeRepo().getEvseIdsWithActiveTransactionByStationId(
-        TENANT_A,
-        STATION,
-      );
-
-      expect(evseIds).toEqual([4]);
     });
 
     it('getActiveTransactionByStationIdAndEvseId picks the most recently updated active transaction', async () => {
@@ -739,7 +651,9 @@ describe('SequelizeTransactionEventRepository', () => {
       expect(Number(row.meterStart)).toBe(2);
       expect(Number(row.totalKwh)).toBe(4);
 
-      const stored = await repo.readAllMeterValuesByTransactionDataBaseId(TENANT_A, tx.id);
+      const stored = await repo.meterValue.readAllByQuery(TENANT_A, {
+        where: { transactionDatabaseId: tx.id },
+      });
       expect(stored).toHaveLength(2);
       expect(stored[0].transactionId).toBe('42');
       expect(stored[0].transactionDatabaseId).toBe(tx.id);
@@ -799,7 +713,7 @@ describe('SequelizeTransactionEventRepository', () => {
       const shortCircuit = await repo.deactivateActiveTransactionsByStationIdAndEvseId(
         TENANT_A,
         STATION,
-        1,
+        evse.id,
         '0',
       );
       expect(shortCircuit).toEqual([]);
@@ -807,7 +721,7 @@ describe('SequelizeTransactionEventRepository', () => {
       const deactivated = await repo.deactivateActiveTransactionsByStationIdAndEvseId(
         TENANT_A,
         STATION,
-        1,
+        evse.id,
         'KEEP',
       );
 
@@ -816,6 +730,25 @@ describe('SequelizeTransactionEventRepository', () => {
       expect(deactivated[0].isActive).toBe(false);
       expect((await Transaction.findByPk(kept.id))!.isActive).toBe(true);
       expect((await Transaction.findByPk(elsewhere.id))!.isActive).toBe(true);
+    });
+
+    it('deactivateActiveTransactionsByStationIdAndEvseId leaves other evses with a null evseTypeId untouched', async () => {
+      await aStation();
+      const connector1Evse = await anEvse(null);
+      const connector2Evse = await anEvse(null);
+      const live = await aTransactionRow({ transactionId: '1', evseId: connector1Evse.id });
+      await aTransactionRow({ transactionId: '2', evseId: connector2Evse.id });
+      const repo = makeRepo();
+
+      const deactivated = await repo.deactivateActiveTransactionsByStationIdAndEvseId(
+        TENANT_A,
+        STATION,
+        connector2Evse.id,
+        '2',
+      );
+
+      expect(deactivated).toEqual([]);
+      expect((await Transaction.findByPk(live.id))!.isActive).toBe(true);
     });
   });
 });

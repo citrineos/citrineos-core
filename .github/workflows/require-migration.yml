@@ -12,6 +12,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
+  contents: read
   pull-requests: write
   issues: write
 
@@ -20,101 +21,468 @@ jobs:
     name: Require Migration
     runs-on: ubuntu-latest
     steps:
-      - name: Check for a migration alongside DAL model changes
-        uses: actions/github-script@v7
+      - name: Check for a migration alongside schema changes
+        uses: actions/github-script@v9
         with:
           script: |
-            const MODEL_PREFIX = 'packages/dal/src/models/';
+            const SEQUELIZE_PREFIX = 'packages/dal/src/models/';
+            const DRIZZLE_PREFIX = 'packages/dal/src/db/drizzle/schema/';
+            const TABLE_NAME_FILE = `${SEQUELIZE_PREFIX}table-name.ts`;
             const MIGRATION_PREFIX = 'apps/ocpp-server/db/migrations/';
             const MIGRATION_FILENAME = /^\d{14}-[a-z0-9-]+\.ts$/;
             const EXEMPT_LABEL = 'no-migration-needed';
             const MARKER = '<!-- citrineos:require-migration -->';
 
-            const { owner, repo } = context.repo;
-            const pr = context.payload.pull_request;
+            const SEQUELIZE_DECORATORS = ['Column', 'PrimaryKey', 'AutoIncrement', 'Unique', 'AllowNull', 'Index', 'ForeignKey'];
+            const SEQUELIZE_COLUMN_OPTIONS = ['allowNull', 'unique', 'field', 'primaryKey', 'autoIncrement', 'onDelete', 'onUpdate'];
+            const DRIZZLE_BUILDERS = [
+              'bigint', 'bigserial', 'boolean', 'char', 'cidr', 'citext', 'date', 'decimal', 'doublePrecision',
+              'geometry', 'inet', 'integer', 'interval', 'json', 'jsonb', 'macaddr', 'numeric', 'real', 'serial',
+              'smallint', 'smallserial', 'text', 'time', 'timestamp', 'uuid', 'varchar', 'vector',
+            ];
+            const DRIZZLE_COLUMN_CHAIN = ['notNull', 'unique', 'primaryKey', 'references', 'array'];
+            const DRIZZLE_TABLE_EXTRAS = ['index', 'uniqueIndex', 'primaryKey', 'foreignKey', 'unique', 'check'];
 
-            const files = await github.paginate(github.rest.pulls.listFiles, {
-              owner,
-              repo,
-              pull_number: pr.number,
-              per_page: 100,
-            });
+            const collapseWhitespace = (text) => text.replace(/\s+/g, ' ').replace(/\s*([(){}\[\],:;.])\s*/g, '$1').trim();
 
-            const modelChanges = files.filter((file) => file.filename.startsWith(MODEL_PREFIX));
-            const addedMigrations = files.filter(
-              (file) => file.filename.startsWith(MIGRATION_PREFIX) && file.status === 'added',
-            );
+            // Strings are matched alongside comments so that `//` or `/*` inside a string is not read as a comment.
+            const STRINGS_AND_COMMENTS =
+              /('(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"|`(?:\\.|[^`\\])*`)|\/\*[\s\S]*?\*\/|\/\/[^\n]*/g;
 
-            const exempt = pr.labels.some((label) => label.name === EXEMPT_LABEL);
+            const stripComments = (source) =>
+              source.replace(STRINGS_AND_COMMENTS, (match, string) => string ?? match.replace(/[^\n]/g, ''));
 
-            const badNames = addedMigrations
-              .map((file) => file.filename.slice(MIGRATION_PREFIX.length))
-              .filter((name) => !MIGRATION_FILENAME.test(name));
+            const replaceStringContentsWithSpaces = (source) =>
+              source.replace(STRINGS_AND_COMMENTS, (match) => match.replace(/[^\n]/g, ' '));
 
-            const failures = [];
-
-            if (modelChanges.length > 0 && addedMigrations.length === 0 && !exempt) {
-              for (const file of modelChanges) {
-                core.error('Model changed with no migration in this pull request.', { file: file.filename });
-              }
-              failures.push(
-                [
-                  `This pull request changes ${modelChanges.length} file(s) under \`${MODEL_PREFIX}\` but adds no migration to \`${MIGRATION_PREFIX}\`.`,
-                  '',
-                  'A model change on its own leaves every database that already exists behind. Add a migration named',
-                  '`<14-digit UTC timestamp>-<what-it-does>.ts`, following the newest file in that directory for structure.',
-                  '',
-                  `If this change genuinely does not alter the database shape, apply the \`${EXEMPT_LABEL}\` label.`,
-                  '',
-                  'Model files changed:',
-                  ...modelChanges.map((file) => `- \`${file.filename}\``),
-                ].join('\n'),
-              );
-            }
-
-            for (const name of badNames) {
-              core.error('Migration filename must be <14-digit UTC timestamp>-<what-it-does>.ts, lower case.', {
-                file: `${MIGRATION_PREFIX}${name}`,
+            // Measures each line's nesting depth, ignoring brackets in strings.
+            function splitLinesWithBracketDepth(source) {
+              const sourceWithoutComments = stripComments(source);
+              const linesWithoutComments = sourceWithoutComments.split(/\r?\n/);
+              const linesForBracketCounting = replaceStringContentsWithSpaces(sourceWithoutComments).split(/\r?\n/);
+              let depth = 0;
+              return linesWithoutComments.map((line, index) => {
+                const depthBefore = depth;
+                for (const ch of linesForBracketCounting[index]) {
+                  if ('([{'.includes(ch)) depth += 1;
+                  else if (')]}'.includes(ch)) depth -= 1;
+                }
+                return { text: line.trim(), depthBefore, depthAfter: depth };
               });
             }
 
-            if (badNames.length > 0) {
-              failures.push(
-                [
-                  'These added migrations do not follow the `<14-digit UTC timestamp>-<what-it-does>.ts` naming convention (lower case, hyphen separated):',
-                  ...badNames.map((name) => `- \`${name}\``),
-                  '',
-                  'Migrations run in filename order, so the timestamp prefix is what fixes their sequence.',
-                ].join('\n'),
+            // Returns the text inside a pair of matching parentheses.
+            function readParenthesizedArgs(text, open) {
+              if (text[open] !== '(') return '';
+              let depth = 0;
+              for (let i = open; i < text.length; i += 1) {
+                if (text[i] === '(') depth += 1;
+                else if (text[i] === ')') {
+                  depth -= 1;
+                  if (depth === 0) return text.slice(open, i + 1);
+                }
+              }
+              return text.slice(open);
+            }
+
+            // Reduces a column definition to its schema-relevant calls.
+            function readCallWithChainedCalls(text, start, name, chainMethodsToKeep) {
+              let i = start + name.length;
+              const args = readParenthesizedArgs(text, i);
+              let result = name + args;
+              i += args.length;
+              while (text[i] === '.') {
+                const match = /^\.(\$?\w+)(<[^()]*>)?/.exec(text.slice(i));
+                if (!match) break;
+                const chainArgs = readParenthesizedArgs(text, i + match[0].length);
+                if (chainMethodsToKeep === null || chainMethodsToKeep.includes(match[1])) result += `.${match[1]}${chainArgs}`;
+                i += match[0].length + chainArgs.length;
+              }
+              return result;
+            }
+
+            // Joins a statement that spans several lines into one line.
+            function readStatementStartingAt(lines, index) {
+              const parts = [lines[index].text];
+              const baseDepth = lines[index].depthBefore;
+              let depth = lines[index].depthAfter;
+              for (let i = index + 1; i < lines.length; i += 1) {
+                if (depth <= baseDepth && !lines[i].text.startsWith('.')) break;
+                parts.push(lines[i].text);
+                depth = lines[i].depthAfter;
+              }
+              return collapseWhitespace(parts.join(' '));
+            }
+
+            function sequelizeColumnSignature(decoratorText) {
+              const tokens = [];
+              for (const match of decoratorText.matchAll(/@(\w+)/g)) {
+                if (!SEQUELIZE_DECORATORS.includes(match[1])) continue;
+                const args = readParenthesizedArgs(decoratorText, match.index + match[0].length);
+                tokens.push(match[1] === 'Column' ? '@Column' : `@${match[1]}${args}`);
+              }
+              for (const match of decoratorText.matchAll(/DataType\.\w+(\([^)]*\))?/g)) tokens.push(match[0]);
+              for (const match of decoratorText.matchAll(/\b(\w+):([^,}]+)/g)) {
+                if (SEQUELIZE_COLUMN_OPTIONS.includes(match[1])) tokens.push(`${match[1]}:${match[2]}`);
+              }
+              const references = /\breferences:\{[^}]*\}/.exec(decoratorText);
+              if (references) tokens.push(references[0]);
+              return tokens.sort().join(' ');
+            }
+
+            function parseSequelize(source, file, entries) {
+              const lines = splitLinesWithBracketDepth(source);
+              let className = null;
+              let tableDecoratorLines = null;
+              let insideTableDecorator = false;
+              let memberDecoratorLines = [];
+              for (const { text, depthBefore, depthAfter } of lines) {
+                if (className === null) {
+                  if (depthBefore > 0) {
+                    if (insideTableDecorator) tableDecoratorLines.push(text);
+                    continue;
+                  }
+                  const classMatch = /^(?:export\s+)?(?:default\s+)?(?:abstract\s+)?class\s+(\w+)/.exec(text);
+                  if (classMatch) {
+                    className = classMatch[1];
+                    if (tableDecoratorLines !== null) {
+                      entries.set(`Sequelize table \`${className}\``, {
+                        file,
+                        signature: collapseWhitespace(tableDecoratorLines.join(' ')),
+                        tableRef: { kind: 'class', value: className },
+                      });
+                    }
+                    tableDecoratorLines = null;
+                    insideTableDecorator = false;
+                    memberDecoratorLines = [];
+                  } else if (text.startsWith('@Table')) {
+                    tableDecoratorLines = [text];
+                    insideTableDecorator = true;
+                  } else if (text.startsWith('@')) {
+                    insideTableDecorator = false;
+                  }
+                  continue;
+                }
+                if (depthBefore === 1 && depthAfter === 0) {
+                  className = null;
+                  continue;
+                }
+                if (depthBefore > 1) {
+                  if (memberDecoratorLines.length > 0) memberDecoratorLines.push(text);
+                  continue;
+                }
+                if (!text) continue;
+                if (text.startsWith('@')) {
+                  memberDecoratorLines.push(text);
+                  continue;
+                }
+                const property = /^(?:declare\s+)?(?:(?:public|protected|private|readonly)\s+)*(\w+)[!?]?\s*:/.exec(text);
+                if (property && memberDecoratorLines.some((decorator) => /^@Column\b/.test(decorator))) {
+                  const decoratorText = collapseWhitespace(memberDecoratorLines.join(' '));
+                  entries.set(`Sequelize column \`${className}.${property[1]}\``, {
+                    file,
+                    signature: sequelizeColumnSignature(decoratorText),
+                    tableRef: { kind: 'class', value: className },
+                    column: /\bfield:['"]([^'"]+)['"]/.exec(decoratorText)?.[1] ?? property[1],
+                  });
+                }
+                memberDecoratorLines = [];
+              }
+            }
+
+            function readTableNames(source) {
+              const tableNames = new Map();
+              const block = /export const TableName\s*=\s*\{([\s\S]*?)\}/.exec(source ?? '');
+              if (!block) return tableNames;
+              for (const match of block[1].matchAll(/^\s*(\w+)\s*:\s*['"]([^'"]+)['"]/gm)) tableNames.set(match[1], match[2]);
+              return tableNames;
+            }
+
+            function parseTableNames(source, file, entries) {
+              for (const [key, tableName] of readTableNames(source)) {
+                entries.set(`table name \`TableName.${key}\``, {
+                  file,
+                  signature: tableName,
+                  tableRef: { kind: 'name', value: tableName },
+                });
+              }
+            }
+
+            function parseDrizzle(source, file, entries) {
+              const lines = splitLinesWithBracketDepth(source);
+              const builderPattern = new RegExp(`^(\\w+)\\s*:\\s*(${DRIZZLE_BUILDERS.join('|')})\\(`);
+              const extrasPattern = new RegExp(`(?<![.\\w])(${DRIZZLE_TABLE_EXTRAS.join('|')})\\(`, 'g');
+              let enclosingDeclaration = null;
+              const tableByColumnsOwner = new Map();
+              lines.forEach((line, index) => {
+                const { text, depthBefore } = line;
+                if (depthBefore === 0) {
+                  const declarationMatch = /^(?:export\s+)?(?:const|let|function)\s+(\w+)/.exec(text);
+                  if (declarationMatch) enclosingDeclaration = declarationMatch[1];
+                }
+                const column = builderPattern.exec(text);
+                if (column && depthBefore > 0) {
+                  const statement = readStatementStartingAt(lines, index);
+                  const builder = column[2];
+                  const call = readCallWithChainedCalls(statement, statement.indexOf(`${builder}(`), builder, DRIZZLE_COLUMN_CHAIN);
+                  const dbName = /^\w+\(['"]([^'"]+)['"]/.exec(call)?.[1] ?? column[1];
+                  const signature = call.replace(/,?\bmode:'[^']*'/g, '').replace(/\{,/g, '{').replace(/,\{\}/g, '');
+                  entries.set(`Drizzle column \`${enclosingDeclaration}.${dbName}\``, {
+                    file,
+                    signature,
+                    columnsOwner: enclosingDeclaration,
+                    column: dbName,
+                  });
+                }
+                const tableStart = text.indexOf('pgTable(');
+                if (tableStart !== -1) {
+                  const statement = readStatementStartingAt(lines, index);
+                  const callStart = statement.indexOf('pgTable(');
+                  const call = readParenthesizedArgs(statement, callStart + 'pgTable'.length);
+                  const name = /^\(([^,)]+)/.exec(call)?.[1] ?? '';
+                  const extras = [];
+                  for (const match of call.matchAll(extrasPattern)) {
+                    extras.push(readCallWithChainedCalls(call, match.index, match[1], null));
+                  }
+                  const tableRef = { kind: 'expression', value: name };
+                  tableByColumnsOwner.set(enclosingDeclaration, tableRef);
+                  const columnsFunction = /^\([^,]+,(\w+)\(\)/.exec(call)?.[1];
+                  if (columnsFunction) tableByColumnsOwner.set(columnsFunction, tableRef);
+                  entries.set(`Drizzle table \`${enclosingDeclaration}\``, {
+                    file,
+                    signature: [name, ...extras.sort()].join(' '),
+                    tableRef,
+                  });
+                }
+              });
+              for (const entry of entries.values()) {
+                if (entry.columnsOwner) entry.tableRef = tableByColumnsOwner.get(entry.columnsOwner) ?? null;
+              }
+            }
+
+            function parseSchema(file, source) {
+              const entries = new Map();
+              if (source === null) return entries;
+              if (file === TABLE_NAME_FILE) parseTableNames(source, file, entries);
+              else if (file.startsWith(SEQUELIZE_PREFIX)) parseSequelize(source, file, entries);
+              else parseDrizzle(source, file, entries);
+              return entries;
+            }
+
+            // Sequelize names a model's table by pluralizing its class name.
+            function resolveTableName(tableRef, tableNames) {
+              if (!tableRef) return null;
+              if (tableRef.kind === 'name') return tableRef.value;
+              if (tableRef.kind === 'expression') {
+                const constant = /^TableName\.(\w+)$/.exec(tableRef.value);
+                if (constant) return tableNames.get(constant[1]) ?? null;
+                return /^['"]([^'"]+)['"]$/.exec(tableRef.value)?.[1] ?? null;
+              }
+              const knownTableNames = new Set(tableNames.values());
+              const className = tableRef.value;
+              const pluralForms = [className, `${className}s`, `${className}es`, className.replace(/y$/, 'ies')];
+              return pluralForms.find((candidate) => knownTableNames.has(candidate)) ?? null;
+            }
+
+            const mentionsName = (source, name) =>
+              new RegExp(`(?<![\\w$])${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\w$])`).test(source);
+
+            function findUncoveredChanges(schemaChanges, migrationSources, tableNames) {
+              const uncovered = [];
+              for (const change of schemaChanges) {
+                const requiredNames = [resolveTableName(change.tableRef, tableNames), change.column].filter(Boolean);
+                if (requiredNames.length === 0) continue;
+                const covered = migrationSources.some((source) => requiredNames.every((name) => mentionsName(source, name)));
+                if (!covered) uncovered.push({ ...change, requiredNames });
+              }
+              return uncovered;
+            }
+
+            const isSchemaFile = (path) =>
+              typeof path === 'string' &&
+              path.endsWith('.ts') &&
+              (path.startsWith(SEQUELIZE_PREFIX) || path.startsWith(DRIZZLE_PREFIX));
+
+            async function readFileAtRef(repoOwner, repoName, path, ref) {
+              try {
+                const { data } = await github.rest.repos.getContent({
+                  owner: repoOwner,
+                  repo: repoName,
+                  path,
+                  ref,
+                  mediaType: { format: 'raw' },
+                });
+                return typeof data === 'string' ? data : null;
+              } catch (error) {
+                if (error.status === 404) return null;
+                throw error;
+              }
+            }
+
+            async function runParser() {
+              const { owner, repo } = context.repo;
+              const pr = context.payload.pull_request;
+
+              const files = await github.paginate(github.rest.pulls.listFiles, {
+                owner,
+                repo,
+                pull_number: pr.number,
+                per_page: 100,
+              });
+
+              const schemaFiles = files.filter((file) => isSchemaFile(file.filename) || isSchemaFile(file.previous_filename));
+
+              const addedMigrations = files.filter(
+                (file) => file.filename.startsWith(MIGRATION_PREFIX) && file.status === 'added',
+              );
+
+              const exempt = pr.labels.some((label) => label.name === EXEMPT_LABEL);
+              const schemaChanges = [];
+              const uncoveredChanges = [];
+              if (schemaFiles.length > 0) {
+                const { data: comparison } = await github.rest.repos.compareCommits({
+                  owner,
+                  repo,
+                  base: pr.base.sha,
+                  head: pr.head.sha,
+                });
+                const mergeBase = comparison.merge_base_commit.sha;
+                const headOwner = pr.head.repo?.owner.login ?? owner;
+                const headRepo = pr.head.repo?.name ?? repo;
+
+                const schemaBefore = new Map();
+                const schemaAfter = new Map();
+                for (const file of schemaFiles) {
+                  const oldPath = file.previous_filename ?? file.filename;
+                  // A file moved into or out of the schema directories is parsed the same way on both sides.
+                  const schemaPath = isSchemaFile(file.filename) ? file.filename : oldPath;
+                  if (file.status !== 'added') {
+                    const source = await readFileAtRef(owner, repo, oldPath, mergeBase);
+                    for (const [key, entry] of parseSchema(schemaPath, source)) schemaBefore.set(key, entry);
+                  }
+                  if (file.status !== 'removed') {
+                    const source = await readFileAtRef(headOwner, headRepo, file.filename, pr.head.sha);
+                    for (const [key, entry] of parseSchema(schemaPath, source)) schemaAfter.set(key, entry);
+                  }
+                }
+
+                for (const key of new Set([...schemaBefore.keys(), ...schemaAfter.keys()])) {
+                  const old = schemaBefore.get(key);
+                  const current = schemaAfter.get(key);
+                  if (old && current && old.signature === current.signature) continue;
+                  const change = !old ? 'added' : !current ? 'removed' : 'changed';
+                  const { file, tableRef, column } = current ?? old;
+                  schemaChanges.push({ key, change, file, tableRef, column });
+                }
+                schemaChanges.sort((a, b) => a.key.localeCompare(b.key));
+
+                if (schemaChanges.length > 0 && addedMigrations.length > 0 && !exempt) {
+                  const tableNames = new Map([
+                    ...readTableNames(await readFileAtRef(owner, repo, TABLE_NAME_FILE, mergeBase)),
+                    ...readTableNames(await readFileAtRef(headOwner, headRepo, TABLE_NAME_FILE, pr.head.sha)),
+                  ]);
+                  const migrationSources = [];
+                  for (const migration of addedMigrations) {
+                    const source = await readFileAtRef(headOwner, headRepo, migration.filename, pr.head.sha);
+                    migrationSources.push(stripComments(source ?? ''));
+                  }
+                  uncoveredChanges.push(...findUncoveredChanges(schemaChanges, migrationSources, tableNames));
+                }
+              }
+
+              const missingMigration = schemaChanges.length > 0 && addedMigrations.length === 0 && !exempt;
+
+              const badNames = addedMigrations
+                .map((file) => file.filename.slice(MIGRATION_PREFIX.length))
+                .filter((name) => !MIGRATION_FILENAME.test(name));
+
+              const failures = [];
+
+              if (missingMigration) {
+                for (const change of schemaChanges) {
+                  core.error(`${change.key} ${change.change} with no migration in this pull request.`, { file: change.file });
+                }
+                failures.push(
+                  [
+                    `This pull request changes the database schema but adds no migration to \`${MIGRATION_PREFIX}\`.`,
+                    '',
+                    'A schema change on its own leaves every database that already exists behind. Add a migration named',
+                    '`<14-digit UTC timestamp>-<what-it-does>.ts`, following the newest file in that directory for structure.',
+                    '',
+                    `If this change genuinely does not alter the database shape, apply the \`${EXEMPT_LABEL}\` label.`,
+                    '',
+                    'Schema changes found:',
+                    ...schemaChanges.map((change) => `- ${change.key} ${change.change} (\`${change.file}\`)`),
+                  ].join('\n'),
+                );
+              }
+
+              if (uncoveredChanges.length > 0) {
+                for (const change of uncoveredChanges) {
+                  core.error(`${change.key} ${change.change} but no added migration mentions it.`, { file: change.file });
+                }
+                failures.push(
+                  [
+                    'This pull request adds a migration, but no added migration covers these schema changes:',
+                    '',
+                    ...uncoveredChanges.map(
+                      (change) =>
+                        `- ${change.key} ${change.change}: expected a migration that names ${change.requiredNames.map((name) => `\`${name}\``).join(' and ')}`,
+                    ),
+                    '',
+                    `Extend the migration to cover them. If a change genuinely does not alter the database shape, apply the \`${EXEMPT_LABEL}\` label.`,
+                  ].join('\n'),
+                );
+              }
+
+              for (const name of badNames) {
+                core.error('Migration filename must be <14-digit UTC timestamp>-<what-it-does>.ts, lower case.', {
+                  file: `${MIGRATION_PREFIX}${name}`,
+                });
+              }
+
+              if (badNames.length > 0) {
+                failures.push(
+                  [
+                    'These added migrations do not follow the `<14-digit UTC timestamp>-<what-it-does>.ts` naming convention (lower case, hyphen separated):',
+                    ...badNames.map((name) => `- \`${name}\``),
+                    '',
+                    'Migrations run in filename order, so the timestamp prefix is what fixes their sequence.',
+                  ].join('\n'),
+                );
+              }
+
+              const comments = await github.paginate(github.rest.issues.listComments, {
+                owner,
+                repo,
+                issue_number: pr.number,
+                per_page: 100,
+              });
+              const existing = comments.find((comment) => (comment.body || '').includes(MARKER));
+
+              if (failures.length === 0) {
+                if (existing) {
+                  await github.rest.issues.deleteComment({ owner, repo, comment_id: existing.id });
+                }
+                core.info('Migration check passed.');
+                return;
+              }
+
+              const body = [MARKER, ...failures].join('\n\n');
+
+              if (existing) {
+                await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+              } else {
+                await github.rest.issues.createComment({ owner, repo, issue_number: pr.number, body });
+              }
+
+              core.setFailed(
+                missingMigration
+                  ? 'Database schema changed without a migration.'
+                  : uncoveredChanges.length > 0
+                    ? 'Schema changes are not covered by the added migration.'
+                    : 'Migration filename does not follow the naming convention.',
               );
             }
 
-            const comments = await github.paginate(github.rest.issues.listComments, {
-              owner,
-              repo,
-              issue_number: pr.number,
-              per_page: 100,
-            });
-            const existing = comments.find((comment) => (comment.body || '').includes(MARKER));
-
-            if (failures.length === 0) {
-              if (existing) {
-                await github.rest.issues.deleteComment({ owner, repo, comment_id: existing.id });
-              }
-              core.info('Migration check passed.');
-              return;
-            }
-
-            const body = [MARKER, ...failures].join('\n\n');
-
-            if (existing) {
-              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
-            } else {
-              await github.rest.issues.createComment({ owner, repo, issue_number: pr.number, body });
-            }
-
-            core.setFailed(
-              modelChanges.length > 0 && addedMigrations.length === 0 && !exempt
-                ? 'DAL model changed without a migration.'
-                : 'Migration filename does not follow the naming convention.',
-            );
+            await runParser();

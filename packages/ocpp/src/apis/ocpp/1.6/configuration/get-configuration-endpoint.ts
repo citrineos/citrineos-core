@@ -8,6 +8,7 @@ import {
   type IOcppSender,
   AbstractMessageEndpoint,
   DEFAULT_TENANT_ID,
+  type MessageDelivery,
 } from '@citrineos/base';
 import { EventGroup, OCPP1_6, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
 import type { IChangeConfigurationRepository, IChargingStationRepository } from '@citrineos/dal';
@@ -46,7 +47,7 @@ export class GetConfigurationEndpoint extends AbstractMessageEndpoint {
   async handle(
     identifiers: string[],
     request: OCPP1_6.GetConfigurationRequest,
-    callbackUrl: string | undefined,
+    delivery: MessageDelivery,
     tenantId: number = DEFAULT_TENANT_ID,
   ): Promise<IMessageConfirmation[]> {
     this._logger.debug('GetConfiguration request received:', request);
@@ -87,7 +88,7 @@ export class GetConfigurationEndpoint extends AbstractMessageEndpoint {
                 action: OCPP_CallAction.GetConfiguration,
                 eventGroup: EventGroup.Configuration,
                 payload: { key: batch },
-                callbackUrl,
+                ...delivery,
                 correlationId: uuidv4(),
               });
 

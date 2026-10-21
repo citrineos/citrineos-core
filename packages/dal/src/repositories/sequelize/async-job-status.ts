@@ -2,55 +2,71 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import type { AsyncJobCreate, AsyncJobDto } from '@citrineos/types';
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './base.js';
-import type { FindOptions } from 'sequelize';
+import type { AsyncJobStatusUpdate, IAsyncJobStatusRepository } from '../repositories.js';
 import { AsyncJobStatus } from '../../models/async-job/async-job-status.js';
 
-export class SequelizeAsyncJobStatusRepository extends SequelizeRepository<AsyncJobStatus> {
+function toAsyncJobDto(model: AsyncJobStatus): AsyncJobDto {
+  return {
+    jobId: model.jobId,
+    jobName: model.jobName,
+    tenantPartnerId: model.tenantPartnerId,
+    finishedAt: model.finishedAt ?? undefined,
+    stoppedAt: model.stoppedAt,
+    stopScheduled: model.stopScheduled,
+    isFailed: model.isFailed,
+    paginatedParams: model.paginationParams,
+    totalObjects: model.totalObjects ?? undefined,
+    tenantId: model.tenantId,
+    createdAt: model.createdAt,
+    updatedAt: model.updatedAt,
+  };
+}
+
+export class SequelizeAsyncJobStatusRepository
+  extends SequelizeRepository<AsyncJobStatus>
+  implements IAsyncJobStatusRepository
+{
   constructor({ config, logger, sequelizeInstance }: SequelizeRepositoryDependencies) {
     super({ config, namespace: AsyncJobStatus.MODEL_NAME, logger, sequelizeInstance });
   }
 
-  async createAsyncJobStatus(asyncJobStatus: AsyncJobStatus): Promise<AsyncJobStatus> {
-    return await this._create(asyncJobStatus.tenantId, asyncJobStatus);
+  async createAsyncJobStatus(tenantId: number, input: AsyncJobCreate): Promise<AsyncJobDto> {
+    const { paginatedParams, ...rest } = input;
+    const asyncJobStatus = AsyncJobStatus.build({
+      ...rest,
+      paginationParams: paginatedParams,
+      tenantId,
+    });
+    return toAsyncJobDto(await this._create(tenantId, asyncJobStatus));
   }
 
-  async updateAsyncJobStatus(updateData: {
-    jobId: string;
-    paginationParams?: any;
-    totalObjects?: number;
-    finishedAt?: Date;
-    stoppedAt?: Date | null;
-    stopScheduled?: boolean;
-    isFailed?: boolean;
-  }): Promise<AsyncJobStatus> {
-    const { jobId, ...data } = updateData;
+  async readByJobId(tenantId: number, jobId: string): Promise<AsyncJobDto | undefined> {
+    const asyncJobStatus = await this.readByKey(tenantId, jobId);
+    return asyncJobStatus ? toAsyncJobDto(asyncJobStatus) : undefined;
+  }
 
-    // Use the base class method for updating
-    const updated = await this._updateByKey(0, data as Partial<AsyncJobStatus>, jobId);
+  async updateAsyncJobStatus(
+    tenantId: number,
+    jobId: string,
+    data: AsyncJobStatusUpdate,
+  ): Promise<AsyncJobDto> {
+    const { paginatedParams, ...rest } = data;
+    const updated = await this._updateByKey(
+      tenantId,
+      paginatedParams === undefined ? rest : { ...rest, paginationParams: paginatedParams },
+      jobId,
+    );
     if (!updated) {
       throw new Error(`Failed to update AsyncJobStatus with id ${jobId}`);
     }
-    return updated;
+    return toAsyncJobDto(updated);
   }
 
-  // Method for finding by jobId as string (expected by OCPI service)
-  async readByJobId(jobId: string): Promise<AsyncJobStatus | undefined> {
-    return (
-      ((await this.s.models[this.namespace].findOne({
-        where: { jobId },
-      } as FindOptions)) as AsyncJobStatus | null) ?? undefined
-    );
-  }
-
-  // Method for querying with custom options (expected by OCPI service)
-  async findAllByQuery(query: { where: any }): Promise<AsyncJobStatus[]> {
-    return await super.readAllByQuery(0, query);
-  }
-
-  // Method for deleting by jobId as string (expected by OCPI service)
-  async deleteByJobId(jobId: string): Promise<AsyncJobStatus | undefined> {
-    return await this._deleteByKey(0, jobId);
+  async deleteByJobId(tenantId: number, jobId: string): Promise<AsyncJobDto | undefined> {
+    const deleted = await this._deleteByKey(tenantId, jobId);
+    return deleted ? toAsyncJobDto(deleted) : undefined;
   }
 }
 

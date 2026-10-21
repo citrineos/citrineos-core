@@ -19,11 +19,11 @@ import {
   OCPP2_response_types,
 } from '@citrineos/types';
 import type {
-  IDeviceModelRepository,
+  IComponentRepository,
   IMessageInfoRepository,
   IOCPPMessageRepository,
 } from '@citrineos/dal';
-import { Component } from '@citrineos/dal';
+import type { ComponentDto } from '@citrineos/types';
 import { validateMessageContentType } from '@util/index.js';
 import { stationIdFilter } from '@citrineos/dal';
 
@@ -31,25 +31,25 @@ import { stationIdFilter } from '@citrineos/dal';
 export class NotifyDisplayMessagesRequestOcpp2Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
   protected _ocppMessageRepository: IOCPPMessageRepository;
-  protected _deviceModelRepository: IDeviceModelRepository;
+  protected _componentRepository: IComponentRepository;
   protected _messageInfoRepository: IMessageInfoRepository;
 
   constructor({
     logger,
     ocppSender,
     ocppMessageRepository,
-    deviceModelRepository,
+    componentRepository,
     messageInfoRepository,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
     ocppMessageRepository: IOCPPMessageRepository;
-    deviceModelRepository: IDeviceModelRepository;
+    componentRepository: IComponentRepository;
     messageInfoRepository: IMessageInfoRepository;
   }) {
     super(logger);
     this._ocppSender = ocppSender;
     this._ocppMessageRepository = ocppMessageRepository;
-    this._deviceModelRepository = deviceModelRepository;
+    this._componentRepository = componentRepository;
     this._messageInfoRepository = messageInfoRepository;
   }
 
@@ -124,11 +124,12 @@ export class NotifyDisplayMessagesRequestOcpp2Handler extends AbstractHandler {
     for (const messageInfoType of messageInfoTypes ?? []) {
       let componentId: number | undefined;
       if (messageInfoType.display) {
-        const component: Component = await this._deviceModelRepository.findOrCreateEvseAndComponent(
-          tenantId,
-          messageInfoType.display,
-          message.context.ocppConnectionName,
-        );
+        const component: ComponentDto =
+          await this._componentRepository.findOrCreateEvseAndComponent(
+            tenantId,
+            messageInfoType.display,
+            message.context.ocppConnectionName,
+          );
         componentId = component.id;
       }
       await this._messageInfoRepository.createOrUpdateByMessageInfoTypeAndStationId(

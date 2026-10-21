@@ -11,18 +11,19 @@ import {
   type OCPP2_0_1,
   OCPPVersion,
 } from '@citrineos/types';
-import { Op, type WhereOptions } from 'sequelize';
+import { Op, type Transaction, type WhereOptions } from 'sequelize';
 import {
+  type ConnectorStatusNotificationResult,
   type IChargingStationRepository,
   type IConnectorRepository,
   type IEvseRepository,
   type ILocationRepository,
   type IStatusNotificationRepository,
+  type StationStatusNotificationResult,
 } from '../repositories.js';
 import { ChargingStation } from '../../models/location/charging-station.js';
 import { Connector } from '../../models/location/connector.js';
 import { Evse } from '../../models/location/evse.js';
-import { LatestStatusNotification } from '../../models/location/latest-status-notification.js';
 import { Location } from '../../models/location/location.js';
 import { StatusNotification } from '../../models/location/status-notification.js';
 import { Tariff } from '../../models/tariff/tariffs.js';
@@ -44,7 +45,6 @@ export class SequelizeLocationRepository
 {
   chargingStation: CrudRepository<ChargingStation>;
   statusNotification: CrudRepository<StatusNotification>;
-  latestStatusNotification: CrudRepository<LatestStatusNotification>;
   evse: CrudRepository<Evse>;
   connector: CrudRepository<Connector>;
 
@@ -59,12 +59,6 @@ export class SequelizeLocationRepository
     this.statusNotification = new SequelizeRepository<StatusNotification>({
       config,
       namespace: StatusNotification.MODEL_NAME,
-      logger,
-      sequelizeInstance,
-    });
-    this.latestStatusNotification = new SequelizeRepository<LatestStatusNotification>({
-      config,
-      namespace: LatestStatusNotification.MODEL_NAME,
       logger,
       sequelizeInstance,
     });
@@ -128,6 +122,7 @@ export class SequelizeLocationRepository
         isOnline,
         protocol: ocppVersion,
         connectedWebsocketServerConfigId: connectedWebsocketServerConfigId ?? null,
+        lastConnectedAt: new Date().toISOString(),
       });
     }
 
@@ -135,6 +130,7 @@ export class SequelizeLocationRepository
       isOnline,
       protocol: ocppVersion,
       connectedWebsocketServerConfigId: connectedWebsocketServerConfigId ?? null,
+      ...(isOnline && { lastConnectedAt: new Date().toISOString() }),
     });
     return station;
   }
@@ -154,73 +150,145 @@ export class SequelizeLocationRepository
     tenantId: number,
     ocppConnectionName: string,
     statusNotification: StatusNotificationDto,
-  ): Promise<void> {
+  ): Promise<StatusNotification> {
     const stationId = await resolveStationId(tenantId, ocppConnectionName);
-    const savedStatusNotification = await this.statusNotification.create(
-      tenantId,
-      StatusNotification.build({
-        tenantId,
-        stationId,
-        timestamp: statusNotification.timestamp,
-        connectorStatus: statusNotification.connectorStatus,
-        evseId: statusNotification.evseId,
-        connectorId: statusNotification.connectorId,
-        errorCode: statusNotification.errorCode,
-        info: statusNotification.info,
-        vendorId: statusNotification.vendorId,
-        vendorErrorCode: statusNotification.vendorErrorCode,
-      }),
+    return await this.s.transaction((transaction) =>
+      this.insertStatusNotification(tenantId, stationId, statusNotification, transaction),
     );
-    try {
-      await this.updateLatestStatusNotification(tenantId, savedStatusNotification);
-    } catch (e: any) {
-      this.logger.error(`Failed to update latest status notification with error: ${e.message}`, e);
-    }
   }
 
-  async updateLatestStatusNotification(
+  async addOcpp2ConnectorStatusNotification(
     tenantId: number,
-    statusNotification: StatusNotification,
-  ): Promise<void> {
-    const evseId = statusNotification.evseId;
-    const connectorId = statusNotification.connectorId;
-    const statusNotificationId = statusNotification.id;
-    const stationId = statusNotification.stationId;
-    // delete operation doesn't support "include" in query
-    // so we need to find them at first and then delete
-    const existingLatestStatusNotifications: LatestStatusNotification[] =
-      await this.latestStatusNotification.readAllByQuery(tenantId, {
-        where: {
-          stationId,
-        },
-        include: [
-          {
-            model: StatusNotification,
-            where: {
-              evseId,
-              connectorId,
-            },
-            require: true,
-          },
-        ],
-      });
-    const idsToDelete = existingLatestStatusNotifications.map((l) => l.id);
-    await this.latestStatusNotification.deleteAllByQuery(tenantId, {
-      where: {
+    ocppConnectionName: string,
+    connector: ConnectorDto & { evseTypeConnectorId: number },
+    statusNotification: StatusNotificationDto,
+  ): Promise<ConnectorStatusNotificationResult> {
+    const stationId = await resolveStationId(tenantId, ocppConnectionName);
+    return await this.s.transaction(async (transaction) =>
+      this.linkStatusNotificationToConnector(
+        tenantId,
+        ocppConnectionName,
         stationId,
-        id: {
-          [Op.in]: idsToDelete,
-        },
-      },
-    });
-    await this.latestStatusNotification.create(
+        await this.upsertConnector(
+          tenantId,
+          connector,
+          {
+            tenantId,
+            evseId: connector.evseId,
+            evseTypeConnectorId: connector.evseTypeConnectorId,
+          },
+          transaction,
+        ),
+        statusNotification,
+        transaction,
+      ),
+    );
+  }
+
+  async addOcpp16ConnectorStatusNotification(
+    tenantId: number,
+    ocppConnectionName: string,
+    connector: ConnectorDto & { connectorId: number },
+    statusNotification: StatusNotificationDto,
+  ): Promise<ConnectorStatusNotificationResult> {
+    const stationId = await resolveStationId(tenantId, ocppConnectionName);
+    return await this.s.transaction(async (transaction) =>
+      this.linkStatusNotificationToConnector(
+        tenantId,
+        ocppConnectionName,
+        stationId,
+        await this.upsertConnector(
+          tenantId,
+          connector,
+          {
+            tenantId,
+            stationId: connector.stationId,
+            connectorId: connector.connectorId,
+          },
+          transaction,
+        ),
+        statusNotification,
+        transaction,
+      ),
+    );
+  }
+
+  async addOcpp16StationStatusNotification(
+    tenantId: number,
+    ocppConnectionName: string,
+    connector: Partial<ConnectorDto>,
+    statusNotification: StatusNotificationDto,
+  ): Promise<StationStatusNotificationResult> {
+    const stationId = await resolveStationIdOrThrow(
       tenantId,
-      LatestStatusNotification.build({
+      ocppConnectionName,
+      'record a station-wide status notification',
+    );
+    return await this.s.transaction(async (transaction) => {
+      const saved = await this.insertStatusNotification(
         tenantId,
         stationId,
-        statusNotificationId,
-      }),
+        statusNotification,
+        transaction,
+      );
+      const connectors = await this.updateAllConnectorsByStationId(
+        tenantId,
+        stationId,
+        { ...connector, latestStatusNotificationId: saved.id },
+        transaction,
+      );
+      return { statusNotification: saved, connectors };
+    });
+  }
+
+  private async linkStatusNotificationToConnector(
+    tenantId: number,
+    ocppConnectionName: string,
+    stationId: number | undefined,
+    connector: Connector | undefined,
+    statusNotification: StatusNotificationDto,
+    transaction: Transaction,
+  ): Promise<ConnectorStatusNotificationResult> {
+    if (connector?.id === undefined) {
+      throw new Error(`Failed to save the connector reported by ${ocppConnectionName}`);
+    }
+
+    const saved = await this.insertStatusNotification(
+      tenantId,
+      stationId,
+      { ...statusNotification, connectorDatabaseId: connector.id },
+      transaction,
     );
+    const [linked] = await this.connector.updateAllByQuery(
+      tenantId,
+      { latestStatusNotificationId: saved.id },
+      { where: { id: connector.id }, transaction },
+    );
+    if (!linked) {
+      throw new Error(`Failed to save the connector reported by ${ocppConnectionName}`);
+    }
+    return { statusNotification: saved, connector: linked };
+  }
+
+  private async insertStatusNotification(
+    tenantId: number,
+    stationId: number | undefined,
+    statusNotification: StatusNotificationDto,
+    transaction: Transaction,
+  ): Promise<StatusNotification> {
+    return await StatusNotification.build({
+      tenantId,
+      stationId,
+      timestamp: statusNotification.timestamp,
+      connectorStatus: statusNotification.connectorStatus,
+      evseId: statusNotification.evseId,
+      connectorId: statusNotification.connectorId,
+      connectorDatabaseId: statusNotification.connectorDatabaseId,
+      errorCode: statusNotification.errorCode,
+      info: statusNotification.info,
+      vendorId: statusNotification.vendorId,
+      vendorErrorCode: statusNotification.vendorErrorCode,
+    }).save({ transaction });
   }
 
   async getChargingStationsByIds(
@@ -392,39 +460,40 @@ export class SequelizeLocationRepository
     tenantId: number,
     connector: ConnectorDto,
     where: WhereOptions<Connector>,
+    outerTransaction?: Transaction,
   ): Promise<Connector | undefined> {
-    let result;
-    await this.s.transaction(async (sequelizeTransaction) => {
+    const upsert = async (transaction: Transaction): Promise<Connector | undefined> => {
       const [savedConnector, connectorCreated] = await this.connector.readOrCreateByQuery(
         tenantId,
         {
           where,
           defaults: { ...connector },
-          transaction: sequelizeTransaction,
+          transaction,
         },
       );
-      if (!connectorCreated) {
-        const updatedConnectors = await this.connector.updateAllByQuery(tenantId, connector, {
-          where: {
-            id: savedConnector.id,
-          },
-          transaction: sequelizeTransaction,
-        });
-        result = updatedConnectors.length > 0 ? updatedConnectors[0] : undefined;
-      } else {
-        result = savedConnector;
+      if (connectorCreated) {
+        return savedConnector;
       }
-    });
-    return result;
+      const [updatedConnector] = await this.connector.updateAllByQuery(tenantId, connector, {
+        where: {
+          id: savedConnector.id,
+        },
+        transaction,
+      });
+      return updatedConnector;
+    };
+    return outerTransaction ? await upsert(outerTransaction) : await this.s.transaction(upsert);
   }
 
   async updateAllConnectorsByStationId(
     tenantId: number,
     stationId: number,
     value: Partial<ConnectorDto>,
+    transaction?: Transaction,
   ): Promise<Connector[]> {
     return await this.connector.updateAllByQuery(tenantId, value, {
       where: { stationId, tenantId },
+      transaction,
     });
   }
 

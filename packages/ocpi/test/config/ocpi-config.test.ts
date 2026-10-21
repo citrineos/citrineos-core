@@ -260,6 +260,14 @@ describe('defineOcpiConfig', () => {
     expect(config.database.username).toBe('ocpi');
   });
 
+  it('leaves ocpiServer.trustProxy unset until a boolean env value turns it on', () => {
+    expect(defineOcpiConfig(aFullConfig()).ocpiServer.trustProxy).toBeUndefined();
+
+    setEnv('CITRINEOS_OCPI_OCPISERVER_TRUSTPROXY', 'true');
+
+    expect(defineOcpiConfig(aFullConfig()).ocpiServer.trustProxy).toBe(true);
+  });
+
   it('overrides a top-level key', () => {
     setEnv('CITRINEOS_OCPI_ENV', 'production');
 

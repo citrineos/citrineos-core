@@ -8,6 +8,7 @@ import {
   type IOcppSender,
   AbstractMessageEndpoint,
   DEFAULT_TENANT_ID,
+  type MessageDelivery,
 } from '@citrineos/base';
 import {
   EventGroup,
@@ -43,7 +44,7 @@ export class SendLocalListEndpoint extends AbstractMessageEndpoint {
   async handle(
     identifiers: string[],
     request: OCPP2_request_types.SendLocalListRequest,
-    callbackUrl: string | undefined,
+    delivery: MessageDelivery,
     tenantId: number = DEFAULT_TENANT_ID,
     version: OCPPVersion,
   ): Promise<IMessageConfirmation[]> {
@@ -65,7 +66,7 @@ export class SendLocalListEndpoint extends AbstractMessageEndpoint {
             action: OCPP_CallAction.SendLocalList,
             eventGroup: EventGroup.EVDriver,
             payload: request,
-            callbackUrl,
+            ...delivery,
             correlationId,
           }),
         );

@@ -2,9 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { ICache } from '../interfaces/cache/cache.js';
+import type { CacheExpiry, ICache } from '../interfaces/cache/cache.js';
+import { childLogger } from '../util/logging.js';
 import type { ClassConstructor } from 'class-transformer';
 import { plainToInstance } from 'class-transformer';
+import type { ILogObj, Logger } from 'tslog';
+
+type ExpiryCallback = (key: string, namespace: string) => void | Promise<void>;
 
 /**
  * Implementation of cache interface with memory storage
@@ -14,8 +18,11 @@ export class MemoryCache implements ICache {
   private _keySubscriptionMap: Map<string, (arg: string | null) => void>;
   private _keySubscriptionPromiseMap: Map<string, Promise<string | null>>;
   private _timeoutMap: Map<string, NodeJS.Timeout>;
+  private _expiryCallbackMap: Map<string, ExpiryCallback>;
+  private _logger: Logger<ILogObj>;
 
-  constructor() {
+  constructor(logger?: Logger<ILogObj>) {
+    this._logger = childLogger(logger, this.constructor.name);
     const keySubscriptionMap: Map<string, (arg: string | null) => void> = new Map();
     const subscriptionHandler: ProxyHandler<Map<string, string>> = {
       // Returns value on keySubscriptions when Map.set(key, value) is called
@@ -49,6 +56,7 @@ export class MemoryCache implements ICache {
     this._keySubscriptionMap = keySubscriptionMap;
     this._keySubscriptionPromiseMap = new Map();
     this._timeoutMap = new Map();
+    this._expiryCallbackMap = new Map();
   }
 
   exists(key: string, namespace?: string): Promise<boolean> {
@@ -76,6 +84,8 @@ export class MemoryCache implements ICache {
     const namespaceKey = `${namespace}:${key}`;
     const value = this._cache.get(namespaceKey);
     this._cache.delete(namespaceKey);
+    this._clearExpiry(namespaceKey);
+    this._expiryCallbackMap.delete(namespaceKey);
     if (value !== undefined) {
       if (classConstructor) {
         return plainToInstance(classConstructor(), JSON.parse(value));
@@ -154,22 +164,12 @@ export class MemoryCache implements ICache {
     key: string,
     value: string,
     namespace?: string,
-    expireSeconds?: number,
+    expire?: CacheExpiry,
   ): Promise<boolean> {
     namespace = namespace || 'default';
     const namespaceKey = `${namespace}:${key}`;
     this._cache.set(namespaceKey, value);
-    if (this._timeoutMap.has(namespaceKey)) {
-      clearTimeout(this._timeoutMap.get(namespaceKey));
-    }
-    if (expireSeconds) {
-      this._timeoutMap.set(
-        namespaceKey,
-        setTimeout(() => {
-          this._cache.delete(namespaceKey);
-        }, expireSeconds * 1000),
-      );
-    }
+    this._applyExpiry(key, namespace, expire);
     this.resolveOnChange(namespaceKey, value);
     return true;
   }
@@ -178,7 +178,7 @@ export class MemoryCache implements ICache {
     key: string,
     value: string,
     namespace?: string,
-    expireSeconds?: number,
+    expire?: CacheExpiry,
   ): Promise<boolean> {
     namespace = namespace || 'default';
     const namespaceKey = `${namespace}:${key}`;
@@ -186,17 +186,7 @@ export class MemoryCache implements ICache {
       return false;
     }
     this._cache.set(namespaceKey, value);
-    if (this._timeoutMap.has(namespaceKey)) {
-      clearTimeout(this._timeoutMap.get(namespaceKey));
-    }
-    if (expireSeconds) {
-      this._timeoutMap.set(
-        namespaceKey,
-        setTimeout(() => {
-          this._cache.delete(namespaceKey);
-        }, expireSeconds * 1000),
-      );
-    }
+    this._applyExpiry(key, namespace, expire);
     this.resolveOnChange(namespaceKey, value);
     return true;
   }
@@ -207,20 +197,50 @@ export class MemoryCache implements ICache {
     if (!this._cache.has(namespaceKey)) {
       return false;
     }
-    if (this._timeoutMap.has(namespaceKey)) {
-      clearTimeout(this._timeoutMap.get(namespaceKey));
-    }
-    this._timeoutMap.set(
-      namespaceKey,
-      setTimeout(() => {
-        this._cache.delete(namespaceKey);
-      }, expireSeconds * 1000),
-    );
+    this._clearExpiry(namespaceKey);
+    this._scheduleExpiry(key, namespace, expireSeconds);
     return true;
   }
 
   async ping(): Promise<void> {
     return;
+  }
+
+  private _applyExpiry(key: string, namespace: string, expire?: CacheExpiry): void {
+    const namespaceKey = `${namespace}:${key}`;
+    if (typeof expire === 'object' && expire.onExpire) {
+      this._expiryCallbackMap.set(namespaceKey, expire.onExpire);
+    }
+    this._clearExpiry(namespaceKey);
+    const seconds = typeof expire === 'object' ? expire.seconds : expire;
+    if (seconds) {
+      this._scheduleExpiry(key, namespace, seconds);
+    }
+  }
+
+  private _scheduleExpiry(key: string, namespace: string, seconds: number): void {
+    const namespaceKey = `${namespace}:${key}`;
+    this._timeoutMap.set(
+      namespaceKey,
+      setTimeout(() => {
+        this._timeoutMap.delete(namespaceKey);
+        this._cache.delete(namespaceKey);
+        const onExpire = this._expiryCallbackMap.get(namespaceKey);
+        this._expiryCallbackMap.delete(namespaceKey);
+        if (onExpire) {
+          Promise.resolve()
+            .then(() => onExpire(key, namespace))
+            .catch((error) => {
+              this._logger.error('Expiry callback failed', namespaceKey, error);
+            });
+        }
+      }, seconds * 1000),
+    );
+  }
+
+  private _clearExpiry(namespaceKey: string): void {
+    clearTimeout(this._timeoutMap.get(namespaceKey));
+    this._timeoutMap.delete(namespaceKey);
   }
 
   private resolveOnChange(namespaceKey: string, value: string) {

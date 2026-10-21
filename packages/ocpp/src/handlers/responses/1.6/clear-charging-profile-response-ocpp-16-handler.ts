@@ -7,36 +7,26 @@ import {
   AsResponseHandler,
   type IMessage,
 } from '@citrineos/base';
-import {
-  type HandlerProperties,
-  MessageOrigin,
-  OCPP1_6,
-  OCPP_CallAction,
-  OCPPVersion,
-} from '@citrineos/types';
-import type { IChargingProfileRepository, IOCPPMessageRepository } from '@citrineos/dal';
-import { OCPP1_6_Mapper, stationIdFilter } from '@citrineos/dal';
+import { type HandlerProperties, OCPP1_6, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
+import type { IChargingProfileRepository } from '@citrineos/dal';
+import { OCPP1_6_Mapper } from '@citrineos/dal';
 
 @AsResponseHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.ClearChargingProfile)
 export class ClearChargingProfileResponseOcpp16Handler extends AbstractHandler {
-  protected _ocppMessageRepository: IOCPPMessageRepository;
   protected _chargingProfileRepository: IChargingProfileRepository;
 
   constructor({
     logger,
-    ocppMessageRepository,
     chargingProfileRepository,
   }: AbstractHandlerDependencies & {
-    ocppMessageRepository: IOCPPMessageRepository;
     chargingProfileRepository: IChargingProfileRepository;
   }) {
     super(logger);
-    this._ocppMessageRepository = ocppMessageRepository;
     this._chargingProfileRepository = chargingProfileRepository;
   }
 
   async handle(
-    message: IMessage<OCPP1_6.ClearChargingProfileResponse>,
+    message: IMessage<OCPP1_6.ClearChargingProfileResponse, OCPP1_6.ClearChargingProfileRequest>,
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.info(
@@ -48,21 +38,13 @@ export class ClearChargingProfileResponseOcpp16Handler extends AbstractHandler {
     const tenantId = message.context.tenantId;
     if (message.payload.status === OCPP1_6.ClearChargingProfileResponseStatus.Accepted) {
       const ocppConnectionName: string = message.context.ocppConnectionName;
-      const originalMessage = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
-        where: {
-          tenantId: tenantId,
-          stationId: await stationIdFilter(tenantId, ocppConnectionName),
-          correlationId: message.context.correlationId,
-          origin: MessageOrigin.ChargingStationManagementSystem,
-        },
-      });
-      if (!originalMessage) {
+      const originalRequest = message.request;
+      if (!originalRequest) {
         this._logger.error(
           `OCPP 1.6 ClearChargingProfile accepted but original request not found by CorrelationId ${message.context.correlationId}.`,
         );
         return;
       }
-      const originalRequest = originalMessage.payload as OCPP1_6.ClearChargingProfileRequest;
       // Set existed profiles to isActive false
       await this._chargingProfileRepository.updateAllByQuery(
         tenantId,

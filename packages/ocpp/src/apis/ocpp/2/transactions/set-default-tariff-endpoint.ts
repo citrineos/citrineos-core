@@ -8,6 +8,7 @@ import {
   type IOcppSender,
   AbstractMessageEndpoint,
   DEFAULT_TENANT_ID,
+  type MessageDelivery,
 } from '@citrineos/base';
 import { EventGroup, type OCPP2_1, OCPP_CallAction, type OCPPVersion } from '@citrineos/types';
 import { validateTariffConditionsTimeFields } from '@util/index.js';
@@ -35,7 +36,7 @@ export class SetDefaultTariffEndpoint extends AbstractMessageEndpoint {
   async handle(
     identifiers: string[],
     request: OCPP2_1.SetDefaultTariffRequest,
-    callbackUrl: string | undefined,
+    delivery: MessageDelivery,
     tenantId: number | undefined,
     version: OCPPVersion,
   ): Promise<IMessageConfirmation[]> {
@@ -53,7 +54,7 @@ export class SetDefaultTariffEndpoint extends AbstractMessageEndpoint {
           action: OCPP_CallAction.SetDefaultTariff,
           eventGroup: EventGroup.Transactions,
           payload: request,
-          callbackUrl,
+          ...delivery,
         }),
       ),
     );

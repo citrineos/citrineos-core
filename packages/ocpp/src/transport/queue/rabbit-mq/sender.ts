@@ -9,12 +9,19 @@ import {
   AbstractMessageSender,
   OcppError,
 } from '@citrineos/base';
-import { type OcppRequest, type OcppResponse, MessageState } from '@citrineos/types';
-import { instanceToPlain } from 'class-transformer';
+import {
+  type OcppRequest,
+  type OcppResponse,
+  type SystemConfig,
+  MessageState,
+} from '@citrineos/types';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { RabbitMQChannelManager } from './channel-manager.js';
 import { RabbitMQConnectionManager } from './connection-manager.js';
+import type { RabbitMqDeadLetterPublisher } from './dead-letter-publisher.js';
+import { DeadLetterReason, DeadLetterSource } from '@/transport/metrics.js';
+import { toAmqpContent, toAmqpPublish } from './util.js';
 
 /**
  * Implementation of a {@link IMessageSender} using RabbitMQ as the underlying transport.
@@ -34,12 +41,16 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
   /**
    * Constructor for the class.
    *
+   * @param timeouts - Decides when a message the CSMS sends expires on the broker.
+   * @param deadLetterPublisher - Takes a message that is already stale when it is sent.
    * @param {Logger<ILogObj>} [logger] - The logger object.
    */
   constructor(
     private exchange: string,
     connectionManager: RabbitMQConnectionManager,
     channelManager: RabbitMQChannelManager,
+    private readonly timeouts: SystemConfig['timeouts'],
+    private readonly deadLetterPublisher: RabbitMqDeadLetterPublisher,
     logger?: Logger<ILogObj>,
   ) {
     super(logger);
@@ -112,6 +123,20 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
       return { success: false, payload: 'Message payload must be set' };
     }
 
+    const publish = toAmqpPublish(message, this.timeouts);
+    if (publish.stale) {
+      this._logger.info(
+        `Dead-lettering ${message.action} for ${message.context.ocppConnectionName}: it went ` +
+          `stale before it was sent. correlationId=${message.context.correlationId}`,
+      );
+      await this.deadLetterPublisher.publishMessage(
+        message,
+        DeadLetterReason.Stale,
+        DeadLetterSource.Sender,
+      );
+      return { success: false, payload: 'Message went stale before it was sent' };
+    }
+
     const channel = await this._channelManager.getChannel(RabbitMqSender.CHANNEL_ID);
     if (!channel) {
       throw new Error('RabbitMQ is down: cannot send message.');
@@ -122,19 +147,8 @@ export class RabbitMqSender extends AbstractMessageSender implements IMessageSen
     const success = channel.publish(
       this.exchange || '',
       '',
-      Buffer.from(JSON.stringify(instanceToPlain(message)), 'utf-8'),
-      {
-        contentEncoding: 'utf-8',
-        contentType: 'application/json',
-        headers: {
-          origin: message.origin.toString(),
-          eventGroup: message.eventGroup.toString(),
-          action: message.action.toString(),
-          state: message.state.toString(),
-          ...message.context,
-          tenantId: message.context.tenantId.toString(),
-        },
-      },
+      toAmqpContent(message),
+      publish.options,
     );
     return { success };
   }

@@ -10,35 +10,30 @@ import {
 import {
   ChargingLimitSourceEnum,
   type HandlerProperties,
-  MessageOrigin,
   OCPP1_6,
   OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/types';
-import type { IChargingProfileRepository, IOCPPMessageRepository } from '@citrineos/dal';
-import { OCPP1_6_Mapper, stationIdFilter } from '@citrineos/dal';
+import type { IChargingProfileRepository } from '@citrineos/dal';
+import { OCPP1_6_Mapper } from '@citrineos/dal';
 import { Op } from 'sequelize';
 
 @AsResponseHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.SetChargingProfile)
 export class SetChargingProfileResponseOcpp16Handler extends AbstractHandler {
-  protected _ocppMessageRepository: IOCPPMessageRepository;
   protected _chargingProfileRepository: IChargingProfileRepository;
 
   constructor({
     logger,
-    ocppMessageRepository,
     chargingProfileRepository,
   }: AbstractHandlerDependencies & {
-    ocppMessageRepository: IOCPPMessageRepository;
     chargingProfileRepository: IChargingProfileRepository;
   }) {
     super(logger);
-    this._ocppMessageRepository = ocppMessageRepository;
     this._chargingProfileRepository = chargingProfileRepository;
   }
 
   async handle(
-    message: IMessage<OCPP1_6.SetChargingProfileResponse>,
+    message: IMessage<OCPP1_6.SetChargingProfileResponse, OCPP1_6.SetChargingProfileRequest>,
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.info(
@@ -51,17 +46,9 @@ export class SetChargingProfileResponseOcpp16Handler extends AbstractHandler {
     const ocppConnectionName: string = message.context.ocppConnectionName;
 
     if (message.payload.status === OCPP1_6.SetChargingProfileResponseStatus.Accepted) {
-      const originalMessage = await this._ocppMessageRepository.readOnlyOneByQuery(tenantId, {
-        where: {
-          tenantId: tenantId,
-          stationId: await stationIdFilter(tenantId, ocppConnectionName),
-          correlationId: message.context.correlationId,
-          origin: MessageOrigin.ChargingStationManagementSystem,
-        },
-      });
+      const originalRequest = message.request;
 
-      if (originalMessage) {
-        const originalRequest = originalMessage.payload as OCPP1_6.SetChargingProfileRequest;
+      if (originalRequest) {
         const mapped = OCPP1_6_Mapper.ChargingProfileMapper.fromSetChargingProfileRequest(
           originalRequest.csChargingProfiles,
         );

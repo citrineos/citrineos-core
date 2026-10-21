@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import type { IMessageConfirmation, IOcppSender } from '@citrineos/base';
+import type { IMessageConfirmation, IOcppSender, MessageDelivery } from '@citrineos/base';
 import type { CallAction, EventGroup, OcppRequest, OCPPVersion } from '@citrineos/types';
 import { getBatches } from '@util/index.js';
 
@@ -15,7 +15,7 @@ export interface SendInBatchesOptions<T> {
   items: readonly T[];
   itemsPerMessage: number;
   buildPayload: (batch: T[]) => OcppRequest;
-  callbackUrl?: string;
+  delivery: MessageDelivery;
 }
 
 /**
@@ -32,7 +32,7 @@ export async function sendInBatches<T>({
   items,
   itemsPerMessage,
   buildPayload,
-  callbackUrl,
+  delivery,
 }: SendInBatchesOptions<T>): Promise<IMessageConfirmation[]> {
   const confirmations: IMessageConfirmation[] = [];
 
@@ -45,7 +45,7 @@ export async function sendInBatches<T>({
         action,
         eventGroup,
         payload: buildPayload(batch),
-        callbackUrl,
+        ...delivery,
       });
       confirmations.push({
         success: confirmation.success,

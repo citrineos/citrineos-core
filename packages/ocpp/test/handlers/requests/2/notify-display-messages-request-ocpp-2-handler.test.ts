@@ -60,7 +60,7 @@ describe('NotifyDisplayMessagesRequestOcpp2Handler', () => {
   const { logger } = createTestContainer();
   let handler: NotifyDisplayMessagesRequestOcpp2Handler;
   let ocppMessageRepository: { readAllByQuery: ReturnType<typeof vi.fn> };
-  let deviceModelRepository: { findOrCreateEvseAndComponent: ReturnType<typeof vi.fn> };
+  let componentRepository: { findOrCreateEvseAndComponent: ReturnType<typeof vi.fn> };
   let messageInfoRepository: {
     createOrUpdateByMessageInfoTypeAndStationId: ReturnType<typeof vi.fn>;
   };
@@ -70,7 +70,7 @@ describe('NotifyDisplayMessagesRequestOcpp2Handler', () => {
     vi.clearAllMocks();
 
     ocppMessageRepository = { readAllByQuery: vi.fn() };
-    deviceModelRepository = { findOrCreateEvseAndComponent: vi.fn() };
+    componentRepository = { findOrCreateEvseAndComponent: vi.fn() };
     messageInfoRepository = { createOrUpdateByMessageInfoTypeAndStationId: vi.fn() };
     ocppSender = makeMockOcppSender();
 
@@ -79,7 +79,7 @@ describe('NotifyDisplayMessagesRequestOcpp2Handler', () => {
         logger,
         ocppSender,
         ocppMessageRepository,
-        deviceModelRepository,
+        componentRepository,
         messageInfoRepository,
       }),
     );

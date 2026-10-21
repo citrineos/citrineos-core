@@ -20,9 +20,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const STATION = 'station-001';
 const CORRELATION_ID = 'corr-001';
 
+const REQUEST: OCPP2_0_1.GetTransactionStatusRequest = { transactionId: 'tx-001' };
+
 function makeMessage(
   payload: OCPP2_0_1.GetTransactionStatusResponse,
-): IMessage<OCPP2_0_1.GetTransactionStatusResponse> {
+): IMessage<OCPP2_0_1.GetTransactionStatusResponse, OCPP2_0_1.GetTransactionStatusRequest> {
   return {
     context: {
       tenantId: DEFAULT_TENANT_ID,
@@ -36,7 +38,8 @@ function makeMessage(
     action: OCPP_CallAction.GetTransactionStatus,
     state: MessageState.Response,
     protocol: OCPPVersion.OCPP2_0_1,
-  } as unknown as IMessage<OCPP2_0_1.GetTransactionStatusResponse>;
+    request: REQUEST,
+  };
 }
 
 describe('GetTransactionStatusResponseOcpp2Handler', () => {
@@ -65,7 +68,7 @@ describe('GetTransactionStatusResponseOcpp2Handler', () => {
     expect(transactionService.updateTransactionStatus).toHaveBeenCalledWith(
       DEFAULT_TENANT_ID,
       STATION,
-      CORRELATION_ID,
+      REQUEST,
       false,
     );
   });
@@ -76,7 +79,7 @@ describe('GetTransactionStatusResponseOcpp2Handler', () => {
     expect(transactionService.updateTransactionStatus).toHaveBeenCalledWith(
       DEFAULT_TENANT_ID,
       STATION,
-      CORRELATION_ID,
+      REQUEST,
       true,
     );
   });

@@ -10,7 +10,6 @@ import {
   type VariableDto,
   type VariableMonitoringDto,
   type VariableMonitoringStatusDto,
-  OCPP2_0_1,
 } from '@citrineos/types';
 import { DEFAULT_TENANT_ID, OCPP2_Namespace } from '@citrineos/base';
 import {
@@ -63,7 +62,13 @@ export class VariableMonitoring extends Model implements VariableMonitoringDto {
   @Column(DataType.BOOLEAN)
   declare transaction: boolean;
 
-  @Column(DataType.INTEGER)
+  @Column({
+    type: DataType.DECIMAL,
+    get(this: VariableMonitoring) {
+      const value = this.getDataValue('value');
+      return value == null ? value : parseFloat(value);
+    },
+  })
   declare value: number;
 
   @Column(DataType.STRING)
@@ -100,8 +105,6 @@ export class VariableMonitoring extends Model implements VariableMonitoringDto {
 
   @HasMany(() => VariableMonitoringStatus, 'variableMonitoringId')
   declare statuses?: VariableMonitoringStatusDto[];
-
-  declare customData?: OCPP2_0_1.CustomDataType | null;
 
   @BelongsTo(() => ChargingStation, 'stationId')
   declare chargingStation?: ChargingStationDto;

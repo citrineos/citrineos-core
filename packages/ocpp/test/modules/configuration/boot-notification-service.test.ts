@@ -52,6 +52,7 @@ describe('BootService', () => {
       getBaseReportOnPending: false,
       bootWithRejectedVariables: false,
       autoAccept: false,
+      maxPendingCallsPerStation: 5,
     };
 
     bootService = getTestInstance(container, BootNotificationService, {

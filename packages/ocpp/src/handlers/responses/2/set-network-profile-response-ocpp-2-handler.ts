@@ -15,32 +15,36 @@ import {
   OCPP2_response_types,
 } from '@citrineos/types';
 import type {
+  IChargingStationNetworkProfileRepository,
   IChargingStationRepository,
   IServerNetworkProfileRepository,
   ISetNetworkProfileRepository,
 } from '@citrineos/dal';
-import { ChargingStationNetworkProfile } from '@citrineos/dal';
 
 @AsResponseHandler(OCPP_2_VER_LIST, OCPP_CallAction.SetNetworkProfile)
 export class SetNetworkProfileResponseOcpp2Handler extends AbstractHandler {
   protected _serverNetworkProfileRepository: IServerNetworkProfileRepository;
   protected _setNetworkProfileRepository: ISetNetworkProfileRepository;
   protected _chargingStationRepository: IChargingStationRepository;
+  protected _chargingStationNetworkProfileRepository: IChargingStationNetworkProfileRepository;
 
   constructor({
     logger,
     serverNetworkProfileRepository,
     setNetworkProfileRepository,
     chargingStationRepository,
+    chargingStationNetworkProfileRepository,
   }: AbstractHandlerDependencies & {
     serverNetworkProfileRepository: IServerNetworkProfileRepository;
     setNetworkProfileRepository: ISetNetworkProfileRepository;
     chargingStationRepository: IChargingStationRepository;
+    chargingStationNetworkProfileRepository: IChargingStationNetworkProfileRepository;
   }) {
     super(logger);
     this._serverNetworkProfileRepository = serverNetworkProfileRepository;
     this._setNetworkProfileRepository = setNetworkProfileRepository;
     this._chargingStationRepository = chargingStationRepository;
+    this._chargingStationNetworkProfileRepository = chargingStationNetworkProfileRepository;
   }
 
   async handle(
@@ -79,20 +83,16 @@ export class SetNetworkProfileResponseOcpp2Handler extends AbstractHandler {
         message.context.tenantId,
         message.context.ocppConnectionName,
       );
-    if (!chargingStation) {
+    if (chargingStation?.id === undefined) {
       return;
     }
 
-    const [chargingStationNetworkProfile] = await ChargingStationNetworkProfile.findOrBuild({
-      where: {
-        tenantId: message.context.tenantId,
-        stationId: chargingStation.id,
-        configurationSlot: setNetworkProfile.configurationSlot!,
-      },
-    });
-    chargingStationNetworkProfile.websocketServerConfigId =
-      setNetworkProfile.websocketServerConfigId!;
-    chargingStationNetworkProfile.setNetworkProfileId = setNetworkProfile.id!;
-    await chargingStationNetworkProfile.save();
+    await this._chargingStationNetworkProfileRepository.upsertByConfigurationSlot(
+      message.context.tenantId,
+      chargingStation.id,
+      setNetworkProfile.configurationSlot!,
+      setNetworkProfile.id!,
+      setNetworkProfile.websocketServerConfigId!,
+    );
   }
 }

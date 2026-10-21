@@ -2,24 +2,29 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { IStatusNotificationRepository } from '@dal/repositories/repositories.js';
-import type { StatusNotificationDto } from '@citrineos/types';
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import type {
+  ConnectorStatusNotificationResult,
+  IStatusNotificationRepository,
+  StationStatusNotificationResult,
+} from '@dal/repositories/repositories.js';
+import type { ConnectorDto, StatusNotificationDto } from '@citrineos/types';
+import { and, eq } from 'drizzle-orm';
 import {
   chargingStationTable,
   tenantChargingStationTable,
 } from '../../db/drizzle/schema/charging-station.js';
-import {
-  latestStatusNotificationTable,
-  tenantLatestStatusNotificationTable,
-} from '../../db/drizzle/schema/latest-status-notification.js';
 import {
   type StatusNotificationEntity,
   statusNotificationTable,
   tenantStatusNotificationTable,
 } from '../../db/drizzle/schema/status-notification.js';
 import { type Explicit } from '../../db/drizzle/types.js';
-import { DrizzleRepository, type DrizzleWriteContext } from './base.js';
+import {
+  DrizzleRepository,
+  type DrizzleRepositoryDependencies,
+  type DrizzleWriteContext,
+} from './base.js';
+import { type DrizzleConnectorRepository } from './connector.js';
 
 // ─── Mapper ──────────────────────────────────────────────────────────────────
 // Maps a Drizzle entity (DB row) to the external StatusNotificationDto contract.
@@ -33,6 +38,7 @@ export function toStatusNotificationDto(entity: StatusNotificationEntity): Statu
     connectorStatus: entity.connectorStatus as StatusNotificationDto['connectorStatus'],
     evseId: entity.evseId,
     connectorId: entity.connectorId ?? 0,
+    connectorDatabaseId: entity.connectorDatabaseId,
     errorCode: entity.errorCode,
     info: entity.info,
     vendorId: entity.vendorId,
@@ -51,18 +57,28 @@ export class DrizzleStatusNotificationRepository
   extends DrizzleRepository<typeof statusNotificationTable, StatusNotificationDto>
   implements IStatusNotificationRepository
 {
+  private _connectorRepository: DrizzleConnectorRepository;
+
+  constructor({
+    config,
+    logger,
+    drizzleInstance,
+    useTenantSchema,
+    connectorRepository,
+  }: DrizzleRepositoryDependencies & {
+    connectorRepository: DrizzleConnectorRepository;
+  }) {
+    super({ config, logger, drizzleInstance, useTenantSchema });
+
+    this._connectorRepository = connectorRepository;
+  }
+
   protected getTable(tenantId: number): typeof statusNotificationTable {
     return this.useTenantSchema ? tenantStatusNotificationTable(tenantId) : statusNotificationTable;
   }
 
   protected toDto(row: StatusNotificationEntity): StatusNotificationDto {
     return toStatusNotificationDto(row);
-  }
-
-  private getLatestStatusNotificationTable(tenantId: number): typeof latestStatusNotificationTable {
-    return this.useTenantSchema
-      ? tenantLatestStatusNotificationTable(tenantId)
-      : latestStatusNotificationTable;
   }
 
   private getChargingStationTable(tenantId: number): typeof chargingStationTable {
@@ -95,80 +111,125 @@ export class DrizzleStatusNotificationRepository
     tenantId: number,
     ocppConnectionName: string,
     statusNotification: StatusNotificationDto,
-  ): Promise<void> {
-    await this.withAtomicWrite(async (ctx) => {
-      const stationId = await this.resolveStationId(tenantId, ocppConnectionName, ctx);
+  ): Promise<StatusNotificationDto> {
+    return this.withAtomicWrite((ctx) =>
+      this.insertStatusNotification(tenantId, ocppConnectionName, statusNotification, ctx),
+    );
+  }
 
-      const saved = await this.insert(
+  async addOcpp2ConnectorStatusNotification(
+    tenantId: number,
+    ocppConnectionName: string,
+    connector: ConnectorDto & { evseTypeConnectorId: number },
+    statusNotification: StatusNotificationDto,
+  ): Promise<ConnectorStatusNotificationResult> {
+    return this.withAtomicWrite(async (ctx) =>
+      this.linkStatusNotificationToConnector(
         tenantId,
-        {
-          stationId,
-          timestamp: statusNotification.timestamp ? new Date(statusNotification.timestamp) : null,
-          connectorStatus: statusNotification.connectorStatus,
-          evseId: statusNotification.evseId ?? null,
-          connectorId: statusNotification.connectorId,
-          errorCode: statusNotification.errorCode,
-          info: statusNotification.info,
-          vendorId: statusNotification.vendorId,
-          vendorErrorCode: statusNotification.vendorErrorCode,
-        },
+        ocppConnectionName,
+        await this._connectorRepository.createOrUpdateOcpp2Connector(tenantId, connector, ctx),
+        statusNotification,
+        ctx,
+      ),
+    );
+  }
+
+  async addOcpp16ConnectorStatusNotification(
+    tenantId: number,
+    ocppConnectionName: string,
+    connector: ConnectorDto & { connectorId: number },
+    statusNotification: StatusNotificationDto,
+  ): Promise<ConnectorStatusNotificationResult> {
+    return this.withAtomicWrite(async (ctx) =>
+      this.linkStatusNotificationToConnector(
+        tenantId,
+        ocppConnectionName,
+        await this._connectorRepository.createOrUpdateOcpp16Connector(tenantId, connector, ctx),
+        statusNotification,
+        ctx,
+      ),
+    );
+  }
+
+  async addOcpp16StationStatusNotification(
+    tenantId: number,
+    ocppConnectionName: string,
+    connector: Partial<ConnectorDto>,
+    statusNotification: StatusNotificationDto,
+  ): Promise<StationStatusNotificationResult> {
+    return this.withAtomicWrite(async (ctx) => {
+      const saved = await this.insertStatusNotification(
+        tenantId,
+        ocppConnectionName,
+        statusNotification,
         ctx,
       );
+      if (saved.stationId == null) {
+        throw new Error(`Charging station ${ocppConnectionName} not found`);
+      }
 
-      await this.replaceLatestStatusNotification(tenantId, stationId, saved, ctx);
+      const connectors = await this._connectorRepository.updateAllConnectorsByStationId(
+        tenantId,
+        saved.stationId,
+        { ...connector, latestStatusNotificationId: saved.id },
+        ctx,
+      );
+      return { statusNotification: saved, connectors };
     });
   }
 
-  /**
-   * Points LatestStatusNotifications at the row just inserted, replacing whatever
-   * pointer currently exists for this (station, evse, connector) combination.
-   */
-  private async replaceLatestStatusNotification(
+  private async linkStatusNotificationToConnector(
     tenantId: number,
-    stationId: number | undefined,
+    ocppConnectionName: string,
+    connector: ConnectorDto | undefined,
     statusNotification: StatusNotificationDto,
     ctx: DrizzleWriteContext,
-  ): Promise<void> {
-    const latest = this.getLatestStatusNotificationTable(tenantId);
-    const notifications = this.getTable(tenantId);
-
-    const evseMatch =
-      statusNotification.evseId != null
-        ? eq(notifications.evseId, statusNotification.evseId)
-        : sql`${notifications.evseId} is null`;
-
-    const stationMatch =
-      stationId != null ? eq(latest.stationId, stationId) : sql`${latest.stationId} is null`;
-
-    const stale = await ctx.db
-      .select({ id: latest.id })
-      .from(latest)
-      .innerJoin(notifications, eq(latest.statusNotificationId, notifications.id))
-      .where(
-        and(
-          stationMatch,
-          evseMatch,
-          eq(notifications.connectorId, statusNotification.connectorId),
-          this.tenantFilter(latest, tenantId),
-        ),
-      );
-
-    if (stale.length > 0) {
-      await ctx.db.delete(latest).where(
-        and(
-          inArray(
-            latest.id,
-            stale.map((row) => row.id),
-          ),
-          this.tenantFilter(latest, tenantId),
-        ),
-      );
+  ): Promise<ConnectorStatusNotificationResult> {
+    if (connector?.id === undefined) {
+      throw new Error(`Failed to save the connector reported by ${ocppConnectionName}`);
     }
 
-    await ctx.db.insert(latest).values({
+    const saved = await this.insertStatusNotification(
       tenantId,
-      statusNotificationId: statusNotification.id,
-      stationId,
-    });
+      ocppConnectionName,
+      { ...statusNotification, connectorDatabaseId: connector.id },
+      ctx,
+    );
+    const linked = await this._connectorRepository.updateById(
+      tenantId,
+      connector.id,
+      { latestStatusNotificationId: saved.id, updatedAt: new Date() },
+      ctx,
+    );
+    if (!linked) {
+      throw new Error(`Failed to save the connector reported by ${ocppConnectionName}`);
+    }
+    return { statusNotification: saved, connector: linked };
+  }
+
+  private async insertStatusNotification(
+    tenantId: number,
+    ocppConnectionName: string,
+    statusNotification: StatusNotificationDto,
+    ctx: DrizzleWriteContext,
+  ): Promise<StatusNotificationDto> {
+    const stationId = await this.resolveStationId(tenantId, ocppConnectionName, ctx);
+
+    return await this.insert(
+      tenantId,
+      {
+        stationId,
+        timestamp: statusNotification.timestamp ? new Date(statusNotification.timestamp) : null,
+        connectorStatus: statusNotification.connectorStatus,
+        evseId: statusNotification.evseId ?? null,
+        connectorId: statusNotification.connectorId,
+        connectorDatabaseId: statusNotification.connectorDatabaseId,
+        errorCode: statusNotification.errorCode,
+        info: statusNotification.info,
+        vendorId: statusNotification.vendorId,
+        vendorErrorCode: statusNotification.vendorErrorCode,
+      },
+      ctx,
+    );
   }
 }

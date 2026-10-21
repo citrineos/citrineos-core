@@ -19,32 +19,32 @@ import {
   OCPP2_request_types,
   OCPP2_response_types,
 } from '@citrineos/types';
-import type { IChargingProfileRepository, ITransactionEventRepository } from '@citrineos/dal';
+import type { IChargingProfileRepository, ITransactionRepository } from '@citrineos/dal';
 import { OCPP2_0_1_Mapper } from '@citrineos/dal';
 import type { ISmartCharging } from '@modules/smart-charging/smart-charging.js';
 
 @AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.NotifyEVChargingNeeds)
 export class NotifyEVChargingNeedsRequestOcpp2Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
-  protected _transactionEventRepository: ITransactionEventRepository;
+  protected _transactionRepository: ITransactionRepository;
   protected _chargingProfileRepository: IChargingProfileRepository;
   protected _smartChargingService: ISmartCharging;
 
   constructor({
     logger,
     ocppSender,
-    transactionEventRepository,
+    transactionRepository,
     chargingProfileRepository,
     smartChargingService,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
-    transactionEventRepository: ITransactionEventRepository;
+    transactionRepository: ITransactionRepository;
     chargingProfileRepository: IChargingProfileRepository;
     smartChargingService: ISmartCharging;
   }) {
     super(logger);
     this._ocppSender = ocppSender;
-    this._transactionEventRepository = transactionEventRepository;
+    this._transactionRepository = transactionRepository;
     this._chargingProfileRepository = chargingProfileRepository;
     this._smartChargingService = smartChargingService;
   }
@@ -65,7 +65,7 @@ export class NotifyEVChargingNeedsRequestOcpp2Handler extends AbstractHandler {
     const givenNeeds: OCPP2_common_types.ChargingNeedsType = request.chargingNeeds;
 
     const activeTransaction =
-      await this._transactionEventRepository.getActiveTransactionByStationIdAndEvseId(
+      await this._transactionRepository.getActiveTransactionByStationIdAndEvseId(
         tenantId,
         ocppConnectionName,
         request.evseId,

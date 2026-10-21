@@ -38,15 +38,20 @@ import { ChargingStation } from '../../models/location/charging-station.js';
 import { ChargingStationNetworkProfile } from '../../models/location/charging-station-network-profile.js';
 import { Connector } from '../../models/location/connector.js';
 import { Evse } from '../../models/location/evse.js';
-import { LatestStatusNotification } from '../../models/location/latest-status-notification.js';
 import { Location } from '../../models/location/location.js';
 import { ServerNetworkProfile } from '../../models/location/server-network-profile.js';
 import { SetNetworkProfile } from '../../models/location/set-network-profile.js';
 import { StatusNotification } from '../../models/location/status-notification.js';
 import { MessageInfo } from '../../models/message-info/message-info.js';
+import {
+  NetworkAlert,
+  NetworkAlertConfig,
+  NetworkAlertOccurrence,
+} from '../../models/network-alert/index.js';
 import { OCPPMessage } from '../../models/ocpp-message.js';
 import { Reservation } from '../../models/reservation.js';
 import { SecurityEvent } from '../../models/security-event.js';
+import { WebsocketEvent } from '../../models/websocket-event.js';
 import { Subscription } from '../../models/subscription/subscription.js';
 import { Tariff } from '../../models/tariff/tariffs.js';
 import { Tenant } from '../../models/tenant.js';
@@ -98,7 +103,7 @@ export class DefaultSequelizeInstance {
 
         await this.syncDb();
 
-        this.logger.info(`Sequelize initialized: ${JSON.stringify(this.instance?.config || {})}`);
+        this.logger.debug('Sequelize initialized:', this.instance?.config ?? {});
         return;
       } catch (error) {
         lastError = error;
@@ -175,6 +180,9 @@ export class DefaultSequelizeInstance {
         Location,
         MeterValue,
         MessageInfo,
+        NetworkAlert,
+        NetworkAlertConfig,
+        NetworkAlertOccurrence,
         OCPPMessage,
         Reservation,
         SalesTariff,
@@ -185,7 +193,6 @@ export class DefaultSequelizeInstance {
         StartTransaction,
         StatusNotification,
         StopTransaction,
-        LatestStatusNotification,
         Subscription,
         TransactionEvent,
         Tariff,
@@ -195,6 +202,7 @@ export class DefaultSequelizeInstance {
         VariableMonitoringStatus,
         VariableStatus,
         Variable,
+        WebsocketEvent,
         LocalListAuthorization,
         LocalListVersion,
         LocalListVersionAuthorization,

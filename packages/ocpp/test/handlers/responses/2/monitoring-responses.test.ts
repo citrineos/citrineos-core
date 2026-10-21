@@ -14,7 +14,7 @@ import {
   OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/types';
-import type { IDeviceModelRepository, IVariableMonitoringRepository } from '@citrineos/dal';
+import type { IVariableAttributeRepository, IVariableMonitoringRepository } from '@citrineos/dal';
 import {
   ClearVariableMonitoringResponseOcpp2Handler,
   GetMonitoringReportResponseOcpp2Handler,
@@ -399,17 +399,17 @@ describe('GetMonitoringReportResponseOcpp2Handler', () => {
 });
 
 describe('GetVariablesResponseOcpp2Handler', () => {
-  let deviceModelRepository: Mocked<IDeviceModelRepository>;
+  let variableAttributeRepository: Mocked<IVariableAttributeRepository>;
 
   beforeEach(() => {
-    deviceModelRepository = {
+    variableAttributeRepository = {
       createOrUpdateByGetVariablesResultAndStationId: vi.fn().mockResolvedValue([]),
-    } as unknown as Mocked<IDeviceModelRepository>;
+    } as unknown as Mocked<IVariableAttributeRepository>;
   });
 
   function makeHandler() {
     return getTestInstance(container, GetVariablesResponseOcpp2Handler, {
-      deviceModelRepository,
+      variableAttributeRepository,
     });
   }
 
@@ -431,15 +431,15 @@ describe('GetVariablesResponseOcpp2Handler', () => {
     );
 
     expect(
-      deviceModelRepository.createOrUpdateByGetVariablesResultAndStationId,
+      variableAttributeRepository.createOrUpdateByGetVariablesResultAndStationId,
     ).toHaveBeenCalledTimes(1);
     expect(
-      deviceModelRepository.createOrUpdateByGetVariablesResultAndStationId,
+      variableAttributeRepository.createOrUpdateByGetVariablesResultAndStationId,
     ).toHaveBeenCalledWith(DEFAULT_TENANT_ID, getVariableResult, STATION, TIMESTAMP);
   });
 
   it('repository failure propagates to the caller', async () => {
-    deviceModelRepository.createOrUpdateByGetVariablesResultAndStationId.mockRejectedValue(
+    variableAttributeRepository.createOrUpdateByGetVariablesResultAndStationId.mockRejectedValue(
       new Error('db down'),
     );
     const handler = makeHandler();

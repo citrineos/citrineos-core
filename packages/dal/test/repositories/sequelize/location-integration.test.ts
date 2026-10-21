@@ -12,7 +12,6 @@ import {
 } from '@dal/db/sequelize/index.js';
 import { OCPPVersion, type StatusNotificationDto, type SystemConfig } from '@citrineos/types';
 import { SequelizeLocationRepository } from '../../../index.js';
-import { LatestStatusNotification } from '@dal/models/location/latest-status-notification.js';
 import { type PgHarness, resetDb, startPgHarness } from '../../utils/pg-harness.js';
 
 // SequelizeLocationRepository owns the Location -> ChargingStation -> Evse -> Connector
@@ -325,6 +324,42 @@ describe('SequelizeLocationRepository', () => {
       expect(result!.protocol ?? null).toBeNull();
       expect(await ChargingStation.count()).toBe(1);
     });
+
+    it('records when the station connected, and keeps it when the station goes offline', async () => {
+      const earlier = '2026-10-01T10:00:00.000Z';
+      await aStation({ lastConnectedAt: earlier });
+      const repo = makeRepo();
+      const before = Date.now();
+
+      await repo.setChargingStationIsOnlineAndOCPPVersion(
+        TENANT_A,
+        STATION_NAME,
+        true,
+        OCPPVersion.OCPP2_0_1,
+      );
+      const online = await ChargingStation.findOne({ where: { ocppConnectionName: STATION_NAME } });
+      const connectedAt = new Date(online!.lastConnectedAt!).getTime();
+      expect(connectedAt).toBeGreaterThanOrEqual(before);
+
+      await repo.setChargingStationIsOnlineAndOCPPVersion(TENANT_A, STATION_NAME, false, null);
+      const offline = await ChargingStation.findOne({
+        where: { ocppConnectionName: STATION_NAME },
+      });
+      expect(new Date(offline!.lastConnectedAt!).getTime()).toBe(connectedAt);
+    });
+
+    it('records when a station created by its first connect connected', async () => {
+      const before = Date.now();
+
+      const result = await makeRepo().setChargingStationIsOnlineAndOCPPVersion(
+        TENANT_A,
+        'CS-NEW',
+        true,
+        OCPPVersion.OCPP2_0_1,
+      );
+
+      expect(new Date(result!.lastConnectedAt!).getTime()).toBeGreaterThanOrEqual(before);
+    });
   });
 
   describe('doesChargingStationExistByOcppConnectionName', () => {
@@ -362,10 +397,10 @@ describe('SequelizeLocationRepository', () => {
   });
 
   describe('addStatusNotificationToChargingStation', () => {
-    it('stores the notification and points the latest entry at it', async () => {
+    it('stores the notification', async () => {
       const { station, connector1 } = await aCommissionedStation();
 
-      await makeRepo().addStatusNotificationToChargingStation(
+      const saved = await makeRepo().addStatusNotificationToChargingStation(
         TENANT_A,
         STATION_NAME,
         aStatusNotification(connector1.id, { connectorStatus: 'Occupied' }),
@@ -373,57 +408,11 @@ describe('SequelizeLocationRepository', () => {
 
       const rows = await StatusNotification.findAll();
       expect(rows).toHaveLength(1);
+      expect(saved.id).toBe(rows[0].id);
       expect(rows[0].stationId).toBe(station.id);
       expect(rows[0].connectorStatus).toBe('Occupied');
       expect(rows[0].evseId).toBe(1);
       expect(rows[0].connectorId).toBe(connector1.id);
-      const latest = await LatestStatusNotification.findAll();
-      expect(latest).toHaveLength(1);
-      expect(latest[0].statusNotificationId).toBe(rows[0].id);
-      expect(latest[0].stationId).toBe(station.id);
-    });
-
-    it('a newer notification for the same evse and connector replaces the latest entry', async () => {
-      const { connector1 } = await aCommissionedStation();
-      const repo = makeRepo();
-
-      await repo.addStatusNotificationToChargingStation(
-        TENANT_A,
-        STATION_NAME,
-        aStatusNotification(connector1.id, { connectorStatus: 'Occupied' }),
-      );
-      await repo.addStatusNotificationToChargingStation(
-        TENANT_A,
-        STATION_NAME,
-        aStatusNotification(connector1.id, { connectorStatus: 'Available' }),
-      );
-
-      expect(await StatusNotification.count()).toBe(2);
-      const latest = await LatestStatusNotification.findAll({ include: [StatusNotification] });
-      expect(latest).toHaveLength(1);
-      expect(latest[0].statusNotification.connectorStatus).toBe('Available');
-    });
-
-    it('notifications for different connectors keep separate latest entries', async () => {
-      const { connector1, connector2 } = await aCommissionedStation();
-      const repo = makeRepo();
-
-      await repo.addStatusNotificationToChargingStation(
-        TENANT_A,
-        STATION_NAME,
-        aStatusNotification(connector1.id),
-      );
-      await repo.addStatusNotificationToChargingStation(
-        TENANT_A,
-        STATION_NAME,
-        aStatusNotification(connector2.id, { connectorStatus: 'Faulted' }),
-      );
-
-      const latest = await LatestStatusNotification.findAll({ include: [StatusNotification] });
-      expect(latest).toHaveLength(2);
-      expect(
-        latest.map((l) => (l.statusNotification as StatusNotification).connectorId).sort(),
-      ).toEqual([connector1.id, connector2.id]);
     });
   });
 
@@ -518,6 +507,49 @@ describe('SequelizeLocationRepository', () => {
       expect(updated!.errorCode).toBe('NoError');
       expect(await Connector.count()).toBe(2);
       expect((await Connector.findByPk(connector1.id))!.status).toBe('Charging');
+    });
+
+    // The default pool holds 5 connections. Each upsert holds one for its transaction, so an
+    // update that took a second connection exhausted the pool once 5 ran at the same time.
+    it('updates existing connectors concurrently without exhausting the pool', async () => {
+      const { station, evse } = await aCommissionedStation();
+      const repo = makeRepo();
+
+      const updated = await Promise.all(
+        Array.from({ length: 10 }, (_, i) =>
+          repo.createOrUpdateOcpp16Connector(TENANT_A, {
+            tenantId: TENANT_A,
+            stationId: station.id,
+            evseId: evse.id,
+            connectorId: (i % 2) + 1,
+            status: 'Occupied',
+            timestamp: TS,
+          }),
+        ),
+      );
+
+      expect(updated.every((c) => c?.status === 'Occupied')).toBe(true);
+      expect(await Connector.count({ where: { status: 'Occupied' } })).toBe(2);
+    }, 20_000);
+  });
+
+  describe('updateAllByQuery', () => {
+    it("runs inside the caller's transaction", async () => {
+      const { connector1 } = await aCommissionedStation();
+      const repo = makeRepo();
+
+      await expect(
+        h.sequelizeInstance.transaction(async (transaction) => {
+          await repo.connector.updateAllByQuery(
+            TENANT_A,
+            { status: 'Faulted' },
+            { where: { id: connector1.id }, transaction },
+          );
+          throw new Error('rollback');
+        }),
+      ).rejects.toThrow('rollback');
+
+      expect((await Connector.findByPk(connector1.id))!.status).toBe('Available');
     });
   });
 

@@ -13,7 +13,7 @@ import {
   OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/types';
-import type { IConnectorRepository, ITransactionEventRepository } from '@citrineos/dal';
+import type { IConnectorRepository, ITransactionRepository } from '@citrineos/dal';
 import { StartTransactionRequestOcpp16Handler } from '@handlers/index.js';
 import { createTestContainer, makeMockOcppSender } from '@test/test-container.js';
 
@@ -37,7 +37,7 @@ function makeMessage<T extends OcppRequest>(payload: T): IMessage<T> {
 function makeHandler(
   overrides: {
     connectorRepository?: Partial<IConnectorRepository>;
-    transactionEventRepository?: Partial<ITransactionEventRepository>;
+    transactionEventRepository?: Partial<ITransactionRepository>;
     transactionService?: Record<string, unknown>;
   } = {},
 ) {
@@ -70,8 +70,7 @@ function makeHandler(
     logger,
     ocppSender,
     connectorRepository: connectorRepository as unknown as IConnectorRepository,
-    transactionEventRepository:
-      transactionEventRepository as unknown as ITransactionEventRepository,
+    transactionRepository: transactionEventRepository as unknown as ITransactionRepository,
     transactionService: transactionService as any,
   });
 

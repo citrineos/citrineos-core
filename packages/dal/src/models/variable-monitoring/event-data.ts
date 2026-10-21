@@ -9,7 +9,6 @@ import {
   type EventTriggerEnumType,
   type EventNotificationEnumType,
   type VariableDto,
-  OCPP2_0_1,
 } from '@citrineos/types';
 import { DEFAULT_TENANT_ID, OCPP2_Namespace } from '@citrineos/base';
 import {
@@ -104,8 +103,6 @@ export class EventData extends Model implements EventDataDto {
     type: DataType.INTEGER,
   })
   declare componentId?: number;
-
-  declare customData?: OCPP2_0_1.CustomDataType | null;
 
   @BelongsTo(() => ChargingStation, 'stationId')
   declare chargingStation?: ChargingStationDto;

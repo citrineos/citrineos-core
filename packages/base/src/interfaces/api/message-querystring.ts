@@ -11,6 +11,7 @@ export interface IMessageQuerystring {
   identifier: string | string[];
   tenantId?: number;
   callbackUrl?: string;
+  staleAfterSeconds?: number;
 }
 
 /**
@@ -31,6 +32,8 @@ export const IMessageQuerystringSchema = {
     },
     tenantId: { type: 'number', default: DEFAULT_TENANT_ID },
     callbackUrl: { type: 'string' },
+    // Seconds after which the Call is dropped if it has not reached the station; 0 never drops it.
+    staleAfterSeconds: { type: 'integer', minimum: 0 },
   },
   required: ['identifier', 'tenantId'],
 };

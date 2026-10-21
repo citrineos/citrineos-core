@@ -9,7 +9,6 @@ import { applyUpdateFunction, type UpdateFunction } from '../utils/update-util.j
 export function aAuthorization(updateFunction?: UpdateFunction<Authorization>): Authorization {
   return applyUpdateFunction(
     {
-      customData: { exampleKey: faker.lorem.word() },
       idToken: faker.string.uuid(),
       idTokenType: IdTokenEnum.Central,
       additionalInfo: [{ additionalIdToken: 'value', type: 'key' }] as AdditionalInfo[],

@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { RabbitMQChannelManager } from '@/transport/queue/rabbit-mq/channel-manager.js';
+import type { RabbitMqDeadLetterPublisher } from '@/transport/queue/rabbit-mq/dead-letter-publisher.js';
+import type { RabbitMqReemitter } from '@/transport/queue/rabbit-mq/reemitter.js';
 import {
   EventGroup,
   MessageOrigin,
@@ -24,18 +26,18 @@ export function aSystemConfigWithAmqp(override?: {
   noAmqp?: boolean;
   maxCallLengthSeconds?: number;
   staleCallMaxAgeSeconds?: number;
+  reemitMaxRetrySeconds?: number;
   prefetch?: {
     router?: number;
     module?: number;
+    moduleStale?: number;
     messages?: number;
     messagesDeadLetter?: number;
   };
 }): SystemConfig {
   const timeouts = {
     maxCallLengthSeconds: override?.maxCallLengthSeconds ?? 20,
-    ...(override?.staleCallMaxAgeSeconds !== undefined && {
-      staleCallMaxAgeSeconds: override.staleCallMaxAgeSeconds,
-    }),
+    staleCallMaxAgeSeconds: override?.staleCallMaxAgeSeconds ?? 40,
   };
   if (override?.noAmqp) {
     return { timeouts, messageBroker: { amqp: undefined } } as unknown as SystemConfig;
@@ -49,9 +51,12 @@ export function aSystemConfigWithAmqp(override?: {
         prefetch: {
           router: override?.prefetch?.router ?? 100,
           module: override?.prefetch?.module ?? 10,
+          moduleStale: override?.prefetch?.moduleStale ?? 1,
           messages: override?.prefetch?.messages ?? 50,
           messagesDeadLetter: override?.prefetch?.messagesDeadLetter ?? 10,
         },
+        reemitMaxRetrySeconds: override?.reemitMaxRetrySeconds ?? 300,
+        deadLetterQueue: { maxLength: 100_000, maxLengthBytes: 512 * 1024 * 1024 },
         ...(override?.instanceIdentifier !== undefined && {
           instanceIdentifier: override.instanceIdentifier,
         }),
@@ -82,6 +87,8 @@ export function aMockAmqpChannel(): amqplib.Channel {
     ack: vi.fn(),
     nack: vi.fn(),
     sendToQueue: vi.fn().mockReturnValue(true),
+    publish: vi.fn().mockReturnValue(true),
+    on: vi.fn(),
   } as unknown as amqplib.Channel;
 }
 
@@ -110,6 +117,31 @@ export function aMockChannelManager(
   } as unknown as RabbitMQChannelManager;
 }
 
+export type MockDeadLetterPublisher = RabbitMqDeadLetterPublisher & {
+  publishRaw: ReturnType<typeof vi.fn>;
+  publishMessage: ReturnType<typeof vi.fn>;
+};
+
+/** Dead-letter publisher whose publishes resolve without touching a broker. */
+export function aMockDeadLetterPublisher(): MockDeadLetterPublisher {
+  return {
+    publishRaw: vi.fn().mockResolvedValue(undefined),
+    publishMessage: vi.fn().mockResolvedValue(undefined),
+  } as unknown as MockDeadLetterPublisher;
+}
+
+export type MockReemitter = RabbitMqReemitter & {
+  reemit: ReturnType<typeof vi.fn>;
+  shutdown: ReturnType<typeof vi.fn>;
+};
+
+export function aMockReemitter(): MockReemitter {
+  return {
+    reemit: vi.fn().mockResolvedValue(undefined),
+    shutdown: vi.fn().mockResolvedValue(undefined),
+  } as unknown as MockReemitter;
+}
+
 /**
  * Creates a minimal amqplib ConsumeMessage using direct field names
  * (the format published by RabbitMqSender via instanceToPlain).
@@ -118,7 +150,7 @@ export function aConsumeMessage(override?: {
   origin?: string;
   eventGroup?: string;
   action?: string;
-  state?: string;
+  state?: string | MessageState;
   context?: Record<string, unknown>;
   payload?: Record<string, unknown>;
   protocol?: string;
@@ -161,7 +193,7 @@ export function aConsumeMessageWithPrefixedFields(override?: {
   origin?: string;
   eventGroup?: string;
   action?: string;
-  state?: string;
+  state?: string | MessageState;
   context?: Record<string, unknown>;
   payload?: Record<string, unknown>;
   protocol?: string;

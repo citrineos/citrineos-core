@@ -91,7 +91,6 @@ const TRACKED_TABLES: ReadonlyArray<string> = [
   'Connectors',
   'Evses',
   'StatusNotifications',
-  'LatestStatusNotifications',
   'OCPPMessages',
   'Tariffs',
   'TenantPartners',

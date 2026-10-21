@@ -8,6 +8,7 @@ import {
   type IOcppSender,
   AbstractMessageEndpoint,
   DEFAULT_TENANT_ID,
+  type MessageDelivery,
 } from '@citrineos/base';
 import {
   EventGroup,
@@ -46,7 +47,7 @@ export class GetMonitoringReportEndpoint extends AbstractMessageEndpoint {
   async handle(
     identifiers: string[],
     request: OCPP2_request_types.GetMonitoringReportRequest,
-    callbackUrl: string | undefined,
+    delivery: MessageDelivery,
     tenantId: number = DEFAULT_TENANT_ID,
     version: OCPPVersion,
   ): Promise<IMessageConfirmation[]> {
@@ -55,7 +56,7 @@ export class GetMonitoringReportEndpoint extends AbstractMessageEndpoint {
     if (componentVariable.length === 0) {
       return Promise.all(
         identifiers.map((ocppConnectionName) =>
-          this._send(ocppConnectionName, tenantId, version, request, callbackUrl),
+          this._send(ocppConnectionName, tenantId, version, request, delivery),
         ),
       );
     }
@@ -95,7 +96,7 @@ export class GetMonitoringReportEndpoint extends AbstractMessageEndpoint {
             tenantId,
             version,
             { ...request, componentVariable: batch },
-            callbackUrl,
+            delivery,
           );
           confirmations.push({
             success: batchResult.success,
@@ -118,7 +119,7 @@ export class GetMonitoringReportEndpoint extends AbstractMessageEndpoint {
     tenantId: number,
     version: OCPPVersion,
     payload: OcppRequest,
-    callbackUrl: string | undefined,
+    delivery: MessageDelivery,
   ): Promise<IMessageConfirmation> {
     return this._ocppSender.sendCall({
       ocppConnectionName,
@@ -127,7 +128,7 @@ export class GetMonitoringReportEndpoint extends AbstractMessageEndpoint {
       action: OCPP_CallAction.GetMonitoringReport,
       eventGroup: EventGroup.Reporting,
       payload,
-      callbackUrl,
+      ...delivery,
     });
   }
 }

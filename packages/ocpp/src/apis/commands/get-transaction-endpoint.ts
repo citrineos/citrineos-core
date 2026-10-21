@@ -6,15 +6,14 @@ import {
   type ICommandEndpointMetadata,
   AbstractEndpoint,
 } from '@citrineos/base';
-import { HttpMethod } from '@citrineos/types';
+import { HttpMethod, type TransactionDto } from '@citrineos/types';
 import type { TransactionEventQuerystring } from '@citrineos/dal';
 import { TransactionEventQuerySchema } from '@citrineos/dal';
-import type { ITransactionEventRepository } from '@citrineos/dal';
-import type { Transaction } from '@citrineos/dal';
+import type { ITransactionRepository } from '@citrineos/dal';
 import type { FastifyRequest } from 'fastify';
 
 interface GetTransactionEndpointDependencies extends AbstractEndpointDependencies {
-  transactionEventRepository: ITransactionEventRepository;
+  transactionRepository: ITransactionRepository;
 }
 
 type GetTransactionRoute = { Querystring: TransactionEventQuerystring };
@@ -26,15 +25,15 @@ export class GetTransactionEndpoint extends AbstractEndpoint<GetTransactionRoute
     querySchema: TransactionEventQuerySchema,
   };
 
-  private readonly _transactionEventRepository: ITransactionEventRepository;
+  private readonly _transactionRepository: ITransactionRepository;
 
-  constructor({ logger, transactionEventRepository }: GetTransactionEndpointDependencies) {
+  constructor({ logger, transactionRepository }: GetTransactionEndpointDependencies) {
     super(logger);
-    this._transactionEventRepository = transactionEventRepository;
+    this._transactionRepository = transactionRepository;
   }
 
-  async handle(request: FastifyRequest<GetTransactionRoute>): Promise<Transaction | undefined> {
-    return this._transactionEventRepository.readTransactionByStationIdAndTransactionId(
+  async handle(request: FastifyRequest<GetTransactionRoute>): Promise<TransactionDto | undefined> {
+    return this._transactionRepository.readTransactionByStationIdAndTransactionId(
       request.query.tenantId,
       request.query.ocppConnectionName,
       request.query.transactionId,

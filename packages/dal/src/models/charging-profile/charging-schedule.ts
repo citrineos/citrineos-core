@@ -95,8 +95,6 @@ export class ChargingSchedule extends Model implements ChargingScheduleDto {
   @HasMany(() => SalesTariff, 'chargingScheduleDatabaseId')
   declare salesTariffs?: SalesTariffDto[];
 
-  declare customData?: object | null;
-
   @ForeignKey(() => Tenant)
   @Column({
     type: DataType.INTEGER,

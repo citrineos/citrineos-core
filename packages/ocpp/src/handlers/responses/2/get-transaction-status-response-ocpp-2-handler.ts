@@ -11,6 +11,7 @@ import {
   type HandlerProperties,
   OCPP_2_VER_LIST,
   OCPP_CallAction,
+  OCPP2_request_types,
   OCPP2_response_types,
 } from '@citrineos/types';
 import type { TransactionService } from '@modules/transactions/transaction-service.js';
@@ -31,7 +32,10 @@ export class GetTransactionStatusResponseOcpp2Handler extends AbstractHandler {
   }
 
   async handle(
-    message: IMessage<OCPP2_response_types.GetTransactionStatusResponse>,
+    message: IMessage<
+      OCPP2_response_types.GetTransactionStatusResponse,
+      OCPP2_request_types.GetTransactionStatusRequest
+    >,
     props?: HandlerProperties,
   ): Promise<void> {
     this._logger.debug(
@@ -48,7 +52,7 @@ export class GetTransactionStatusResponseOcpp2Handler extends AbstractHandler {
       await this._transactionService.updateTransactionStatus(
         message.context.tenantId,
         message.context.ocppConnectionName,
-        message.context.correlationId,
+        message.request,
         response.ongoingIndicator,
       );
     }

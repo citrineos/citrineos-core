@@ -54,3 +54,4 @@ export {
   validateDrizzleSchema,
   type DrizzleSchemaValidationOptions,
 } from './drizzle-schema-validator.js';
+export { requireTransactionDatabaseId } from './transaction.js';

@@ -8,6 +8,7 @@ import {
   type IOcppSender,
   AbstractMessageEndpoint,
   DEFAULT_TENANT_ID,
+  type MessageDelivery,
 } from '@citrineos/base';
 import {
   DataEnum,
@@ -17,7 +18,7 @@ import {
   type OCPPVersion,
   type OCPP2_request_types,
 } from '@citrineos/types';
-import type { IDeviceModelRepository, IVariableMonitoringRepository } from '@citrineos/dal';
+import type { IComponentRepository, IVariableMonitoringRepository } from '@citrineos/dal';
 import type { DeviceModelService } from '@services/device-model/device-model-service.js';
 import { getSizeOfRequest } from '@util/index.js';
 import { COMPONENT_MONITORING_CTRLR } from '../components.js';
@@ -27,7 +28,7 @@ import { sendInBatches } from './send-in-batches.js';
 interface Dependencies extends AbstractMessageEndpointDependencies {
   ocppSender: IOcppSender;
   deviceModelService: DeviceModelService;
-  deviceModelRepository: IDeviceModelRepository;
+  componentRepository: IComponentRepository;
   variableMonitoringRepository: IVariableMonitoringRepository;
 }
 
@@ -41,27 +42,27 @@ export class SetVariableMonitoringEndpoint extends AbstractMessageEndpoint {
 
   private readonly _ocppSender: IOcppSender;
   private readonly _deviceModelService: DeviceModelService;
-  private readonly _deviceModelRepository: IDeviceModelRepository;
+  private readonly _componentRepository: IComponentRepository;
   private readonly _variableMonitoringRepository: IVariableMonitoringRepository;
 
   constructor({
     logger,
     ocppSender,
     deviceModelService,
-    deviceModelRepository,
+    componentRepository,
     variableMonitoringRepository,
   }: Dependencies) {
     super(logger);
     this._ocppSender = ocppSender;
     this._deviceModelService = deviceModelService;
-    this._deviceModelRepository = deviceModelRepository;
+    this._componentRepository = componentRepository;
     this._variableMonitoringRepository = variableMonitoringRepository;
   }
 
   async handle(
     identifiers: string[],
     request: OCPP2_request_types.SetVariableMonitoringRequest,
-    callbackUrl: string | undefined,
+    delivery: MessageDelivery,
     tenantId: number = DEFAULT_TENANT_ID,
     version: OCPPVersion,
   ): Promise<IMessageConfirmation[]> {
@@ -106,7 +107,7 @@ export class SetVariableMonitoringEndpoint extends AbstractMessageEndpoint {
             items: setMonitoringData,
             itemsPerMessage,
             buildPayload: (batch) => ({ ...request, setMonitoringData: batch }),
-            callbackUrl,
+            delivery,
           })),
         );
       } catch (error) {
@@ -126,7 +127,7 @@ export class SetVariableMonitoringEndpoint extends AbstractMessageEndpoint {
     setMonitoringData: OCPP2_request_types.SetVariableMonitoringRequest['setMonitoringData'],
   ): Promise<void> {
     for (const data of setMonitoringData) {
-      const [component, variable] = await this._deviceModelRepository.findComponentAndVariable(
+      const [component, variable] = await this._componentRepository.findComponentAndVariable(
         tenantId,
         data.component,
         data.variable,
@@ -145,9 +146,9 @@ export class SetVariableMonitoringEndpoint extends AbstractMessageEndpoint {
         await this._variableMonitoringRepository.createOrUpdateBySetMonitoringDataTypeAndStationId(
           tenantId,
           data,
+          ocppConnectionName,
           component.id,
           variable.id,
-          ocppConnectionName,
         );
       }
     }

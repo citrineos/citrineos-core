@@ -10,14 +10,11 @@ import {
   type ConnectorDto,
   type ConnectorStatusEnumType,
   type EvseDto,
-  type LatestStatusNotificationDto,
   type LocationDto,
-  type StatusNotificationDto,
   ChargingStateEnum,
   ChargingStationSchema,
   ChargingStationStatusEnum,
   ConnectorStatusEnum,
-  LatestStatusNotificationSchema,
   LocationSchema,
   TransactionSchema,
 } from '@citrineos/types';
@@ -28,7 +25,6 @@ import { z } from 'zod';
 
 const ChargingStationDetailsSchema = ChargingStationSchema.extend({
   location: LocationSchema.omit({ chargingPool: true }).optional(),
-  statusNotifications: z.array(LatestStatusNotificationSchema).optional(),
   transactions: z.array(TransactionSchema.omit({ station: true, location: true })).optional(),
   connectedWebsocketServerConfigId: z.string().nullish(),
   // The websocket server (ServerNetworkProfile) the station is currently connected on — safe fields only.
@@ -60,11 +56,7 @@ export const ChargingStationDetailsProps = ChargingStationDetailsSchema.keyof().
 
 export type ChargingStationDetailsDto = z.infer<typeof ChargingStationDetailsSchema>;
 
-const ChargingStationStatusCountsSchema = ChargingStationSchema.extend({
-  statusNotifications: z.array(LatestStatusNotificationSchema).optional(),
-});
-
-export type ChargingStationStatusCountsDto = z.infer<typeof ChargingStationStatusCountsSchema>;
+export type ChargingStationStatusCountsDto = z.infer<typeof ChargingStationSchema>;
 
 export class ChargingStationClass implements Partial<ChargingStationDto> {
   id!: number;
@@ -87,8 +79,6 @@ export class ChargingStationClass implements Partial<ChargingStationDto> {
   parkingRestrictions?: ChargingStationParkingRestrictionEnumType[] | null;
   capabilities?: ChargingStationCapabilityEnumType[] | null;
   locationId?: number | null;
-  @Expose({ name: 'LatestStatusNotifications' })
-  statusNotifications?: LatestStatusNotificationDto[] | null;
   evses?: EvseDto[] | null;
   connectors?: ConnectorDto[] | null;
   // TODO: Add missing properties from ChargingStationDto
@@ -177,16 +167,7 @@ export const getChargingStationStatusCounts = (chargingStation: ChargingStationS
   const evses = chargingStation?.evses;
   if (evses && evses.length > 0) {
     for (const evse of evses) {
-      let latestStatusNotificationForEvse: StatusNotificationDto | undefined;
-      chargingStation?.statusNotifications?.forEach((statusNotificationForStation) => {
-        if (
-          statusNotificationForStation.statusNotification?.evseId === evse.evseTypeId &&
-          statusNotificationForStation.statusNotification?.connectorId ===
-            evse.connectors?.[0]?.evseTypeConnectorId
-        ) {
-          latestStatusNotificationForEvse = statusNotificationForStation.statusNotification;
-        }
-      });
+      const latestStatusNotificationForEvse = evse.connectors?.[0]?.latestStatusNotification;
       if (latestStatusNotificationForEvse) {
         const connectorStatus: ConnectorStatusEnumType =
           latestStatusNotificationForEvse?.connectorStatus || ConnectorStatusEnum.Unavailable;
