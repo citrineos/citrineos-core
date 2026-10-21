@@ -281,18 +281,34 @@ export class WebhookDispatcher {
       if (!response.ok) {
         const errorText = await response.text();
         this._logger.error(
-          `Route to subscription ${url} on charging station ${requestBody.ocppConnectionName} failed.
+          `Route to subscription ${redactUrl(url)} on charging station ${requestBody.ocppConnectionName} failed.
             Event: ${requestBody.event}, ${response.status} ${response.statusText} - ${errorText}`,
         );
       }
       return response.ok;
     } catch (error) {
       this._logger.error(
-        `Route to subscription ${url} on charging station ${requestBody.ocppConnectionName} failed.
+        `Route to subscription ${redactUrl(url)} on charging station ${requestBody.ocppConnectionName} failed.
            Event: ${requestBody.event}, ${error}`,
       );
       return false;
     }
+  }
+}
+
+/**
+ * Reduces a URL to its origin and path for safe logging.
+ *
+ * Subscription URLs may carry credentials in the query string (the only
+ * way to authenticate a webhook receiver without custom headers), so the
+ * raw URL must not be written to the logs.
+ */
+export function redactUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    return `${parsed.origin}${parsed.pathname}`;
+  } catch {
+    return '<unparsable-url>';
   }
 }
 

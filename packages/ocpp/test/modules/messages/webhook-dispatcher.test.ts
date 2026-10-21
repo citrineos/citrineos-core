@@ -11,7 +11,7 @@ import {
   type SubscriptionDto,
 } from '@citrineos/types';
 import { buildFrameEvent } from '@/transport/index.js';
-import { WebhookDispatcher } from '@modules/messages/webhook-dispatcher.js';
+import { redactUrl, WebhookDispatcher } from '@modules/messages/webhook-dispatcher.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
 import { faker } from '@faker-js/faker';
 import { afterEach, beforeEach, describe, expect, it, type Mocked, vi } from 'vitest';
@@ -514,6 +514,93 @@ describe('WebhookDispatcher', () => {
       ...override,
     });
   }
+
+  describe('redactUrl', () => {
+    it('should strip the query string', () => {
+      expect(redactUrl('http://receiver:8000/ocpp/webhook?token=secret')).toBe(
+        'http://receiver:8000/ocpp/webhook',
+      );
+    });
+
+    it('should strip userinfo and the query string', () => {
+      expect(redactUrl('https://user:password@receiver/ocpp/webhook?token=secret')).toBe(
+        'https://receiver/ocpp/webhook',
+      );
+    });
+
+    it('should keep URLs without credentials unchanged', () => {
+      expect(redactUrl('http://receiver:8000/ocpp/webhook')).toBe(
+        'http://receiver:8000/ocpp/webhook',
+      );
+    });
+
+    it('should not fail on unparsable URLs', () => {
+      expect(redactUrl('not-a-url')).toBe('<unparsable-url>');
+    });
+  });
+
+  describe('subscription error logs', () => {
+    const aLoggerWithErrorSpy = () => {
+      const errorLog = vi.fn();
+      const logger = {
+        error: errorLog,
+        warn: vi.fn(),
+        info: vi.fn(),
+        debug: vi.fn(),
+        getSubLogger: () => logger,
+      } as any;
+      return { errorLog, logger };
+    };
+
+    it('should not log the query string when the receiver returns an error', async () => {
+      const { errorLog, logger } = aLoggerWithErrorSpy();
+      const dispatcher = getTestInstance(container, WebhookDispatcher, {
+        subscriptionRepository,
+        logger,
+      });
+
+      const subscription = aSubscription({
+        onConnect: true,
+        url: 'http://receiver:8000/ocpp/webhook?token=super-secret-token',
+      });
+      givenSubscriptions(subscription);
+      fetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error',
+        text: () => Promise.resolve('receiver down'),
+      } as Response);
+
+      await dispatcher.register(subscription.tenantId!, subscription.ocppConnectionName);
+
+      expect(errorLog).toHaveBeenCalled();
+      const logged = String(errorLog.mock.calls[0][0]);
+      expect(logged).toContain('http://receiver:8000/ocpp/webhook');
+      expect(logged).not.toContain('super-secret-token');
+    });
+
+    it('should not log the query string when the receiver is unreachable', async () => {
+      const { errorLog, logger } = aLoggerWithErrorSpy();
+      const dispatcher = getTestInstance(container, WebhookDispatcher, {
+        subscriptionRepository,
+        logger,
+      });
+
+      const subscription = aSubscription({
+        onConnect: true,
+        url: 'http://receiver:8000/ocpp/webhook?token=super-secret-token',
+      });
+      givenSubscriptions(subscription);
+      fetch.mockRejectedValueOnce(new Error('ECONNREFUSED'));
+
+      await dispatcher.register(subscription.tenantId!, subscription.ocppConnectionName);
+
+      expect(errorLog).toHaveBeenCalled();
+      const logged = String(errorLog.mock.calls[0][0]);
+      expect(logged).toContain('http://receiver:8000/ocpp/webhook');
+      expect(logged).not.toContain('super-secret-token');
+    });
+  });
 
   function anOutboundFrame(ocppConnectionName: string): FrameEvent {
     return buildFrameEvent({
