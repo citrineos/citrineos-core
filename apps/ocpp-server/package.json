@@ -33,6 +33,7 @@
     "eslint-config-prettier": "catalog:",
     "eslint-plugin-prettier": "catalog:",
     "nodemon": "catalog:",
+    "pg": "catalog:",
     "sequelize": "catalog:",
     "sequelize-typescript": "catalog:",
     "ts-node": "catalog:",

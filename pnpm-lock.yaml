@@ -390,7 +390,7 @@ importers:
         version: 6.6.5
       sequelize-typescript:
         specifier: 'catalog:'
-        version: 2.1.6(@types/node@25.9.9)(@types/validator@13.15.10)(reflect-metadata@0.2.2)(sequelize@6.37.8)
+        version: 2.1.6(@types/node@26.6.5)(@types/validator@13.15.10)(reflect-metadata@0.2.2)(sequelize@6.37.8(sqlite3@5.1.7))
       sqlite3:
         specifier: 'catalog:'
         version: 5.1.7
@@ -427,7 +427,7 @@ importers:
         version: 3.1.14
       ts-node:
         specifier: 'catalog:'
-        version: 10.9.2(@swc/core@1.16.18)(@types/node@25.9.9)(typescript@6.0.3)
+        version: 10.9.2(@swc/core@1.16.18)(@types/node@26.6.5)(typescript@6.0.3)
       tsx:
         specifier: 'catalog:'
         version: 4.23.15
@@ -470,7 +470,7 @@ importers:
         version: 6.6.5
       sequelize-typescript:
         specifier: 'catalog:'
-        version: 2.1.6(@types/node@25.9.9)(@types/validator@13.15.10)(reflect-metadata@0.2.2)(sequelize@6.37.8)
+        version: 2.1.6(@types/node@26.6.5)(@types/validator@13.15.10)(reflect-metadata@0.2.2)(sequelize@6.37.8(sqlite3@5.1.7))
       sqlite3:
         specifier: 'catalog:'
         version: 5.1.7
@@ -499,9 +499,12 @@ importers:
       nodemon:
         specifier: 'catalog:'
         version: 3.1.14
+      pg:
+        specifier: 'catalog:'
+        version: 8.11.3
       ts-node:
         specifier: 'catalog:'
-        version: 10.9.2(@swc/core@1.16.18)(@types/node@25.9.9)(typescript@6.0.3)
+        version: 10.9.2(@swc/core@1.16.18)(@types/node@26.6.5)(typescript@6.0.3)
       typescript-eslint:
         specifier: 'catalog:'
         version: 8.17.0(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3)
@@ -939,7 +942,7 @@ importers:
         version: 6.37.8(pg-hstore@2.3.4)(pg@8.11.3)(sqlite3@5.1.7)
       sequelize-typescript:
         specifier: 'catalog:'
-        version: 2.1.6(@types/node@25.9.9)(@types/validator@13.15.10)(reflect-metadata@0.2.2)(sequelize@6.37.8)
+        version: 2.1.6(@types/node@26.6.5)(@types/validator@13.15.10)(reflect-metadata@0.2.2)(sequelize@6.37.8(sqlite3@5.1.7))
       tslog:
         specifier: 'catalog:'
         version: 5.1.0
@@ -982,7 +985,7 @@ importers:
         version: 8.17.0(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3)
       vitest:
         specifier: 'catalog:'
-        version: 3.2.7(@types/debug@4.1.13)(@types/node@25.9.9)(jiti@2.7.0)(lightningcss@1.32.0)(msw@2.15.0(@types/node@25.9.9)(typescript@6.0.3))(sass@1.93.2)(tsx@4.23.15)(yaml@2.9.1)
+        version: 3.2.7(@types/debug@4.1.13)(@types/node@26.6.5)(jiti@2.7.0)(lightningcss@1.32.0)(msw@2.15.0(@types/node@26.6.5)(typescript@6.0.3))(sass@1.93.2)(tsx@4.23.15)(yaml@2.9.1)
 
   packages/ocpi:
     dependencies:
@@ -1130,7 +1133,7 @@ importers:
         version: 1.2.0
       ts-node:
         specifier: 'catalog:'
-        version: 10.9.2(@swc/core@1.16.18)(@types/node@25.9.9)(typescript@6.0.3)
+        version: 10.9.2(@swc/core@1.16.18)(@types/node@26.6.5)(typescript@6.0.3)
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
@@ -1247,7 +1250,7 @@ importers:
         version: 6.37.8(pg-hstore@2.3.4)(pg@8.11.3)(sqlite3@5.1.7)
       sequelize-typescript:
         specifier: 'catalog:'
-        version: 2.1.6(@types/node@25.9.9)(@types/validator@13.15.10)(reflect-metadata@0.2.2)(sequelize@6.37.8)
+        version: 2.1.6(@types/node@26.6.5)(@types/validator@13.15.10)(reflect-metadata@0.2.2)(sequelize@6.37.8(sqlite3@5.1.7))
       ssh2-sftp-client:
         specifier: ^10.0.3
         version: 10.0.3
@@ -1308,7 +1311,7 @@ importers:
         version: 8.17.0(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3)
       vitest:
         specifier: 'catalog:'
-        version: 3.2.7(@types/debug@4.1.13)(@types/node@25.9.9)(jiti@2.7.0)(lightningcss@1.32.0)(msw@2.15.0(@types/node@25.9.9)(typescript@6.0.3))(sass@1.93.2)(tsx@4.23.15)(yaml@2.9.1)
+        version: 3.2.7(@types/debug@4.1.13)(@types/node@26.6.5)(jiti@2.7.0)(lightningcss@1.32.0)(msw@2.15.0(@types/node@26.6.5)(typescript@6.0.3))(sass@1.93.2)(tsx@4.23.15)(yaml@2.9.1)
 
   packages/types:
     dependencies:
@@ -16191,7 +16194,7 @@ snapshots:
       '@typescript-eslint/parser': 8.71.2(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3)
       eslint: 9.16.0(jiti@2.7.0)
       eslint-import-resolver-node: 0.3.10
-      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.71.2(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3))(eslint@9.16.0(jiti@2.7.0)))(eslint@9.16.0(jiti@2.7.0))
+      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0)(eslint@9.16.0(jiti@2.7.0))
       eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.71.2(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3))(eslint-import-resolver-typescript@3.10.1)(eslint@9.16.0(jiti@2.7.0))
       eslint-plugin-jsx-a11y: 6.10.2(eslint@9.16.0(jiti@2.7.0))
       eslint-plugin-react: 7.37.5(eslint@9.16.0(jiti@2.7.0))
@@ -16215,7 +16218,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.71.2(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3))(eslint@9.16.0(jiti@2.7.0)))(eslint@9.16.0(jiti@2.7.0)):
+  eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0)(eslint@9.16.0(jiti@2.7.0)):
     dependencies:
       '@nolyfill/is-core-module': 1.0.39
       debug: 4.4.3(supports-color@5.5.0)
@@ -16230,14 +16233,14 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-module-utils@2.14.0(@typescript-eslint/parser@8.71.2(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3))(eslint-import-resolver-node@0.3.10)(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.71.2(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3))(eslint@9.16.0(jiti@2.7.0)))(eslint@9.16.0(jiti@2.7.0)))(eslint@9.16.0(jiti@2.7.0)):
+  eslint-module-utils@2.14.0(@typescript-eslint/parser@8.71.2(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3))(eslint-import-resolver-node@0.3.10)(eslint-import-resolver-typescript@3.10.1)(eslint@9.16.0(jiti@2.7.0)):
     dependencies:
       debug: 3.2.7
     optionalDependencies:
       '@typescript-eslint/parser': 8.71.2(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3)
       eslint: 9.16.0(jiti@2.7.0)
       eslint-import-resolver-node: 0.3.10
-      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.71.2(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3))(eslint@9.16.0(jiti@2.7.0)))(eslint@9.16.0(jiti@2.7.0))
+      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0)(eslint@9.16.0(jiti@2.7.0))
     transitivePeerDependencies:
       - supports-color
 
@@ -16252,7 +16255,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 9.16.0(jiti@2.7.0)
       eslint-import-resolver-node: 0.3.10
-      eslint-module-utils: 2.14.0(@typescript-eslint/parser@8.71.2(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3))(eslint-import-resolver-node@0.3.10)(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.71.2(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3))(eslint@9.16.0(jiti@2.7.0)))(eslint@9.16.0(jiti@2.7.0)))(eslint@9.16.0(jiti@2.7.0))
+      eslint-module-utils: 2.14.0(@typescript-eslint/parser@8.71.2(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3))(eslint-import-resolver-node@0.3.10)(eslint-import-resolver-typescript@3.10.1)(eslint@9.16.0(jiti@2.7.0))
       hasown: 2.0.4
       is-core-module: 2.17.0
       is-glob: 4.0.3
@@ -19712,6 +19715,14 @@ snapshots:
       reflect-metadata: 0.2.2
       sequelize: 6.37.8(pg-hstore@2.3.4)(pg@8.11.3)(sqlite3@5.1.7)
 
+  sequelize-typescript@2.1.6(@types/node@26.6.5)(@types/validator@13.15.10)(reflect-metadata@0.2.2)(sequelize@6.37.8(sqlite3@5.1.7)):
+    dependencies:
+      '@types/node': 26.6.5
+      '@types/validator': 13.15.10
+      glob: 7.2.0
+      reflect-metadata: 0.2.2
+      sequelize: 6.37.8(pg-hstore@2.3.4)(pg@8.11.3)(sqlite3@5.1.7)
+
   sequelize@6.37.8(pg-hstore@2.3.4)(pg@8.11.3)(sqlite3@5.1.7):
     dependencies:
       '@types/debug': 4.1.13
@@ -20450,14 +20461,14 @@ snapshots:
       '@ts-morph/common': 0.19.0
       code-block-writer: 12.0.0
 
-  ts-node@10.9.2(@swc/core@1.16.18)(@types/node@25.9.9)(typescript@6.0.3):
+  ts-node@10.9.2(@swc/core@1.16.18)(@types/node@26.6.5)(typescript@6.0.3):
     dependencies:
       '@cspotcode/source-map-support': 0.8.1
       '@tsconfig/node10': 1.0.13
       '@tsconfig/node12': 1.0.11
       '@tsconfig/node14': 1.0.3
       '@tsconfig/node16': 1.0.4
-      '@types/node': 25.9.9
+      '@types/node': 26.6.5
       acorn: 8.19.0
       acorn-walk: 8.3.5
       arg: 4.1.3

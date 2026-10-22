@@ -6,13 +6,14 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import type { Sequelize } from 'sequelize-typescript';
 import { QueryTypes, type QueryInterface } from 'sequelize';
-import { type BootstrapConfig, DEFAULT_TENANT_ID } from '@citrineos/base';
+import { DEFAULT_TENANT_ID } from '@citrineos/base';
+import { configSchema } from '@citrineos/types';
 import {
   DefaultSequelizeInstance,
   type ITenantRepository,
   SequelizeTenantRepository,
 } from '@citrineos/dal';
-import migration from '../../migrations/20260821120000-authorization-unique-constraint-nulls-not-distinct.js';
+import migration from '../../db/migrations/20260821120000-authorization-unique-constraint-nulls-not-distinct.js';
 
 const TOKEN = 'DEPOT-TOKEN-1';
 const OTHER_TENANT_ID = DEFAULT_TENANT_ID + 1;
@@ -33,21 +34,19 @@ beforeAll(async () => {
     .withWaitStrategy(Wait.forLogMessage('database system is ready to accept connections', 2))
     .start();
 
-  sequelizeInstance = DefaultSequelizeInstance.getInstance({
-    database: {
-      host: pgContainer.getHost(),
-      port: pgContainer.getMappedPort(5432),
-      database: 'citrineos_test',
-      dialect: 'postgres',
-      username: 'test',
-      password: 'test',
-      sync: false,
-      alter: false,
-      force: false,
-      maxRetries: 1,
-      retryDelay: 100,
-    },
-  } as unknown as BootstrapConfig);
+  sequelizeInstance = DefaultSequelizeInstance.getInstance(
+    configSchema.parse({
+      database: {
+        host: pgContainer.getHost(),
+        port: pgContainer.getMappedPort(5432),
+        database: 'citrineos_test',
+        username: 'test',
+        password: 'test',
+        maxRetries: 1,
+        retryDelay: 100,
+      },
+    }),
+  );
   await sequelizeInstance.query('CREATE EXTENSION IF NOT EXISTS citext;');
   await sequelizeInstance.sync({ force: true });
   queryInterface = sequelizeInstance.getQueryInterface();
