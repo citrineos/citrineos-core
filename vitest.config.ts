@@ -44,14 +44,19 @@ const typecheck = (extraExclude: string[] = [], tsconfig = './tsconfig.json') =>
 // only at the root drops every suite back to the 10s default.
 const TIMEOUTS = { testTimeout: 30_000, hookTimeout: 60_000 };
 
-const nodeProject = (name: string, root: string, extraExclude: string[] = []) => ({
+const nodeProject = (
+  name: string,
+  root: string,
+  extraExclude: string[] = [],
+  tsconfig?: string,
+) => ({
   test: {
     name,
     root: r(root),
     environment: 'node' as const,
     include: testGlob,
     exclude: [...sharedExclude, ...extraExclude],
-    typecheck: typecheck(extraExclude),
+    typecheck: typecheck(extraExclude, tsconfig),
     ...TIMEOUTS,
   },
   resolve: { alias },
@@ -69,6 +74,7 @@ export default defineConfig({
       nodeProject('base', './packages/base'),
       nodeProject('ocpi', './packages/ocpi'),
       nodeProject('mock-msp', './apps/mock-msp'),
+      nodeProject('ocpp-server', './apps/ocpp-server', [], './config/tsconfig.test.json'),
       // operator-ui owns its own Playwright e2e specs; vitest can't run them
       // (they call @playwright/test's test.use(), which only works under the
       // Playwright runner). Only that tests/ tree is excluded — unit tests
