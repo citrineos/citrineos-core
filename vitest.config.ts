@@ -74,13 +74,13 @@ export default defineConfig({
       nodeProject('base', './packages/base'),
       nodeProject('ocpi', './packages/ocpi'),
       nodeProject('mock-msp', './apps/mock-msp'),
-      nodeProject('ocpp-server', './apps/ocpp-server', [], './config/tsconfig.test.json'),
       // operator-ui owns its own Playwright e2e specs; vitest can't run them
       // (they call @playwright/test's test.use(), which only works under the
       // Playwright runner). Only that tests/ tree is excluded — unit tests
       // co-located under src do run here. They stay in tsconfig.json's scope
       // so `pnpm typecheck:test` still covers them.
       nodeProject('operator-ui', './apps/operator-ui', ['tests/**']),
+      nodeProject('ocpp-server', './apps/ocpp-server', [], './config/tsconfig.test.json'),
     ],
 
     // The testcontainers-backed integration suites annotate their beforeAll
