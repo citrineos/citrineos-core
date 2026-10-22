@@ -167,7 +167,7 @@ export class ConfigLoader {
         try {
           currentConfigPart[keyToUse] = JSON.parse(value as string);
         } catch {
-          console.debug(`Mapping '${value}' as string for environment variable '${fullEnvKey}'.`);
+          console.debug(`Mapping string value for environment variable '${fullEnvKey}'.`);
           currentConfigPart[keyToUse] = value;
         }
       }
