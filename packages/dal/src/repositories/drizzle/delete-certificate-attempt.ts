@@ -13,10 +13,10 @@ import {
   deleteCertificateAttemptTable,
   tenantDeleteCertificateAttemptTable,
 } from '../../db/drizzle/schema/delete-certificate-attempt.js';
-import { chargingStationTable } from '../../db/drizzle/schema/charging-station.js';
 import { type Explicit } from '../../db/drizzle/types.js';
 import { DrizzleRepository } from './base.js';
 import { type IDeleteCertificateAttemptRepository } from '../../../index.js';
+import { resolveStationId } from './resolve-station-id.js';
 import { and, eq, isNull } from 'drizzle-orm';
 
 type DeleteCertificateHashData = Pick<
@@ -64,7 +64,12 @@ export class DrizzleDeleteCertificateAttemptRepository
     ocppConnectionName: string,
     hashData: DeleteCertificateHashData,
   ): Promise<DeleteCertificateAttemptDto | undefined> {
-    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    const stationId = await resolveStationId(
+      this.db,
+      tenantId,
+      ocppConnectionName,
+      this.useTenantSchema,
+    );
     if (stationId === undefined) {
       return undefined;
     }
@@ -92,7 +97,12 @@ export class DrizzleDeleteCertificateAttemptRepository
     tenantId: number,
     ocppConnectionName: string,
   ): Promise<DeleteCertificateAttemptDto | undefined> {
-    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    const stationId = await resolveStationId(
+      this.db,
+      tenantId,
+      ocppConnectionName,
+      this.useTenantSchema,
+    );
     if (stationId === undefined) {
       return undefined;
     }
@@ -118,7 +128,12 @@ export class DrizzleDeleteCertificateAttemptRepository
     input: Omit<DeleteCertificateAttemptCreate, 'stationId'>,
   ): Promise<DeleteCertificateAttemptDto> {
     // The row references its station by FK only; the caller supplies the name.
-    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    const stationId = await resolveStationId(
+      this.db,
+      tenantId,
+      ocppConnectionName,
+      this.useTenantSchema,
+    );
     if (stationId === undefined) {
       throw new Error(
         `Cannot record a delete-certificate attempt: no charging station named ` +
@@ -135,23 +150,5 @@ export class DrizzleDeleteCertificateAttemptRepository
     status: DeleteCertificateStatusEnumType,
   ): Promise<DeleteCertificateAttemptDto | undefined> {
     return await this.updateById(tenantId, id, { status });
-  }
-
-  private async resolveStationId(
-    tenantId: number,
-    ocppConnectionName: string,
-  ): Promise<number | undefined> {
-    const rows = await this.db
-      .select({ id: chargingStationTable.id })
-      .from(chargingStationTable)
-      .where(
-        and(
-          eq(chargingStationTable.ocppConnectionName, ocppConnectionName),
-          eq(chargingStationTable.tenantId, tenantId),
-        ),
-      )
-      .limit(1);
-
-    return rows[0]?.id;
   }
 }

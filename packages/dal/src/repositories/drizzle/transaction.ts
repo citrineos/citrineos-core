@@ -75,6 +75,7 @@ import {
   type DrizzleRepositoryDependencies,
   type DrizzleWriteContext,
 } from './base.js';
+import { resolveStationId } from './resolve-station-id.js';
 
 // ─── Mapper ──────────────────────────────────────────────────────────────────
 // Scalar columns only; every relation on TransactionDto is optional and a flat row
@@ -167,24 +168,6 @@ export class DrizzleTransactionRepository
 
   private getConnectorTable(tenantId: number): typeof connectorTable {
     return this.useTenantSchema ? tenantConnectorTable(tenantId) : connectorTable;
-  }
-
-  private async resolveStationId(
-    tenantId: number,
-    ocppConnectionName: string,
-  ): Promise<number | undefined> {
-    const stations = this.getChargingStationTable(tenantId);
-    const rows = await this.db
-      .select({ id: stations.id })
-      .from(stations)
-      .where(
-        and(
-          eq(stations.ocppConnectionName, ocppConnectionName),
-          this.tenantFilter(stations, tenantId),
-        ),
-      )
-      .limit(1);
-    return rows[0]?.id;
   }
 
   // Matches CrudRepository.readOnlyOneByQuery.
@@ -404,7 +387,12 @@ export class DrizzleTransactionRepository
     ocppConnectionName: string,
     transactionId: string,
   ): Promise<TransactionDto | undefined> {
-    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    const stationId = await resolveStationId(
+      this.db,
+      tenantId,
+      ocppConnectionName,
+      this.useTenantSchema,
+    );
     if (stationId === undefined) {
       return undefined;
     }
@@ -448,7 +436,12 @@ export class DrizzleTransactionRepository
     ocppConnectionName: string,
     evseId: number,
   ): Promise<TransactionDto | undefined> {
-    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    const stationId = await resolveStationId(
+      this.db,
+      tenantId,
+      ocppConnectionName,
+      this.useTenantSchema,
+    );
     if (stationId === undefined) {
       return undefined;
     }
@@ -487,7 +480,12 @@ export class DrizzleTransactionRepository
     ocppConnectionName: string,
     evseTypeId?: number,
   ): Promise<TransactionDto[]> {
-    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    const stationId = await resolveStationId(
+      this.db,
+      tenantId,
+      ocppConnectionName,
+      this.useTenantSchema,
+    );
     if (stationId === undefined) {
       return [];
     }
@@ -587,7 +585,12 @@ export class DrizzleTransactionRepository
     transactionId: string,
     ocppConnectionName: string,
   ): Promise<TransactionDto | undefined> {
-    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    const stationId = await resolveStationId(
+      this.db,
+      tenantId,
+      ocppConnectionName,
+      this.useTenantSchema,
+    );
     if (stationId === undefined) {
       return undefined;
     }
@@ -616,7 +619,12 @@ export class DrizzleTransactionRepository
     if (!excludeTransactionId || excludeTransactionId === '0') {
       return [];
     }
-    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    const stationId = await resolveStationId(
+      this.db,
+      tenantId,
+      ocppConnectionName,
+      this.useTenantSchema,
+    );
     if (stationId === undefined) {
       return [];
     }
@@ -649,7 +657,6 @@ export class DrizzleTransactionRepository
   ): Promise<StopTransactionDto> {
     const transactions = this.getTable(tenantId);
     const stopTransactions = this.getStopTransactionTable(tenantId);
-    const meterValueRows = this.getMeterValueTable(tenantId);
 
     return await this.withAtomicWrite(async (ctx) => {
       const existing = (await ctx.db
@@ -723,7 +730,12 @@ export class DrizzleTransactionRepository
     // In OCPP 2.1, transactionEventRequest contains tariffId
     const { tariffId: infoTariffId, ...transactionInfo } =
       value.transactionInfo as typeof value.transactionInfo & { tariffId?: string | null };
-    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    const stationId = await resolveStationId(
+      this.db,
+      tenantId,
+      ocppConnectionName,
+      this.useTenantSchema,
+    );
     if (stationId === undefined) {
       throw new Error(
         `Cannot record a transaction event: no charging station named ` +
@@ -1019,7 +1031,12 @@ export class DrizzleTransactionRepository
     request: OCPP1_6.StartTransactionRequest,
     ocppConnectionName: string,
   ): Promise<TransactionDto> {
-    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    const stationId = await resolveStationId(
+      this.db,
+      tenantId,
+      ocppConnectionName,
+      this.useTenantSchema,
+    );
     if (stationId === undefined) {
       throw new Error(
         `Cannot start a transaction: no charging station named ` +
@@ -1119,7 +1136,12 @@ export class DrizzleTransactionRepository
     ocppConnectionName: string,
     transactionId: number,
   ): Promise<void> {
-    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    const stationId = await resolveStationId(
+      this.db,
+      tenantId,
+      ocppConnectionName,
+      this.useTenantSchema,
+    );
     if (stationId === undefined) {
       this.logger.error(
         `Transaction ${transactionId} on station ${ocppConnectionName} does not exist.`,
@@ -1128,7 +1150,6 @@ export class DrizzleTransactionRepository
     }
 
     const transactions = this.getTable(tenantId);
-    const meterValueRows = this.getMeterValueTable(tenantId);
 
     await this.withAtomicWrite(async (ctx) => {
       const rows = (await ctx.db
