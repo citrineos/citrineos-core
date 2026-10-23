@@ -133,6 +133,18 @@ export {
   DrizzleSubscriptionRepository,
   toSubscriptionDto,
 } from '../../repositories/drizzle/subscription.js';
+export {
+  DrizzleEventDataRepository,
+  toEventDataDto,
+} from '../../repositories/drizzle/event-data.js';
+export {
+  DrizzleVariableMonitoringRepository,
+  toVariableMonitoringDto,
+} from '../../repositories/drizzle/variable-monitoring.js';
+export {
+  DrizzleVariableMonitoringStatusRepository,
+  toVariableMonitoringStatusDto,
+} from '../../repositories/drizzle/variable-monitoring-status.js';
 export { DrizzleTariffRepository, toTariffDto } from '../../repositories/drizzle/tariff.js';
 export { DrizzleTenantRepository, toTenantDto } from '../../repositories/drizzle/tenant.js';
 export {

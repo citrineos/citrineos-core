@@ -35,6 +35,7 @@ import type {
   ITransactionRepository,
   IVariableAttributeRepository,
   IVariableCharacteristicsRepository,
+  IEventDataRepository,
   IVariableMonitoringRepository,
 } from '../repositories.js';
 import {
@@ -63,6 +64,8 @@ import {
   DrizzleTenantRepository,
   DrizzleVariableAttributeRepository,
   DrizzleVariableCharacteristicsRepository,
+  DrizzleEventDataRepository,
+  DrizzleVariableMonitoringRepository,
 } from '../../db/drizzle/index.js';
 import { SequelizeAuthorizationRepository } from './authorization.js';
 import { SequelizeBootRepository } from './boot.js';
@@ -116,6 +119,7 @@ export class RepositoryStore {
   transactionEventRepository: ITransactionEventRepository;
   transactionRepository: ITransactionRepository;
   variableMonitoringRepository: IVariableMonitoringRepository;
+  eventDataRepository: IEventDataRepository;
   tenantRepository: ITenantRepository;
   serverNetworkProfileRepository: IServerNetworkProfileRepository;
   variableAttributeRepository: IVariableAttributeRepository;
@@ -210,6 +214,11 @@ export class RepositoryStore {
       this.meterValueRepository = new DrizzleMeterValueRepository({ config, logger });
       this.transactionRepository = new DrizzleTransactionRepository({ config, logger });
       this.transactionEventRepository = new DrizzleTransactionEventRepository({ config, logger });
+      this.variableMonitoringRepository = new DrizzleVariableMonitoringRepository({
+        config,
+        logger,
+      });
+      this.eventDataRepository = new DrizzleEventDataRepository({ config, logger });
       this.variableCharacteristicsRepository = new DrizzleVariableCharacteristicsRepository({
         config,
         logger,
@@ -303,12 +312,13 @@ export class RepositoryStore {
       this.transactionEventRepository = transactionEvent;
       this.transactionRepository = transactionEvent;
       this.meterValueRepository = transactionEvent;
+      const variableMonitoring = new SequelizeVariableMonitoringRepository({
+        config,
+        logger,
+        sequelizeInstance,
+      });
+      this.variableMonitoringRepository = variableMonitoring;
+      this.eventDataRepository = variableMonitoring;
     }
-
-    this.variableMonitoringRepository = new SequelizeVariableMonitoringRepository({
-      config,
-      logger,
-      sequelizeInstance,
-    });
   }
 }

@@ -161,7 +161,7 @@ describe('NotifyEventRequestOcpp2Handler', () => {
   let variableAttributeRepository: {
     createOrUpdateDeviceModelByStationId: ReturnType<typeof vi.fn>;
   };
-  let variableMonitoringRepository: {
+  let eventDataRepository: {
     createEventDatumByComponentIdAndVariableIdAndStationId: ReturnType<typeof vi.fn>;
   };
   let handler: NotifyEventRequestOcpp2Handler;
@@ -175,7 +175,7 @@ describe('NotifyEventRequestOcpp2Handler', () => {
     variableAttributeRepository = {
       createOrUpdateDeviceModelByStationId: vi.fn().mockResolvedValue(undefined),
     };
-    variableMonitoringRepository = {
+    eventDataRepository = {
       createEventDatumByComponentIdAndVariableIdAndStationId: vi.fn().mockResolvedValue(undefined),
     };
     handler = new NotifyEventRequestOcpp2Handler(
@@ -184,7 +184,7 @@ describe('NotifyEventRequestOcpp2Handler', () => {
         ocppSender,
         componentRepository,
         variableAttributeRepository,
-        variableMonitoringRepository,
+        eventDataRepository,
       }),
     );
   });
@@ -222,10 +222,10 @@ describe('NotifyEventRequestOcpp2Handler', () => {
       event.variable,
     );
     expect(
-      variableMonitoringRepository.createEventDatumByComponentIdAndVariableIdAndStationId,
+      eventDataRepository.createEventDatumByComponentIdAndVariableIdAndStationId,
     ).toHaveBeenCalledOnce();
     expect(
-      variableMonitoringRepository.createEventDatumByComponentIdAndVariableIdAndStationId,
+      eventDataRepository.createEventDatumByComponentIdAndVariableIdAndStationId,
     ).toHaveBeenCalledWith(DEFAULT_TENANT_ID, event, STATION_ID, 3, 9);
     expect(variableAttributeRepository.createOrUpdateDeviceModelByStationId).toHaveBeenCalledOnce();
     expect(variableAttributeRepository.createOrUpdateDeviceModelByStationId).toHaveBeenCalledWith(
@@ -250,10 +250,10 @@ describe('NotifyEventRequestOcpp2Handler', () => {
 
     expect(componentRepository.findOrCreateEvseAndComponentAndVariable).toHaveBeenCalledTimes(2);
     expect(
-      variableMonitoringRepository.createEventDatumByComponentIdAndVariableIdAndStationId,
+      eventDataRepository.createEventDatumByComponentIdAndVariableIdAndStationId,
     ).toHaveBeenCalledTimes(2);
     expect(
-      variableMonitoringRepository.createEventDatumByComponentIdAndVariableIdAndStationId,
+      eventDataRepository.createEventDatumByComponentIdAndVariableIdAndStationId,
     ).toHaveBeenNthCalledWith(2, DEFAULT_TENANT_ID, second, STATION_ID, 3, 9);
     expect(variableAttributeRepository.createOrUpdateDeviceModelByStationId).toHaveBeenCalledTimes(
       2,
@@ -264,7 +264,7 @@ describe('NotifyEventRequestOcpp2Handler', () => {
   });
 
   it('propagates a persistence failure without acknowledging', async () => {
-    variableMonitoringRepository.createEventDatumByComponentIdAndVariableIdAndStationId.mockRejectedValue(
+    eventDataRepository.createEventDatumByComponentIdAndVariableIdAndStationId.mockRejectedValue(
       new Error('db down'),
     );
 

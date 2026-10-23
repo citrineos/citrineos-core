@@ -38,6 +38,7 @@ import {
   DrizzleLocationRepository,
   DrizzleMeterValueRepository,
   DrizzleStatusNotificationRepository,
+  DrizzleEventDataRepository,
   DrizzleEvseRepository,
   DrizzleDeleteCertificateAttemptRepository,
   DrizzleInstallCertificateAttemptRepository,
@@ -57,6 +58,7 @@ import {
   DrizzleTransactionRepository,
   DrizzleVariableAttributeRepository,
   DrizzleVariableCharacteristicsRepository,
+  DrizzleVariableMonitoringRepository,
   SequelizeAsyncJobStatusRepository,
   SequelizeAuthorizationRepository,
   SequelizeBootRepository,
@@ -372,6 +374,9 @@ function registerRepositories(container: AwilixContainer): void {
     // The device model aggregate is the instance behind all three narrow tokens.
     variableAttributeRepository: asClass(SequelizeDeviceModelRepository).singleton(),
     variableMonitoringRepository: asClass(SequelizeVariableMonitoringRepository).singleton(),
+    eventDataRepository: asFunction(
+      ({ variableMonitoringRepository }) => variableMonitoringRepository,
+    ).singleton(),
     // use asFunction to return an already existing instance
     chargingStationRepository: asFunction(
       ({ locationRepository }) => locationRepository,
@@ -448,6 +453,8 @@ function registerRepositories(container: AwilixContainer): void {
       variableCharacteristicsRepository: asClass(
         DrizzleVariableCharacteristicsRepository,
       ).singleton(),
+      variableMonitoringRepository: asClass(DrizzleVariableMonitoringRepository).singleton(),
+      eventDataRepository: asClass(DrizzleEventDataRepository).singleton(),
     });
   }
 }

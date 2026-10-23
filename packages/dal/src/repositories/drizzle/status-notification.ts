@@ -8,11 +8,6 @@ import type {
   StationStatusNotificationResult,
 } from '@dal/repositories/repositories.js';
 import type { ConnectorDto, StatusNotificationDto } from '@citrineos/types';
-import { and, eq } from 'drizzle-orm';
-import {
-  chargingStationTable,
-  tenantChargingStationTable,
-} from '../../db/drizzle/schema/charging-station.js';
 import {
   type StatusNotificationEntity,
   statusNotificationTable,
@@ -25,6 +20,7 @@ import {
   type DrizzleWriteContext,
 } from './base.js';
 import { type DrizzleConnectorRepository } from './connector.js';
+import { resolveStationId } from './resolve-station-id.js';
 
 // ─── Mapper ──────────────────────────────────────────────────────────────────
 // Maps a Drizzle entity (DB row) to the external StatusNotificationDto contract.
@@ -79,30 +75,6 @@ export class DrizzleStatusNotificationRepository
 
   protected toDto(row: StatusNotificationEntity): StatusNotificationDto {
     return toStatusNotificationDto(row);
-  }
-
-  private getChargingStationTable(tenantId: number): typeof chargingStationTable {
-    return this.useTenantSchema ? tenantChargingStationTable(tenantId) : chargingStationTable;
-  }
-
-  private async resolveStationId(
-    tenantId: number,
-    ocppConnectionName: string,
-    ctx: DrizzleWriteContext,
-  ): Promise<number | undefined> {
-    const stations = this.getChargingStationTable(tenantId);
-    const rows = await ctx.db
-      .select({ id: stations.id })
-      .from(stations)
-      .where(
-        and(
-          eq(stations.ocppConnectionName, ocppConnectionName),
-          this.tenantFilter(stations, tenantId),
-        ),
-      )
-      .limit(1);
-
-    return rows[0]?.id;
   }
 
   // ─── IStatusNotificationRepository methods ───────────────────────────────
@@ -213,7 +185,12 @@ export class DrizzleStatusNotificationRepository
     statusNotification: StatusNotificationDto,
     ctx: DrizzleWriteContext,
   ): Promise<StatusNotificationDto> {
-    const stationId = await this.resolveStationId(tenantId, ocppConnectionName, ctx);
+    const stationId = await resolveStationId(
+      ctx.db,
+      tenantId,
+      ocppConnectionName,
+      this.useTenantSchema,
+    );
 
     return await this.insert(
       tenantId,

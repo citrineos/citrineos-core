@@ -15,11 +15,11 @@ import {
   tenantInstalledCertificateTable,
 } from '../../db/drizzle/schema/installed-certificate.js';
 import { type CertificateEntity, certificateTable } from '../../db/drizzle/schema/certificate.js';
-import { chargingStationTable } from '../../db/drizzle/schema/charging-station.js';
 import { type Explicit } from '../../db/drizzle/types.js';
 import { DrizzleRepository } from './base.js';
 import { toCertificateDto } from './certificate.js';
 import { type IInstalledCertificateRepository } from '../../../index.js';
+import { resolveStationId } from './resolve-station-id.js';
 import { and, eq } from 'drizzle-orm';
 
 type InstalledCertificateHashData = Pick<
@@ -75,7 +75,12 @@ export class DrizzleInstalledCertificateRepository
     ocppConnectionName: string,
     certificateType: CertificateUseEnumType,
   ): Promise<InstalledCertificateDto | undefined> {
-    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    const stationId = await resolveStationId(
+      this.db,
+      tenantId,
+      ocppConnectionName,
+      this.useTenantSchema,
+    );
     if (stationId === undefined) {
       return undefined;
     }
@@ -100,7 +105,12 @@ export class DrizzleInstalledCertificateRepository
     id: number,
     ocppConnectionName: string,
   ): Promise<InstalledCertificateDto | undefined> {
-    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    const stationId = await resolveStationId(
+      this.db,
+      tenantId,
+      ocppConnectionName,
+      this.useTenantSchema,
+    );
     if (stationId === undefined) {
       return undefined;
     }
@@ -155,7 +165,12 @@ export class DrizzleInstalledCertificateRepository
     ocppConnectionName: string,
     input: InstalledCertificateCreateInput,
   ): Promise<InstalledCertificateDto> {
-    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    const stationId = await resolveStationId(
+      this.db,
+      tenantId,
+      ocppConnectionName,
+      this.useTenantSchema,
+    );
     if (stationId === undefined) {
       throw new Error(
         `Cannot record an installed certificate: no charging station named ` +
@@ -190,7 +205,12 @@ export class DrizzleInstalledCertificateRepository
     tenantId: number,
     ocppConnectionName: string,
   ): Promise<InstalledCertificateDto[]> {
-    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    const stationId = await resolveStationId(
+      this.db,
+      tenantId,
+      ocppConnectionName,
+      this.useTenantSchema,
+    );
     if (stationId === undefined) {
       return [];
     }
@@ -212,7 +232,12 @@ export class DrizzleInstalledCertificateRepository
     tenantId: number,
     ocppConnectionName: string,
   ): Promise<InstalledCertificateDto[]> {
-    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    const stationId = await resolveStationId(
+      this.db,
+      tenantId,
+      ocppConnectionName,
+      this.useTenantSchema,
+    );
     if (stationId === undefined) {
       return [];
     }
@@ -230,7 +255,12 @@ export class DrizzleInstalledCertificateRepository
     ocppConnectionName: string,
     certificateType: CertificateUseEnumType,
   ): Promise<InstalledCertificateDto[]> {
-    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    const stationId = await resolveStationId(
+      this.db,
+      tenantId,
+      ocppConnectionName,
+      this.useTenantSchema,
+    );
     if (stationId === undefined) {
       return [];
     }
@@ -249,7 +279,12 @@ export class DrizzleInstalledCertificateRepository
     ocppConnectionName: string,
     hashData: InstalledCertificateHashData,
   ): Promise<InstalledCertificateDto[]> {
-    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    const stationId = await resolveStationId(
+      this.db,
+      tenantId,
+      ocppConnectionName,
+      this.useTenantSchema,
+    );
     if (stationId === undefined) {
       return [];
     }
@@ -277,23 +312,5 @@ export class DrizzleInstalledCertificateRepository
       this.emit('deleted', dtos);
     }
     return dtos;
-  }
-
-  private async resolveStationId(
-    tenantId: number,
-    ocppConnectionName: string,
-  ): Promise<number | undefined> {
-    const rows = await this.db
-      .select({ id: chargingStationTable.id })
-      .from(chargingStationTable)
-      .where(
-        and(
-          eq(chargingStationTable.ocppConnectionName, ocppConnectionName),
-          eq(chargingStationTable.tenantId, tenantId),
-        ),
-      )
-      .limit(1);
-
-    return rows[0]?.id;
   }
 }
