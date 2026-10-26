@@ -30,10 +30,14 @@ import {
   DrizzleCertificateRepository,
   DrizzleChangeConfigurationRepository,
   DrizzleChargingStationNetworkProfileRepository,
+  DrizzleChargingNeedsRepository,
+  DrizzleChargingProfileRepository,
+  DrizzleChargingScheduleRepository,
   DrizzleChargingStationRepository,
   DrizzleChargingStationSecurityInfoRepository,
   DrizzleChargingStationSequenceRepository,
   DrizzleComponentRepository,
+  DrizzleCompositeScheduleRepository,
   DrizzleConnectorRepository,
   DrizzleLocationRepository,
   DrizzleMeterValueRepository,
@@ -381,6 +385,15 @@ function registerRepositories(container: AwilixContainer): void {
     chargingStationRepository: asFunction(
       ({ locationRepository }) => locationRepository,
     ).singleton(),
+    chargingNeedsRepository: asFunction(
+      ({ chargingProfileRepository }) => chargingProfileRepository,
+    ).singleton(),
+    chargingScheduleRepository: asFunction(
+      ({ chargingProfileRepository }) => chargingProfileRepository,
+    ).singleton(),
+    compositeScheduleRepository: asFunction(
+      ({ chargingProfileRepository }) => chargingProfileRepository,
+    ).singleton(),
     componentRepository: asFunction(
       ({ variableAttributeRepository }) => variableAttributeRepository,
     ).singleton(),
@@ -454,6 +467,10 @@ function registerRepositories(container: AwilixContainer): void {
         DrizzleVariableCharacteristicsRepository,
       ).singleton(),
       variableMonitoringRepository: asClass(DrizzleVariableMonitoringRepository).singleton(),
+      chargingProfileRepository: asClass(DrizzleChargingProfileRepository).singleton(),
+      chargingNeedsRepository: asClass(DrizzleChargingNeedsRepository).singleton(),
+      chargingScheduleRepository: asClass(DrizzleChargingScheduleRepository).singleton(),
+      compositeScheduleRepository: asClass(DrizzleCompositeScheduleRepository).singleton(),
       eventDataRepository: asClass(DrizzleEventDataRepository).singleton(),
     });
   }

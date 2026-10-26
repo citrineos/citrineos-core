@@ -42,17 +42,17 @@ function makeMessage(
 describe('SetChargingProfileResponseOcpp2Handler', () => {
   const { container } = createTestContainer();
   let sendCall: ReturnType<typeof vi.fn>;
-  let updateAllByQuery: ReturnType<typeof vi.fn>;
+  let deactivateChargingProfiles: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     sendCall = vi.fn().mockResolvedValue({ success: true });
-    updateAllByQuery = vi.fn().mockResolvedValue([]);
+    deactivateChargingProfiles = vi.fn().mockResolvedValue([]);
   });
 
   const handle = (status: ChargingProfileStatusEnumType) =>
     getTestInstance(container, SetChargingProfileResponseOcpp2Handler, {
       ocppSender: { sendCall },
-      chargingProfileRepository: { updateAllByQuery },
+      chargingProfileRepository: { deactivateChargingProfiles },
       idGenerator: { generateRequestId: vi.fn().mockResolvedValue(1) },
     }).handle(makeMessage(status));
 
@@ -68,13 +68,9 @@ describe('SetChargingProfileResponseOcpp2Handler', () => {
   it('deactivates the stored CSO profiles and re-reads them when the station accepts', async () => {
     await handle(ChargingProfileStatusEnum.Accepted);
 
-    expect(updateAllByQuery).toHaveBeenCalledWith(
-      DEFAULT_TENANT_ID,
-      { isActive: false },
-      expect.objectContaining({
-        where: expect.objectContaining({ chargingLimitSource: ChargingLimitSourceEnum.CSO }),
-      }),
-    );
+    expect(deactivateChargingProfiles).toHaveBeenCalledWith(DEFAULT_TENANT_ID, STATION, {
+      chargingLimitSource: ChargingLimitSourceEnum.CSO,
+    });
     expectCsoProfilesReRead();
   });
 
@@ -87,6 +83,6 @@ describe('SetChargingProfileResponseOcpp2Handler', () => {
   it('leaves the stored profiles active when the station rejects the profile', async () => {
     await handle(ChargingProfileStatusEnum.Rejected);
 
-    expect(updateAllByQuery).not.toHaveBeenCalled();
+    expect(deactivateChargingProfiles).not.toHaveBeenCalled();
   });
 });

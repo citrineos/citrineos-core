@@ -19,10 +19,13 @@ import type {
   ChangeConfigurationDto,
   ChargingLimitSourceEnumType,
   ChargingProfilePurposeEnumType,
+  ChargingNeedsDto,
+  ChargingProfileDto,
   ChargingStationDto,
   ChargingStationNetworkProfileDto,
   ChargingStationSequenceTypeEnumType,
   ComponentDto,
+  CompositeScheduleDto,
   ConnectorDto,
   DeleteCertificateAttemptCreate,
   DeleteCertificateAttemptDto,
@@ -89,11 +92,6 @@ import type {
 import type { CompositeScheduleInput as CompositeScheduleInput21 } from '../mappers/2.1/charging-profile-mapper.js';
 import type { LocalListVersion } from '../models/authorization/local-list-version.js';
 import type { SendLocalList } from '../models/authorization/send-local-list.js';
-import type {
-  ChargingNeeds,
-  ChargingProfile,
-  CompositeSchedule,
-} from '../models/charging-profile/index.js';
 
 export type AsyncJobStatusUpdate = Partial<
   Pick<
@@ -681,7 +679,28 @@ export interface IDeleteCertificateAttemptRepository {
   ): Promise<DeleteCertificateAttemptDto | undefined>;
 }
 
-export interface IChargingProfileRepository extends CrudRepository<ChargingProfile> {
+/** Criteria for locating stored charging profiles; omitted fields are not filtered on. */
+export interface ChargingProfileQuery {
+  ocppConnectionName?: string;
+  stackLevel?: number;
+  chargingProfilePurpose?: ChargingProfilePurposeEnumType;
+  evseId?: number | null;
+  transactionDatabaseId?: number | null;
+  isActive?: boolean;
+}
+
+/** Criteria for the profiles a station has just superseded or cleared. */
+export interface ChargingProfileDeactivation {
+  chargingProfileId?: number;
+  /** The profile the station just accepted, which must stay active. */
+  excludeChargingProfileId?: number;
+  evseId?: number | null;
+  stackLevel?: number;
+  chargingProfilePurpose?: ChargingProfilePurposeEnumType;
+  chargingLimitSource?: ChargingLimitSourceEnumType;
+}
+
+export interface IChargingProfileRepository {
   createOrUpdateChargingProfile(
     tenantId: number,
     chargingProfile: ChargingProfileInput,
@@ -689,30 +708,58 @@ export interface IChargingProfileRepository extends CrudRepository<ChargingProfi
     evseId?: number | null,
     chargingLimitSource?: ChargingLimitSourceEnumType,
     isActive?: boolean,
-  ): Promise<ChargingProfile>;
-  createChargingNeeds(
+  ): Promise<ChargingProfileDto>;
+  readChargingProfiles(
     tenantId: number,
-    chargingNeeds: OCPP2_request_types.NotifyEVChargingNeedsRequest,
+    query: ChargingProfileQuery,
+  ): Promise<ChargingProfileDto[]>;
+  readTxProfilesWithSchedules(
+    tenantId: number,
     ocppConnectionName: string,
-  ): Promise<ChargingNeeds>;
-  findChargingNeedsByEvseDBIdAndTransactionDBId(
+    transactionDatabaseId: number | null | undefined,
+  ): Promise<ChargingProfileDto[]>;
+  readHighestStackLevelTxProfile(
     tenantId: number,
-    evseDBId: number,
-    transactionDataBaseId: number,
-  ): Promise<ChargingNeeds | undefined>;
-  createCompositeSchedule(
-    tenantId: number,
-    compositeSchedule: CompositeScheduleInput | CompositeScheduleInput21,
     ocppConnectionName: string,
-  ): Promise<CompositeSchedule>;
+    transactionDatabaseId: number | null,
+  ): Promise<ChargingProfileDto | undefined>;
+  deactivateChargingProfiles(
+    tenantId: number,
+    ocppConnectionName: string,
+    criteria: ChargingProfileDeactivation,
+  ): Promise<number>;
   getNextChargingProfileId(tenantId: number, ocppConnectionName: string): Promise<number>;
-  getNextChargingScheduleId(tenantId: number, ocppConnectionName: string): Promise<number>;
   getNextStackLevel(
     tenantId: number,
     ocppConnectionName: string,
     transactionDatabaseId: number | null,
     profilePurpose: ChargingProfilePurposeEnumType,
   ): Promise<number>;
+}
+
+export interface IChargingScheduleRepository {
+  getNextChargingScheduleId(tenantId: number, ocppConnectionName: string): Promise<number>;
+}
+
+export interface IChargingNeedsRepository {
+  createChargingNeeds(
+    tenantId: number,
+    chargingNeeds: OCPP2_request_types.NotifyEVChargingNeedsRequest,
+    ocppConnectionName: string,
+  ): Promise<ChargingNeedsDto>;
+  findChargingNeedsByEvseDBIdAndTransactionDBId(
+    tenantId: number,
+    evseDBId: number,
+    transactionDataBaseId: number,
+  ): Promise<ChargingNeedsDto | undefined>;
+}
+
+export interface ICompositeScheduleRepository {
+  createCompositeSchedule(
+    tenantId: number,
+    compositeSchedule: CompositeScheduleInput | CompositeScheduleInput21,
+    ocppConnectionName: string,
+  ): Promise<CompositeScheduleDto>;
 }
 
 export interface IReservationRepository {

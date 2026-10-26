@@ -358,7 +358,7 @@ describe('SetChargingProfileResponseOcpp16Handler', () => {
     const { container } = createTestContainer();
     chargingProfileRepository = {
       createOrUpdateChargingProfile: vi.fn().mockResolvedValue({}),
-      updateAllByQuery: vi.fn().mockResolvedValue([]),
+      deactivateChargingProfiles: vi.fn().mockResolvedValue([]),
     } as unknown as Mocked<IChargingProfileRepository>;
     originalRequest = request;
     handler = getTestInstance(container, SetChargingProfileResponseOcpp16Handler, {
@@ -428,7 +428,7 @@ describe('ClearChargingProfileResponseOcpp16Handler', () => {
   beforeEach(() => {
     const { container } = createTestContainer();
     chargingProfileRepository = {
-      updateAllByQuery: vi.fn().mockResolvedValue([]),
+      deactivateChargingProfiles: vi.fn().mockResolvedValue([]),
     } as unknown as Mocked<IChargingProfileRepository>;
     handler = getTestInstance(container, ClearChargingProfileResponseOcpp16Handler, {
       chargingProfileRepository,
@@ -443,25 +443,18 @@ describe('ClearChargingProfileResponseOcpp16Handler', () => {
   it('Accepted deactivates only the station-scoped active profiles', async () => {
     await respond(OCPP1_6.ClearChargingProfileResponseStatus.Accepted);
 
-    expect(chargingProfileRepository.updateAllByQuery).toHaveBeenCalledTimes(1);
-    expect(chargingProfileRepository.updateAllByQuery).toHaveBeenCalledWith(
+    expect(chargingProfileRepository.deactivateChargingProfiles).toHaveBeenCalledTimes(1);
+    expect(chargingProfileRepository.deactivateChargingProfiles).toHaveBeenCalledWith(
       DEFAULT_TENANT_ID,
-      { isActive: false },
-      {
-        where: {
-          tenantId: DEFAULT_TENANT_ID,
-          ocppConnectionName: STATION,
-          isActive: true,
-        },
-        returning: false,
-      },
+      STATION,
+      {},
     );
   });
 
   it('Unknown leaves profiles untouched', async () => {
     await respond(OCPP1_6.ClearChargingProfileResponseStatus.Unknown);
 
-    expect(chargingProfileRepository.updateAllByQuery).not.toHaveBeenCalled();
+    expect(chargingProfileRepository.deactivateChargingProfiles).not.toHaveBeenCalled();
   });
 });
 
