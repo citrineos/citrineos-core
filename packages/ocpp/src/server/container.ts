@@ -47,9 +47,11 @@ import {
   DrizzleDeleteCertificateAttemptRepository,
   DrizzleInstallCertificateAttemptRepository,
   DrizzleInstalledCertificateRepository,
+  DrizzleLocalListVersionRepository,
   DrizzleMessageInfoRepository,
   DrizzleReservationRepository,
   DrizzleSecurityEventRepository,
+  DrizzleSendLocalListRepository,
   DrizzleWebsocketEventRepository,
   DrizzleNetworkAlertConfigRepository,
   DrizzleNetworkAlertRepository,
@@ -357,7 +359,7 @@ function registerRepositories(container: AwilixContainer): void {
       SequelizeInstallCertificateAttemptRepository,
     ).singleton(),
     installedCertificateRepository: asClass(SequelizeInstalledCertificateRepository).singleton(),
-    localAuthListRepository: asClass(SequelizeLocalAuthListRepository).singleton(),
+    sendLocalListRepository: asClass(SequelizeLocalAuthListRepository).singleton(),
     locationRepository: asClass(SequelizeLocationRepository).singleton(),
     messageInfoRepository: asClass(SequelizeMessageInfoRepository).singleton(),
     ocppMessageRepository: asClass(SequelizeOCPPMessageRepository).singleton(),
@@ -390,6 +392,9 @@ function registerRepositories(container: AwilixContainer): void {
     ).singleton(),
     chargingScheduleRepository: asFunction(
       ({ chargingProfileRepository }) => chargingProfileRepository,
+    ).singleton(),
+    localListVersionRepository: asFunction(
+      ({ sendLocalListRepository }) => sendLocalListRepository,
     ).singleton(),
     compositeScheduleRepository: asFunction(
       ({ chargingProfileRepository }) => chargingProfileRepository,
@@ -472,6 +477,8 @@ function registerRepositories(container: AwilixContainer): void {
       chargingScheduleRepository: asClass(DrizzleChargingScheduleRepository).singleton(),
       compositeScheduleRepository: asClass(DrizzleCompositeScheduleRepository).singleton(),
       eventDataRepository: asClass(DrizzleEventDataRepository).singleton(),
+      sendLocalListRepository: asClass(DrizzleSendLocalListRepository).singleton(),
+      localListVersionRepository: asClass(DrizzleLocalListVersionRepository).singleton(),
     });
   }
 }

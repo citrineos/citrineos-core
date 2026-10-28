@@ -14,6 +14,7 @@ import {
   DrizzleChargingNeedsRepository,
   DrizzleChargingProfileRepository,
   DrizzleChargingScheduleRepository,
+  DrizzleLocalListVersionRepository,
   DrizzleChargingStationRepository,
   DrizzleChargingStationSequenceRepository,
   DrizzleComponentRepository,
@@ -29,6 +30,7 @@ import {
   DrizzleMessageInfoRepository,
   DrizzleReservationRepository,
   DrizzleSecurityEventRepository,
+  DrizzleSendLocalListRepository,
   DrizzleServerNetworkProfileRepository,
   DrizzleStatusNotificationRepository,
   DrizzleSubscriptionRepository,
@@ -176,7 +178,6 @@ describe('RepositoryStore', () => {
     expect(store.componentRepository).toBeInstanceOf(SequelizeDeviceModelRepository);
     expect(store.variableAttributeRepository).toBe(store.componentRepository);
     expect(store.variableCharacteristicsRepository).toBe(store.componentRepository);
-    expect(store.localAuthListRepository).toBeInstanceOf(SequelizeLocalAuthListRepository);
     expect(store.ocppMessageRepository).toBeInstanceOf(SequelizeOCPPMessageRepository);
     expect(store.transactionEventRepository).toBeInstanceOf(SequelizeTransactionEventRepository);
     expect(store.eventDataRepository).toBe(store.variableMonitoringRepository);
@@ -209,6 +210,8 @@ describe('RepositoryStore', () => {
       expect(store.installedCertificateRepository).toBeInstanceOf(
         SequelizeInstalledCertificateRepository,
       );
+      expect(store.sendLocalListRepository).toBeInstanceOf(SequelizeLocalAuthListRepository);
+      expect(store.localListVersionRepository).toBe(store.sendLocalListRepository);
       expect(store.locationRepository).toBeInstanceOf(SequelizeLocationRepository);
       expect(store.messageInfoRepository).toBeInstanceOf(SequelizeMessageInfoRepository);
       expect(store.reservationRepository).toBeInstanceOf(SequelizeReservationRepository);
@@ -289,8 +292,9 @@ describe('RepositoryStore', () => {
       expect(store.chargingNeedsRepository).toBeInstanceOf(DrizzleChargingNeedsRepository);
       expect(store.chargingScheduleRepository).toBeInstanceOf(DrizzleChargingScheduleRepository);
       expect(store.compositeScheduleRepository).toBeInstanceOf(DrizzleCompositeScheduleRepository);
+      expect(store.sendLocalListRepository).toBeInstanceOf(DrizzleSendLocalListRepository);
+      expect(store.localListVersionRepository).toBeInstanceOf(DrizzleLocalListVersionRepository);
       // Non-switchable repositories stay on sequelize even in drizzle mode.
-      expect(store.localAuthListRepository).toBeInstanceOf(SequelizeLocalAuthListRepository);
       expect(store.ocppMessageRepository).toBeInstanceOf(SequelizeOCPPMessageRepository);
     });
   });
