@@ -180,8 +180,7 @@ export class SequelizeDeviceModelRepository
               dataType: dataType ?? savedVariableAttribute.dataType,
               type: variableAttribute.type ?? savedVariableAttribute.type,
               value:
-                mutability === OCPP2_0_1.MutabilityEnumType.WriteOnly &&
-                !overwriteWriteOnly
+                mutability === OCPP2_0_1.MutabilityEnumType.WriteOnly && !overwriteWriteOnly
                   ? savedVariableAttribute.value
                   : (variableAttribute.value ?? null),
               mutability,
