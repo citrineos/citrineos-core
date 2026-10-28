@@ -84,6 +84,7 @@ export class SequelizeDeviceModelRepository
     value: OCPP2_0_1.ReportDataType,
     ocppConnectionName: string,
     isoTimestamp: string,
+    overwriteWriteOnly = false,
   ): Promise<VariableAttributeDto[]> {
     // Doing this here so that no records are created if the data is invalid
     const variableAttributeTypes = value.variableAttribute.map(
@@ -184,7 +185,7 @@ export class SequelizeDeviceModelRepository
               dataType: dataType ?? savedVariableAttribute.dataType,
               type: variableAttribute.type ?? savedVariableAttribute.type,
               value:
-                mutability === OCPP2_0_1.MutabilityEnumType.WriteOnly
+                mutability === OCPP2_0_1.MutabilityEnumType.WriteOnly && !overwriteWriteOnly
                   ? savedVariableAttribute.value
                   : (variableAttribute.value ?? null),
               mutability,

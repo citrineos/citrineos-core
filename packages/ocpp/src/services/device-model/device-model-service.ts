@@ -43,6 +43,7 @@ export class DeviceModelService {
         withDefaultedMutability,
         ocppConnectionName,
         timestamp,
+        true, // CSMS-initiated provisioning replaces existing values (#232)
       );
 
     if (!setOnCharger) {
