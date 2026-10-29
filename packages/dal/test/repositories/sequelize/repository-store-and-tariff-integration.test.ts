@@ -15,6 +15,7 @@ import {
   DrizzleChargingProfileRepository,
   DrizzleChargingScheduleRepository,
   DrizzleLocalListVersionRepository,
+  DrizzleOCPPMessageRepository,
   DrizzleChargingStationRepository,
   DrizzleChargingStationSequenceRepository,
   DrizzleComponentRepository,
@@ -294,8 +295,7 @@ describe('RepositoryStore', () => {
       expect(store.compositeScheduleRepository).toBeInstanceOf(DrizzleCompositeScheduleRepository);
       expect(store.sendLocalListRepository).toBeInstanceOf(DrizzleSendLocalListRepository);
       expect(store.localListVersionRepository).toBeInstanceOf(DrizzleLocalListVersionRepository);
-      // Non-switchable repositories stay on sequelize even in drizzle mode.
-      expect(store.ocppMessageRepository).toBeInstanceOf(SequelizeOCPPMessageRepository);
+      expect(store.ocppMessageRepository).toBeInstanceOf(DrizzleOCPPMessageRepository);
     });
   });
 

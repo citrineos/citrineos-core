@@ -63,6 +63,7 @@ import {
   DrizzleInstalledCertificateRepository,
   DrizzleLocalListVersionRepository,
   DrizzleMessageInfoRepository,
+  DrizzleOCPPMessageRepository,
   DrizzleReservationRepository,
   DrizzleSecurityEventRepository,
   DrizzleSendLocalListRepository,
@@ -149,11 +150,6 @@ export class RepositoryStore {
     sequelizeInstance: Sequelize;
   }) {
     this.sequelizeInstance = sequelizeInstance;
-    this.ocppMessageRepository = new SequelizeOCPPMessageRepository({
-      config,
-      logger,
-      sequelizeInstance,
-    });
     if (process.env.CITRINEOS_USE_DRIZZLE === 'true') {
       this.authorizationRepository = new DrizzleAuthorizationRepository({ config, logger });
       // Order matters: component -> variableAttribute -> boot, each injected into the next.
@@ -196,6 +192,7 @@ export class RepositoryStore {
       });
       this.messageInfoRepository = new DrizzleMessageInfoRepository({ config, logger });
       this.locationRepository = new DrizzleLocationRepository({ config, logger });
+      this.ocppMessageRepository = new DrizzleOCPPMessageRepository({ config, logger });
       this.reservationRepository = new DrizzleReservationRepository({ config, logger });
       this.securityEventRepository = new DrizzleSecurityEventRepository({ config, logger });
       this.serverNetworkProfileRepository = new DrizzleServerNetworkProfileRepository({
@@ -269,6 +266,11 @@ export class RepositoryStore {
         sequelizeInstance,
       });
       this.messageInfoRepository = new SequelizeMessageInfoRepository({
+        config,
+        logger,
+        sequelizeInstance,
+      });
+      this.ocppMessageRepository = new SequelizeOCPPMessageRepository({
         config,
         logger,
         sequelizeInstance,

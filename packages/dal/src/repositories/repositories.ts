@@ -799,8 +799,12 @@ export interface IOCPPMessageRepository {
     tenantId: number,
     correlationId: string,
   ): Promise<OCPPMessageDto | undefined>;
-  readOnlyOneByQuery(tenantId: number, query: object): Promise<OCPPMessageDto | undefined>;
-  readAllByQuery(tenantId: number, query: object): Promise<OCPPMessageDto[]>;
+  hasMessageWithPayloadRequestId(
+    tenantId: number,
+    ocppConnectionName: string,
+    action: CallAction,
+    requestId: number,
+  ): Promise<boolean>;
 }
 
 /** Reads and writes on one subject's alerts, inside the transaction that holds its lock. */

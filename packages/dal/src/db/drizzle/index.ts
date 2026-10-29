@@ -147,6 +147,10 @@ export {
   toMessageInfoDto,
 } from '../../repositories/drizzle/message-info.js';
 export {
+  DrizzleOCPPMessageRepository,
+  toOCPPMessageDto,
+} from '../../repositories/drizzle/ocpp-message.js';
+export {
   DrizzleNetworkAlertConfigRepository,
   toNetworkAlertConfigDto,
 } from '../../repositories/drizzle/network-alert-config.js';
