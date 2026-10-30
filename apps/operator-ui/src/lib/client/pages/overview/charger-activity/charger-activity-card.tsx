@@ -11,6 +11,7 @@ import {
   ConnectorStatusEnum,
 } from '@citrineos/types';
 import { ChargingStationClass } from '@lib/cls/charging-station-dto';
+import { getConnectorStatus } from '@lib/utils/connector-status';
 import { GET_CHARGING_STATIONS_WITH_LOCATION_AND_LATEST_STATUS_NOTIFICATIONS_AND_TRANSACTIONS } from '@lib/queries/charging-stations';
 import { ActionType, ResourceType } from '@lib/utils/access-types';
 import { useGqlCustom } from '@lib/utils/use-gql-custom';
@@ -79,11 +80,9 @@ const getOnlineStatusCountsForStation = (
   const counts: OnlineStatusCounts = getNewCounts();
 
   chargingStation.evses?.forEach((evse: EvseDto) => {
-    const latestStatusNotification = evse.connectors?.[0]?.latestStatusNotification;
+    const status = getConnectorStatus(chargingStation.protocol, evse.connectors?.[0]);
 
-    if (latestStatusNotification) {
-      const status = latestStatusNotification.connectorStatus;
-
+    if (status) {
       const chargerStatus = connectorStatusToChargerStatus(status);
 
       if (chargingStation.isOnline !== true) {
