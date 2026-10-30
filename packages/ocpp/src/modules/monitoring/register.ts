@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { asClass, asFunction, type AwilixContainer } from 'awilix';
+import { ConnectorStatusService } from './connector-status-service.js';
 import { MonitoringService } from './monitoring-service.js';
 import {
   type AbstractHandler,
@@ -43,6 +44,7 @@ const MONITORING_HANDLERS = [
 export function registerMonitoringServices(container: AwilixContainer): void {
   container.register({
     monitoringService: asClass(MonitoringService).scoped(),
+    connectorStatusService: asClass(ConnectorStatusService).scoped(),
     monitoringHandlers: asFunction((cradle: HandlerResolverCradle): AbstractHandler[] =>
       buildHandlers(cradle.moduleScope, MONITORING_HANDLERS),
     ).scoped(),

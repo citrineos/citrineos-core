@@ -22,6 +22,7 @@ import { Expose } from 'class-transformer';
 import { IsBoolean } from 'class-validator';
 import type { Point } from 'geojson';
 import { z } from 'zod';
+import { getConnectorStatus } from '@lib/utils/connector-status';
 
 const ChargingStationDetailsSchema = ChargingStationSchema.extend({
   location: LocationSchema.omit({ chargingPool: true }).optional(),
@@ -167,10 +168,8 @@ export const getChargingStationStatusCounts = (chargingStation: ChargingStationS
   const evses = chargingStation?.evses;
   if (evses && evses.length > 0) {
     for (const evse of evses) {
-      const latestStatusNotificationForEvse = evse.connectors?.[0]?.latestStatusNotification;
-      if (latestStatusNotificationForEvse) {
-        const connectorStatus: ConnectorStatusEnumType =
-          latestStatusNotificationForEvse?.connectorStatus || ConnectorStatusEnum.Unavailable;
+      const connectorStatus = getConnectorStatus(chargingStation.protocol, evse.connectors?.[0]);
+      if (connectorStatus) {
         const activeTransaction = (chargingStation as ChargingStationClass)?.transactions?.find(
           (transaction) => transaction.evseId === evse.id,
         );
