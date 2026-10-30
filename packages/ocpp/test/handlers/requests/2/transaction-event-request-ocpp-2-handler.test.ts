@@ -6,6 +6,7 @@ import { type ICache, type IMessage, CacheNamespace, DEFAULT_TENANT_ID } from '@
 import {
   type OcppRequest,
   type SystemConfig,
+  AuthorizationAttemptReasonEnum,
   AuthorizationStatusEnum,
   EventGroup,
   MessageOrigin,
@@ -17,7 +18,11 @@ import {
 } from '@citrineos/types';
 import type { ITransactionEventRepository, ITransactionRepository } from '@citrineos/dal';
 import { TransactionEventRequestOcpp2Handler } from '@handlers/index.js';
-import { createTestContainer, makeMockOcppSender } from '@test/test-container.js';
+import {
+  createTestContainer,
+  makeMockAuthorizationAttemptService,
+  makeRewritingOcppSender,
+} from '@test/test-container.js';
 import { describe, expect, it, type Mock, vi } from 'vitest';
 
 function makeConfig(): SystemConfig {
@@ -59,7 +64,7 @@ function makeHandler(
   } = {},
 ) {
   const { logger } = createTestContainer();
-  const ocppSender = makeMockOcppSender();
+  const ocppSender = makeRewritingOcppSender();
 
   const transactionRepository = {
     createOrUpdateTransactionByTransactionEventAndStationId: vi.fn().mockResolvedValue({
@@ -106,7 +111,10 @@ function makeHandler(
   };
   const costNotifier = { notifyWhileActive: vi.fn() };
 
+  const authorizationAttemptService = makeMockAuthorizationAttemptService();
+
   const handler = new TransactionEventRequestOcpp2Handler({
+    authorizationAttemptService,
     logger,
     ocppSender,
     cache: cache as unknown as ICache,
@@ -132,6 +140,7 @@ function makeHandler(
     costCalculator,
     signedMeterValuesUtil,
     variableAttributeRepository,
+    authorizationAttemptService,
   };
 }
 
@@ -1332,6 +1341,79 @@ describe('TransactionEventRequestOcpp2Handler', () => {
           totalCost: 4.25,
         }),
       );
+    });
+  });
+
+  describe('authorization attempts', () => {
+    const startedWithToken = {
+      eventType: OCPP2_0_1.TransactionEventEnumType.Started,
+      triggerReason: OCPP2_0_1.TriggerReasonEnumType.Authorized,
+      timestamp: new Date().toISOString(),
+      seqNo: 0,
+      evse: { id: 1, connectorId: 2 },
+      idToken: { idToken: 'TOKEN-1', type: OCPP2_0_1.IdTokenEnumType.ISO14443 },
+      transactionInfo: { transactionId: 'txn-001' },
+    } as OCPP2_0_1.TransactionEventRequest;
+
+    it('records the idToken against the transaction it was presented for', async () => {
+      const { handler, transactionEventRepository, authorizationAttemptService } = makeHandler({
+        transactionService: {
+          authorizeOcpp201IdToken: vi.fn(async (_tenantId, _event, _context, decision) => {
+            decision.reason = AuthorizationAttemptReasonEnum.Accepted;
+            return { idTokenInfo: { status: AuthorizationStatusEnum.Accepted } };
+          }),
+        },
+      });
+      const message = makeMessage(startedWithToken);
+
+      const { context } = message;
+
+      await handler.handle(message);
+
+      const transaction = await vi.mocked(
+        transactionEventRepository.createOrUpdateTransactionByTransactionEventAndStationId,
+      ).mock.results[0].value;
+      expect(authorizationAttemptService.record).toHaveBeenCalledWith(context, {
+        ocppVersion: OCPPVersion.OCPP2_0_1,
+        action: OCPP_CallAction.TransactionEvent,
+        idToken: 'TOKEN-1',
+        idTokenType: OCPP2_0_1.IdTokenEnumType.ISO14443,
+        decision: { reason: AuthorizationAttemptReasonEnum.Accepted },
+        responseStatus: AuthorizationStatusEnum.Accepted,
+        details: {
+          eventType: OCPP2_0_1.TransactionEventEnumType.Started,
+          triggerReason: OCPP2_0_1.TriggerReasonEnumType.Authorized,
+        },
+        evseId: 1,
+        connectorId: 2,
+        transaction,
+        transactionId: 'txn-001',
+      });
+    });
+
+    it('records the attempt for an event on an already-ended transaction', async () => {
+      const ended = { id: 1, transactionId: 'txn-001', isActive: false };
+      const { handler, authorizationAttemptService } = makeHandler({
+        transactionEventRepository: {
+          readTransactionByStationIdAndTransactionId: vi.fn().mockResolvedValue(ended),
+        } as never,
+      });
+
+      await handler.handle(
+        makeMessage({ ...startedWithToken, eventType: OCPP2_0_1.TransactionEventEnumType.Ended }),
+      );
+
+      expect(authorizationAttemptService.record).toHaveBeenCalledOnce();
+      expect(authorizationAttemptService.record.mock.calls[0][1].transaction).toBe(ended);
+    });
+
+    it('records nothing for an event that carries no idToken', async () => {
+      const { idToken: _, ...withoutIdToken } = startedWithToken;
+      const { handler, authorizationAttemptService } = makeHandler();
+
+      await handler.handle(makeMessage(withoutIdToken));
+
+      expect(authorizationAttemptService.record).not.toHaveBeenCalled();
     });
   });
 });

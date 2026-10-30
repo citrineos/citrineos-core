@@ -20,6 +20,7 @@ import {
 import { cardTabsStyle } from '@lib/client/styles/card';
 import { useColumnPreferences } from '@lib/client/hooks/use-column-preferences';
 import { useTranslate } from '@refinedev/core';
+import { AuthorizationAttemptsTable } from '@lib/client/pages/authorizations/attempts/authorization-attempts-table';
 
 export const AuthorizationDetailTabsCard = ({
   authorization,
@@ -42,6 +43,9 @@ export const AuthorizationDetailTabsCard = ({
         <Tabs defaultValue="transactions">
           <TabsList>
             <TabsTrigger value="transactions">{translate('Transactions.Transactions')}</TabsTrigger>
+            <TabsTrigger value="attempts">
+              {translate('AuthorizationAttempts.AuthorizationAttempts')}
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="transactions" className={cardTabsStyle}>
             <CanAccess resource={ResourceType.TRANSACTIONS} action={ActionType.LIST}>
@@ -70,6 +74,11 @@ export const AuthorizationDetailTabsCard = ({
                 {renderedVisibleColumns}
               </Table>
             </CanAccess>
+          </TabsContent>
+          <TabsContent value="attempts" className={cardTabsStyle}>
+            {authorization?.id !== undefined && (
+              <AuthorizationAttemptsTable authorizationId={authorization.id} />
+            )}
           </TabsContent>
         </Tabs>
       </CardContent>
