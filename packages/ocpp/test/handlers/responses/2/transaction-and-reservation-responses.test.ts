@@ -83,7 +83,7 @@ describe('RequestStartTransactionResponseOcpp2Handler', () => {
 
   beforeEach(() => {
     chargingProfileRepository = {
-      updateAllByQuery: vi.fn().mockResolvedValue([]),
+      deactivateChargingProfiles: vi.fn().mockResolvedValue([]),
     } as unknown as Mocked<IChargingProfileRepository>;
     idGenerator = {
       generateRequestId: vi.fn().mockResolvedValue(GENERATED_REQUEST_ID),
@@ -113,18 +113,13 @@ describe('RequestStartTransactionResponseOcpp2Handler', () => {
       } as never),
     );
 
-    expect(chargingProfileRepository.updateAllByQuery).toHaveBeenCalledTimes(1);
-    expect(chargingProfileRepository.updateAllByQuery).toHaveBeenCalledWith(
+    expect(chargingProfileRepository.deactivateChargingProfiles).toHaveBeenCalledTimes(1);
+    expect(chargingProfileRepository.deactivateChargingProfiles).toHaveBeenCalledWith(
       DEFAULT_TENANT_ID,
-      { isActive: false },
+      STATION,
       {
-        where: {
-          ocppConnectionName: STATION,
-          isActive: true,
-          chargingLimitSource: ChargingLimitSourceEnum.CSO,
-          chargingProfilePurpose: ChargingProfilePurposeEnum.TxProfile,
-        },
-        returning: false,
+        chargingLimitSource: ChargingLimitSourceEnum.CSO,
+        chargingProfilePurpose: ChargingProfilePurposeEnum.TxProfile,
       },
     );
   });
@@ -170,7 +165,7 @@ describe('RequestStartTransactionResponseOcpp2Handler', () => {
       } as never),
     );
 
-    expect(chargingProfileRepository.updateAllByQuery).toHaveBeenCalledTimes(1);
+    expect(chargingProfileRepository.deactivateChargingProfiles).toHaveBeenCalledTimes(1);
     expect(idGenerator.generateRequestId).not.toHaveBeenCalled();
     expect(ocppSender.sendCall).not.toHaveBeenCalled();
   });
@@ -184,7 +179,7 @@ describe('RequestStartTransactionResponseOcpp2Handler', () => {
       } as never),
     );
 
-    expect(chargingProfileRepository.updateAllByQuery).not.toHaveBeenCalled();
+    expect(chargingProfileRepository.deactivateChargingProfiles).not.toHaveBeenCalled();
     expect(ocppSender.sendCall).not.toHaveBeenCalled();
     expect(logger.error).toHaveBeenCalledTimes(1);
     expect(logger.error).toHaveBeenCalledWith(

@@ -2,8 +2,17 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 import { CrudRepository } from '@citrineos/base';
-import { OCPP1_6, OCPP2_0_1 } from '@citrineos/types';
-import type { IAuthorizationRepository, ILocalAuthListRepository } from '../repositories.js';
+import {
+  OCPP1_6,
+  OCPP2_0_1,
+  type LocalListVersionDto,
+  type SendLocalListDto,
+} from '@citrineos/types';
+import type {
+  IAuthorizationRepository,
+  ILocalListVersionRepository,
+  ISendLocalListRepository,
+} from '../repositories.js';
 import { AuthorizationMapper } from '../../mappers/2.0.1/authorization-mapper.js';
 import { LocalAuthListMapper } from '../../mappers/1.6/local-auth-list-mapper.js';
 import { Authorization } from '../../models/authorization/authorization.js';
@@ -17,17 +26,17 @@ import { SequelizeRepository, type SequelizeRepositoryDependencies } from './bas
 
 export class SequelizeLocalAuthListRepository
   extends SequelizeRepository<LocalListVersion>
-  implements ILocalAuthListRepository
+  implements ISendLocalListRepository, ILocalListVersionRepository
 {
   authorization: IAuthorizationRepository;
   localListAuthorization: CrudRepository<LocalListAuthorization>;
   sendLocalList: CrudRepository<SendLocalList>;
 
   constructor({ config, logger, sequelizeInstance }: SequelizeRepositoryDependencies) {
-    // The repo's primary model is LocalListVersion, matching the
-    // ILocalAuthListRepository<LocalListVersion> contract: the inherited CRUD
-    // queries operate on LocalListVersion and resolve associations such as
-    // LocalListAuthorization through it.
+    // One Sequelize instance serves both ISendLocalListRepository and
+    // ILocalListVersionRepository. Its primary model is LocalListVersion, so the
+    // inherited CRUD queries operate on that table and resolve associations such
+    // as LocalListAuthorization through it.
     super({ config, namespace: LocalListVersion.MODEL_NAME, logger, sequelizeInstance });
     this.authorization = new SequelizeAuthorizationRepository({
       config,
@@ -55,7 +64,7 @@ export class SequelizeLocalAuthListRepository
     updateType: OCPP2_0_1.UpdateEnumType,
     versionNumber: number,
     localAuthorizationList?: OCPP2_0_1.AuthorizationData[],
-  ): Promise<SendLocalList> {
+  ): Promise<SendLocalListDto> {
     const sendLocalList = await this.sendLocalList.create(
       tenantId,
       SendLocalList.build({
@@ -153,7 +162,7 @@ export class SequelizeLocalAuthListRepository
     updateType: OCPP1_6.SendLocalListRequestUpdateType,
     versionNumber: number,
     localAuthorizationList?: NonNullable<OCPP1_6.SendLocalListRequest['localAuthorizationList']>,
-  ): Promise<SendLocalList> {
+  ): Promise<SendLocalListDto> {
     const sendLocalList = await this.sendLocalList.create(
       tenantId,
       SendLocalList.build({
@@ -285,11 +294,21 @@ export class SequelizeLocalAuthListRepository
     });
   }
 
+  async readLocalListVersionByStationId(
+    tenantId: number,
+    ocppConnectionName: string,
+  ): Promise<LocalListVersionDto | undefined> {
+    return this.readOnlyOneByQuery(tenantId, {
+      where: { ocppConnectionName: ocppConnectionName },
+      include: [LocalListAuthorization],
+    });
+  }
+
   async getSendLocalListRequestByStationIdAndCorrelationId(
     tenantId: number,
     ocppConnectionName: string,
     correlationId: string,
-  ): Promise<SendLocalList | undefined> {
+  ): Promise<SendLocalListDto | undefined> {
     // Eager-load the LocalListAuthorization rows that the SendLocalList row was
     // created with. The Accept-path of replaceLocalListVersion / updateLocal-
     // ListVersion iterates sendLocalList.localAuthorizationList to populate the
@@ -305,8 +324,8 @@ export class SequelizeLocalAuthListRepository
   async createOrUpdateLocalListVersionFromStationIdAndSendLocalList(
     tenantId: number,
     ocppConnectionName: string,
-    sendLocalList: SendLocalList,
-  ): Promise<LocalListVersion> {
+    sendLocalList: SendLocalListDto,
+  ): Promise<LocalListVersionDto> {
     switch (sendLocalList.updateType) {
       case OCPP2_0_1.UpdateEnumType.Full:
         return this.replaceLocalListVersionFromStationIdAndSendLocalList(
@@ -320,14 +339,16 @@ export class SequelizeLocalAuthListRepository
           ocppConnectionName,
           sendLocalList,
         );
+      default:
+        throw new Error(`Unknown SendLocalList updateType ${sendLocalList.updateType}`);
     }
   }
 
   private async replaceLocalListVersionFromStationIdAndSendLocalList(
     tenantId: number,
     ocppConnectionName: string,
-    sendLocalList: SendLocalList,
-  ): Promise<LocalListVersion> {
+    sendLocalList: SendLocalListDto,
+  ): Promise<LocalListVersionDto> {
     const localListVersion = await this.s.transaction(async (transaction) => {
       const oldLocalListVersion = await LocalListVersion.findOne({
         where: { tenantId, ocppConnectionName: ocppConnectionName },
@@ -382,8 +403,8 @@ export class SequelizeLocalAuthListRepository
   private async updateLocalListVersionFromStationIdAndSendLocalListRequest(
     tenantId: number,
     ocppConnectionName: string,
-    sendLocalList: SendLocalList,
-  ): Promise<LocalListVersion> {
+    sendLocalList: SendLocalListDto,
+  ): Promise<LocalListVersionDto> {
     const localListVersion = await this.s.transaction(async (transaction) => {
       if (!sendLocalList.localAuthorizationList) {
         // See D01.FR.05

@@ -66,19 +66,12 @@ export class RequestStartTransactionResponseOcpp2Handler extends AbstractHandler
       // we need to update db entity with the latest data from charger
       const ocppConnectionName: string = message.context.ocppConnectionName;
       // 1. Clear all existing profiles: find existing active profiles and set them to isActive false
-      await this._chargingProfileRepository.updateAllByQuery(
+      await this._chargingProfileRepository.deactivateChargingProfiles(
         message.context.tenantId,
+        ocppConnectionName,
         {
-          isActive: false,
-        },
-        {
-          where: {
-            ocppConnectionName: ocppConnectionName,
-            isActive: true,
-            chargingLimitSource: ChargingLimitSourceEnum.CSO,
-            chargingProfilePurpose: ChargingProfilePurposeEnum.TxProfile,
-          },
-          returning: false,
+          chargingLimitSource: ChargingLimitSourceEnum.CSO,
+          chargingProfilePurpose: ChargingProfilePurposeEnum.TxProfile,
         },
       );
       // 2. Request charging profiles to get the latest data (if configured)

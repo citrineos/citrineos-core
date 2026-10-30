@@ -31,7 +31,6 @@ import {
   type TransactionDto,
 } from '@citrineos/types';
 import {
-  ChargingSchedule,
   type IChargingProfileRepository,
   type IVariableAttributeRepository,
   type ITransactionEventRepository,
@@ -456,16 +455,11 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
 
           try {
             // Query active TxProfile charging profiles associated with this transaction
-            const txProfiles = await this._chargingProfileRepository.readAllByQuery(tenantId, {
-              where: {
-                tenantId,
-                ocppConnectionName,
-                chargingProfilePurpose: OCPP2_1.ChargingProfilePurposeEnumType.TxProfile,
-                transactionDatabaseId: transaction.id,
-                isActive: true,
-              },
-              include: [{ model: ChargingSchedule, as: 'chargingSchedule' }],
-            });
+            const txProfiles = await this._chargingProfileRepository.readTxProfilesWithSchedules(
+              tenantId,
+              ocppConnectionName,
+              transaction.id,
+            );
 
             if (txProfiles.length > 0) {
               this._logger.info(

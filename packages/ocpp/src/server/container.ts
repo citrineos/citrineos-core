@@ -30,10 +30,14 @@ import {
   DrizzleCertificateRepository,
   DrizzleChangeConfigurationRepository,
   DrizzleChargingStationNetworkProfileRepository,
+  DrizzleChargingNeedsRepository,
+  DrizzleChargingProfileRepository,
+  DrizzleChargingScheduleRepository,
   DrizzleChargingStationRepository,
   DrizzleChargingStationSecurityInfoRepository,
   DrizzleChargingStationSequenceRepository,
   DrizzleComponentRepository,
+  DrizzleCompositeScheduleRepository,
   DrizzleConnectorRepository,
   DrizzleLocationRepository,
   DrizzleMeterValueRepository,
@@ -43,9 +47,11 @@ import {
   DrizzleDeleteCertificateAttemptRepository,
   DrizzleInstallCertificateAttemptRepository,
   DrizzleInstalledCertificateRepository,
+  DrizzleLocalListVersionRepository,
   DrizzleMessageInfoRepository,
   DrizzleReservationRepository,
   DrizzleSecurityEventRepository,
+  DrizzleSendLocalListRepository,
   DrizzleWebsocketEventRepository,
   DrizzleNetworkAlertConfigRepository,
   DrizzleNetworkAlertRepository,
@@ -353,7 +359,7 @@ function registerRepositories(container: AwilixContainer): void {
       SequelizeInstallCertificateAttemptRepository,
     ).singleton(),
     installedCertificateRepository: asClass(SequelizeInstalledCertificateRepository).singleton(),
-    localAuthListRepository: asClass(SequelizeLocalAuthListRepository).singleton(),
+    sendLocalListRepository: asClass(SequelizeLocalAuthListRepository).singleton(),
     locationRepository: asClass(SequelizeLocationRepository).singleton(),
     messageInfoRepository: asClass(SequelizeMessageInfoRepository).singleton(),
     ocppMessageRepository: asClass(SequelizeOCPPMessageRepository).singleton(),
@@ -380,6 +386,18 @@ function registerRepositories(container: AwilixContainer): void {
     // use asFunction to return an already existing instance
     chargingStationRepository: asFunction(
       ({ locationRepository }) => locationRepository,
+    ).singleton(),
+    chargingNeedsRepository: asFunction(
+      ({ chargingProfileRepository }) => chargingProfileRepository,
+    ).singleton(),
+    chargingScheduleRepository: asFunction(
+      ({ chargingProfileRepository }) => chargingProfileRepository,
+    ).singleton(),
+    localListVersionRepository: asFunction(
+      ({ sendLocalListRepository }) => sendLocalListRepository,
+    ).singleton(),
+    compositeScheduleRepository: asFunction(
+      ({ chargingProfileRepository }) => chargingProfileRepository,
     ).singleton(),
     componentRepository: asFunction(
       ({ variableAttributeRepository }) => variableAttributeRepository,
@@ -454,7 +472,13 @@ function registerRepositories(container: AwilixContainer): void {
         DrizzleVariableCharacteristicsRepository,
       ).singleton(),
       variableMonitoringRepository: asClass(DrizzleVariableMonitoringRepository).singleton(),
+      chargingProfileRepository: asClass(DrizzleChargingProfileRepository).singleton(),
+      chargingNeedsRepository: asClass(DrizzleChargingNeedsRepository).singleton(),
+      chargingScheduleRepository: asClass(DrizzleChargingScheduleRepository).singleton(),
+      compositeScheduleRepository: asClass(DrizzleCompositeScheduleRepository).singleton(),
       eventDataRepository: asClass(DrizzleEventDataRepository).singleton(),
+      sendLocalListRepository: asClass(DrizzleSendLocalListRepository).singleton(),
+      localListVersionRepository: asClass(DrizzleLocalListVersionRepository).singleton(),
     });
   }
 }

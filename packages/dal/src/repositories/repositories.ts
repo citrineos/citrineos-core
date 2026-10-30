@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { CrudRepository } from '@citrineos/base';
 import type {
   AsyncJobCreate,
   AsyncJobDto,
@@ -19,10 +18,13 @@ import type {
   ChangeConfigurationDto,
   ChargingLimitSourceEnumType,
   ChargingProfilePurposeEnumType,
+  ChargingNeedsDto,
+  ChargingProfileDto,
   ChargingStationDto,
   ChargingStationNetworkProfileDto,
   ChargingStationSequenceTypeEnumType,
   ComponentDto,
+  CompositeScheduleDto,
   ConnectorDto,
   DeleteCertificateAttemptCreate,
   DeleteCertificateAttemptDto,
@@ -35,6 +37,7 @@ import type {
   InstallCertificateStatusEnumType,
   InstalledCertificateCreate,
   InstalledCertificateDto,
+  LocalListVersionDto,
   LocationDto,
   MessageInfoDto,
   MessageOrigin,
@@ -54,6 +57,7 @@ import type {
   OCPPVersion,
   ReservationDto,
   SecurityEventDto,
+  SendLocalListDto,
   ServerNetworkProfileDto,
   SetNetworkProfileDto,
   StatusNotificationDto,
@@ -87,13 +91,6 @@ import type {
   CompositeScheduleInput,
 } from '../mappers/2.0.1/charging-profile-mapper.js';
 import type { CompositeScheduleInput as CompositeScheduleInput21 } from '../mappers/2.1/charging-profile-mapper.js';
-import type { LocalListVersion } from '../models/authorization/local-list-version.js';
-import type { SendLocalList } from '../models/authorization/send-local-list.js';
-import type {
-  ChargingNeeds,
-  ChargingProfile,
-  CompositeSchedule,
-} from '../models/charging-profile/index.js';
 
 export type AsyncJobStatusUpdate = Partial<
   Pick<
@@ -225,7 +222,7 @@ export interface IComponentRepository {
   ): Promise<ComponentDto[]>;
 }
 
-export interface ILocalAuthListRepository extends CrudRepository<LocalListVersion> {
+export interface ISendLocalListRepository {
   /**
    * Creates a SendLocalList.
    * @param {number} tenantId - The tenant ID.
@@ -234,7 +231,7 @@ export interface ILocalAuthListRepository extends CrudRepository<LocalListVersio
    * @param {UpdateEnumType} updateType - The type of update.
    * @param {number} versionNumber - The version number.
    * @param {AuthorizationData[]} localAuthorizationList - The list of authorizations.
-   * @return {SendLocalList} The database object. Contains the correlationId to be used for the sendLocalListRequest.
+   * @return {SendLocalListDto} The database object. Contains the correlationId to be used for the sendLocalListRequest.
    */
   createSendLocalListFromRequestData(
     tenantId: number,
@@ -243,7 +240,7 @@ export interface ILocalAuthListRepository extends CrudRepository<LocalListVersio
     updateType: UpdateEnumType,
     versionNumber: number,
     localAuthorizationList?: OCPP2_common_types.AuthorizationData[],
-  ): Promise<SendLocalList>;
+  ): Promise<SendLocalListDto>;
   /**
    * OCPP 1.6 variant. Resolves Authorization rows by flat idTag (no IdTokenEnumType).
    * For DIFFERENTIAL deletes, an entry without idTagInfo is allowed and recorded as a tombstone.
@@ -255,7 +252,15 @@ export interface ILocalAuthListRepository extends CrudRepository<LocalListVersio
     updateType: OCPP1_6.SendLocalListRequestUpdateType,
     versionNumber: number,
     localAuthorizationList?: NonNullable<OCPP1_6.SendLocalListRequest['localAuthorizationList']>,
-  ): Promise<SendLocalList>;
+  ): Promise<SendLocalListDto>;
+  getSendLocalListRequestByStationIdAndCorrelationId(
+    tenantId: number,
+    ocppConnectionName: string,
+    correlationId: string,
+  ): Promise<SendLocalListDto | undefined>;
+}
+
+export interface ILocalListVersionRepository {
   /**
    * Used to process GetLocalListVersionResponse, if version is unknown it will create or update LocalListVersion with the new version and an empty localAuthorizationList.
    * @param tenantId
@@ -267,23 +272,22 @@ export interface ILocalAuthListRepository extends CrudRepository<LocalListVersio
     versionNumber: number,
     ocppConnectionName: string,
   ): Promise<void>;
-  getSendLocalListRequestByStationIdAndCorrelationId(
+  readLocalListVersionByStationId(
     tenantId: number,
     ocppConnectionName: string,
-    correlationId: string,
-  ): Promise<SendLocalList | undefined>;
+  ): Promise<LocalListVersionDto | undefined>;
   /**
    * Used to process SendLocalListResponse.
    * @param tenantId
    * @param ocppConnectionName - The connection name of the charging station
-   * @param {SendLocalList} sendLocalList - The SendLocalList object created from the associated SendLocalListRequest.
-   * @returns {LocalListVersion} LocalListVersion - The updated LocalListVersion.
+   * @param {SendLocalListDto} sendLocalList - The SendLocalList object created from the associated SendLocalListRequest.
+   * @returns {LocalListVersionDto} LocalListVersion - The updated LocalListVersion.
    */
   createOrUpdateLocalListVersionFromStationIdAndSendLocalList(
     tenantId: number,
     ocppConnectionName: string,
-    sendLocalList: SendLocalList,
-  ): Promise<LocalListVersion>;
+    sendLocalList: SendLocalListDto,
+  ): Promise<LocalListVersionDto>;
 }
 
 export interface ILocationRepository {
@@ -681,7 +685,28 @@ export interface IDeleteCertificateAttemptRepository {
   ): Promise<DeleteCertificateAttemptDto | undefined>;
 }
 
-export interface IChargingProfileRepository extends CrudRepository<ChargingProfile> {
+/** Criteria for locating stored charging profiles; omitted fields are not filtered on. */
+export interface ChargingProfileQuery {
+  ocppConnectionName?: string;
+  stackLevel?: number;
+  chargingProfilePurpose?: ChargingProfilePurposeEnumType;
+  evseId?: number | null;
+  transactionDatabaseId?: number | null;
+  isActive?: boolean;
+}
+
+/** Criteria for the profiles a station has just superseded or cleared. */
+export interface ChargingProfileDeactivation {
+  chargingProfileId?: number;
+  /** The profile the station just accepted, which must stay active. */
+  excludeChargingProfileId?: number;
+  evseId?: number | null;
+  stackLevel?: number;
+  chargingProfilePurpose?: ChargingProfilePurposeEnumType;
+  chargingLimitSource?: ChargingLimitSourceEnumType;
+}
+
+export interface IChargingProfileRepository {
   createOrUpdateChargingProfile(
     tenantId: number,
     chargingProfile: ChargingProfileInput,
@@ -689,30 +714,58 @@ export interface IChargingProfileRepository extends CrudRepository<ChargingProfi
     evseId?: number | null,
     chargingLimitSource?: ChargingLimitSourceEnumType,
     isActive?: boolean,
-  ): Promise<ChargingProfile>;
-  createChargingNeeds(
+  ): Promise<ChargingProfileDto>;
+  readChargingProfiles(
     tenantId: number,
-    chargingNeeds: OCPP2_request_types.NotifyEVChargingNeedsRequest,
+    query: ChargingProfileQuery,
+  ): Promise<ChargingProfileDto[]>;
+  readTxProfilesWithSchedules(
+    tenantId: number,
     ocppConnectionName: string,
-  ): Promise<ChargingNeeds>;
-  findChargingNeedsByEvseDBIdAndTransactionDBId(
+    transactionDatabaseId: number | null | undefined,
+  ): Promise<ChargingProfileDto[]>;
+  readHighestStackLevelTxProfile(
     tenantId: number,
-    evseDBId: number,
-    transactionDataBaseId: number,
-  ): Promise<ChargingNeeds | undefined>;
-  createCompositeSchedule(
-    tenantId: number,
-    compositeSchedule: CompositeScheduleInput | CompositeScheduleInput21,
     ocppConnectionName: string,
-  ): Promise<CompositeSchedule>;
+    transactionDatabaseId: number | null,
+  ): Promise<ChargingProfileDto | undefined>;
+  deactivateChargingProfiles(
+    tenantId: number,
+    ocppConnectionName: string,
+    criteria: ChargingProfileDeactivation,
+  ): Promise<number>;
   getNextChargingProfileId(tenantId: number, ocppConnectionName: string): Promise<number>;
-  getNextChargingScheduleId(tenantId: number, ocppConnectionName: string): Promise<number>;
   getNextStackLevel(
     tenantId: number,
     ocppConnectionName: string,
     transactionDatabaseId: number | null,
     profilePurpose: ChargingProfilePurposeEnumType,
   ): Promise<number>;
+}
+
+export interface IChargingScheduleRepository {
+  getNextChargingScheduleId(tenantId: number, ocppConnectionName: string): Promise<number>;
+}
+
+export interface IChargingNeedsRepository {
+  createChargingNeeds(
+    tenantId: number,
+    chargingNeeds: OCPP2_request_types.NotifyEVChargingNeedsRequest,
+    ocppConnectionName: string,
+  ): Promise<ChargingNeedsDto>;
+  findChargingNeedsByEvseDBIdAndTransactionDBId(
+    tenantId: number,
+    evseDBId: number,
+    transactionDataBaseId: number,
+  ): Promise<ChargingNeedsDto | undefined>;
+}
+
+export interface ICompositeScheduleRepository {
+  createCompositeSchedule(
+    tenantId: number,
+    compositeSchedule: CompositeScheduleInput | CompositeScheduleInput21,
+    ocppConnectionName: string,
+  ): Promise<CompositeScheduleDto>;
 }
 
 export interface IReservationRepository {

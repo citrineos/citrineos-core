@@ -83,6 +83,52 @@ export {
   DrizzleInstalledCertificateRepository,
   toInstalledCertificateDto,
 } from '../../repositories/drizzle/installed-certificate.js';
+export {
+  DrizzleLocalListAuthorizationRepository,
+  toLocalListAuthorizationDto,
+  type LocalListAuthorizationInput,
+} from '../../repositories/drizzle/local-list-authorization.js';
+export {
+  localListAuthorizationTable,
+  tenantLocalListAuthorizationTable,
+  LocalListAuthorizationEntitySchema,
+  LocalListAuthorizationEntityInsertSchema,
+  type LocalListAuthorizationEntity,
+  type LocalListAuthorizationEntityInsert,
+} from './schema/local-list-authorization.js';
+export {
+  DrizzleLocalListVersionRepository,
+  toLocalListVersionDto,
+} from '../../repositories/drizzle/local-list-version.js';
+export {
+  localListVersionTable,
+  tenantLocalListVersionTable,
+  LocalListVersionEntitySchema,
+  LocalListVersionEntityInsertSchema,
+  type LocalListVersionEntity,
+  type LocalListVersionEntityInsert,
+} from './schema/local-list-version.js';
+export {
+  localListVersionAuthorizationTable,
+  tenantLocalListVersionAuthorizationTable,
+} from './schema/local-list-version-authorization.js';
+export {
+  DrizzleSendLocalListRepository,
+  toSendLocalListDto,
+  type SendLocalListInput,
+} from '../../repositories/drizzle/send-local-list.js';
+export {
+  sendLocalListTable,
+  tenantSendLocalListTable,
+  SendLocalListEntitySchema,
+  SendLocalListEntityInsertSchema,
+  type SendLocalListEntity,
+  type SendLocalListEntityInsert,
+} from './schema/send-local-list.js';
+export {
+  sendLocalListAuthorizationTable,
+  tenantSendLocalListAuthorizationTable,
+} from './schema/send-local-list-authorization.js';
 export { DrizzleLocationRepository, toLocationDto } from '../../repositories/drizzle/location.js';
 export {
   DrizzleMeterValueRepository,
@@ -137,6 +183,26 @@ export {
   DrizzleEventDataRepository,
   toEventDataDto,
 } from '../../repositories/drizzle/event-data.js';
+export {
+  DrizzleChargingNeedsRepository,
+  toChargingNeedsDto,
+} from '../../repositories/drizzle/charging-needs.js';
+export {
+  DrizzleChargingProfileRepository,
+  toChargingProfileDto,
+} from '../../repositories/drizzle/charging-profile.js';
+export {
+  DrizzleChargingScheduleRepository,
+  toChargingScheduleDto,
+} from '../../repositories/drizzle/charging-schedule.js';
+export {
+  DrizzleCompositeScheduleRepository,
+  toCompositeScheduleDto,
+} from '../../repositories/drizzle/composite-schedule.js';
+export {
+  DrizzleSalesTariffRepository,
+  toSalesTariffDto,
+} from '../../repositories/drizzle/sales-tariff.js';
 export {
   DrizzleVariableMonitoringRepository,
   toVariableMonitoringDto,

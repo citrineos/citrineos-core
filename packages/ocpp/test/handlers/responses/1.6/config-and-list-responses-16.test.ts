@@ -17,7 +17,8 @@ import {
 import type {
   IChangeConfigurationRepository,
   IChargingProfileRepository,
-  ILocalAuthListRepository,
+  ILocalListVersionRepository,
+  ISendLocalListRepository,
 } from '@citrineos/dal';
 import {
   ChangeConfigurationResponseOcpp16Handler,
@@ -64,21 +65,25 @@ function makeMessage<T extends OcppResponse, R extends OcppRequest = OcppRequest
 describe('SendLocalListResponseOcpp16Handler', () => {
   const originalRequest = { listVersion: 5, updateType: 'Full' };
   let handler: SendLocalListResponseOcpp16Handler;
-  let localAuthListRepository: Mocked<ILocalAuthListRepository>;
+  let sendLocalListRepository: Mocked<ISendLocalListRepository>;
+  let localListVersionRepository: Mocked<ILocalListVersionRepository>;
   let ocppSender: MockOcppSender;
 
   beforeEach(() => {
     const { container } = createTestContainer();
-    localAuthListRepository = {
+    sendLocalListRepository = {
       getSendLocalListRequestByStationIdAndCorrelationId: vi
         .fn()
         .mockResolvedValue(originalRequest),
+    } as unknown as Mocked<ISendLocalListRepository>;
+    localListVersionRepository = {
       createOrUpdateLocalListVersionFromStationIdAndSendLocalList: vi.fn().mockResolvedValue({}),
-    } as unknown as Mocked<ILocalAuthListRepository>;
+    } as unknown as Mocked<ILocalListVersionRepository>;
     ocppSender = makeMockOcppSender();
     handler = getTestInstance(container, SendLocalListResponseOcpp16Handler, {
       ocppSender,
-      localAuthListRepository,
+      sendLocalListRepository,
+      localListVersionRepository,
     });
   });
 
@@ -90,13 +95,13 @@ describe('SendLocalListResponseOcpp16Handler', () => {
     await respond(OCPP1_6.SendLocalListResponseStatus.Accepted);
 
     expect(
-      localAuthListRepository.getSendLocalListRequestByStationIdAndCorrelationId,
+      sendLocalListRepository.getSendLocalListRequestByStationIdAndCorrelationId,
     ).toHaveBeenCalledWith(DEFAULT_TENANT_ID, STATION, CORRELATION_ID);
     expect(
-      localAuthListRepository.createOrUpdateLocalListVersionFromStationIdAndSendLocalList,
+      localListVersionRepository.createOrUpdateLocalListVersionFromStationIdAndSendLocalList,
     ).toHaveBeenCalledTimes(1);
     expect(
-      localAuthListRepository.createOrUpdateLocalListVersionFromStationIdAndSendLocalList,
+      localListVersionRepository.createOrUpdateLocalListVersionFromStationIdAndSendLocalList,
     ).toHaveBeenCalledWith(DEFAULT_TENANT_ID, STATION, originalRequest);
     expect(ocppSender.sendCall).not.toHaveBeenCalled();
   });
@@ -105,7 +110,7 @@ describe('SendLocalListResponseOcpp16Handler', () => {
     await respond(OCPP1_6.SendLocalListResponseStatus.Failed);
 
     expect(
-      localAuthListRepository.createOrUpdateLocalListVersionFromStationIdAndSendLocalList,
+      localListVersionRepository.createOrUpdateLocalListVersionFromStationIdAndSendLocalList,
     ).not.toHaveBeenCalled();
     expect(ocppSender.sendCall).not.toHaveBeenCalled();
   });
@@ -114,7 +119,7 @@ describe('SendLocalListResponseOcpp16Handler', () => {
     await respond(OCPP1_6.SendLocalListResponseStatus.NotSupported);
 
     expect(
-      localAuthListRepository.createOrUpdateLocalListVersionFromStationIdAndSendLocalList,
+      localListVersionRepository.createOrUpdateLocalListVersionFromStationIdAndSendLocalList,
     ).not.toHaveBeenCalled();
     expect(ocppSender.sendCall).not.toHaveBeenCalled();
   });
@@ -123,7 +128,7 @@ describe('SendLocalListResponseOcpp16Handler', () => {
     await respond(OCPP1_6.SendLocalListResponseStatus.VersionMismatch);
 
     expect(
-      localAuthListRepository.createOrUpdateLocalListVersionFromStationIdAndSendLocalList,
+      localListVersionRepository.createOrUpdateLocalListVersionFromStationIdAndSendLocalList,
     ).not.toHaveBeenCalled();
     expect(ocppSender.sendCall).toHaveBeenCalledTimes(1);
     expect(ocppSender.sendCall).toHaveBeenCalledWith({
@@ -146,14 +151,14 @@ describe('SendLocalListResponseOcpp16Handler', () => {
   });
 
   it('missing correlated request aborts before any write or send', async () => {
-    localAuthListRepository.getSendLocalListRequestByStationIdAndCorrelationId.mockResolvedValue(
+    sendLocalListRepository.getSendLocalListRequestByStationIdAndCorrelationId.mockResolvedValue(
       undefined as never,
     );
 
     await respond(OCPP1_6.SendLocalListResponseStatus.Accepted);
 
     expect(
-      localAuthListRepository.createOrUpdateLocalListVersionFromStationIdAndSendLocalList,
+      localListVersionRepository.createOrUpdateLocalListVersionFromStationIdAndSendLocalList,
     ).not.toHaveBeenCalled();
     expect(ocppSender.sendCall).not.toHaveBeenCalled();
   });
@@ -358,7 +363,7 @@ describe('SetChargingProfileResponseOcpp16Handler', () => {
     const { container } = createTestContainer();
     chargingProfileRepository = {
       createOrUpdateChargingProfile: vi.fn().mockResolvedValue({}),
-      updateAllByQuery: vi.fn().mockResolvedValue([]),
+      deactivateChargingProfiles: vi.fn().mockResolvedValue([]),
     } as unknown as Mocked<IChargingProfileRepository>;
     originalRequest = request;
     handler = getTestInstance(container, SetChargingProfileResponseOcpp16Handler, {
@@ -428,7 +433,7 @@ describe('ClearChargingProfileResponseOcpp16Handler', () => {
   beforeEach(() => {
     const { container } = createTestContainer();
     chargingProfileRepository = {
-      updateAllByQuery: vi.fn().mockResolvedValue([]),
+      deactivateChargingProfiles: vi.fn().mockResolvedValue([]),
     } as unknown as Mocked<IChargingProfileRepository>;
     handler = getTestInstance(container, ClearChargingProfileResponseOcpp16Handler, {
       chargingProfileRepository,
@@ -443,25 +448,18 @@ describe('ClearChargingProfileResponseOcpp16Handler', () => {
   it('Accepted deactivates only the station-scoped active profiles', async () => {
     await respond(OCPP1_6.ClearChargingProfileResponseStatus.Accepted);
 
-    expect(chargingProfileRepository.updateAllByQuery).toHaveBeenCalledTimes(1);
-    expect(chargingProfileRepository.updateAllByQuery).toHaveBeenCalledWith(
+    expect(chargingProfileRepository.deactivateChargingProfiles).toHaveBeenCalledTimes(1);
+    expect(chargingProfileRepository.deactivateChargingProfiles).toHaveBeenCalledWith(
       DEFAULT_TENANT_ID,
-      { isActive: false },
-      {
-        where: {
-          tenantId: DEFAULT_TENANT_ID,
-          ocppConnectionName: STATION,
-          isActive: true,
-        },
-        returning: false,
-      },
+      STATION,
+      {},
     );
   });
 
   it('Unknown leaves profiles untouched', async () => {
     await respond(OCPP1_6.ClearChargingProfileResponseStatus.Unknown);
 
-    expect(chargingProfileRepository.updateAllByQuery).not.toHaveBeenCalled();
+    expect(chargingProfileRepository.deactivateChargingProfiles).not.toHaveBeenCalled();
   });
 });
 

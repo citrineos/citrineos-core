@@ -2,12 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { AuthorizationStatusEnum, IdTokenEnum, OCPP1_6, type SystemConfig } from '@citrineos/types';
 import {
-  DefaultSequelizeInstance,
-  type LocalListVersion,
-  SequelizeLocalAuthListRepository,
-} from '../../../index.js';
+  AuthorizationStatusEnum,
+  IdTokenEnum,
+  OCPP1_6,
+  type LocalListVersionDto,
+  type SystemConfig,
+} from '@citrineos/types';
+import { DefaultSequelizeInstance, SequelizeLocalAuthListRepository } from '../../../index.js';
 import { Authorization, Tenant } from '@dal/db/sequelize/index.js';
 import type { Sequelize } from 'sequelize-typescript';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
@@ -96,7 +98,7 @@ async function sendAndAccept(
   updateType: OCPP1_6.SendLocalListRequestUpdateType,
   versionNumber: number,
   entries: LocalAuthListEntry[],
-): Promise<LocalListVersion> {
+): Promise<LocalListVersionDto> {
   const sendLocalList = await repo.createSendLocalListFromRequestData16(
     TENANT,
     STATION,
@@ -112,7 +114,7 @@ async function sendAndAccept(
   );
 }
 
-function idTokensOn(version: LocalListVersion): string[] {
+function idTokensOn(version: LocalListVersionDto): string[] {
   return (version.localAuthorizationList ?? []).map((auth) => auth.idToken).sort();
 }
 

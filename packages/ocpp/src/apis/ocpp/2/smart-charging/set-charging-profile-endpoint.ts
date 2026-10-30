@@ -21,6 +21,7 @@ import {
   type OCPP2_request_types,
 } from '@citrineos/types';
 import type {
+  IChargingNeedsRepository,
   IChargingProfileRepository,
   IVariableAttributeRepository,
   ITransactionRepository,
@@ -41,6 +42,7 @@ interface Dependencies extends AbstractMessageEndpointDependencies {
   ocppSender: IOcppSender;
   variableAttributeRepository: IVariableAttributeRepository;
   variableCharacteristicsRepository: IVariableCharacteristicsRepository;
+  chargingNeedsRepository: IChargingNeedsRepository;
   chargingProfileRepository: IChargingProfileRepository;
   transactionRepository: ITransactionRepository;
 }
@@ -56,6 +58,7 @@ export class SetChargingProfileEndpoint extends AbstractMessageEndpoint {
   private readonly _ocppSender: IOcppSender;
   private readonly _variableAttributeRepository: IVariableAttributeRepository;
   private readonly _variableCharacteristicsRepository: IVariableCharacteristicsRepository;
+  private readonly _chargingNeedsRepository: IChargingNeedsRepository;
   private readonly _chargingProfileRepository: IChargingProfileRepository;
   private readonly _transactionRepository: ITransactionRepository;
 
@@ -64,6 +67,7 @@ export class SetChargingProfileEndpoint extends AbstractMessageEndpoint {
     ocppSender,
     variableAttributeRepository,
     variableCharacteristicsRepository,
+    chargingNeedsRepository,
     chargingProfileRepository,
     transactionRepository,
   }: Dependencies) {
@@ -71,6 +75,7 @@ export class SetChargingProfileEndpoint extends AbstractMessageEndpoint {
     this._ocppSender = ocppSender;
     this._variableAttributeRepository = variableAttributeRepository;
     this._variableCharacteristicsRepository = variableCharacteristicsRepository;
+    this._chargingNeedsRepository = chargingNeedsRepository;
     this._chargingProfileRepository = chargingProfileRepository;
     this._transactionRepository = transactionRepository;
   }
@@ -96,7 +101,7 @@ export class SetChargingProfileEndpoint extends AbstractMessageEndpoint {
             tenantId,
             ocppConnectionName,
             this._variableAttributeRepository,
-            this._chargingProfileRepository,
+            this._chargingNeedsRepository,
             this._transactionRepository,
             this._logger,
             request.evseId,
@@ -209,16 +214,16 @@ export class SetChargingProfileEndpoint extends AbstractMessageEndpoint {
       };
     }
 
-    const existedChargingProfiles = await this._chargingProfileRepository.readAllByQuery(tenantId, {
-      where: {
+    const existedChargingProfiles = await this._chargingProfileRepository.readChargingProfiles(
+      tenantId,
+      {
         ocppConnectionName,
         stackLevel: chargingProfile.stackLevel,
         chargingProfilePurpose: chargingProfile.chargingProfilePurpose,
         evseId: request.evseId,
         isActive: true,
-        tenantId,
       },
-    });
+    );
     this._logger.info(
       `Found existing charging profiles: ${JSON.stringify(existedChargingProfiles)}`,
     );
@@ -271,15 +276,15 @@ export class SetChargingProfileEndpoint extends AbstractMessageEndpoint {
       };
     }
 
-    const existedChargingProfiles = await this._chargingProfileRepository.readAllByQuery(tenantId, {
-      where: {
+    const existedChargingProfiles = await this._chargingProfileRepository.readChargingProfiles(
+      tenantId,
+      {
         stackLevel: chargingProfile.stackLevel,
         transactionDatabaseId: transaction.id,
         chargingProfilePurpose: chargingProfile.chargingProfilePurpose,
         isActive: true,
-        tenantId,
       },
-    });
+    );
     const numExisted = existedChargingProfiles.filter(
       (existedProfile) => existedProfile.id !== chargingProfile.id,
     ).length;

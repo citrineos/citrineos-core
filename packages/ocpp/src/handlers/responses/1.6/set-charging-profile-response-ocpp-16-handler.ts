@@ -16,7 +16,6 @@ import {
 } from '@citrineos/types';
 import type { IChargingProfileRepository } from '@citrineos/dal';
 import { OCPP1_6_Mapper } from '@citrineos/dal';
-import { Op } from 'sequelize';
 
 @AsResponseHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.SetChargingProfile)
 export class SetChargingProfileResponseOcpp16Handler extends AbstractHandler {
@@ -53,22 +52,14 @@ export class SetChargingProfileResponseOcpp16Handler extends AbstractHandler {
           originalRequest.csChargingProfiles,
         );
 
-        await this._chargingProfileRepository.updateAllByQuery(
+        await this._chargingProfileRepository.deactivateChargingProfiles(
           tenantId,
+          ocppConnectionName,
           {
-            isActive: false,
-          },
-          {
-            where: {
-              tenantId: tenantId,
-              ocppConnectionName: ocppConnectionName,
-              evseId: originalRequest.connectorId,
-              stackLevel: mapped.stackLevel,
-              chargingProfilePurpose: mapped.chargingProfilePurpose,
-              id: { [Op.ne]: mapped.id },
-              isActive: true,
-            },
-            returning: false,
+            evseId: originalRequest.connectorId,
+            stackLevel: mapped.stackLevel,
+            chargingProfilePurpose: mapped.chargingProfilePurpose,
+            excludeChargingProfileId: mapped.id,
           },
         );
 
