@@ -50,6 +50,7 @@ packages/ocpi/tsconfig.json
 apps/ocpp-server/config/tsconfig.eslint.json
 apps/ocpp-server/config/tsconfig.json
 apps/ocpp-server/config/tsconfig.src.json
+apps/ocpp-server/config/tsconfig.test.json
 apps/mock-msp/tsconfig.eslint.json
 apps/mock-msp/tsconfig.json
 apps/mock-msp/tsconfig.src.json

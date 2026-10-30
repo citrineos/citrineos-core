@@ -1,0 +1,10 @@
+{
+  "extends": ["../../../tsconfig.build.json", "../../../tsconfig.test.base.json"],
+  "include": ["../test/**/*.ts", "../db/migrations/**/*.ts"],
+  "exclude": ["../**/dist/**", "../**/node_modules/**"],
+  "references": [
+    { "path": "../../../packages/types/tsconfig.src.json" },
+    { "path": "../../../packages/base/tsconfig.src.json" },
+    { "path": "../../../packages/dal/tsconfig.src.json" }
+  ]
+}
