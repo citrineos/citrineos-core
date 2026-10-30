@@ -23,12 +23,13 @@ import type {
   IEvseRepository,
   IInstallCertificateAttemptRepository,
   IInstalledCertificateRepository,
-  ILocalAuthListRepository,
+  ILocalListVersionRepository,
   ILocationRepository,
   IMessageInfoRepository,
   IOCPPMessageRepository,
   IReservationRepository,
   ISecurityEventRepository,
+  ISendLocalListRepository,
   IServerNetworkProfileRepository,
   ISubscriptionRepository,
   ITariffRepository,
@@ -60,9 +61,11 @@ import {
   DrizzleDeleteCertificateAttemptRepository,
   DrizzleInstallCertificateAttemptRepository,
   DrizzleInstalledCertificateRepository,
+  DrizzleLocalListVersionRepository,
   DrizzleMessageInfoRepository,
   DrizzleReservationRepository,
   DrizzleSecurityEventRepository,
+  DrizzleSendLocalListRepository,
   DrizzleServerNetworkProfileRepository,
   DrizzleSubscriptionRepository,
   DrizzleTransactionRepository,
@@ -113,7 +116,8 @@ export class RepositoryStore {
   compositeScheduleRepository: ICompositeScheduleRepository;
   chargingStationSequenceRepository: IChargingStationSequenceRepository;
   componentRepository: IComponentRepository;
-  localAuthListRepository: ILocalAuthListRepository;
+  sendLocalListRepository: ISendLocalListRepository;
+  localListVersionRepository: ILocalListVersionRepository;
   chargingStationRepository: IChargingStationRepository;
   evseRepository: IEvseRepository;
   connectorRepository: IConnectorRepository;
@@ -145,11 +149,6 @@ export class RepositoryStore {
     sequelizeInstance: Sequelize;
   }) {
     this.sequelizeInstance = sequelizeInstance;
-    this.localAuthListRepository = new SequelizeLocalAuthListRepository({
-      config,
-      logger,
-      sequelizeInstance,
-    });
     this.ocppMessageRepository = new SequelizeOCPPMessageRepository({
       config,
       logger,
@@ -226,6 +225,8 @@ export class RepositoryStore {
         logger,
       });
       this.eventDataRepository = new DrizzleEventDataRepository({ config, logger });
+      this.sendLocalListRepository = new DrizzleSendLocalListRepository({ config, logger });
+      this.localListVersionRepository = new DrizzleLocalListVersionRepository({ config, logger });
       this.variableCharacteristicsRepository = new DrizzleVariableCharacteristicsRepository({
         config,
         logger,
@@ -337,6 +338,14 @@ export class RepositoryStore {
       this.chargingNeedsRepository = chargingProfile;
       this.chargingScheduleRepository = chargingProfile;
       this.compositeScheduleRepository = chargingProfile;
+      // LocalAuthList cluster
+      const localAuthList = new SequelizeLocalAuthListRepository({
+        config,
+        logger,
+        sequelizeInstance,
+      });
+      this.sendLocalListRepository = localAuthList;
+      this.localListVersionRepository = localAuthList;
     }
   }
 }

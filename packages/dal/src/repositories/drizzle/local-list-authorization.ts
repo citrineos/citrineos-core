@@ -3,13 +3,19 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { LocalListAuthorizationDto } from '@citrineos/types';
+import { and, inArray } from 'drizzle-orm';
 import {
   type LocalListAuthorizationEntity,
+  type LocalListAuthorizationEntityInsert,
   localListAuthorizationTable,
   tenantLocalListAuthorizationTable,
 } from '../../db/drizzle/schema/local-list-authorization.js';
 import { type Explicit } from '../../db/drizzle/types.js';
-import { DrizzleRepository } from './base.js';
+import { DrizzleRepository, type DrizzleWriteContext } from './base.js';
+
+export type LocalListAuthorizationInput = Omit<LocalListAuthorizationEntityInsert, 'tenantId'>;
+
+export const TOMBSTONE_STATUS = 'Invalid';
 
 // ─── Mapper ──────────────────────────────────────────────────────────────────
 // Maps a Drizzle entity (DB row) to the external LocalListAuthorizationDto contract.
@@ -60,5 +66,28 @@ export class DrizzleLocalListAuthorizationRepository extends DrizzleRepository<
     return toLocalListAuthorizationDto(row);
   }
 
-  // Domain query/write methods intentionally omitted — stub outline only.
+  async createLocalListAuthorization(
+    tenantId: number,
+    values: LocalListAuthorizationInput,
+    ctx?: DrizzleWriteContext,
+  ): Promise<LocalListAuthorizationDto> {
+    return this.insert(tenantId, values, ctx);
+  }
+
+  async readByIds(
+    tenantId: number,
+    ids: number[],
+    ctx?: DrizzleWriteContext,
+  ): Promise<LocalListAuthorizationDto[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+    const table = this.getTable(tenantId);
+    const rows = (await (ctx?.db ?? this.db)
+      .select()
+      .from(table)
+      .where(and(inArray(table.id, ids), this.tenantFilter(table, tenantId)))
+      .orderBy(table.id)) as LocalListAuthorizationEntity[];
+    return rows.map((row) => toLocalListAuthorizationDto(row));
+  }
 }

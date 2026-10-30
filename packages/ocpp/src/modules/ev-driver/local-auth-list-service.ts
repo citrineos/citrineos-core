@@ -6,6 +6,8 @@ import {
   OCPP1_6,
   UpdateEnum,
   OCPP2_request_types,
+  type LocalListVersionDto,
+  type SendLocalListDto,
   type VariableAttributeDto,
 } from '@citrineos/types';
 import { childLogger } from '@citrineos/base';
@@ -14,28 +16,33 @@ import { v4 as uuidv4 } from 'uuid';
 import type {
   IChangeConfigurationRepository,
   IVariableAttributeRepository,
-  ILocalAuthListRepository,
+  ILocalListVersionRepository,
+  ISendLocalListRepository,
 } from '@citrineos/dal';
-import { SendLocalList, Variable, LocalListVersion, LocalListAuthorization } from '@citrineos/dal';
+import { Variable } from '@citrineos/dal';
 
 export class LocalAuthListService {
-  protected _localAuthListRepository: ILocalAuthListRepository;
+  protected _sendLocalListRepository: ISendLocalListRepository;
+  protected _localListVersionRepository: ILocalListVersionRepository;
   protected _variableAttributeRepository: IVariableAttributeRepository;
   protected _changeConfigurationRepository: IChangeConfigurationRepository;
   protected _logger: Logger<ILogObj>;
 
   constructor({
-    localAuthListRepository,
+    sendLocalListRepository,
+    localListVersionRepository,
     variableAttributeRepository,
     changeConfigurationRepository,
     logger,
   }: {
-    localAuthListRepository: ILocalAuthListRepository;
+    sendLocalListRepository: ISendLocalListRepository;
+    localListVersionRepository: ILocalListVersionRepository;
     variableAttributeRepository: IVariableAttributeRepository;
     changeConfigurationRepository: IChangeConfigurationRepository;
     logger: Logger<ILogObj>;
   }) {
-    this._localAuthListRepository = localAuthListRepository;
+    this._sendLocalListRepository = sendLocalListRepository;
+    this._localListVersionRepository = localListVersionRepository;
     this._variableAttributeRepository = variableAttributeRepository;
     this._changeConfigurationRepository = changeConfigurationRepository;
     this._logger = childLogger(logger, this.constructor.name);
@@ -84,13 +91,11 @@ export class LocalAuthListService {
     ocppConnectionName: string,
     correlationId: string,
     sendLocalListRequest: OCPP2_request_types.SendLocalListRequest,
-  ): Promise<SendLocalList> {
-    const localListVersion = await this._localAuthListRepository.readOnlyOneByQuery(tenantId, {
-      where: {
-        ocppConnectionName: ocppConnectionName,
-      },
-      include: [LocalListAuthorization],
-    });
+  ): Promise<SendLocalListDto> {
+    const localListVersion = await this._localListVersionRepository.readLocalListVersionByStationId(
+      tenantId,
+      ocppConnectionName,
+    );
     const sendLocalList = await this.createSendLocalListFromStationIdAndRequestAndCurrentVersion(
       tenantId,
       ocppConnectionName,
@@ -143,8 +148,8 @@ export class LocalAuthListService {
     ocppConnectionName: string,
     correlationId: string,
     sendLocalListRequest: OCPP2_request_types.SendLocalListRequest,
-    localListVersion?: LocalListVersion,
-  ): Promise<SendLocalList> {
+    localListVersion?: LocalListVersionDto,
+  ): Promise<SendLocalListDto> {
     if (sendLocalListRequest.versionNumber <= 0) {
       throw new Error(
         `Version number ${sendLocalListRequest.versionNumber} must be greater than 0, see D01.FR.18`,
@@ -170,7 +175,7 @@ export class LocalAuthListService {
       }
     }
 
-    return await this._localAuthListRepository.createSendLocalListFromRequestData(
+    return await this._sendLocalListRepository.createSendLocalListFromRequestData(
       tenantId,
       ocppConnectionName,
       correlationId,
@@ -181,8 +186,8 @@ export class LocalAuthListService {
   }
 
   private async countUpdatedAuthListFromRequestAndCurrentVersion(
-    sendLocalList: SendLocalList,
-    localListVersion?: LocalListVersion,
+    sendLocalList: SendLocalListDto,
+    localListVersion?: LocalListVersionDto,
   ): Promise<number> {
     switch (sendLocalList?.updateType) {
       case UpdateEnum.Full:
@@ -232,13 +237,11 @@ export class LocalAuthListService {
     stationId: string,
     correlationId: string,
     sendLocalListRequest: OCPP1_6.SendLocalListRequest,
-  ): Promise<SendLocalList> {
-    const localListVersion = await this._localAuthListRepository.readOnlyOneByQuery(tenantId, {
-      where: {
-        ocppConnectionName: stationId,
-      },
-      include: [LocalListAuthorization],
-    });
+  ): Promise<SendLocalListDto> {
+    const localListVersion = await this._localListVersionRepository.readLocalListVersionByStationId(
+      tenantId,
+      stationId,
+    );
 
     if (sendLocalListRequest.listVersion <= 0) {
       throw new Error(`listVersion ${sendLocalListRequest.listVersion} must be greater than 0`);
@@ -296,7 +299,7 @@ export class LocalAuthListService {
       }
     }
 
-    return await this._localAuthListRepository.createSendLocalListFromRequestData16(
+    return await this._sendLocalListRepository.createSendLocalListFromRequestData16(
       tenantId,
       stationId,
       correlationId,
@@ -308,7 +311,7 @@ export class LocalAuthListService {
 
   private countUpdatedAuthList16(
     sendLocalListRequest: OCPP1_6.SendLocalListRequest,
-    localListVersion?: LocalListVersion,
+    localListVersion?: LocalListVersionDto,
   ): number {
     const list = sendLocalListRequest.localAuthorizationList ?? [];
     if (sendLocalListRequest.updateType === OCPP1_6.SendLocalListRequestUpdateType.Full) {
