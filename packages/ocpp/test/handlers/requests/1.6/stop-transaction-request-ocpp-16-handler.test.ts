@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { type IMessage, DEFAULT_TENANT_ID } from '@citrineos/base';
 import {
   type OcppRequest,
+  AuthorizationAttemptReasonEnum,
   AuthorizationStatusEnum,
   EventGroup,
   MessageOrigin,
@@ -16,7 +17,11 @@ import {
 } from '@citrineos/types';
 import type { IAuthorizationRepository, ITransactionRepository } from '@citrineos/dal';
 import { StopTransactionRequestOcpp16Handler } from '@handlers/index.js';
-import { createTestContainer, makeMockOcppSender } from '@test/test-container.js';
+import {
+  createTestContainer,
+  makeMockAuthorizationAttemptService,
+  makeRewritingOcppSender,
+} from '@test/test-container.js';
 
 function makeMessage<T extends OcppRequest>(payload: T): IMessage<T> {
   return {
@@ -58,7 +63,7 @@ function makeHandler(
   authorizations: ReturnType<typeof anAuthorization>[] = [anAuthorization()],
 ) {
   const { logger } = createTestContainer();
-  const ocppSender = makeMockOcppSender();
+  const ocppSender = makeRewritingOcppSender();
 
   const authorizationRepository = {
     readAllByQuerystring: vi.fn().mockResolvedValue(authorizations),
@@ -86,7 +91,10 @@ function makeHandler(
     calculateTotalCost: vi.fn().mockResolvedValue(0),
   };
 
+  const authorizationAttemptService = makeMockAuthorizationAttemptService();
+
   const handler = new StopTransactionRequestOcpp16Handler({
+    authorizationAttemptService,
     logger,
     ocppSender,
     authorizationRepository: authorizationRepository as unknown as IAuthorizationRepository,
@@ -94,7 +102,13 @@ function makeHandler(
     costCalculator,
   } as never);
 
-  return { handler, ocppSender, transactionEventRepository, costCalculator };
+  return {
+    handler,
+    ocppSender,
+    transactionEventRepository,
+    costCalculator,
+    authorizationAttemptService,
+  };
 }
 
 /** The partial update the handler asked the repository to apply to the Transaction row. */
@@ -275,5 +289,63 @@ describe('StopTransactionRequestOcpp16Handler', () => {
         sampledValue: [expect.objectContaining({ value: 25000 })],
       }),
     ]);
+  });
+
+  describe('authorization attempts', () => {
+    it('records the idTag against the transaction it stopped', async () => {
+      const transaction = aTransaction(true);
+      const authorization = anAuthorization();
+      const { handler, authorizationAttemptService } = makeHandler(transaction, [authorization]);
+      const message = makeMessage(request);
+
+      const { context } = message;
+
+      await handler.handle(message);
+
+      expect(authorizationAttemptService.record).toHaveBeenCalledWith(context, {
+        ocppVersion: OCPPVersion.OCPP1_6,
+        action: OCPP_CallAction.StopTransaction,
+        idToken: 'TAG001',
+        decision: { reason: AuthorizationAttemptReasonEnum.Accepted, authorization },
+        responseStatus: OCPP1_6.StopTransactionResponseStatus.Accepted,
+        transaction,
+        transactionId: '100',
+      });
+    });
+
+    it('records the attempt even when the transaction is unknown', async () => {
+      const { handler, authorizationAttemptService } = makeHandler(null, []);
+
+      await handler.handle(makeMessage(request));
+
+      expect(authorizationAttemptService.record.mock.calls[0][1]).toMatchObject({
+        decision: { reason: AuthorizationAttemptReasonEnum.NotFound },
+        responseStatus: OCPP1_6.StopTransactionResponseStatus.Invalid,
+        transaction: undefined,
+        transactionId: '100',
+      });
+    });
+
+    it('records an expired cache entry', async () => {
+      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const { handler, authorizationAttemptService } = makeHandler(aTransaction(true), [
+        anAuthorization({ cacheExpiryDateTime: yesterday }),
+      ]);
+
+      await handler.handle(makeMessage(request));
+
+      expect(authorizationAttemptService.record.mock.calls[0][1].decision.reason).toBe(
+        AuthorizationAttemptReasonEnum.CacheExpired,
+      );
+    });
+
+    it('records nothing when the station presented no idTag', async () => {
+      const { idTag: _, ...withoutIdTag } = request;
+      const { handler, authorizationAttemptService } = makeHandler(aTransaction(true));
+
+      await handler.handle(makeMessage(withoutIdTag));
+
+      expect(authorizationAttemptService.record).not.toHaveBeenCalled();
+    });
   });
 });

@@ -13,37 +13,45 @@ import {
   recordAuthorizeResult,
 } from '@citrineos/base';
 import {
+  AuthorizationAttemptReasonEnum,
   AuthorizationStatusEnum,
   type AuthorizationStatusEnumType,
   type HandlerProperties,
   OCPP1_6,
   OCPP_CallAction,
-  type OcppRequest,
-  type OcppResponse,
   OCPPVersion,
 } from '@citrineos/types';
 import { type IAuthorizationRepository, OCPP1_6_Mapper } from '@citrineos/dal';
+import {
+  type AuthorizationAttemptService,
+  type AuthorizationDecision,
+  newAuthorizationDecision,
+} from '@services/authorization-attempts/index.js';
 
 @AsRequestHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.Authorize)
 export class AuthorizeRequestOcpp16Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
   protected _authorizers: IAuthorizer[];
   protected _authorizationRepository: IAuthorizationRepository;
+  protected _authorizationAttemptService: Pick<AuthorizationAttemptService, 'record'>;
 
   constructor({
     logger,
     ocppSender,
     authorizers,
     authorizationRepository,
+    authorizationAttemptService,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
     authorizers: IAuthorizer[];
     authorizationRepository: IAuthorizationRepository;
+    authorizationAttemptService: Pick<AuthorizationAttemptService, 'record'>;
   }) {
     super(logger);
     this._ocppSender = ocppSender;
     this._authorizers = authorizers;
     this._authorizationRepository = authorizationRepository;
+    this._authorizationAttemptService = authorizationAttemptService;
   }
 
   async handle(
@@ -55,6 +63,7 @@ export class AuthorizeRequestOcpp16Handler extends AbstractHandler {
     const request: OCPP1_6.AuthorizeRequest = message.payload;
     const context: IMessageContext = message.context;
 
+    const decision = newAuthorizationDecision();
     // Default response: Invalid
     const response: OCPP1_6.AuthorizeResponse = {
       idTagInfo: {
@@ -72,7 +81,8 @@ export class AuthorizeRequestOcpp16Handler extends AbstractHandler {
         this._logger.error(`No authorization found for idToken: ${request.idTag}`);
         //below line is just to make it more explicit. Default status is already invalid.
         response.idTagInfo.status = OCPP1_6.AuthorizeResponseStatus.Invalid;
-        await this._sendAuthorizeResult(message, response);
+        decision.reason = AuthorizationAttemptReasonEnum.NotFound;
+        await this._sendAuthorizeResult(message, response, decision);
         this._logger.debug(this.createHandlerSentMessageLog('AuthorizeResponse'), response);
         return;
       }
@@ -81,15 +91,18 @@ export class AuthorizeRequestOcpp16Handler extends AbstractHandler {
       if (authorizations.length > 1) {
         this._logger.error(`Too many authorizations found for idToken: ${request.idTag}`);
         response.idTagInfo.status = OCPP1_6.AuthorizeResponseStatus.Invalid;
-        await this._sendAuthorizeResult(message, response);
+        decision.reason = AuthorizationAttemptReasonEnum.MultipleFound;
+        await this._sendAuthorizeResult(message, response, decision);
         this._logger.debug(this.createHandlerSentMessageLog('AuthorizeResponse'), response);
         return;
       }
 
       const authorization = authorizations[0];
+      decision.authorization = authorization;
 
       if (!authorization.status) {
         this._logger.error(`Authorization for idToken ${request.idTag} has no status; rejecting.`);
+        decision.reason = AuthorizationAttemptReasonEnum.StoredStatus;
       } else if (authorization.status === AuthorizationStatusEnum.Accepted) {
         const cacheExpiryDateTime = authorization.cacheExpiryDateTime;
         const groupAuthorizationId = authorization.groupAuthorizationId;
@@ -106,6 +119,7 @@ export class AuthorizeRequestOcpp16Handler extends AbstractHandler {
         }
         if (cacheExpiryDateTime && new Date() > new Date(cacheExpiryDateTime)) {
           response.idTagInfo.status = OCPP1_6.AuthorizeResponseStatus.Expired;
+          decision.reason = AuthorizationAttemptReasonEnum.CacheExpired;
         } else {
           // Apply authorizers
           let status: AuthorizationStatusEnumType = authorization.status;
@@ -116,6 +130,10 @@ export class AuthorizeRequestOcpp16Handler extends AbstractHandler {
             status = await authorizer.authorize(authorization, context);
           }
           response.idTagInfo.status = OCPP1_6_Mapper.AuthorizationMapper.toIdTagInfoStatus(status);
+          decision.reason =
+            status === AuthorizationStatusEnum.Accepted
+              ? AuthorizationAttemptReasonEnum.Accepted
+              : AuthorizationAttemptReasonEnum.AuthorizerRejected;
         }
       } else {
         // Stored non-Accepted status (Blocked / Expired / ConcurrentTx / Invalid, etc.)
@@ -123,6 +141,7 @@ export class AuthorizeRequestOcpp16Handler extends AbstractHandler {
         response.idTagInfo.status = OCPP1_6_Mapper.AuthorizationMapper.toIdTagInfoStatus(
           authorization.status,
         );
+        decision.reason = AuthorizationAttemptReasonEnum.StoredStatus;
       }
     } catch (error) {
       // Log any unexpected errors
@@ -130,7 +149,7 @@ export class AuthorizeRequestOcpp16Handler extends AbstractHandler {
       // response remains "Invalid" by default
     }
 
-    await this._sendAuthorizeResult(message, response).then((messageConfirmation) => {
+    await this._sendAuthorizeResult(message, response, decision).then((messageConfirmation) => {
       this._logger.debug(
         this.createHandlerSentMessageLog('AuthorizeResponse'),
         messageConfirmation,
@@ -142,18 +161,26 @@ export class AuthorizeRequestOcpp16Handler extends AbstractHandler {
   /**
    * Records the Authorize decision, then sends the CallResult.
    */
-  private _sendAuthorizeResult(
-    message: IMessage<OcppRequest>,
-    response: OcppResponse,
+  private async _sendAuthorizeResult(
+    message: IMessage<OCPP1_6.AuthorizeRequest>,
+    response: OCPP1_6.AuthorizeResponse,
+    decision: AuthorizationDecision,
   ): Promise<IMessageConfirmation> {
-    const status =
-      (response as { idTokenInfo?: { status?: unknown } }).idTokenInfo?.status ??
-      (response as { idTagInfo?: { status?: unknown } }).idTagInfo?.status;
+    // Sending replaces the message's payload and context with the response's.
+    const { context, payload: request } = message;
     recordAuthorizeResult({
-      status,
+      status: response.idTagInfo.status,
       ocppVersion: String(message.protocol),
       action: 'Authorize',
     });
-    return this._ocppSender.sendCallResultWithMessage(message, response);
+    const confirmation = await this._ocppSender.sendCallResultWithMessage(message, response);
+    await this._authorizationAttemptService.record(context, {
+      ocppVersion: message.protocol,
+      action: OCPP_CallAction.Authorize,
+      idToken: request.idTag,
+      decision,
+      responseStatus: response.idTagInfo.status,
+    });
+    return confirmation;
   }
 }

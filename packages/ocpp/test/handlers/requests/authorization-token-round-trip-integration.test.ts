@@ -26,7 +26,12 @@ import {
   type SystemConfig,
 } from '@citrineos/types';
 import { AuthorizeRequestOcpp16Handler, AuthorizeRequestOcpp201Handler } from '@handlers/index.js';
-import { createTestContainer, getTestInstance, makeMockOcppSender } from '@test/test-container.js';
+import {
+  createTestContainer,
+  getTestInstance,
+  makeMockOcppSender,
+  makeMockAuthorizationAttemptService,
+} from '@test/test-container.js';
 import type { Sequelize } from 'sequelize-typescript';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -148,6 +153,7 @@ describe('A depot vehicle token, enrolled once and presented by a charger', () =
   async function authorizeOver201(idToken: string, type: OCPP2_0_1.IdTokenEnumType) {
     const ocppSender = makeMockOcppSender();
     const handler = getTestInstance(container, AuthorizeRequestOcpp201Handler, {
+      authorizationAttemptService: makeMockAuthorizationAttemptService(),
       ocppSender,
       authorizers: [],
       authorizationRepository,
@@ -164,6 +170,7 @@ describe('A depot vehicle token, enrolled once and presented by a charger', () =
   async function authorizeOver16(idTag: string) {
     const ocppSender = makeMockOcppSender();
     const handler = getTestInstance(container, AuthorizeRequestOcpp16Handler, {
+      authorizationAttemptService: makeMockAuthorizationAttemptService(),
       ocppSender,
       authorizers: [],
       authorizationRepository,

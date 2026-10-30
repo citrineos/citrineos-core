@@ -9,6 +9,7 @@ import {
   type IMessage,
 } from '@citrineos/base';
 import {
+  AuthorizationAttemptReasonEnum,
   ChargingLimitSourceEnum,
   type HandlerProperties,
   OCPP1_6,
@@ -16,19 +17,24 @@ import {
   OCPPVersion,
 } from '@citrineos/types';
 import type { IChargingProfileRepository } from '@citrineos/dal';
+import type { AuthorizationAttemptService } from '@services/authorization-attempts/index.js';
 
 @AsResponseHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.RemoteStartTransaction)
 export class RemoteStartTransactionResponseOcpp16Handler extends AbstractHandler {
   protected _chargingProfileRepository: IChargingProfileRepository;
+  protected _authorizationAttemptService: Pick<AuthorizationAttemptService, 'recordRemoteStart'>;
 
   constructor({
     logger,
     chargingProfileRepository,
+    authorizationAttemptService,
   }: AbstractHandlerDependencies & {
     chargingProfileRepository: IChargingProfileRepository;
+    authorizationAttemptService: Pick<AuthorizationAttemptService, 'recordRemoteStart'>;
   }) {
     super(logger);
     this._chargingProfileRepository = chargingProfileRepository;
+    this._authorizationAttemptService = authorizationAttemptService;
   }
 
   async handle(
@@ -42,6 +48,17 @@ export class RemoteStartTransactionResponseOcpp16Handler extends AbstractHandler
       this.createHandlerReceivedMessageLog('RemoteStartTransactionResponse'),
       message,
       props,
+    );
+
+    await this._authorizationAttemptService.recordRemoteStart(
+      message.context,
+      message.protocol,
+      message.action,
+      message.request,
+      {
+        reason: AuthorizationAttemptReasonEnum.StationResponded,
+        responseStatus: message.payload.status,
+      },
     );
 
     const tenantId = message.context.tenantId;

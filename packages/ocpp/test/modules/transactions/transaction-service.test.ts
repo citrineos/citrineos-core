@@ -6,30 +6,35 @@ import {
   type IAuthorizationRepository,
   type IConnectorRepository,
   type IEvseRepository,
-  type IReservationRepository,
   type IMeterValueRepository,
+  type IReservationRepository,
   type ITransactionRepository,
 } from '@citrineos/dal';
 import { TransactionService } from '@modules/transactions/transaction-service.js';
+import {
+  type AuthorizationDecision,
+  newAuthorizationDecision,
+} from '@services/authorization-attempts/index.js';
 import { anAuthorization } from './providers/authorization-provider.js';
 import { anIdToken } from './providers/id-token-provider.js';
 
-import { faker } from '@faker-js/faker';
-import { beforeEach, describe, expect, it, type Mocked, vi } from 'vitest';
-import { createTestContainer, getTestInstance } from '@test/test-container.js';
-import { aMessageContext } from './providers/message-context-provider.js';
-import { aTransaction, aTransactionEventRequest } from './providers/transaction-provider.js';
 import {
+  AuthorizationAttemptReasonEnum,
   AuthorizationStatusEnum,
+  type AuthorizationStatusEnumType,
   type ConnectorDto,
   type EvseDto,
+  type MeterValueDto,
   OCPP1_6,
   OCPP2_0_1,
   OCPP2_1,
-  type AuthorizationStatusEnumType,
-  type MeterValueDto,
   type TransactionDto,
 } from '@citrineos/types';
+import { faker } from '@faker-js/faker';
+import { createTestContainer, getTestInstance } from '@test/test-container.js';
+import { beforeEach, describe, expect, it, type Mocked, vi } from 'vitest';
+import { aMessageContext } from './providers/message-context-provider.js';
+import { aTransaction, aTransactionEventRequest } from './providers/transaction-provider.js';
 
 describe('TransactionService', () => {
   // idToken of the group Authorization that groupAuthorizationId points at.
@@ -726,6 +731,135 @@ describe('TransactionService', () => {
         transactionRepositoryMock.updateTransactionByStationIdAndTransactionId.mock.calls[0];
       expect(transactionId).toBe('T-99');
       expect(ocppConnectionName).toBe(STATION);
+    });
+  });
+
+  describe('authorization decision reasons', () => {
+    function startedEvent() {
+      return aTransactionEventRequest((item) => {
+        item.idToken = anIdToken();
+        item.eventType = OCPP2_0_1.TransactionEventEnumType.Started;
+      });
+    }
+
+    async function decide201(): Promise<AuthorizationDecision> {
+      const decision = newAuthorizationDecision();
+      await transactionService.authorizeOcpp201IdToken(
+        DEFAULT_TENANT_ID,
+        startedEvent(),
+        aMessageContext(),
+        decision,
+      );
+      return decision;
+    }
+
+    async function decide16(): Promise<AuthorizationDecision> {
+      const decision = newAuthorizationDecision();
+      await transactionService.authorizeOcpp16IdToken(aMessageContext(), 'TAG-1', 1, decision);
+      return decision;
+    }
+
+    beforeEach(() => {
+      transactionRepositoryMock.readAllActiveTransactionsByAuthorizationId.mockResolvedValue([]);
+      authorizer.authorize.mockResolvedValue(AuthorizationStatusEnum.Accepted);
+      realTimeAuthorizer.authorize.mockResolvedValue(AuthorizationStatusEnum.Accepted);
+    });
+
+    it.each([
+      ['no Authorization', 0, AuthorizationAttemptReasonEnum.NotFound],
+      ['more than one Authorization', 2, AuthorizationAttemptReasonEnum.MultipleFound],
+    ])('explains an Unknown/Invalid answer for %s', async (_label, matches, reason) => {
+      authorizationRepository.readAllByQuerystring.mockResolvedValue(
+        Array.from({ length: matches }, () => anAuthorization()),
+      );
+
+      expect((await decide201()).reason).toBe(reason);
+      expect((await decide16()).reason).toBe(reason);
+    });
+
+    it('blames the stored status, and keeps the Authorization it read', async () => {
+      const authorization = anAuthorization((auth) => {
+        auth.status = AuthorizationStatusEnum.Blocked;
+      });
+      authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
+
+      expect(await decide201()).toEqual({
+        reason: AuthorizationAttemptReasonEnum.StoredStatus,
+        authorization,
+      });
+      expect((await decide16()).reason).toBe(AuthorizationAttemptReasonEnum.StoredStatus);
+    });
+
+    it('blames an expired cache entry', async () => {
+      authorizationRepository.readAllByQuerystring.mockResolvedValue([
+        anAuthorization((auth) => {
+          auth.status = AuthorizationStatusEnum.Accepted;
+          auth.cacheExpiryDateTime = new Date(Date.now() - 1000).toISOString();
+        }),
+      ]);
+
+      expect((await decide201()).reason).toBe(AuthorizationAttemptReasonEnum.CacheExpired);
+      expect((await decide16()).reason).toBe(AuthorizationAttemptReasonEnum.CacheExpired);
+    });
+
+    it('blames a concurrent transaction', async () => {
+      authorizationRepository.readAllByQuerystring.mockResolvedValue([
+        anAuthorization((auth) => {
+          auth.status = AuthorizationStatusEnum.Accepted;
+          auth.concurrentTransaction = false;
+        }),
+      ]);
+      transactionRepositoryMock.readAllActiveTransactionsByAuthorizationId.mockResolvedValue([
+        aTransaction(),
+      ]);
+
+      expect((await decide201()).reason).toBe(AuthorizationAttemptReasonEnum.ConcurrentTx);
+      expect((await decide16()).reason).toBe(AuthorizationAttemptReasonEnum.ConcurrentTx);
+    });
+
+    it('blames the authorizer chain when an authorizer turns an Accepted token down', async () => {
+      authorizationRepository.readAllByQuerystring.mockResolvedValue([
+        anAuthorization((auth) => {
+          auth.status = AuthorizationStatusEnum.Accepted;
+          auth.cacheExpiryDateTime = undefined;
+        }),
+      ]);
+      realTimeAuthorizer.authorize.mockResolvedValue(AuthorizationStatusEnum.Blocked);
+
+      expect((await decide201()).reason).toBe(AuthorizationAttemptReasonEnum.AuthorizerRejected);
+      expect((await decide16()).reason).toBe(AuthorizationAttemptReasonEnum.AuthorizerRejected);
+    });
+
+    it('reports Accepted when every check passes', async () => {
+      authorizationRepository.readAllByQuerystring.mockResolvedValue([
+        anAuthorization((auth) => {
+          auth.status = AuthorizationStatusEnum.Accepted;
+          auth.cacheExpiryDateTime = undefined;
+        }),
+      ]);
+
+      expect((await decide201()).reason).toBe(AuthorizationAttemptReasonEnum.Accepted);
+      expect((await decide16()).reason).toBe(AuthorizationAttemptReasonEnum.Accepted);
+    });
+
+    it('reports NoAuthorization for a token that is never looked up', async () => {
+      const decision = newAuthorizationDecision();
+      await transactionService.authorizeOcpp21IdToken(
+        DEFAULT_TENANT_ID,
+        aTransactionEventRequest((item) => {
+          item.idToken = { idToken: '', type: OCPP2_0_1.IdTokenEnumType.NoAuthorization };
+        }),
+        aMessageContext(),
+        decision,
+      );
+
+      expect(decision).toEqual({ reason: AuthorizationAttemptReasonEnum.NoAuthorization });
+    });
+
+    it('leaves Error behind when the 1.6 evaluation throws', async () => {
+      authorizationRepository.readAllByQuerystring.mockRejectedValue(new Error('db down'));
+
+      expect((await decide16()).reason).toBe(AuthorizationAttemptReasonEnum.Error);
     });
   });
 });

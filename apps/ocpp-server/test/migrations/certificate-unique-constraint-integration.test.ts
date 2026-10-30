@@ -8,11 +8,11 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import type { Sequelize as SequelizeInstance } from 'sequelize-typescript';
 import { QueryTypes, Sequelize } from 'sequelize';
-import { type BootstrapConfig, DEFAULT_TENANT_ID } from '@citrineos/base';
-import type { CertificateCreate, SystemConfig } from '@citrineos/types';
+import { DEFAULT_TENANT_ID } from '@citrineos/base';
+import { type CertificateCreate, configSchema, type SystemConfig } from '@citrineos/types';
 import { DefaultSequelizeInstance, SequelizeCertificateRepository } from '@citrineos/dal';
 
-const MIGRATIONS_DIR = fileURLToPath(new URL('../../migrations/', import.meta.url));
+const MIGRATIONS_DIR = fileURLToPath(new URL('../../db/migrations/', import.meta.url));
 const OTHER_TENANT_ID = DEFAULT_TENANT_ID + 1;
 const ISSUER = 'CN=V2G Root CA, O=Example, C=DE';
 
@@ -30,21 +30,19 @@ beforeAll(async () => {
     .withWaitStrategy(Wait.forLogMessage('database system is ready to accept connections', 2))
     .start();
 
-  sequelizeInstance = DefaultSequelizeInstance.getInstance({
-    database: {
-      host: pgContainer.getHost(),
-      port: pgContainer.getMappedPort(5432),
-      database: 'citrineos_test',
-      dialect: 'postgres',
-      username: 'test',
-      password: 'test',
-      sync: false,
-      alter: false,
-      force: false,
-      maxRetries: 1,
-      retryDelay: 100,
-    },
-  } as unknown as BootstrapConfig);
+  sequelizeInstance = DefaultSequelizeInstance.getInstance(
+    configSchema.parse({
+      database: {
+        host: pgContainer.getHost(),
+        port: pgContainer.getMappedPort(5432),
+        database: 'citrineos_test',
+        username: 'test',
+        password: 'test',
+        maxRetries: 1,
+        retryDelay: 100,
+      },
+    }),
+  );
   const queryInterface = sequelizeInstance.getQueryInterface();
 
   const files = readdirSync(MIGRATIONS_DIR)
