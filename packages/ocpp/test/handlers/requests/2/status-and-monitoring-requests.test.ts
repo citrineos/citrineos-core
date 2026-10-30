@@ -9,10 +9,12 @@ import {
   type OcppRequest,
   type OCPP2_request_types,
   type ReservationUpdateStatusEnumType,
+  ConnectorStatusEnum,
   EventGroup,
   MessageOrigin,
   MessageState,
   OCPP2_0_1,
+  OCPP2_1,
   OCPP_CallAction,
   OCPPVersion,
   ReservationUpdateStatusEnum,
@@ -29,7 +31,11 @@ import { createTestContainer, makeMockOcppSender, mockDeps } from '@test/test-co
 const STATION_ID = 'station-001';
 const GENERATED_AT = '2026-09-01T10:00:00.000Z';
 
-function makeMessage<T extends OcppRequest>(action: CallAction, payload: T): IMessage<T> {
+function makeMessage<T extends OcppRequest>(
+  action: CallAction,
+  payload: T,
+  protocol: OCPPVersion = OCPPVersion.OCPP2_0_1,
+): IMessage<T> {
   return {
     context: {
       tenantId: DEFAULT_TENANT_ID,
@@ -42,7 +48,7 @@ function makeMessage<T extends OcppRequest>(action: CallAction, payload: T): IMe
     eventGroup: EventGroup.Monitoring,
     action,
     state: MessageState.Request,
-    protocol: OCPPVersion.OCPP2_0_1,
+    protocol,
   } as unknown as IMessage<T>;
 }
 
@@ -164,6 +170,9 @@ describe('NotifyEventRequestOcpp2Handler', () => {
   let variableMonitoringRepository: {
     createEventDatumByComponentIdAndVariableIdAndStationId: ReturnType<typeof vi.fn>;
   };
+  let connectorStatusService: {
+    updateConnectorStatus: ReturnType<typeof vi.fn>;
+  };
   let handler: NotifyEventRequestOcpp2Handler;
 
   beforeEach(() => {
@@ -178,6 +187,9 @@ describe('NotifyEventRequestOcpp2Handler', () => {
     variableMonitoringRepository = {
       createEventDatumByComponentIdAndVariableIdAndStationId: vi.fn().mockResolvedValue(undefined),
     };
+    connectorStatusService = {
+      updateConnectorStatus: vi.fn().mockResolvedValue(undefined),
+    };
     handler = new NotifyEventRequestOcpp2Handler(
       mockDeps<typeof NotifyEventRequestOcpp2Handler>({
         logger,
@@ -185,6 +197,7 @@ describe('NotifyEventRequestOcpp2Handler', () => {
         componentRepository,
         variableAttributeRepository,
         variableMonitoringRepository,
+        connectorStatusService,
       }),
     );
   });
@@ -272,6 +285,155 @@ describe('NotifyEventRequestOcpp2Handler', () => {
 
     expect(variableAttributeRepository.createOrUpdateDeviceModelByStationId).not.toHaveBeenCalled();
     expect(ocppSender.sendCallResultWithMessage).not.toHaveBeenCalled();
+  });
+
+  describe('Connector AvailabilityState on OCPP 2.1', () => {
+    const EVENT_TIMESTAMP = '2026-09-01T09:58:00.000Z';
+
+    function anAvailabilityStateEvent(
+      eventId: number,
+      actualValue: string,
+      component: OCPP2_1.ComponentType = { name: 'Connector', evse: { id: 2, connectorId: 1 } },
+    ): OCPP2_1.EventDataType {
+      return {
+        eventId,
+        timestamp: EVENT_TIMESTAMP,
+        trigger: OCPP2_1.EventTriggerEnumType.Delta,
+        actualValue,
+        eventNotificationType: OCPP2_1.EventNotificationEnumType.HardWiredNotification,
+        component,
+        variable: { name: 'AvailabilityState' },
+      };
+    }
+
+    function anOcpp21Message(...eventData: OCPP2_1.EventDataType[]) {
+      return makeMessage(
+        OCPP_CallAction.NotifyEvent,
+        { generatedAt: GENERATED_AT, seqNo: 0, eventData } as OCPP2_1.NotifyEventRequest,
+        OCPPVersion.OCPP2_1,
+      );
+    }
+
+    it('updates the connector status from the reported value', async () => {
+      const message = anOcpp21Message(anAvailabilityStateEvent(1, 'Occupied'));
+
+      await handler.handle(message);
+
+      expect(connectorStatusService.updateConnectorStatus).toHaveBeenCalledExactlyOnceWith(
+        DEFAULT_TENANT_ID,
+        STATION_ID,
+        {
+          evseId: 2,
+          connectorId: 1,
+          connectorStatus: ConnectorStatusEnum.Occupied,
+          timestamp: EVENT_TIMESTAMP,
+        },
+      );
+      expect(
+        variableAttributeRepository.createOrUpdateDeviceModelByStationId,
+      ).toHaveBeenCalledOnce();
+      expect(ocppSender.sendCallResultWithMessage).toHaveBeenCalledWith(message, {});
+    });
+
+    it('leaves the connector status alone for an OCPP 2.0.1 station', async () => {
+      const message = makeMessage(OCPP_CallAction.NotifyEvent, {
+        generatedAt: GENERATED_AT,
+        seqNo: 0,
+        eventData: [anAvailabilityStateEvent(1, 'Occupied')],
+      } as OCPP2_1.NotifyEventRequest);
+
+      await handler.handle(message);
+
+      expect(connectorStatusService.updateConnectorStatus).not.toHaveBeenCalled();
+      expect(ocppSender.sendCallResultWithMessage).toHaveBeenCalledWith(message, {});
+    });
+
+    it('ignores AvailabilityState reported on a component other than Connector', async () => {
+      await handler.handle(
+        anOcpp21Message(
+          anAvailabilityStateEvent(1, 'Occupied', { name: 'EVSE', evse: { id: 2 } }),
+          anAvailabilityStateEvent(2, 'Available', { name: 'ChargingStation' }),
+        ),
+      );
+
+      expect(connectorStatusService.updateConnectorStatus).not.toHaveBeenCalled();
+    });
+
+    it('ignores other Connector variables', async () => {
+      const event: OCPP2_1.EventDataType = {
+        ...anAvailabilityStateEvent(1, 'true'),
+        variable: { name: 'Enabled' },
+      };
+
+      await handler.handle(anOcpp21Message(event));
+
+      expect(connectorStatusService.updateConnectorStatus).not.toHaveBeenCalled();
+    });
+
+    it('skips an event without an EVSE or connector id', async () => {
+      await handler.handle(
+        anOcpp21Message(
+          anAvailabilityStateEvent(1, 'Occupied', { name: 'Connector' }),
+          anAvailabilityStateEvent(2, 'Occupied', { name: 'Connector', evse: { id: 2 } }),
+        ),
+      );
+
+      expect(connectorStatusService.updateConnectorStatus).not.toHaveBeenCalled();
+      expect(logger.warn).toHaveBeenCalled();
+    });
+
+    it('skips a value that is not a connector status', async () => {
+      await handler.handle(anOcpp21Message(anAvailabilityStateEvent(1, 'Charging')));
+
+      expect(connectorStatusService.updateConnectorStatus).not.toHaveBeenCalled();
+      expect(logger.warn).toHaveBeenCalled();
+    });
+
+    it('updates only the qualifying events of a mixed report', async () => {
+      await handler.handle(
+        anOcpp21Message(
+          anAvailabilityStateEvent(1, 'Faulted', {
+            name: 'Connector',
+            evse: { id: 1, connectorId: 1 },
+          }),
+          anAvailabilityStateEvent(2, 'Occupied', { name: 'EVSE', evse: { id: 1 } }),
+          anAvailabilityStateEvent(3, 'Available', {
+            name: 'Connector',
+            evse: { id: 2, connectorId: 1 },
+          }),
+        ),
+      );
+
+      expect(connectorStatusService.updateConnectorStatus).toHaveBeenCalledTimes(2);
+      expect(connectorStatusService.updateConnectorStatus.mock.calls[0][2]).toMatchObject({
+        evseId: 1,
+        connectorStatus: ConnectorStatusEnum.Faulted,
+      });
+      expect(connectorStatusService.updateConnectorStatus.mock.calls[1][2]).toMatchObject({
+        evseId: 2,
+        connectorStatus: ConnectorStatusEnum.Available,
+      });
+    });
+
+    it('still stores the remaining events and acknowledges when the status update fails', async () => {
+      connectorStatusService.updateConnectorStatus.mockRejectedValueOnce(new Error('db down'));
+      const message = anOcpp21Message(
+        anAvailabilityStateEvent(1, 'Occupied'),
+        anAvailabilityStateEvent(2, 'Available', {
+          name: 'Connector',
+          evse: { id: 3, connectorId: 1 },
+        }),
+      );
+
+      await handler.handle(message);
+
+      expect(logger.error).toHaveBeenCalled();
+      expect(connectorStatusService.updateConnectorStatus).toHaveBeenCalledTimes(2);
+      expect(
+        variableMonitoringRepository.createEventDatumByComponentIdAndVariableIdAndStationId,
+      ).toHaveBeenCalledTimes(2);
+      expect(ocppSender.sendCallResultWithMessage).toHaveBeenCalledWith(message, {});
+    });
   });
 });
 
