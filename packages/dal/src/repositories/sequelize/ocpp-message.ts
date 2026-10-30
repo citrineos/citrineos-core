@@ -2,11 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { type OCPPMessageDto } from '@citrineos/types';
+import { type CallAction, type OCPPMessageDto } from '@citrineos/types';
 import type { IOCPPMessageRepository } from '../repositories.js';
 import { OCPPMessage } from '../../models/ocpp-message.js';
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './base.js';
-import { resolveStationIdOrThrow } from './resolve-station-id.js';
+import { resolveStationId, resolveStationIdOrThrow } from './resolve-station-id.js';
 
 export class SequelizeOCPPMessageRepository
   extends SequelizeRepository<OCPPMessage>
@@ -44,6 +44,24 @@ export class SequelizeOCPPMessageRepository
     return this.readOnlyOneByQuery(tenantId, {
       where: { tenantId, correlationId, requestMessageId: null },
     });
+  }
+
+  public async hasMessageWithPayloadRequestId(
+    tenantId: number,
+    ocppConnectionName: string,
+    action: CallAction,
+    requestId: number,
+  ): Promise<boolean> {
+    const stationId = await resolveStationId(tenantId, ocppConnectionName);
+    if (stationId === undefined) {
+      return false;
+    }
+
+    const matches = await this.readAllByQuery(tenantId, {
+      where: { tenantId, stationId, action, payload: { requestId } },
+      limit: 1,
+    });
+    return matches.length > 0;
   }
 }
 

@@ -98,6 +98,7 @@ export {
   DrizzleLocationRepository,
   DrizzleMeterValueRepository,
   DrizzleMessageInfoRepository,
+  DrizzleOCPPMessageRepository,
   DrizzleReservationRepository,
   DrizzleSalesTariffRepository,
   DrizzleSecurityEventRepository,

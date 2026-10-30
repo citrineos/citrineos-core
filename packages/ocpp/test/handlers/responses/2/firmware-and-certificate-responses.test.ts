@@ -66,7 +66,7 @@ function makeMessage<T extends OcppResponse, R extends OcppRequest = OcppRequest
 
 function makeOcppMessageRepository(row: { payload: unknown } | undefined) {
   return {
-    readOnlyOneByQuery: vi.fn().mockResolvedValue(row),
+    getRequestByCorrelationId: vi.fn().mockResolvedValue(row),
   } as unknown as Mocked<IOCPPMessageRepository>;
 }
 
@@ -292,7 +292,7 @@ describe('UpdateFirmwareResponseOcpp2Handler', () => {
     expect(logger.error).not.toHaveBeenCalled();
     expect(ocppSender.sendCall).not.toHaveBeenCalled();
     expect(ocppSender.sendCallResultWithMessage).not.toHaveBeenCalled();
-    expect(ocppMessageRepository.readOnlyOneByQuery).not.toHaveBeenCalled();
+    expect(ocppMessageRepository.getRequestByCorrelationId).not.toHaveBeenCalled();
   });
 });
 
@@ -315,7 +315,7 @@ describe('UnpublishFirmwareResponseOcpp2Handler', () => {
     expect(logger.error).not.toHaveBeenCalled();
     expect(ocppSender.sendCall).not.toHaveBeenCalled();
     expect(ocppSender.sendCallResultWithMessage).not.toHaveBeenCalled();
-    expect(ocppMessageRepository.readOnlyOneByQuery).not.toHaveBeenCalled();
+    expect(ocppMessageRepository.getRequestByCorrelationId).not.toHaveBeenCalled();
   });
 });
 
@@ -338,7 +338,7 @@ describe('PublishFirmwareResponseOcpp2Handler', () => {
     expect(logger.error).not.toHaveBeenCalled();
     expect(ocppSender.sendCall).not.toHaveBeenCalled();
     expect(ocppSender.sendCallResultWithMessage).not.toHaveBeenCalled();
-    expect(ocppMessageRepository.readOnlyOneByQuery).not.toHaveBeenCalled();
+    expect(ocppMessageRepository.getRequestByCorrelationId).not.toHaveBeenCalled();
   });
 });
 
@@ -362,7 +362,7 @@ describe('GetLogResponseOcpp2Handler', () => {
     expect(logger.error).not.toHaveBeenCalled();
     expect(ocppSender.sendCall).not.toHaveBeenCalled();
     expect(ocppSender.sendCallResultWithMessage).not.toHaveBeenCalled();
-    expect(ocppMessageRepository.readOnlyOneByQuery).not.toHaveBeenCalled();
+    expect(ocppMessageRepository.getRequestByCorrelationId).not.toHaveBeenCalled();
   });
 });
 
@@ -385,7 +385,7 @@ describe('GetBaseReportResponseOcpp2Handler', () => {
     expect(logger.error).not.toHaveBeenCalled();
     expect(ocppSender.sendCall).not.toHaveBeenCalled();
     expect(ocppSender.sendCallResultWithMessage).not.toHaveBeenCalled();
-    expect(ocppMessageRepository.readOnlyOneByQuery).not.toHaveBeenCalled();
+    expect(ocppMessageRepository.getRequestByCorrelationId).not.toHaveBeenCalled();
   });
 });
 

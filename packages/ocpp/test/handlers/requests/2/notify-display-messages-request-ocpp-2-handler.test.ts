@@ -59,7 +59,7 @@ function aNotifyDisplayMessagesRequest(): OCPP2_request_types.NotifyDisplayMessa
 describe('NotifyDisplayMessagesRequestOcpp2Handler', () => {
   const { logger } = createTestContainer();
   let handler: NotifyDisplayMessagesRequestOcpp2Handler;
-  let ocppMessageRepository: { readAllByQuery: ReturnType<typeof vi.fn> };
+  let ocppMessageRepository: { hasMessageWithPayloadRequestId: ReturnType<typeof vi.fn> };
   let componentRepository: { findOrCreateEvseAndComponent: ReturnType<typeof vi.fn> };
   let messageInfoRepository: {
     createOrUpdateByMessageInfoTypeAndStationId: ReturnType<typeof vi.fn>;
@@ -69,7 +69,7 @@ describe('NotifyDisplayMessagesRequestOcpp2Handler', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    ocppMessageRepository = { readAllByQuery: vi.fn() };
+    ocppMessageRepository = { hasMessageWithPayloadRequestId: vi.fn() };
     componentRepository = { findOrCreateEvseAndComponent: vi.fn() };
     messageInfoRepository = { createOrUpdateByMessageInfoTypeAndStationId: vi.fn() };
     ocppSender = makeMockOcppSender();
@@ -86,25 +86,22 @@ describe('NotifyDisplayMessagesRequestOcpp2Handler', () => {
   });
 
   it('correlates the requestId against the stored payload and acknowledges', async () => {
-    ocppMessageRepository.readAllByQuery.mockResolvedValue([{ id: 1 }]);
+    ocppMessageRepository.hasMessageWithPayloadRequestId.mockResolvedValue(true);
 
     await handler.handle(aNotifyDisplayMessagesMessage(aNotifyDisplayMessagesRequest()));
 
-    expect(ocppMessageRepository.readAllByQuery).toHaveBeenCalledWith(DEFAULT_TENANT_ID, {
-      where: {
-        tenantId: DEFAULT_TENANT_ID,
-        stationId: STATION_DB_ID,
-        action: OCPP_CallAction.GetDisplayMessages,
-        payload: { requestId: REQUEST_ID },
-      },
-      limit: 1,
-    });
+    expect(ocppMessageRepository.hasMessageWithPayloadRequestId).toHaveBeenCalledWith(
+      DEFAULT_TENANT_ID,
+      STATION_ID,
+      OCPP_CallAction.GetDisplayMessages,
+      REQUEST_ID,
+    );
     expect(ocppSender.sendCallResultWithMessage).toHaveBeenCalled();
     expect(ocppSender.sendCallErrorWithMessage).not.toHaveBeenCalled();
   });
 
   it('rejects with a CallError when no GetDisplayMessagesRequest matches the requestId', async () => {
-    ocppMessageRepository.readAllByQuery.mockResolvedValue([]);
+    ocppMessageRepository.hasMessageWithPayloadRequestId.mockResolvedValue(false);
 
     await handler.handle(aNotifyDisplayMessagesMessage(aNotifyDisplayMessagesRequest()));
 
@@ -113,7 +110,7 @@ describe('NotifyDisplayMessagesRequestOcpp2Handler', () => {
   });
 
   it('stores a 2.1 QRCODE message and acknowledges', async () => {
-    ocppMessageRepository.readAllByQuery.mockResolvedValue([{ id: 1 }]);
+    ocppMessageRepository.hasMessageWithPayloadRequestId.mockResolvedValue(true);
     const qrCodeMessage: OCPP2_1.MessageInfoType = {
       id: 7,
       priority: OCPP2_1.MessagePriorityEnumType.NormalCycle,
@@ -138,7 +135,7 @@ describe('NotifyDisplayMessagesRequestOcpp2Handler', () => {
   });
 
   it('acknowledges a report that carries no messageInfo', async () => {
-    ocppMessageRepository.readAllByQuery.mockResolvedValue([{ id: 1 }]);
+    ocppMessageRepository.hasMessageWithPayloadRequestId.mockResolvedValue(true);
 
     await handler.handle(aNotifyDisplayMessagesMessage({ requestId: REQUEST_ID }));
 

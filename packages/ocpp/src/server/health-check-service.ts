@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { childLogger, type ICache } from '@citrineos/base';
-import type { Sequelize } from '@citrineos/dal';
+import { DefaultDrizzleInstance, type Sequelize } from '@citrineos/dal';
 import type { SchemaValidationReport } from '@/util/index.js';
 import { RabbitMQConnectionManager, WebsocketNetworkConnection } from '@/transport/index.js';
 import type { ILogObj, Logger } from 'tslog';
@@ -117,6 +117,12 @@ export class HealthCheckService {
     checks['database'] = await this._checkDatabase();
     if (checks['database'].status === 'fail') pass = false;
 
+    const drizzleDatabase = this._checkDrizzleDatabase();
+    if (drizzleDatabase) {
+      checks['drizzleDatabase'] = drizzleDatabase;
+      if (drizzleDatabase.status === 'fail') pass = false;
+    }
+
     const schema = this._checkSchemaReport(this._schemaReport);
     if (schema) checks['schema'] = schema;
 
@@ -181,6 +187,25 @@ export class HealthCheckService {
         waiting: pool.waiting,
         maxSize: pool.maxSize,
       });
+      return { status: 'fail', error: 'database unavailable' };
+    }
+
+    return { status: 'pass' };
+  }
+
+  /**
+   * `null` when no Drizzle pool exists, which is the state when the Drizzle data layer
+   * is not enabled. No check is reported rather than a misleading pass.
+   */
+  private _checkDrizzleDatabase(): CheckResult | null {
+    const stats = DefaultDrizzleInstance.getPoolStats();
+    if (!stats) return null;
+
+    if (stats.total === 0 && stats.waiting > 0) {
+      this._logger.error(
+        'Drizzle database health check failed: connections waiting but pool empty',
+        stats,
+      );
       return { status: 'fail', error: 'database unavailable' };
     }
 

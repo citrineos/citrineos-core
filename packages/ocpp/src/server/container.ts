@@ -49,6 +49,7 @@ import {
   DrizzleInstallCertificateAttemptRepository,
   DrizzleInstalledCertificateRepository,
   DrizzleLocalListVersionRepository,
+  DrizzleOCPPMessageRepository,
   DrizzleMessageInfoRepository,
   DrizzleReservationRepository,
   DrizzleSecurityEventRepository,
@@ -484,6 +485,7 @@ function registerRepositories(container: AwilixContainer): void {
       eventDataRepository: asClass(DrizzleEventDataRepository).singleton(),
       sendLocalListRepository: asClass(DrizzleSendLocalListRepository).singleton(),
       localListVersionRepository: asClass(DrizzleLocalListVersionRepository).singleton(),
+      ocppMessageRepository: asClass(DrizzleOCPPMessageRepository).singleton(),
     });
   }
 }
