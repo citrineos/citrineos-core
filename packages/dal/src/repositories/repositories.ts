@@ -434,6 +434,11 @@ export interface ITransactionRepository {
     ocppConnectionName: string,
     transactionId: string,
   ): Promise<TransactionDto | undefined>;
+  readTransactionWithStartTransactionByStationIdAndTransactionId(
+    tenantId: number,
+    ocppConnectionName: string,
+    transactionId: string,
+  ): Promise<TransactionDto | undefined>;
   readAllActiveTransactionsByAuthorizationId(
     tenantId: number,
     authorizationId: number,

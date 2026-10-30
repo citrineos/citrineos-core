@@ -439,4 +439,4 @@ export {
   type WebsocketEventEntity,
   type WebsocketEventEntityInsert,
 } from './schema/websocket-event.js';
-export { DefaultDrizzleInstance } from './util.js';
+export { DefaultDrizzleInstance, type DrizzlePoolStats } from './util.js';

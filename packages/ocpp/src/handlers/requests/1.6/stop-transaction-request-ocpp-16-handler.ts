@@ -15,15 +15,10 @@ import {
   OCPP1_6,
   OCPP_CallAction,
   OCPPVersion,
+  type TransactionCreate,
 } from '@citrineos/types';
-import {
-  type IAuthorizationRepository,
-  type ITransactionRepository,
-  StartTransaction,
-  Transaction,
-} from '@citrineos/dal';
+import { type IAuthorizationRepository, type ITransactionRepository } from '@citrineos/dal';
 import { OCPP1_6_Mapper } from '@citrineos/dal';
-import { stationIdFilter } from '@citrineos/dal';
 import type { CostCalculator } from '@modules/transactions/cost-calculator.js';
 
 @AsRequestHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.StopTransaction)
@@ -121,16 +116,15 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
 
     await this._ocppSender.sendCallResultWithMessage(message, stopTransactionResponse);
 
-    const transaction = await Transaction.findOne({
-      where: {
-        stationId: await stationIdFilter(tenantId, ocppConnectionName),
+    const transactionId = request.transactionId.toString();
+    const transaction =
+      await this._transactionRepository.readTransactionWithStartTransactionByStationIdAndTransactionId(
         tenantId,
-        transactionId: request.transactionId.toString(),
-      },
-      include: [StartTransaction],
-    });
+        ocppConnectionName,
+        transactionId,
+      );
 
-    if (!transaction) {
+    if (!transaction?.id) {
       this._logger.error(`Transaction ${request.transactionId} not found.`);
       return;
     }
@@ -171,29 +165,44 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
       );
     }
 
+    // Sole owner of the final timeSpentCharging: 1.6 reports no charging duration, so the whole
+    // session is billed as charging time. Always set, so cost calculation never sees it unset.
+    const startTime = transaction.startTime ? Date.parse(transaction.startTime) : Number.NaN;
+    const stopTime = Date.parse(request.timestamp);
+    const elapsedSeconds = Math.floor((stopTime - startTime) / 1000);
+
+    const updates: Partial<TransactionCreate> = {
+      isActive: false,
+      stoppedReason,
+      endTime: request.timestamp,
+      timeSpentCharging: Number.isFinite(elapsedSeconds) ? Math.max(0, elapsedSeconds) : 0,
+    };
+
     if (transaction.startTransaction) {
-      transaction.totalKwh = (request.meterStop - transaction.startTransaction.meterStart) / 1000; // Convert from Wh to kWh
+      updates.totalKwh = (request.meterStop - transaction.startTransaction.meterStart) / 1000; // Convert from Wh to kWh
     } else {
       this._logger.warn(
         `StartTransaction record not found at station ${ocppConnectionName} for transactionId ${request.transactionId}.
         Cannot calculate totalKwh.`,
       );
     }
-    transaction.isActive = false;
-    transaction.stoppedReason = stoppedReason;
-    transaction.endTime = request.timestamp;
 
-    // Sole owner of the final timeSpentCharging: 1.6 reports no charging duration, so the whole
-    // session is billed as charging time. Always set, so cost calculation never sees it unset.
-    const startTime = transaction.startTime ? Date.parse(transaction.startTime) : Number.NaN;
-    const stopTime = Date.parse(request.timestamp);
-    const elapsedSeconds = Math.floor((stopTime - startTime) / 1000);
-    transaction.timeSpentCharging = Number.isFinite(elapsedSeconds)
-      ? Math.max(0, elapsedSeconds)
-      : 0;
-    await transaction.save();
+    const updatedTransaction =
+      await this._transactionRepository.updateTransactionByStationIdAndTransactionId(
+        tenantId,
+        updates,
+        transactionId,
+        ocppConnectionName,
+      );
 
-    const totalCost = await this._costCalculator.calculateTotalCost(tenantId, transaction);
+    if (!updatedTransaction) {
+      this._logger.error(
+        `Failed to end transaction ${request.transactionId} at station ${ocppConnectionName}.`,
+      );
+      return;
+    }
+
+    const totalCost = await this._costCalculator.calculateTotalCost(tenantId, updatedTransaction);
     if (totalCost != null) {
       await this._transactionRepository.updateTransactionTotalCostById(
         tenantId,

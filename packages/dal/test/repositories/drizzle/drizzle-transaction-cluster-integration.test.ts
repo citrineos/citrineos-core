@@ -862,6 +862,81 @@ describe('DrizzleTransactionRepository cluster reads', () => {
     ).rejects.toThrow(/More than one value found/);
   });
 
+  it('readTransactionWithStartTransactionByStationIdAndTransactionId hydrates the start row', async () => {
+    const station = await aStation(TENANT);
+    const tx = await aTransaction(TENANT, station.id, 'T-START');
+    await startTransactionRepo().create(TENANT, {
+      ocppConnectionName: STATION,
+      meterStart: 1500,
+      timestamp: new Date('2026-01-01T00:00:00.000Z'),
+      transactionDatabaseId: tx.id,
+      transactionCreatedAt: tx.createdAt,
+      connectorDatabaseId: station.connectorDatabaseId,
+    });
+
+    const found =
+      await transactionRepo().readTransactionWithStartTransactionByStationIdAndTransactionId(
+        TENANT,
+        STATION,
+        'T-START',
+      );
+
+    expect(found?.transactionId).toBe('T-START');
+    expect(found?.startTransaction?.meterStart).toBe(1500);
+  });
+
+  // The plain read leaves the relation unset, so a caller reading meterStart off it would
+  // silently skip totalKwh rather than fail.
+  it('readTransactionByStationIdAndTransactionId leaves startTransaction unset', async () => {
+    const station = await aStation(TENANT);
+    const tx = await aTransaction(TENANT, station.id, 'T-BARE');
+    await startTransactionRepo().create(TENANT, {
+      ocppConnectionName: STATION,
+      meterStart: 1500,
+      timestamp: new Date('2026-01-01T00:00:00.000Z'),
+      transactionDatabaseId: tx.id,
+      transactionCreatedAt: tx.createdAt,
+      connectorDatabaseId: station.connectorDatabaseId,
+    });
+
+    const found = await transactionRepo().readTransactionByStationIdAndTransactionId(
+      TENANT,
+      STATION,
+      'T-BARE',
+    );
+
+    expect(found?.transactionId).toBe('T-BARE');
+    expect(found?.startTransaction).toBeUndefined();
+  });
+
+  it('readTransactionWithStartTransactionByStationIdAndTransactionId returns the transaction when no start row exists', async () => {
+    const station = await aStation(TENANT);
+    await aTransaction(TENANT, station.id, 'T-NOSTART');
+
+    const found =
+      await transactionRepo().readTransactionWithStartTransactionByStationIdAndTransactionId(
+        TENANT,
+        STATION,
+        'T-NOSTART',
+      );
+
+    expect(found?.transactionId).toBe('T-NOSTART');
+    expect(found?.startTransaction).toBeUndefined();
+  });
+
+  it('readTransactionWithStartTransactionByStationIdAndTransactionId does not cross tenants', async () => {
+    const other = await aStation(OTHER_TENANT, 'CS-TX-OTHER');
+    await aTransaction(OTHER_TENANT, other.id, 'T-OTHER');
+
+    await expect(
+      transactionRepo().readTransactionWithStartTransactionByStationIdAndTransactionId(
+        TENANT,
+        'CS-TX-OTHER',
+        'T-OTHER',
+      ),
+    ).resolves.toBeUndefined();
+  });
+
   it('readAllActiveTransactionsByAuthorizationId returns only active rows for that authorization', async () => {
     const station = await aStation(TENANT);
     const authorizationId = await anAuthorization(TENANT, null);

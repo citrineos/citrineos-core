@@ -15,16 +15,8 @@ import {
   OCPPVersion,
 } from '@citrineos/types';
 import type { IAuthorizationRepository, ITransactionRepository } from '@citrineos/dal';
-import { Transaction } from '@citrineos/dal';
 import { StopTransactionRequestOcpp16Handler } from '@handlers/index.js';
 import { createTestContainer, makeMockOcppSender } from '@test/test-container.js';
-
-const STATION_DB_ID = vi.hoisted(() => 4242);
-vi.mock('@citrineos/dal', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@citrineos/dal')>()),
-  resolveStationId: vi.fn().mockResolvedValue(STATION_DB_ID),
-  stationIdFilter: vi.fn().mockResolvedValue(STATION_DB_ID),
-}));
 
 function makeMessage<T extends OcppRequest>(payload: T): IMessage<T> {
   return {
@@ -44,16 +36,16 @@ function makeMessage<T extends OcppRequest>(payload: T): IMessage<T> {
 }
 
 /**
- * A Transaction row as the handler finds it, with just enough surface for the handler to run:
- * the StartTransaction association it reads meterStart from, and a no-op save().
+ * A Transaction as the repository returns it, with the StartTransaction relation the
+ * handler reads meterStart from to derive totalKwh.
  */
 function aTransaction(isActive: boolean) {
   return {
     id: 1,
     transactionId: '100',
     isActive,
+    connectorId: 1,
     startTransaction: { meterStart: 1000 },
-    save: vi.fn().mockResolvedValue(undefined),
   };
 }
 
@@ -79,6 +71,13 @@ function makeHandler(
   };
 
   const transactionEventRepository = {
+    readTransactionWithStartTransactionByStationIdAndTransactionId: vi
+      .fn()
+      .mockResolvedValue(transaction ?? undefined),
+    updateTransactionByStationIdAndTransactionId: vi.fn(async (_tenantId, updates) => ({
+      ...transaction,
+      ...updates,
+    })),
     createStopTransaction: vi.fn().mockResolvedValue({ id: 1 }),
     updateTransactionTotalCostById: vi.fn().mockResolvedValue(undefined),
   };
@@ -86,10 +85,6 @@ function makeHandler(
   const costCalculator = {
     calculateTotalCost: vi.fn().mockResolvedValue(0),
   };
-
-  const findOne = vi
-    .spyOn(Transaction, 'findOne')
-    .mockResolvedValue(transaction as unknown as Transaction);
 
   const handler = new StopTransactionRequestOcpp16Handler({
     logger,
@@ -99,7 +94,12 @@ function makeHandler(
     costCalculator,
   } as never);
 
-  return { handler, ocppSender, transactionEventRepository, costCalculator, findOne };
+  return { handler, ocppSender, transactionEventRepository, costCalculator };
+}
+
+/** The partial update the handler asked the repository to apply to the Transaction row. */
+function updatePayload(repository: ReturnType<typeof makeHandler>['transactionEventRepository']) {
+  return repository.updateTransactionByStationIdAndTransactionId.mock.calls[0]?.[1];
 }
 
 const request: OCPP1_6.StopTransactionRequest = {
@@ -121,7 +121,9 @@ describe('StopTransactionRequestOcpp16Handler', () => {
     await handler.handle(makeMessage(request));
 
     expect(transactionEventRepository.createStopTransaction).toHaveBeenCalledOnce();
-    expect(transaction.save).toHaveBeenCalledOnce();
+    expect(
+      transactionEventRepository.updateTransactionByStationIdAndTransactionId,
+    ).toHaveBeenCalledOnce();
   });
 
   it('does not record a second stop for an already-ended transaction', async () => {
@@ -133,7 +135,9 @@ describe('StopTransactionRequestOcpp16Handler', () => {
     // A charger that misses our CallResult retries the StopTransaction. Writing it again
     // duplicates the StopTransaction row and every meter value in transactionData.
     expect(transactionEventRepository.createStopTransaction).not.toHaveBeenCalled();
-    expect(transaction.save).not.toHaveBeenCalled();
+    expect(
+      transactionEventRepository.updateTransactionByStationIdAndTransactionId,
+    ).not.toHaveBeenCalled();
   });
 
   it('still acknowledges a retried StopTransaction so the charger stops resending', async () => {
@@ -155,27 +159,25 @@ describe('StopTransactionRequestOcpp16Handler', () => {
     // carried the derived value - two rows disagreeing about why the same session ended.
     const derived = transactionEventRepository.createStopTransaction.mock.calls[0][6];
     expect(derived).toBeDefined();
-    expect((transaction as unknown as { stoppedReason?: string }).stoppedReason).toBe(derived);
+    expect(updatePayload(transactionEventRepository)?.stoppedReason).toBe(derived);
   });
 
   it('derives Local as the stop reason when the driver presented an identification', async () => {
-    const transaction = aTransaction(true);
-    const { handler } = makeHandler(transaction);
+    const { handler, transactionEventRepository } = makeHandler(aTransaction(true));
 
     await handler.handle(makeMessage({ ...request, reason: undefined }));
 
     // 4.10 gives "EV-driver presented his identification to stop the transaction" as its own
     // example of the omitted-reason case, so an idTag is not evidence of a remote stop.
-    expect((transaction as unknown as { stoppedReason?: string }).stoppedReason).toBe('Local');
+    expect(updatePayload(transactionEventRepository)?.stoppedReason).toBe('Local');
   });
 
   it('derives Local as the stop reason when no idTag was presented', async () => {
-    const transaction = aTransaction(true);
-    const { handler } = makeHandler(transaction);
+    const { handler, transactionEventRepository } = makeHandler(aTransaction(true));
 
     await handler.handle(makeMessage({ ...request, idTag: undefined, reason: undefined }));
 
-    expect((transaction as unknown as { stoppedReason?: string }).stoppedReason).toBe('Local');
+    expect(updatePayload(transactionEventRepository)?.stoppedReason).toBe('Local');
   });
 
   it('answers Invalid when the idTag matches more than one authorization', async () => {
@@ -206,7 +208,9 @@ describe('StopTransactionRequestOcpp16Handler', () => {
     await handler.handle(makeMessage(request));
 
     expect(transactionEventRepository.createStopTransaction).toHaveBeenCalledOnce();
-    expect(transaction.save).toHaveBeenCalledOnce();
+    expect(
+      transactionEventRepository.updateTransactionByStationIdAndTransactionId,
+    ).toHaveBeenCalledOnce();
   });
 
   it('answers Expired for an accepted authorization whose cache expiry has passed', async () => {
