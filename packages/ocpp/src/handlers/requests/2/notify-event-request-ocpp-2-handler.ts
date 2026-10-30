@@ -18,8 +18,8 @@ import {
 } from '@citrineos/types';
 import type {
   IComponentRepository,
+  IEventDataRepository,
   IVariableAttributeRepository,
-  IVariableMonitoringRepository,
 } from '@citrineos/dal';
 
 @AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.NotifyEvent)
@@ -27,26 +27,26 @@ export class NotifyEventRequestOcpp2Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
   protected _componentRepository: IComponentRepository;
   protected _variableAttributeRepository: IVariableAttributeRepository;
-  protected _variableMonitoringRepository: IVariableMonitoringRepository;
+  protected _eventDataRepository: IEventDataRepository;
 
   constructor({
     logger,
     ocppSender,
     componentRepository,
     variableAttributeRepository,
-    variableMonitoringRepository,
+    eventDataRepository,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
     componentRepository: IComponentRepository;
     variableAttributeRepository: IVariableAttributeRepository;
-    variableMonitoringRepository: IVariableMonitoringRepository;
+    eventDataRepository: IEventDataRepository;
   }) {
     super(logger);
 
     this._ocppSender = ocppSender;
     this._componentRepository = componentRepository;
     this._variableAttributeRepository = variableAttributeRepository;
-    this._variableMonitoringRepository = variableMonitoringRepository;
+    this._eventDataRepository = eventDataRepository;
   }
 
   async handle(
@@ -64,7 +64,7 @@ export class NotifyEventRequestOcpp2Handler extends AbstractHandler {
           event.component,
           event.variable,
         );
-      await this._variableMonitoringRepository.createEventDatumByComponentIdAndVariableIdAndStationId(
+      await this._eventDataRepository.createEventDatumByComponentIdAndVariableIdAndStationId(
         message.context.tenantId,
         event,
         ocppConnectionName,

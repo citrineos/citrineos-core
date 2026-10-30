@@ -27,6 +27,7 @@ import type {
   DeleteCertificateAttemptCreate,
   DeleteCertificateAttemptDto,
   DeleteCertificateStatusEnumType,
+  EventDataDto,
   EvseDto,
   HashAlgorithmEnumType,
   InstallCertificateAttemptCreate,
@@ -67,6 +68,7 @@ import type {
   VariableAttributeDto,
   VariableCharacteristicsDto,
   VariableDto,
+  VariableMonitoringDto,
   WebsocketEventCreate,
   WebsocketEventDto,
 } from '@citrineos/types';
@@ -92,7 +94,6 @@ import type {
   ChargingProfile,
   CompositeSchedule,
 } from '../models/charging-profile/index.js';
-import type { EventData, VariableMonitoring } from '../models/variable-monitoring/index.js';
 
 export type AsyncJobStatusUpdate = Partial<
   Pick<
@@ -502,21 +503,21 @@ export interface ITransactionEventRepository {
   ): Promise<TransactionEventDto[]>;
 }
 
-export interface IVariableMonitoringRepository extends CrudRepository<VariableMonitoring> {
+export interface IVariableMonitoringRepository {
   createOrUpdateByMonitoringDataTypeAndStationId(
     tenantId: number,
     value: OCPP2_common_types.MonitoringDataType,
     ocppConnectionName: string,
     componentId?: number,
     variableId?: number,
-  ): Promise<VariableMonitoring[]>;
+  ): Promise<VariableMonitoringDto[]>;
   createOrUpdateBySetMonitoringDataTypeAndStationId(
     tenantId: number,
     value: OCPP2_common_types.SetMonitoringDataType,
     ocppConnectionName: string,
     componentId?: number,
     variableId?: number,
-  ): Promise<VariableMonitoring>;
+  ): Promise<VariableMonitoringDto>;
   rejectAllVariableMonitoringsByStationId(
     tenantId: number,
     action: CallAction,
@@ -532,14 +533,17 @@ export interface IVariableMonitoringRepository extends CrudRepository<VariableMo
     tenantId: number,
     result: OCPP2_common_types.SetMonitoringResultType,
     ocppConnectionName: string,
-  ): Promise<VariableMonitoring>;
+  ): Promise<VariableMonitoringDto>;
+}
+
+export interface IEventDataRepository {
   createEventDatumByComponentIdAndVariableIdAndStationId(
     tenantId: number,
     event: OCPP2_common_types.EventDataType,
     ocppConnectionName: string,
     componentId?: number,
     variableId?: number,
-  ): Promise<EventData>;
+  ): Promise<EventDataDto>;
 }
 
 export interface IMessageInfoRepository {
