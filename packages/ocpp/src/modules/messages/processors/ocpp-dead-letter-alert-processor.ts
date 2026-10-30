@@ -11,7 +11,7 @@ import type { IChargingStationRepository } from '@citrineos/dal';
 import { MessageOrigin } from '@citrineos/types';
 import type { NetworkAlertService } from '@services/network-alerts/index.js';
 
-const UNDELIVERED_REASONS: ReadonlySet<string> = new Set([
+export const UNDELIVERED_REASONS: ReadonlySet<string> = new Set([
   DeadLetterReason.Stale,
   DeadLetterReason.Expired,
   DeadLetterReason.Unroutable,

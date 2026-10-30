@@ -13,20 +13,20 @@ import {
   OCPP_CallAction,
   OCPP2_response_types,
 } from '@citrineos/types';
-import type { ILocalAuthListRepository } from '@citrineos/dal';
+import type { ILocalListVersionRepository } from '@citrineos/dal';
 
 @AsResponseHandler(OCPP_2_VER_LIST, OCPP_CallAction.GetLocalListVersion)
 export class GetLocalListVersionResponseOcpp2Handler extends AbstractHandler {
-  protected _localAuthListRepository: ILocalAuthListRepository;
+  protected _localListVersionRepository: ILocalListVersionRepository;
 
   constructor({
     logger,
-    localAuthListRepository,
+    localListVersionRepository,
   }: AbstractHandlerDependencies & {
-    localAuthListRepository: ILocalAuthListRepository;
+    localListVersionRepository: ILocalListVersionRepository;
   }) {
     super(logger);
-    this._localAuthListRepository = localAuthListRepository;
+    this._localListVersionRepository = localListVersionRepository;
   }
 
   async handle(
@@ -39,7 +39,7 @@ export class GetLocalListVersionResponseOcpp2Handler extends AbstractHandler {
       props,
     );
 
-    await this._localAuthListRepository.validateOrReplaceLocalListVersionForStation(
+    await this._localListVersionRepository.validateOrReplaceLocalListVersionForStation(
       message.context.tenantId,
       message.payload.versionNumber,
       message.context.ocppConnectionName,

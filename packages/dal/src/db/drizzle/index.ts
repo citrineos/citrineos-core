@@ -19,6 +19,10 @@ export {
   toAuthorizationDto,
 } from '../../repositories/drizzle/authorization.js';
 export {
+  DrizzleAuthorizationAttemptRepository,
+  toAuthorizationAttemptDto,
+} from '../../repositories/drizzle/authorization-attempt.js';
+export {
   DrizzleRepository,
   DrizzleTenantScopedRepository,
   type CitrineTable,
@@ -83,6 +87,52 @@ export {
   DrizzleInstalledCertificateRepository,
   toInstalledCertificateDto,
 } from '../../repositories/drizzle/installed-certificate.js';
+export {
+  DrizzleLocalListAuthorizationRepository,
+  toLocalListAuthorizationDto,
+  type LocalListAuthorizationInput,
+} from '../../repositories/drizzle/local-list-authorization.js';
+export {
+  localListAuthorizationTable,
+  tenantLocalListAuthorizationTable,
+  LocalListAuthorizationEntitySchema,
+  LocalListAuthorizationEntityInsertSchema,
+  type LocalListAuthorizationEntity,
+  type LocalListAuthorizationEntityInsert,
+} from './schema/local-list-authorization.js';
+export {
+  DrizzleLocalListVersionRepository,
+  toLocalListVersionDto,
+} from '../../repositories/drizzle/local-list-version.js';
+export {
+  localListVersionTable,
+  tenantLocalListVersionTable,
+  LocalListVersionEntitySchema,
+  LocalListVersionEntityInsertSchema,
+  type LocalListVersionEntity,
+  type LocalListVersionEntityInsert,
+} from './schema/local-list-version.js';
+export {
+  localListVersionAuthorizationTable,
+  tenantLocalListVersionAuthorizationTable,
+} from './schema/local-list-version-authorization.js';
+export {
+  DrizzleSendLocalListRepository,
+  toSendLocalListDto,
+  type SendLocalListInput,
+} from '../../repositories/drizzle/send-local-list.js';
+export {
+  sendLocalListTable,
+  tenantSendLocalListTable,
+  SendLocalListEntitySchema,
+  SendLocalListEntityInsertSchema,
+  type SendLocalListEntity,
+  type SendLocalListEntityInsert,
+} from './schema/send-local-list.js';
+export {
+  sendLocalListAuthorizationTable,
+  tenantSendLocalListAuthorizationTable,
+} from './schema/send-local-list-authorization.js';
 export { DrizzleLocationRepository, toLocationDto } from '../../repositories/drizzle/location.js';
 export {
   DrizzleMeterValueRepository,
@@ -133,6 +183,38 @@ export {
   DrizzleSubscriptionRepository,
   toSubscriptionDto,
 } from '../../repositories/drizzle/subscription.js';
+export {
+  DrizzleEventDataRepository,
+  toEventDataDto,
+} from '../../repositories/drizzle/event-data.js';
+export {
+  DrizzleChargingNeedsRepository,
+  toChargingNeedsDto,
+} from '../../repositories/drizzle/charging-needs.js';
+export {
+  DrizzleChargingProfileRepository,
+  toChargingProfileDto,
+} from '../../repositories/drizzle/charging-profile.js';
+export {
+  DrizzleChargingScheduleRepository,
+  toChargingScheduleDto,
+} from '../../repositories/drizzle/charging-schedule.js';
+export {
+  DrizzleCompositeScheduleRepository,
+  toCompositeScheduleDto,
+} from '../../repositories/drizzle/composite-schedule.js';
+export {
+  DrizzleSalesTariffRepository,
+  toSalesTariffDto,
+} from '../../repositories/drizzle/sales-tariff.js';
+export {
+  DrizzleVariableMonitoringRepository,
+  toVariableMonitoringDto,
+} from '../../repositories/drizzle/variable-monitoring.js';
+export {
+  DrizzleVariableMonitoringStatusRepository,
+  toVariableMonitoringStatusDto,
+} from '../../repositories/drizzle/variable-monitoring-status.js';
 export { DrizzleTariffRepository, toTariffDto } from '../../repositories/drizzle/tariff.js';
 export { DrizzleTenantRepository, toTenantDto } from '../../repositories/drizzle/tenant.js';
 export {
@@ -156,6 +238,13 @@ export {
   toWebsocketEventDto,
 } from '../../repositories/drizzle/websocket-event.js';
 export { registeredTableNames, registeredTables, type RegisteredTable } from './schema-registry.js';
+export {
+  AuthorizationAttemptEntityInsertSchema,
+  AuthorizationAttemptEntitySchema,
+  authorizationAttemptTable,
+  type AuthorizationAttemptEntity,
+  type AuthorizationAttemptEntityInsert,
+} from './schema/authorization-attempt.js';
 export {
   AuthorizationEntityInsertSchema,
   AuthorizationEntitySchema,

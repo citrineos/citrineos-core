@@ -33,7 +33,7 @@ catalog:
   "@playwright/test": 1.64.1
 
   # -- HTTP / Fastify --
-  fastify: 5.12.5
+  fastify: 5.12.7
   "@fastify/auth": 5.1.2
   "@fastify/swagger": 9.9.2
   "@fastify/swagger-ui": 5.2.6
@@ -68,7 +68,7 @@ catalog:
   jsonwebtoken: 9.0.3
   jsrsasign: 11.1.5
   jwks-rsa: 4.1.0
-  "@peculiar/webcrypto": 1.7.1
+  "@peculiar/webcrypto": 1.7.2
   pkijs: 3.4.1
   pvutils: 1.2.0
 
@@ -82,7 +82,7 @@ catalog:
   bufferutil: 4.1.0
   utf-8-validate: 6.0.6
   "@opentelemetry/api": 1.9.1
-  "@aws-sdk/client-s3": 3.1148.0
+  "@aws-sdk/client-s3": 3.1152.0
   "@google-cloud/storage": 7.22.0
 
   # -- Types --

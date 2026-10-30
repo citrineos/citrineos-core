@@ -11,11 +11,17 @@ import {
   DrizzleBootRepository,
   DrizzleCertificateRepository,
   DrizzleChangeConfigurationRepository,
+  DrizzleChargingNeedsRepository,
+  DrizzleChargingProfileRepository,
+  DrizzleChargingScheduleRepository,
+  DrizzleLocalListVersionRepository,
   DrizzleChargingStationRepository,
   DrizzleChargingStationSequenceRepository,
   DrizzleComponentRepository,
+  DrizzleCompositeScheduleRepository,
   DrizzleConnectorRepository,
   DrizzleDeleteCertificateAttemptRepository,
+  DrizzleEventDataRepository,
   DrizzleEvseRepository,
   DrizzleInstallCertificateAttemptRepository,
   DrizzleInstalledCertificateRepository,
@@ -24,6 +30,7 @@ import {
   DrizzleMessageInfoRepository,
   DrizzleReservationRepository,
   DrizzleSecurityEventRepository,
+  DrizzleSendLocalListRepository,
   DrizzleServerNetworkProfileRepository,
   DrizzleStatusNotificationRepository,
   DrizzleSubscriptionRepository,
@@ -31,6 +38,7 @@ import {
   DrizzleTenantRepository,
   DrizzleTransactionEventRepository,
   DrizzleTransactionRepository,
+  DrizzleVariableMonitoringRepository,
   RepositoryStore,
   SequelizeAuthorizationRepository,
   SequelizeBootRepository,
@@ -58,7 +66,7 @@ import {
 import { type PgHarness, resetDb, startPgHarness } from '../../utils/pg-harness.js';
 
 // RepositoryStore builds one repository per interface from a single config,
-// logger and sequelize instance. CITRINEOS_USE_DRIZZLE=true swaps twenty-six of
+// logger and sequelize instance. CITRINEOS_USE_DRIZZLE=true swaps thirty-one of
 // them to Drizzle implementations; those only build a lazy pg pool from config
 // at construction, so both branches are covered here. On the sequelize side the
 // whole Location cluster (station/evse/connector/status notification) is one
@@ -164,12 +172,15 @@ describe('RepositoryStore', () => {
 
     expect(store.sequelizeInstance).toBe(h.sequelizeInstance);
     expect(store.chargingProfileRepository).toBeInstanceOf(SequelizeChargingProfileRepository);
+    expect(store.chargingNeedsRepository).toBe(store.chargingProfileRepository);
+    expect(store.chargingScheduleRepository).toBe(store.chargingProfileRepository);
+    expect(store.compositeScheduleRepository).toBe(store.chargingProfileRepository);
     expect(store.componentRepository).toBeInstanceOf(SequelizeDeviceModelRepository);
     expect(store.variableAttributeRepository).toBe(store.componentRepository);
     expect(store.variableCharacteristicsRepository).toBe(store.componentRepository);
-    expect(store.localAuthListRepository).toBeInstanceOf(SequelizeLocalAuthListRepository);
     expect(store.ocppMessageRepository).toBeInstanceOf(SequelizeOCPPMessageRepository);
     expect(store.transactionEventRepository).toBeInstanceOf(SequelizeTransactionEventRepository);
+    expect(store.eventDataRepository).toBe(store.variableMonitoringRepository);
     expect(store.transactionRepository).toBe(store.transactionEventRepository);
     expect(store.meterValueRepository).toBe(store.transactionEventRepository);
     expect(store.variableMonitoringRepository).toBeInstanceOf(
@@ -199,6 +210,8 @@ describe('RepositoryStore', () => {
       expect(store.installedCertificateRepository).toBeInstanceOf(
         SequelizeInstalledCertificateRepository,
       );
+      expect(store.sendLocalListRepository).toBeInstanceOf(SequelizeLocalAuthListRepository);
+      expect(store.localListVersionRepository).toBe(store.sendLocalListRepository);
       expect(store.locationRepository).toBeInstanceOf(SequelizeLocationRepository);
       expect(store.messageInfoRepository).toBeInstanceOf(SequelizeMessageInfoRepository);
       expect(store.reservationRepository).toBeInstanceOf(SequelizeReservationRepository);
@@ -271,13 +284,18 @@ describe('RepositoryStore', () => {
       expect(store.transactionEventRepository).toBeInstanceOf(DrizzleTransactionEventRepository);
       expect(store.transactionRepository).toBeInstanceOf(DrizzleTransactionRepository);
       expect(store.transactionRepository).not.toBe(store.transactionEventRepository);
-      // Non-switchable repositories stay on sequelize even in drizzle mode.
-      expect(store.chargingProfileRepository).toBeInstanceOf(SequelizeChargingProfileRepository);
-      expect(store.localAuthListRepository).toBeInstanceOf(SequelizeLocalAuthListRepository);
-      expect(store.ocppMessageRepository).toBeInstanceOf(SequelizeOCPPMessageRepository);
       expect(store.variableMonitoringRepository).toBeInstanceOf(
-        SequelizeVariableMonitoringRepository,
+        DrizzleVariableMonitoringRepository,
       );
+      expect(store.eventDataRepository).toBeInstanceOf(DrizzleEventDataRepository);
+      expect(store.chargingProfileRepository).toBeInstanceOf(DrizzleChargingProfileRepository);
+      expect(store.chargingNeedsRepository).toBeInstanceOf(DrizzleChargingNeedsRepository);
+      expect(store.chargingScheduleRepository).toBeInstanceOf(DrizzleChargingScheduleRepository);
+      expect(store.compositeScheduleRepository).toBeInstanceOf(DrizzleCompositeScheduleRepository);
+      expect(store.sendLocalListRepository).toBeInstanceOf(DrizzleSendLocalListRepository);
+      expect(store.localListVersionRepository).toBeInstanceOf(DrizzleLocalListVersionRepository);
+      // Non-switchable repositories stay on sequelize even in drizzle mode.
+      expect(store.ocppMessageRepository).toBeInstanceOf(SequelizeOCPPMessageRepository);
     });
   });
 

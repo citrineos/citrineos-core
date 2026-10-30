@@ -4,14 +4,25 @@
 
 import {
   type ChargingLimitSourceEnumType,
+  type ChargingNeedsDto,
+  type ChargingProfileDto,
   type ChargingProfilePurposeEnumType,
+  type CompositeScheduleDto,
   ChargingLimitSourceEnum,
   OCPP2_0_1,
 } from '@citrineos/types';
+import { Op } from 'sequelize';
 import { CrudRepository } from '@citrineos/base';
 import { SequelizeRepository, type SequelizeRepositoryDependencies } from './base.js';
 import { stationIdFilter } from './resolve-station-id.js';
-import type { IChargingProfileRepository } from '../repositories.js';
+import type {
+  ChargingProfileDeactivation,
+  ChargingProfileQuery,
+  IChargingNeedsRepository,
+  IChargingProfileRepository,
+  IChargingScheduleRepository,
+  ICompositeScheduleRepository,
+} from '../repositories.js';
 import type {
   ChargingProfileInput,
   CompositeScheduleInput,
@@ -30,7 +41,11 @@ const WHOLE_CHARGING_STATION_EVSE_ID = 0;
 
 export class SequelizeChargingProfileRepository
   extends SequelizeRepository<ChargingProfile>
-  implements IChargingProfileRepository
+  implements
+    IChargingProfileRepository,
+    IChargingNeedsRepository,
+    IChargingScheduleRepository,
+    ICompositeScheduleRepository
 {
   chargingNeeds: CrudRepository<ChargingNeeds>;
   chargingSchedule: CrudRepository<ChargingSchedule>;
@@ -93,7 +108,7 @@ export class SequelizeChargingProfileRepository
     evseId?: number | null,
     chargingLimitSource?: ChargingLimitSourceEnumType,
     isActive?: boolean,
-  ): Promise<ChargingProfile> {
+  ): Promise<ChargingProfileDto> {
     let transactionDBId;
     if (chargingProfile.transactionId) {
       const activeTransaction = await Transaction.findOne({
@@ -181,7 +196,7 @@ export class SequelizeChargingProfileRepository
     tenantId: number,
     chargingNeedsReq: OCPP2_0_1.NotifyEVChargingNeedsRequest,
     ocppConnectionName: string,
-  ): Promise<ChargingNeeds> {
+  ): Promise<ChargingNeedsDto> {
     const activeTransaction = await Transaction.findOne({
       where: {
         tenantId,
@@ -213,7 +228,7 @@ export class SequelizeChargingProfileRepository
     tenantId: number,
     evseDBId: number,
     transactionDataBaseId: number | null,
-  ): Promise<ChargingNeeds | undefined> {
+  ): Promise<ChargingNeedsDto | undefined> {
     const chargingNeedsArray = await this.chargingNeeds.readAllByQuery(tenantId, {
       where: {
         evseId: evseDBId,
@@ -229,7 +244,7 @@ export class SequelizeChargingProfileRepository
     tenantId: number,
     compositeSchedule: CompositeScheduleInput | CompositeScheduleInput21,
     ocppConnectionName: string,
-  ): Promise<CompositeSchedule> {
+  ): Promise<CompositeScheduleDto> {
     const evseId = await this.resolveCompositeScheduleEvse(
       tenantId,
       ocppConnectionName,
@@ -276,6 +291,77 @@ export class SequelizeChargingProfileRepository
     return evse.id;
   }
 
+  async readChargingProfiles(
+    tenantId: number,
+    query: ChargingProfileQuery,
+  ): Promise<ChargingProfileDto[]> {
+    return await this.readAllByQuery(tenantId, {
+      where: { tenantId, ...definedOnly(query) },
+    });
+  }
+
+  async readTxProfilesWithSchedules(
+    tenantId: number,
+    ocppConnectionName: string,
+    transactionDatabaseId: number | null | undefined,
+  ): Promise<ChargingProfileDto[]> {
+    return await this.readAllByQuery(tenantId, {
+      where: {
+        tenantId,
+        ocppConnectionName,
+        transactionDatabaseId,
+        chargingProfilePurpose: OCPP2_0_1.ChargingProfilePurposeEnumType.TxProfile,
+        isActive: true,
+      },
+      include: [{ model: ChargingSchedule, as: 'chargingSchedule' }],
+    });
+  }
+
+  async readHighestStackLevelTxProfile(
+    tenantId: number,
+    ocppConnectionName: string,
+    transactionDatabaseId: number | null,
+  ): Promise<ChargingProfileDto | undefined> {
+    const [profile] = await this.readAllByQuery(tenantId, {
+      where: {
+        tenantId,
+        ocppConnectionName,
+        transactionDatabaseId,
+        chargingProfilePurpose: OCPP2_0_1.ChargingProfilePurposeEnumType.TxProfile,
+      },
+      order: [['stackLevel', 'DESC']],
+      limit: 1,
+      include: [ChargingSchedule],
+    });
+    return profile;
+  }
+
+  async deactivateChargingProfiles(
+    tenantId: number,
+    ocppConnectionName: string,
+    criteria: ChargingProfileDeactivation,
+  ): Promise<number> {
+    const { chargingProfileId, excludeChargingProfileId, ...rest } = criteria;
+    const updated = await this.updateAllByQuery(
+      tenantId,
+      { isActive: false },
+      {
+        where: {
+          tenantId,
+          ocppConnectionName,
+          isActive: true,
+          ...definedOnly(rest),
+          ...(chargingProfileId != null ? { id: chargingProfileId } : {}),
+          ...(excludeChargingProfileId != null
+            ? { id: { [Op.ne]: excludeChargingProfileId } }
+            : {}),
+        },
+        returning: false,
+      },
+    );
+    return updated.length;
+  }
+
   async getNextChargingScheduleId(tenantId: number, ocppConnectionName: string): Promise<number> {
     return await this.chargingSchedule.readNextValue(tenantId, 'id', {
       where: { ocppConnectionName: ocppConnectionName },
@@ -307,6 +393,14 @@ export class SequelizeChargingProfileRepository
       0,
     );
   }
+}
+
+// A criteria object only filters on the fields it actually carries; an explicit
+// undefined in a sequelize `where` matches nothing rather than being ignored.
+function definedOnly<T extends object>(criteria: T): Partial<T> {
+  return Object.fromEntries(
+    Object.entries(criteria).filter(([, value]) => value !== undefined),
+  ) as Partial<T>;
 }
 
 export default SequelizeChargingProfileRepository;
