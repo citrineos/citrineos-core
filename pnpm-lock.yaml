@@ -145,8 +145,8 @@ catalogs:
       specifier: 2.3.4
       version: 2.3.4
     pkijs:
-      specifier: 3.4.1
-      version: 3.4.1
+      specifier: 3.4.3
+      version: 3.4.3
     prettier:
       specifier: 3.6.2
       version: 3.6.2
@@ -244,7 +244,7 @@ importers:
         version: 4.1.0
       pkijs:
         specifier: 'catalog:'
-        version: 3.4.1
+        version: 3.4.3
       pvutils:
         specifier: 'catalog:'
         version: 1.2.0
@@ -390,7 +390,7 @@ importers:
         version: 6.6.5
       sequelize-typescript:
         specifier: 'catalog:'
-        version: 2.1.6(@types/node@26.6.5)(@types/validator@13.15.10)(reflect-metadata@0.2.2)(sequelize@6.37.8(sqlite3@5.1.7))
+        version: 2.1.6(@types/node@25.9.9)(@types/validator@13.15.10)(reflect-metadata@0.2.2)(sequelize@6.37.8)
       sqlite3:
         specifier: 'catalog:'
         version: 5.1.7
@@ -427,7 +427,7 @@ importers:
         version: 3.1.14
       ts-node:
         specifier: 'catalog:'
-        version: 10.9.2(@swc/core@1.16.18)(@types/node@26.6.5)(typescript@6.0.3)
+        version: 10.9.2(@swc/core@1.16.18)(@types/node@25.9.9)(typescript@6.0.3)
       tsx:
         specifier: 'catalog:'
         version: 4.23.15
@@ -470,7 +470,7 @@ importers:
         version: 6.6.5
       sequelize-typescript:
         specifier: 'catalog:'
-        version: 2.1.6(@types/node@26.6.5)(@types/validator@13.15.10)(reflect-metadata@0.2.2)(sequelize@6.37.8(sqlite3@5.1.7))
+        version: 2.1.6(@types/node@25.9.9)(@types/validator@13.15.10)(reflect-metadata@0.2.2)(sequelize@6.37.8)
       sqlite3:
         specifier: 'catalog:'
         version: 5.1.7
@@ -504,7 +504,7 @@ importers:
         version: 8.11.3
       ts-node:
         specifier: 'catalog:'
-        version: 10.9.2(@swc/core@1.16.18)(@types/node@26.6.5)(typescript@6.0.3)
+        version: 10.9.2(@swc/core@1.16.18)(@types/node@25.9.9)(typescript@6.0.3)
       typescript-eslint:
         specifier: 'catalog:'
         version: 8.17.0(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3)
@@ -942,7 +942,7 @@ importers:
         version: 6.37.8(pg-hstore@2.3.4)(pg@8.11.3)(sqlite3@5.1.7)
       sequelize-typescript:
         specifier: 'catalog:'
-        version: 2.1.6(@types/node@26.6.5)(@types/validator@13.15.10)(reflect-metadata@0.2.2)(sequelize@6.37.8(sqlite3@5.1.7))
+        version: 2.1.6(@types/node@25.9.9)(@types/validator@13.15.10)(reflect-metadata@0.2.2)(sequelize@6.37.8)
       tslog:
         specifier: 'catalog:'
         version: 5.1.0
@@ -985,7 +985,7 @@ importers:
         version: 8.17.0(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3)
       vitest:
         specifier: 'catalog:'
-        version: 3.2.7(@types/debug@4.1.13)(@types/node@26.6.5)(jiti@2.7.0)(lightningcss@1.32.0)(msw@2.15.0(@types/node@26.6.5)(typescript@6.0.3))(sass@1.93.2)(tsx@4.23.15)(yaml@2.9.1)
+        version: 3.2.7(@types/debug@4.1.13)(@types/node@25.9.9)(jiti@2.7.0)(lightningcss@1.32.0)(msw@2.15.0(@types/node@25.9.9)(typescript@6.0.3))(sass@1.93.2)(tsx@4.23.15)(yaml@2.9.1)
 
   packages/ocpi:
     dependencies:
@@ -1133,7 +1133,7 @@ importers:
         version: 1.2.0
       ts-node:
         specifier: 'catalog:'
-        version: 10.9.2(@swc/core@1.16.18)(@types/node@26.6.5)(typescript@6.0.3)
+        version: 10.9.2(@swc/core@1.16.18)(@types/node@25.9.9)(typescript@6.0.3)
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
@@ -1238,7 +1238,7 @@ importers:
         version: 2.3.4
       pkijs:
         specifier: 'catalog:'
-        version: 3.4.1
+        version: 3.4.3
       pvutils:
         specifier: 'catalog:'
         version: 1.2.0
@@ -1250,7 +1250,7 @@ importers:
         version: 6.37.8(pg-hstore@2.3.4)(pg@8.11.3)(sqlite3@5.1.7)
       sequelize-typescript:
         specifier: 'catalog:'
-        version: 2.1.6(@types/node@26.6.5)(@types/validator@13.15.10)(reflect-metadata@0.2.2)(sequelize@6.37.8(sqlite3@5.1.7))
+        version: 2.1.6(@types/node@25.9.9)(@types/validator@13.15.10)(reflect-metadata@0.2.2)(sequelize@6.37.8)
       ssh2-sftp-client:
         specifier: ^10.0.3
         version: 10.0.3
@@ -1311,7 +1311,7 @@ importers:
         version: 8.17.0(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3)
       vitest:
         specifier: 'catalog:'
-        version: 3.2.7(@types/debug@4.1.13)(@types/node@26.6.5)(jiti@2.7.0)(lightningcss@1.32.0)(msw@2.15.0(@types/node@26.6.5)(typescript@6.0.3))(sass@1.93.2)(tsx@4.23.15)(yaml@2.9.1)
+        version: 3.2.7(@types/debug@4.1.13)(@types/node@25.9.9)(jiti@2.7.0)(lightningcss@1.32.0)(msw@2.15.0(@types/node@25.9.9)(typescript@6.0.3))(sass@1.93.2)(tsx@4.23.15)(yaml@2.9.1)
 
   packages/types:
     dependencies:
@@ -4320,6 +4320,7 @@ packages:
   '@smithy/core@3.36.0':
     resolution: {integrity: sha512-3hJiwG1F5t1SoXqp/yOCmYXziyx7ZVqF63S5W6YU201e/qwVaHPex+E/3vvyY9a3ORq/b+BydeNZpP2saQ9X2g==}
     engines: {node: '>=18.0.0'}
+    deprecated: Deprecated due to a bug in custom logger data redaction. See https://github.com/aws/aws-sdk-js-v3/issues/8393.
 
   '@smithy/credential-provider-imds@4.5.2':
     resolution: {integrity: sha512-A9uSdn72ozbRUSit0eib0TW7nXuNPlaeM0zcGkJ+nE6tFcSDbnmtwoxbTCFBukVQcszDAyvsd7+rTduPTXpygg==}
@@ -8991,8 +8992,8 @@ packages:
     resolution: {integrity: sha512-nDywThFk1i4BQK4twPQ6TA4RT8bDY96yeuCVBWL3ePARCiEKDRSrNGbFIgUJpLp+XeIR65v8ra7WuJOFUBtkMA==}
     engines: {node: '>=8'}
 
-  pkijs@3.4.1:
-    resolution: {integrity: sha512-Oo/NZcSWccq8KyoG7gLE9fnltgHns+pNCjCAp/WmjsUySi+sX7y4z4Xqu4fVb42CDHzRPl33fjzT15V1wvcyhA==}
+  pkijs@3.4.3:
+    resolution: {integrity: sha512-V9kOzaItwDgqlryhXysQsAXUEKi5O7kqWUaP3dXI7MLvkPqWWMb4wVb1QAtmEDCKI+XIAINsZoNKMFF7sZb1eg==}
     engines: {node: '>=16.0.0'}
 
   playwright-core@1.64.1:
@@ -18964,7 +18965,7 @@ snapshots:
     dependencies:
       find-up: 3.0.0
 
-  pkijs@3.4.1:
+  pkijs@3.4.3:
     dependencies:
       '@noble/hashes': 1.8.0
       asn1js: 3.0.10
@@ -19721,14 +19722,6 @@ snapshots:
       reflect-metadata: 0.2.2
       sequelize: 6.37.8(pg-hstore@2.3.4)(pg@8.11.3)(sqlite3@5.1.7)
 
-  sequelize-typescript@2.1.6(@types/node@26.6.5)(@types/validator@13.15.10)(reflect-metadata@0.2.2)(sequelize@6.37.8(sqlite3@5.1.7)):
-    dependencies:
-      '@types/node': 26.6.5
-      '@types/validator': 13.15.10
-      glob: 7.2.0
-      reflect-metadata: 0.2.2
-      sequelize: 6.37.8(pg-hstore@2.3.4)(pg@8.11.3)(sqlite3@5.1.7)
-
   sequelize@6.37.8(pg-hstore@2.3.4)(pg@8.11.3)(sqlite3@5.1.7):
     dependencies:
       '@types/debug': 4.1.13
@@ -20467,14 +20460,14 @@ snapshots:
       '@ts-morph/common': 0.19.0
       code-block-writer: 12.0.0
 
-  ts-node@10.9.2(@swc/core@1.16.18)(@types/node@26.6.5)(typescript@6.0.3):
+  ts-node@10.9.2(@swc/core@1.16.18)(@types/node@25.9.9)(typescript@6.0.3):
     dependencies:
       '@cspotcode/source-map-support': 0.8.1
       '@tsconfig/node10': 1.0.13
       '@tsconfig/node12': 1.0.11
       '@tsconfig/node14': 1.0.3
       '@tsconfig/node16': 1.0.4
-      '@types/node': 26.6.5
+      '@types/node': 25.9.9
       acorn: 8.19.0
       acorn-walk: 8.3.5
       arg: 4.1.3
