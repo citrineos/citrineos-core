@@ -135,6 +135,15 @@ apps/operator-ui/public/locales/pt-BR/tariffs.json
 apps/operator-ui/public/locales/pt-BR/tenantPartners.json
 apps/operator-ui/public/locales/pt-BR/transactions.json
 apps/operator-ui/public/locales/pt-BR/networkAlerts.json
+apps/operator-ui/public/locales/zh-CN/common.json
+apps/operator-ui/public/locales/zh-CN/authorizations.json
+apps/operator-ui/public/locales/zh-CN/chargingStations.json
+apps/operator-ui/public/locales/zh-CN/locations.json
+apps/operator-ui/public/locales/zh-CN/overview.json
+apps/operator-ui/public/locales/zh-CN/tariffs.json
+apps/operator-ui/public/locales/zh-CN/tenantPartners.json
+apps/operator-ui/public/locales/zh-CN/transactions.json
+apps/operator-ui/public/locales/zh-CN/networkAlerts.json
 apps/operator-ui/public/logo-black.svg
 apps/operator-ui/public/logo-collapsed.svg
 apps/operator-ui/public/logo-white.svg

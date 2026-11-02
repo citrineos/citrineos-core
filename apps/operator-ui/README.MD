@@ -222,7 +222,8 @@ pnpm run start
 The Operator UI is fully internationalized using [next-intl](https://next-intl.dev/), integrated with Refine's
 `i18nProvider`. All user-facing strings are resolved through translation keys.
 
-- **Available languages:** English (`en`, default) and Brazilian Portuguese (`pt-BR`)
+- **Available languages:** English (`en`, default), Brazilian Portuguese (`pt-BR`) and Simplified Chinese
+  (`zh-CN`)
 - **Language switcher:** available at the bottom of the sidebar, next to the theme toggle
 - **Persistence:** the selected language is stored in the `NEXT_LOCALE` cookie; English is used as a fallback for
   any key missing in the selected locale
@@ -253,6 +254,7 @@ translate('Locations.noDataFound', { id });
    export const LOCALES = [
      { value: 'en', label: 'English' },
      { value: 'pt-BR', label: 'Português (Brasil)' },
+     { value: 'zh-CN', label: '简体中文' },
      { value: 'de', label: 'Deutsch' },
    ];
    ```
