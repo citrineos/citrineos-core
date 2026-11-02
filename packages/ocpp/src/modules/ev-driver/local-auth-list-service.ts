@@ -9,6 +9,8 @@ import {
   type LocalListVersionDto,
   type SendLocalListDto,
   type VariableAttributeDto,
+  type VariableCharacteristicsDto,
+  type VariableDto,
 } from '@citrineos/types';
 import { childLogger } from '@citrineos/base';
 import type { ILogObj, Logger } from 'tslog';
@@ -19,7 +21,10 @@ import type {
   ILocalListVersionRepository,
   ISendLocalListRepository,
 } from '@citrineos/dal';
-import { Variable } from '@citrineos/dal';
+
+type VariableWithCharacteristics = VariableDto & {
+  variableCharacteristics?: VariableCharacteristicsDto;
+};
 
 export class LocalAuthListService {
   protected _sendLocalListRepository: ISendLocalListRepository;
@@ -364,8 +369,7 @@ export class LocalAuthListService {
         type: AttributeEnum.Actual,
       });
 
-    const maxLimit = (entriesAttributes[0]?.variable as Variable | undefined)
-      ?.variableCharacteristics?.maxLimit;
-    return maxLimit ?? null;
+    const variable = entriesAttributes[0]?.variable as VariableWithCharacteristics | undefined;
+    return variable?.variableCharacteristics?.maxLimit ?? null;
   }
 }

@@ -413,6 +413,57 @@ export class DrizzleTransactionRepository
     return row ? toTransactionDto(row) : undefined;
   }
 
+  async readTransactionWithStartTransactionByStationIdAndTransactionId(
+    tenantId: number,
+    ocppConnectionName: string,
+    transactionId: string,
+  ): Promise<TransactionDto | undefined> {
+    const stationId = await resolveStationId(
+      this.db,
+      tenantId,
+      ocppConnectionName,
+      this.useTenantSchema,
+    );
+    if (stationId === undefined) {
+      return undefined;
+    }
+    const transactions = this.getTable(tenantId);
+    const startTransactions = this.getStartTransactionTable(tenantId);
+
+    const rows = (await this.db
+      .select({ transaction: transactions, startTransaction: startTransactions })
+      .from(transactions)
+      .leftJoin(
+        startTransactions,
+        and(
+          eq(startTransactions.transactionDatabaseId, transactions.id),
+          this.tenantFilter(startTransactions, tenantId),
+        ),
+      )
+      .where(
+        and(
+          eq(transactions.stationId, stationId),
+          eq(transactions.transactionId, transactionId),
+          this.tenantFilter(transactions, tenantId),
+        ),
+      )
+      .limit(2)) as {
+      transaction: TransactionEntity;
+      startTransaction: StartTransactionEntity | null;
+    }[];
+
+    const row = this.onlyOne(rows, `stationId=${stationId}, transactionId=${transactionId}`);
+    if (!row) {
+      return undefined;
+    }
+    return {
+      ...toTransactionDto(row.transaction),
+      startTransaction: row.startTransaction
+        ? toStartTransactionDto(row.startTransaction)
+        : undefined,
+    };
+  }
+
   async readAllActiveTransactionsByAuthorizationId(
     tenantId: number,
     authorizationId: number,

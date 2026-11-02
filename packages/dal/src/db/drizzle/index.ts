@@ -151,6 +151,10 @@ export {
   toMessageInfoDto,
 } from '../../repositories/drizzle/message-info.js';
 export {
+  DrizzleOCPPMessageRepository,
+  toOCPPMessageDto,
+} from '../../repositories/drizzle/ocpp-message.js';
+export {
   DrizzleNetworkAlertConfigRepository,
   toNetworkAlertConfigDto,
 } from '../../repositories/drizzle/network-alert-config.js';
@@ -446,4 +450,4 @@ export {
   type WebsocketEventEntity,
   type WebsocketEventEntityInsert,
 } from './schema/websocket-event.js';
-export { DefaultDrizzleInstance } from './util.js';
+export { DefaultDrizzleInstance, type DrizzlePoolStats } from './util.js';
