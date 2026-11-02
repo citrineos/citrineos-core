@@ -69,6 +69,7 @@ describe('ConnectorStatusService', () => {
   beforeEach(() => {
     logger.error.mockClear();
     logger.info.mockClear();
+    logger.warn.mockClear();
     chargingStationRepository = {
       readChargingStationByOcppConnectionName:
         vi.fn<IChargingStationRepository['readChargingStationByOcppConnectionName']>(),
@@ -93,6 +94,7 @@ describe('ConnectorStatusService', () => {
           aEvse((evse) => {
             evse.id = EVSE_DB_ID;
             evse.evseTypeId = EVSE_TYPE_ID;
+            evse.stationId = STATION_DB_ID;
           }),
         ];
       }),
@@ -176,6 +178,7 @@ describe('ConnectorStatusService', () => {
       aEvse((evse) => {
         evse.id = NEW_EVSE_DB_ID;
         evse.evseTypeId = 9;
+        evse.stationId = STATION_DB_ID;
       }),
     );
 
@@ -190,8 +193,32 @@ describe('ConnectorStatusService', () => {
     });
     expect(connectorRepository.createOrUpdateOcpp2Connector).toHaveBeenCalledWith(
       DEFAULT_TENANT_ID,
-      expect.objectContaining({ evseId: NEW_EVSE_DB_ID, evseTypeConnectorId: CONNECTOR_ID }),
+      expect.objectContaining({
+        stationId: STATION_DB_ID,
+        evseId: NEW_EVSE_DB_ID,
+        evseTypeConnectorId: CONNECTOR_ID,
+      }),
     );
+    expect(logger.warn).toHaveBeenCalled();
+  });
+
+  it('does not warn about a connector id collision when creating the first EVSE', async () => {
+    cacheConnection(true);
+    evseRepository.createOrUpdateEvse.mockResolvedValue(
+      aEvse((evse) => {
+        evse.id = 31;
+        evse.evseTypeId = 1;
+        evse.stationId = STATION_DB_ID;
+      }),
+    );
+
+    await service.updateConnectorStatus(DEFAULT_TENANT_ID, MOCK_STATION_ID, {
+      ...report,
+      evseId: 1,
+    });
+
+    expect(evseRepository.createOrUpdateEvse).toHaveBeenCalledOnce();
+    expect(logger.warn).not.toHaveBeenCalled();
   });
 
   it('ignores a status older than the one the connector already has', async () => {

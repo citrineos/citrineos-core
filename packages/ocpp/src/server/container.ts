@@ -114,7 +114,11 @@ import {
   registerConfigurationServices,
 } from '@modules/configuration/index.js';
 import { EVDriverModule, registerEVDriverServices } from '@modules/ev-driver/index.js';
-import { MonitoringModule, registerMonitoringServices } from '@modules/monitoring/index.js';
+import {
+  ConnectorStatusService,
+  MonitoringModule,
+  registerMonitoringServices,
+} from '@modules/monitoring/index.js';
 import { MessageRouterImpl, registerOcppRouterServices } from '@modules/ocpp-router/index.js';
 import { registerReportingServices, ReportingModule } from '@modules/reporting/index.js';
 import {
@@ -503,6 +507,7 @@ function registerServices(container: AwilixContainer): void {
     networkAlertConfigResolver: asClass(NetworkAlertConfigResolver).singleton(),
     networkAlertService: asClass(NetworkAlertService).singleton(),
     networkAlertSweeper: asClass(NetworkAlertSweeper).singleton(),
+    connectorStatusService: asClass(ConnectorStatusService).singleton(),
     smartChargingService: asClass(InternalSmartCharging).singleton(),
     realTimeAuthorizer: asClass(RealTimeAuthorizer).singleton(),
     authorizationAttemptService: asClass(AuthorizationAttemptService).singleton(),
