@@ -40,7 +40,7 @@ catalog:
   "@fastify/type-provider-json-schema-to-ts": 4.0.1
 
   # -- Schema & validation --
-  zod: 4.1.12
+  zod: 4.6.6
   ajv: 8.18.0
   ajv-formats: 3.0.1
   class-transformer: 0.5.1
