@@ -1,0 +1,24 @@
+{
+  "Overview": {
+    "activeTransactions": "进行中的交易",
+    "chargerActivity": "充电桩活动",
+    "chargerOnlineStatus": "充电桩在线状态",
+    "chargers": "充电桩",
+    "errorLoadingData": "加载数据出错",
+    "plugInSuccessRate": "插枪成功率",
+    "noActiveTransactions": "暂无进行中的交易。",
+    "noChargersStatus": "当前没有状态为 {status} 的充电桩。",
+    "viewAllChargers": "查看所有充电桩",
+    "viewAllLocations": "查看所有位置",
+    "viewAllTransactions": "查看所有交易",
+    "viewAll": "查看全部",
+    "faultedChargers": "故障充电桩",
+    "somethingWentWrong": "出错了！",
+    "station": "充电站",
+    "stationLabel": "充电站：{value}",
+    "location": "位置：",
+    "totalKwh": "总电量 (kWh)：{value}",
+    "totalTime": "总时长：{value}",
+    "transactionStatus": "状态：{value}"
+  }
+}
