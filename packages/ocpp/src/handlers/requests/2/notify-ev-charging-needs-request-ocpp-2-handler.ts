@@ -19,7 +19,11 @@ import {
   OCPP2_request_types,
   OCPP2_response_types,
 } from '@citrineos/types';
-import type { IChargingProfileRepository, ITransactionRepository } from '@citrineos/dal';
+import type {
+  IChargingNeedsRepository,
+  IChargingProfileRepository,
+  ITransactionRepository,
+} from '@citrineos/dal';
 import { OCPP2_0_1_Mapper } from '@citrineos/dal';
 import type { ISmartCharging } from '@modules/smart-charging/smart-charging.js';
 
@@ -27,6 +31,7 @@ import type { ISmartCharging } from '@modules/smart-charging/smart-charging.js';
 export class NotifyEVChargingNeedsRequestOcpp2Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
   protected _transactionRepository: ITransactionRepository;
+  protected _chargingNeedsRepository: IChargingNeedsRepository;
   protected _chargingProfileRepository: IChargingProfileRepository;
   protected _smartChargingService: ISmartCharging;
 
@@ -34,17 +39,20 @@ export class NotifyEVChargingNeedsRequestOcpp2Handler extends AbstractHandler {
     logger,
     ocppSender,
     transactionRepository,
+    chargingNeedsRepository,
     chargingProfileRepository,
     smartChargingService,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
     transactionRepository: ITransactionRepository;
+    chargingNeedsRepository: IChargingNeedsRepository;
     chargingProfileRepository: IChargingProfileRepository;
     smartChargingService: ISmartCharging;
   }) {
     super(logger);
     this._ocppSender = ocppSender;
     this._transactionRepository = transactionRepository;
+    this._chargingNeedsRepository = chargingNeedsRepository;
     this._chargingProfileRepository = chargingProfileRepository;
     this._smartChargingService = smartChargingService;
   }
@@ -111,7 +119,7 @@ export class NotifyEVChargingNeedsRequestOcpp2Handler extends AbstractHandler {
       return;
     }
 
-    const chargingNeeds = await this._chargingProfileRepository.createChargingNeeds(
+    const chargingNeeds = await this._chargingNeedsRepository.createChargingNeeds(
       tenantId,
       request,
       ocppConnectionName,

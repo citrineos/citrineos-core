@@ -18,7 +18,6 @@ import {
   OCPP2_response_types,
 } from '@citrineos/types';
 import type { IOCPPMessageRepository } from '@citrineos/dal';
-import { stationIdFilter } from '@citrineos/dal';
 
 @AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.NotifyCustomerInformation)
 export class NotifyCustomerInformationRequestOcpp2Handler extends AbstractHandler {
@@ -51,25 +50,14 @@ export class NotifyCustomerInformationRequestOcpp2Handler extends AbstractHandle
 
     // Validate requestId was provided in a previous CustomerInformationRequest
     const requestId = message.payload.requestId;
-    const previousRequest = await this._ocppMessageRepository.readAllByQuery(
+    const hasPreviousRequest = await this._ocppMessageRepository.hasMessageWithPayloadRequestId(
       message.context.tenantId,
-      {
-        where: {
-          tenantId: message.context.tenantId,
-          stationId: await stationIdFilter(
-            message.context.tenantId,
-            message.context.ocppConnectionName,
-          ),
-          action: OCPP_CallAction.CustomerInformation,
-          payload: {
-            requestId: requestId,
-          },
-        },
-        limit: 1,
-      },
+      message.context.ocppConnectionName,
+      OCPP_CallAction.CustomerInformation,
+      requestId,
     );
 
-    if (!previousRequest || previousRequest.length === 0) {
+    if (!hasPreviousRequest) {
       await this._ocppSender.sendCallErrorWithMessage(
         message,
         new OcppError(

@@ -21,7 +21,11 @@ import type {
 } from '@citrineos/dal';
 import { AuthorizeRequestOcpp21Handler } from '@handlers/index.js';
 import type { CertificateAuthorityService } from '@services/index.js';
-import { createTestContainer, makeMockOcppSender } from '@test/test-container.js';
+import {
+  createTestContainer,
+  makeMockOcppSender,
+  makeMockAuthorizationAttemptService,
+} from '@test/test-container.js';
 
 const TARIFF_ID = 7;
 
@@ -91,6 +95,7 @@ describe('AuthorizeRequestOcpp21Handler', () => {
       };
 
       return new AuthorizeRequestOcpp21Handler({
+        authorizationAttemptService: makeMockAuthorizationAttemptService(),
         logger,
         ocppSender,
         certificateAuthorityService: {} as unknown as CertificateAuthorityService,
@@ -148,6 +153,7 @@ describe('AuthorizeRequestOcpp21Handler', () => {
       const { logger } = createTestContainer();
       const ocppSender = makeMockOcppSender();
       const handler = new AuthorizeRequestOcpp21Handler({
+        authorizationAttemptService: makeMockAuthorizationAttemptService(),
         logger,
         ocppSender,
         certificateAuthorityService: {

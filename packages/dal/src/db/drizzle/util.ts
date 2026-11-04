@@ -9,6 +9,8 @@ import type { Pool } from 'pg';
 import pg from 'pg';
 import type { ILogObj, Logger } from 'tslog';
 
+export type DrizzlePoolStats = { total: number; idle: number; waiting: number };
+
 export class DefaultDrizzleInstance {
   private static readonly DEFAULT_RETRIES = 5;
   private static readonly DEFAULT_RETRY_DELAY = 5000;
@@ -57,6 +59,14 @@ export class DefaultDrizzleInstance {
    */
   public static async initialize(): Promise<void> {
     await this.waitForConnection();
+  }
+
+  public static getPoolStats(): DrizzlePoolStats | null {
+    const pool = DefaultDrizzleInstance.pool;
+    if (!pool) {
+      return null;
+    }
+    return { total: pool.totalCount, idle: pool.idleCount, waiting: pool.waitingCount };
   }
 
   /**

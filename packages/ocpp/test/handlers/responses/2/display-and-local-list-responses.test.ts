@@ -13,7 +13,11 @@ import {
   OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/types';
-import type { ILocalAuthListRepository, IMessageInfoRepository } from '@citrineos/dal';
+import type {
+  ILocalListVersionRepository,
+  IMessageInfoRepository,
+  ISendLocalListRepository,
+} from '@citrineos/dal';
 import {
   ClearDisplayMessageResponseOcpp2Handler,
   CostUpdatedResponseOcpp2Handler,
@@ -58,23 +62,27 @@ describe('SendLocalListResponseOcpp2Handler', () => {
   const { container, logger } = createTestContainer();
   // Original request as stored by the OCPPMessage log; the handler replays it into the version table.
   const STORED_REQUEST = { versionNumber: 3, updateType: 'Full' };
-  let localAuthListRepository: Mocked<ILocalAuthListRepository>;
+  let sendLocalListRepository: Mocked<ISendLocalListRepository>;
+  let localListVersionRepository: Mocked<ILocalListVersionRepository>;
   let ocppSender: MockOcppSender;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    localAuthListRepository = {
+    sendLocalListRepository = {
       getSendLocalListRequestByStationIdAndCorrelationId: vi.fn().mockResolvedValue(STORED_REQUEST),
+    } as unknown as Mocked<ISendLocalListRepository>;
+    localListVersionRepository = {
       createOrUpdateLocalListVersionFromStationIdAndSendLocalList: vi
         .fn()
         .mockResolvedValue(undefined),
-    } as unknown as Mocked<ILocalAuthListRepository>;
+    } as unknown as Mocked<ILocalListVersionRepository>;
     ocppSender = makeMockOcppSender();
   });
 
   function getHandler() {
     return getTestInstance(container, SendLocalListResponseOcpp2Handler, {
-      localAuthListRepository,
+      sendLocalListRepository,
+      localListVersionRepository,
       ocppSender,
     });
   }
@@ -87,16 +95,16 @@ describe('SendLocalListResponseOcpp2Handler', () => {
     );
 
     expect(
-      localAuthListRepository.getSendLocalListRequestByStationIdAndCorrelationId,
+      sendLocalListRepository.getSendLocalListRequestByStationIdAndCorrelationId,
     ).toHaveBeenCalledExactlyOnceWith(DEFAULT_TENANT_ID, STATION, CORRELATION_ID);
     expect(
-      localAuthListRepository.createOrUpdateLocalListVersionFromStationIdAndSendLocalList,
+      localListVersionRepository.createOrUpdateLocalListVersionFromStationIdAndSendLocalList,
     ).toHaveBeenCalledExactlyOnceWith(DEFAULT_TENANT_ID, STATION, STORED_REQUEST);
     expect(ocppSender.sendCall).not.toHaveBeenCalled();
   });
 
   it('missing original request aborts before any write or follow-up call', async () => {
-    localAuthListRepository.getSendLocalListRequestByStationIdAndCorrelationId.mockResolvedValue(
+    sendLocalListRepository.getSendLocalListRequestByStationIdAndCorrelationId.mockResolvedValue(
       undefined,
     );
 
@@ -109,7 +117,7 @@ describe('SendLocalListResponseOcpp2Handler', () => {
     ).resolves.toBeUndefined();
 
     expect(
-      localAuthListRepository.createOrUpdateLocalListVersionFromStationIdAndSendLocalList,
+      localListVersionRepository.createOrUpdateLocalListVersionFromStationIdAndSendLocalList,
     ).not.toHaveBeenCalled();
     expect(ocppSender.sendCall).not.toHaveBeenCalled();
     expect(logger.error).toHaveBeenCalledWith(
@@ -125,7 +133,7 @@ describe('SendLocalListResponseOcpp2Handler', () => {
     );
 
     expect(
-      localAuthListRepository.createOrUpdateLocalListVersionFromStationIdAndSendLocalList,
+      localListVersionRepository.createOrUpdateLocalListVersionFromStationIdAndSendLocalList,
     ).not.toHaveBeenCalled();
     expect(ocppSender.sendCall).not.toHaveBeenCalled();
   });
@@ -138,7 +146,7 @@ describe('SendLocalListResponseOcpp2Handler', () => {
     );
 
     expect(
-      localAuthListRepository.createOrUpdateLocalListVersionFromStationIdAndSendLocalList,
+      localListVersionRepository.createOrUpdateLocalListVersionFromStationIdAndSendLocalList,
     ).not.toHaveBeenCalled();
     expect(ocppSender.sendCall).toHaveBeenCalledExactlyOnceWith({
       ocppConnectionName: STATION,
@@ -171,32 +179,32 @@ describe('SendLocalListResponseOcpp2Handler', () => {
 
 describe('GetLocalListVersionResponseOcpp2Handler', () => {
   const { container } = createTestContainer();
-  let localAuthListRepository: Mocked<ILocalAuthListRepository>;
+  let localListVersionRepository: Mocked<ILocalListVersionRepository>;
 
   beforeEach(() => {
-    localAuthListRepository = {
+    localListVersionRepository = {
       validateOrReplaceLocalListVersionForStation: vi.fn().mockResolvedValue(undefined),
-    } as unknown as Mocked<ILocalAuthListRepository>;
+    } as unknown as Mocked<ILocalListVersionRepository>;
   });
 
   it('forwards tenant, reported version, and station to the repository', async () => {
     const handler = getTestInstance(container, GetLocalListVersionResponseOcpp2Handler, {
-      localAuthListRepository,
+      localListVersionRepository,
     });
 
     await handler.handle(makeMessage(OCPP_CallAction.GetLocalListVersion, { versionNumber: 12 }));
 
     expect(
-      localAuthListRepository.validateOrReplaceLocalListVersionForStation,
+      localListVersionRepository.validateOrReplaceLocalListVersionForStation,
     ).toHaveBeenCalledExactlyOnceWith(DEFAULT_TENANT_ID, 12, STATION);
   });
 
   it('propagates a repository failure', async () => {
-    localAuthListRepository.validateOrReplaceLocalListVersionForStation.mockRejectedValue(
+    localListVersionRepository.validateOrReplaceLocalListVersionForStation.mockRejectedValue(
       new Error('db down'),
     );
     const handler = getTestInstance(container, GetLocalListVersionResponseOcpp2Handler, {
-      localAuthListRepository,
+      localListVersionRepository,
     });
 
     await expect(

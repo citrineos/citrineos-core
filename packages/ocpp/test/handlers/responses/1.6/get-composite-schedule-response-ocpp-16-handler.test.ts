@@ -13,7 +13,7 @@ import {
   OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/types';
-import type { IChargingProfileRepository } from '@citrineos/dal';
+import type { ICompositeScheduleRepository } from '@citrineos/dal';
 import { GetCompositeScheduleResponseOcpp16Handler } from '@handlers/index.js';
 import { createTestContainer } from '@test/test-container.js';
 
@@ -62,9 +62,9 @@ describe('GetCompositeScheduleResponseOcpp16Handler', () => {
     createCompositeSchedule = vi.fn().mockResolvedValue({ id: 1 });
     handler = new GetCompositeScheduleResponseOcpp16Handler({
       logger,
-      chargingProfileRepository: {
+      compositeScheduleRepository: {
         createCompositeSchedule,
-      } as unknown as IChargingProfileRepository,
+      } as unknown as ICompositeScheduleRepository,
     });
   });
 

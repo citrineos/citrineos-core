@@ -261,6 +261,9 @@ describe('evDriver message endpoints', () => {
         cache: { set: cacheSet },
         variableAttributeRepository: { readAllByQuerystring },
         chargingProfileRepository: { createOrUpdateChargingProfile },
+        chargingNeedsRepository: {
+          findChargingNeedsByEvseDBIdAndTransactionDBId: vi.fn().mockResolvedValue(undefined),
+        },
         transactionRepository: {},
       });
 

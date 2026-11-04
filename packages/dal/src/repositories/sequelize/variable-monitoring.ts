@@ -9,7 +9,7 @@ import { EventData } from '../../models/variable-monitoring/event-data.js';
 import { Variable } from '../../models/device-model/variable.js';
 import { VariableMonitoring } from '../../models/variable-monitoring/variable-monitoring.js';
 import { VariableMonitoringStatus } from '../../models/variable-monitoring/variable-monitoring-status.js';
-import type { IVariableMonitoringRepository } from '../repositories.js';
+import type { IEventDataRepository, IVariableMonitoringRepository } from '../repositories.js';
 import { CrudRepository } from '@citrineos/base';
 import {
   type CallAction,
@@ -22,7 +22,7 @@ import {
 
 export class SequelizeVariableMonitoringRepository
   extends SequelizeRepository<VariableMonitoring>
-  implements IVariableMonitoringRepository
+  implements IVariableMonitoringRepository, IEventDataRepository
 {
   eventData: CrudRepository<EventData>;
   variableMonitoringStatus: CrudRepository<VariableMonitoringStatus>;

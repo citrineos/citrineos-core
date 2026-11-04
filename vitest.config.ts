@@ -44,14 +44,19 @@ const typecheck = (extraExclude: string[] = [], tsconfig = './tsconfig.json') =>
 // only at the root drops every suite back to the 10s default.
 const TIMEOUTS = { testTimeout: 30_000, hookTimeout: 60_000 };
 
-const nodeProject = (name: string, root: string, extraExclude: string[] = []) => ({
+const nodeProject = (
+  name: string,
+  root: string,
+  extraExclude: string[] = [],
+  tsconfig?: string,
+) => ({
   test: {
     name,
     root: r(root),
     environment: 'node' as const,
     include: testGlob,
     exclude: [...sharedExclude, ...extraExclude],
-    typecheck: typecheck(extraExclude),
+    typecheck: typecheck(extraExclude, tsconfig),
     ...TIMEOUTS,
   },
   resolve: { alias },
@@ -75,6 +80,7 @@ export default defineConfig({
       // co-located under src do run here. They stay in tsconfig.json's scope
       // so `pnpm typecheck:test` still covers them.
       nodeProject('operator-ui', './apps/operator-ui', ['tests/**']),
+      nodeProject('ocpp-server', './apps/ocpp-server', [], './config/tsconfig.test.json'),
     ],
 
     // The testcontainers-backed integration suites annotate their beforeAll

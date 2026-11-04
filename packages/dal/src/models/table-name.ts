@@ -12,6 +12,7 @@ export const TableName = {
   AsyncJobStatuses: 'AsyncJobStatuses',
 
   // Authorization
+  AuthorizationAttempts: 'AuthorizationAttempts',
   Authorizations: 'Authorizations',
   LocalListAuthorizations: 'LocalListAuthorizations',
   LocalListVersions: 'LocalListVersions',

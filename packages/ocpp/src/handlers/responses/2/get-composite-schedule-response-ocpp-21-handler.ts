@@ -14,19 +14,19 @@ import {
   OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/types';
-import type { IChargingProfileRepository } from '@citrineos/dal';
+import type { ICompositeScheduleRepository } from '@citrineos/dal';
 import { OCPP2_1_Mapper } from '@citrineos/dal';
 
 @AsResponseHandler([OCPPVersion.OCPP2_1], OCPP_CallAction.GetCompositeSchedule)
 export class GetCompositeScheduleResponseOcpp21Handler extends AbstractHandler {
-  protected _chargingProfileRepository: IChargingProfileRepository;
+  protected _compositeScheduleRepository: ICompositeScheduleRepository;
 
   constructor({
     logger,
-    chargingProfileRepository,
-  }: AbstractHandlerDependencies & { chargingProfileRepository: IChargingProfileRepository }) {
+    compositeScheduleRepository,
+  }: AbstractHandlerDependencies & { compositeScheduleRepository: ICompositeScheduleRepository }) {
     super(logger);
-    this._chargingProfileRepository = chargingProfileRepository;
+    this._compositeScheduleRepository = compositeScheduleRepository;
   }
 
   async handle(
@@ -43,7 +43,7 @@ export class GetCompositeScheduleResponseOcpp21Handler extends AbstractHandler {
     const response = message.payload;
     if (response.status === GenericStatusEnum.Accepted) {
       if (response.schedule) {
-        const compositeSchedule = await this._chargingProfileRepository.createCompositeSchedule(
+        const compositeSchedule = await this._compositeScheduleRepository.createCompositeSchedule(
           tenantId,
           OCPP2_1_Mapper.ChargingProfileMapper.fromCompositeScheduleType(response.schedule),
           message.context.ocppConnectionName,

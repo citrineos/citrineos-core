@@ -13,7 +13,7 @@ import {
   OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/types';
-import type { ILocalAuthListRepository } from '@citrineos/dal';
+import type { ILocalListVersionRepository } from '@citrineos/dal';
 import {
   ChangeAvailabilityResponseOcpp16Handler,
   ClearCacheResponseOcpp16Handler,
@@ -54,9 +54,9 @@ describe('GetLocalListVersionResponseOcpp16Handler', () => {
     validateOrReplace = vi.fn().mockResolvedValue(undefined);
     handler = new GetLocalListVersionResponseOcpp16Handler({
       logger,
-      localAuthListRepository: {
+      localListVersionRepository: {
         validateOrReplaceLocalListVersionForStation: validateOrReplace,
-      } as unknown as ILocalAuthListRepository,
+      } as unknown as ILocalListVersionRepository,
     });
   });
 

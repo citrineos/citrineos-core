@@ -16,7 +16,11 @@ import {
 } from '@citrineos/types';
 import { AuthorizeRequestOcpp201Handler } from '@handlers/index.js';
 import type { CertificateAuthorityService } from '@services/index.js';
-import { createTestContainer, makeMockOcppSender } from '@test/test-container.js';
+import {
+  createTestContainer,
+  makeMockOcppSender,
+  makeMockAuthorizationAttemptService,
+} from '@test/test-container.js';
 import { describe, expect, it, vi } from 'vitest';
 
 function makeMessage<T extends OcppRequest>(payload: T): IMessage<T> {
@@ -49,6 +53,7 @@ function makeHandler(
   const ocppSender = makeMockOcppSender();
 
   const handler = new AuthorizeRequestOcpp201Handler({
+    authorizationAttemptService: makeMockAuthorizationAttemptService(),
     logger,
     ocppSender,
     certificateAuthorityService: certificateAuthorityService as CertificateAuthorityService,

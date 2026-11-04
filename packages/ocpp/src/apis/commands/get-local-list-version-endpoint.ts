@@ -6,15 +6,14 @@ import {
   type ICommandEndpointMetadata,
   AbstractEndpoint,
 } from '@citrineos/base';
-import { HttpMethod } from '@citrineos/types';
+import { HttpMethod, type LocalListVersionDto } from '@citrineos/types';
 import type { ChargingStationKeyQuerystring } from '@citrineos/dal';
 import { ChargingStationKeyQuerySchema } from '@citrineos/dal';
-import type { ILocalAuthListRepository } from '@citrineos/dal';
-import { LocalListAuthorization, type LocalListVersion } from '@citrineos/dal';
+import type { ILocalListVersionRepository } from '@citrineos/dal';
 import type { FastifyRequest } from 'fastify';
 
 interface GetLocalListVersionEndpointDependencies extends AbstractEndpointDependencies {
-  localAuthListRepository: ILocalAuthListRepository;
+  localListVersionRepository: ILocalListVersionRepository;
 }
 
 type GetLocalListVersionRoute = { Querystring: ChargingStationKeyQuerystring };
@@ -26,23 +25,20 @@ export class GetLocalListVersionEndpoint extends AbstractEndpoint<GetLocalListVe
     querySchema: ChargingStationKeyQuerySchema,
   };
 
-  private readonly _localAuthListRepository: ILocalAuthListRepository;
+  private readonly _localListVersionRepository: ILocalListVersionRepository;
 
-  constructor({ logger, localAuthListRepository }: GetLocalListVersionEndpointDependencies) {
+  constructor({ logger, localListVersionRepository }: GetLocalListVersionEndpointDependencies) {
     super(logger);
-    this._localAuthListRepository = localAuthListRepository;
+    this._localListVersionRepository = localListVersionRepository;
   }
 
   async handle(
     request: FastifyRequest<GetLocalListVersionRoute>,
-  ): Promise<LocalListVersion | undefined> {
+  ): Promise<LocalListVersionDto | undefined> {
     const tenantId = request.query.tenantId;
-    return this._localAuthListRepository.readOnlyOneByQuery(tenantId, {
-      where: {
-        tenantId,
-        ocppConnectionName: request.query.ocppConnectionName,
-      },
-      include: [LocalListAuthorization],
-    });
+    return this._localListVersionRepository.readLocalListVersionByStationId(
+      tenantId,
+      request.query.ocppConnectionName,
+    );
   }
 }

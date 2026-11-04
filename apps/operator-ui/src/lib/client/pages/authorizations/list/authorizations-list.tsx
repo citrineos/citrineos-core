@@ -6,6 +6,8 @@
 import { MenuSection } from '@lib/client/components/main-menu/main-menu';
 import { Table } from '@lib/client/components/table';
 import { Button } from '@lib/client/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@lib/client/components/ui/tabs';
+import { AuthorizationAttemptsTable } from '@lib/client/pages/authorizations/attempts/authorization-attempts-table';
 import {
   getAuthorizationsColumns,
   getAuthorizationFilters,
@@ -13,12 +15,13 @@ import {
 import { AuthorizationClass } from '@lib/cls/authorization-dto';
 import { AUTHORIZATIONS_LIST_QUERY } from '@lib/queries/authorizations';
 import { ActionType, ResourceType } from '@lib/utils/access-types';
-import { EMPTY_FILTER } from '@lib/utils/consts';
+import { DETAIL_TAB_STATE, EMPTY_FILTER } from '@lib/utils/consts';
 import { getPlainToInstanceOptions } from '@lib/utils/tables';
 import { CanAccess, useTranslate } from '@refinedev/core';
 import { Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { useQueryState } from 'nuqs';
 import { heading2Style, pageMargin } from '@lib/client/styles/page';
 import {
   tableHeaderWrapperFlex,
@@ -29,8 +32,45 @@ import { buttonIconSize } from '@lib/client/styles/icon';
 import { type AuthorizationDto, AuthorizationProps } from '@citrineos/types';
 import { DebounceSearch } from '@lib/client/components/debounce-search';
 import { useColumnPreferences } from '@lib/client/hooks/use-column-preferences';
+import { cardTabsStyle } from '@lib/client/styles/card';
+
+enum AuthorizationsListTabType {
+  authorizations = 'authorizations',
+  attempts = 'attempts',
+}
 
 export const AuthorizationsList = () => {
+  const translate = useTranslate();
+  const [tab, setTab] = useQueryState(DETAIL_TAB_STATE);
+
+  return (
+    <div className={`${pageMargin} ${tableWrapperStyle}`}>
+      <Tabs
+        value={
+          tab && tab in AuthorizationsListTabType ? tab : AuthorizationsListTabType.authorizations
+        }
+        onValueChange={(selectedTab: string) => setTab(selectedTab)}
+      >
+        <TabsList>
+          <TabsTrigger value={AuthorizationsListTabType.authorizations}>
+            {translate('Authorizations.Authorizations')}
+          </TabsTrigger>
+          <TabsTrigger value={AuthorizationsListTabType.attempts}>
+            {translate('AuthorizationAttempts.AuthorizationAttempts')}
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value={AuthorizationsListTabType.authorizations} className={cardTabsStyle}>
+          <AuthorizationsTable />
+        </TabsContent>
+        <TabsContent value={AuthorizationsListTabType.attempts} className={cardTabsStyle}>
+          <AuthorizationAttemptsTable />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+};
+
+const AuthorizationsTable = () => {
   const { push } = useRouter();
   const [filters, setFilters] = useState<any>(EMPTY_FILTER);
   const translate = useTranslate();
@@ -45,7 +85,7 @@ export const AuthorizationsList = () => {
   };
 
   return (
-    <div className={`${pageMargin} ${tableWrapperStyle}`}>
+    <>
       <div className={tableHeaderWrapperFlex}>
         <h2 className={heading2Style}>{translate('Authorizations.Authorizations')}</h2>
         <div className={tableSearchFlex}>
@@ -92,6 +132,6 @@ export const AuthorizationsList = () => {
           {renderedVisibleColumns}
         </Table>
       </CanAccess>
-    </div>
+    </>
   );
 };

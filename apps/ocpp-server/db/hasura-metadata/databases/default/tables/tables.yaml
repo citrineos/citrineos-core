@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 - '!include public_AsyncJobStatuses.yaml'
+- '!include public_AuthorizationAttempts.yaml'
 - '!include public_Authorizations.yaml'
 - '!include public_Boots.yaml'
 - '!include public_Certificates.yaml'

@@ -12,6 +12,7 @@ import {
   type IEvseRepository,
   type IStatusNotificationRepository,
 } from '@citrineos/dal';
+import { ConnectorStatusService } from '@modules/monitoring/connector-status-service.js';
 import { StatusNotificationService } from '@modules/transactions/status-notification-service.js';
 import { createTestContainer, getTestInstance } from '@test/test-container.js';
 import { OCPP1_6, OCPP2_0_1 } from '@citrineos/types';
@@ -115,7 +116,14 @@ describe('StatusNotificationService', () => {
       evseRepository: locationRepository,
       statusNotificationRepository: locationRepository,
       cache,
-      networkAlertService,
+      connectorStatusService: new ConnectorStatusService({
+        chargingStationRepository: locationRepository,
+        evseRepository: locationRepository,
+        connectorRepository: locationRepository,
+        cache,
+        networkAlertService,
+        logger,
+      }),
     });
   });
 
@@ -333,10 +341,11 @@ describe('StatusNotificationService', () => {
           cs.evses = [];
         }),
       );
-      locationRepository.createOrUpdateEvse.mockResolvedValue(
+      locationRepository.createOrUpdateEvse.mockImplementation(async (_tenantId, created) =>
         aEvse((evse) => {
           evse.id = 99;
           evse.evseTypeId = 1;
+          evse.stationId = created.stationId;
           evse.connectors = [];
         }),
       );
@@ -747,6 +756,7 @@ describe('StatusNotificationService', () => {
           cs.evses = [
             aEvse((evse) => {
               evse.id = 30;
+              evse.stationId = STATION_DB_ID;
             }),
           ];
         }),

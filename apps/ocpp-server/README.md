@@ -206,6 +206,17 @@ applies here too — the composite `(id, "createdAt")` primary key, so nothing c
 ones. Called with no arguments it keeps four weeks. `entrypoint.sh` and `pnpm run db:partitions` call it provision-only,
 as they do the others.
 
+#### AuthorizationAttempts
+
+`AuthorizationAttempts` was created partitioned by migration `20261016120000-create-authorization-attempts`, the same
+way as `WebsocketEvents`: weekly on `createdAt`, composite `(id, "createdAt")` primary key, no `DEFAULT` partition. Its
+`transactionDatabaseId` carries no foreign key, because `Transactions` is partitioned too; it is paired with
+`transactionCreatedAt` so the two together identify the transaction row.
+
+`rotate_authorization_attempts_partitions(retain_weeks, future_weeks, dry_run)` behaves like its `WebsocketEvents`
+counterpart. Called with no arguments it keeps twelve weeks. `entrypoint.sh` and `pnpm run db:partitions` call it
+provision-only.
+
 ## Configuration
 
 Configuration comes from environment variables, validated on startup against the Zod schema in

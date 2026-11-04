@@ -11,7 +11,10 @@ import type {
   IBootRepository,
   ICertificateRepository,
   IChangeConfigurationRepository,
+  IChargingNeedsRepository,
   IChargingProfileRepository,
+  IChargingScheduleRepository,
+  ICompositeScheduleRepository,
   IChargingStationSequenceRepository,
   IDeleteCertificateAttemptRepository,
   IChargingStationRepository,
@@ -20,12 +23,13 @@ import type {
   IEvseRepository,
   IInstallCertificateAttemptRepository,
   IInstalledCertificateRepository,
-  ILocalAuthListRepository,
+  ILocalListVersionRepository,
   ILocationRepository,
   IMessageInfoRepository,
   IOCPPMessageRepository,
   IReservationRepository,
   ISecurityEventRepository,
+  ISendLocalListRepository,
   IServerNetworkProfileRepository,
   ISubscriptionRepository,
   ITariffRepository,
@@ -35,15 +39,20 @@ import type {
   ITransactionRepository,
   IVariableAttributeRepository,
   IVariableCharacteristicsRepository,
+  IEventDataRepository,
   IVariableMonitoringRepository,
 } from '../repositories.js';
 import {
   DrizzleAuthorizationRepository,
   DrizzleCertificateRepository,
   DrizzleChangeConfigurationRepository,
+  DrizzleChargingNeedsRepository,
+  DrizzleChargingProfileRepository,
+  DrizzleChargingScheduleRepository,
   DrizzleChargingStationRepository,
   DrizzleChargingStationSequenceRepository,
   DrizzleComponentRepository,
+  DrizzleCompositeScheduleRepository,
   DrizzleConnectorRepository,
   DrizzleLocationRepository,
   DrizzleMeterValueRepository,
@@ -52,9 +61,12 @@ import {
   DrizzleDeleteCertificateAttemptRepository,
   DrizzleInstallCertificateAttemptRepository,
   DrizzleInstalledCertificateRepository,
+  DrizzleLocalListVersionRepository,
   DrizzleMessageInfoRepository,
+  DrizzleOCPPMessageRepository,
   DrizzleReservationRepository,
   DrizzleSecurityEventRepository,
+  DrizzleSendLocalListRepository,
   DrizzleServerNetworkProfileRepository,
   DrizzleSubscriptionRepository,
   DrizzleTransactionRepository,
@@ -63,6 +75,8 @@ import {
   DrizzleTenantRepository,
   DrizzleVariableAttributeRepository,
   DrizzleVariableCharacteristicsRepository,
+  DrizzleEventDataRepository,
+  DrizzleVariableMonitoringRepository,
 } from '../../db/drizzle/index.js';
 import { SequelizeAuthorizationRepository } from './authorization.js';
 import { SequelizeBootRepository } from './boot.js';
@@ -98,9 +112,13 @@ export class RepositoryStore {
   deleteCertificateAttemptRepository: IDeleteCertificateAttemptRepository;
   changeConfigurationRepository: IChangeConfigurationRepository;
   chargingProfileRepository: IChargingProfileRepository;
+  chargingNeedsRepository: IChargingNeedsRepository;
+  chargingScheduleRepository: IChargingScheduleRepository;
+  compositeScheduleRepository: ICompositeScheduleRepository;
   chargingStationSequenceRepository: IChargingStationSequenceRepository;
   componentRepository: IComponentRepository;
-  localAuthListRepository: ILocalAuthListRepository;
+  sendLocalListRepository: ISendLocalListRepository;
+  localListVersionRepository: ILocalListVersionRepository;
   chargingStationRepository: IChargingStationRepository;
   evseRepository: IEvseRepository;
   connectorRepository: IConnectorRepository;
@@ -116,6 +134,7 @@ export class RepositoryStore {
   transactionEventRepository: ITransactionEventRepository;
   transactionRepository: ITransactionRepository;
   variableMonitoringRepository: IVariableMonitoringRepository;
+  eventDataRepository: IEventDataRepository;
   tenantRepository: ITenantRepository;
   serverNetworkProfileRepository: IServerNetworkProfileRepository;
   variableAttributeRepository: IVariableAttributeRepository;
@@ -131,26 +150,6 @@ export class RepositoryStore {
     sequelizeInstance: Sequelize;
   }) {
     this.sequelizeInstance = sequelizeInstance;
-    this.chargingProfileRepository = new SequelizeChargingProfileRepository({
-      config,
-      logger,
-      sequelizeInstance,
-    });
-    this.localAuthListRepository = new SequelizeLocalAuthListRepository({
-      config,
-      logger,
-      sequelizeInstance,
-    });
-    this.messageInfoRepository = new SequelizeMessageInfoRepository({
-      config,
-      logger,
-      sequelizeInstance,
-    });
-    this.ocppMessageRepository = new SequelizeOCPPMessageRepository({
-      config,
-      logger,
-      sequelizeInstance,
-    });
     if (process.env.CITRINEOS_USE_DRIZZLE === 'true') {
       this.authorizationRepository = new DrizzleAuthorizationRepository({ config, logger });
       // Order matters: component -> variableAttribute -> boot, each injected into the next.
@@ -193,6 +192,7 @@ export class RepositoryStore {
       });
       this.messageInfoRepository = new DrizzleMessageInfoRepository({ config, logger });
       this.locationRepository = new DrizzleLocationRepository({ config, logger });
+      this.ocppMessageRepository = new DrizzleOCPPMessageRepository({ config, logger });
       this.reservationRepository = new DrizzleReservationRepository({ config, logger });
       this.securityEventRepository = new DrizzleSecurityEventRepository({ config, logger });
       this.serverNetworkProfileRepository = new DrizzleServerNetworkProfileRepository({
@@ -210,6 +210,20 @@ export class RepositoryStore {
       this.meterValueRepository = new DrizzleMeterValueRepository({ config, logger });
       this.transactionRepository = new DrizzleTransactionRepository({ config, logger });
       this.transactionEventRepository = new DrizzleTransactionEventRepository({ config, logger });
+      this.variableMonitoringRepository = new DrizzleVariableMonitoringRepository({
+        config,
+        logger,
+      });
+      this.chargingProfileRepository = new DrizzleChargingProfileRepository({ config, logger });
+      this.chargingNeedsRepository = new DrizzleChargingNeedsRepository({ config, logger });
+      this.chargingScheduleRepository = new DrizzleChargingScheduleRepository({ config, logger });
+      this.compositeScheduleRepository = new DrizzleCompositeScheduleRepository({
+        config,
+        logger,
+      });
+      this.eventDataRepository = new DrizzleEventDataRepository({ config, logger });
+      this.sendLocalListRepository = new DrizzleSendLocalListRepository({ config, logger });
+      this.localListVersionRepository = new DrizzleLocalListVersionRepository({ config, logger });
       this.variableCharacteristicsRepository = new DrizzleVariableCharacteristicsRepository({
         config,
         logger,
@@ -252,6 +266,11 @@ export class RepositoryStore {
         sequelizeInstance,
       });
       this.messageInfoRepository = new SequelizeMessageInfoRepository({
+        config,
+        logger,
+        sequelizeInstance,
+      });
+      this.ocppMessageRepository = new SequelizeOCPPMessageRepository({
         config,
         logger,
         sequelizeInstance,
@@ -303,12 +322,32 @@ export class RepositoryStore {
       this.transactionEventRepository = transactionEvent;
       this.transactionRepository = transactionEvent;
       this.meterValueRepository = transactionEvent;
+      // VariableMonitoring cluster
+      const variableMonitoring = new SequelizeVariableMonitoringRepository({
+        config,
+        logger,
+        sequelizeInstance,
+      });
+      this.variableMonitoringRepository = variableMonitoring;
+      this.eventDataRepository = variableMonitoring;
+      // ChargingProfile cluster
+      const chargingProfile = new SequelizeChargingProfileRepository({
+        config,
+        logger,
+        sequelizeInstance,
+      });
+      this.chargingProfileRepository = chargingProfile;
+      this.chargingNeedsRepository = chargingProfile;
+      this.chargingScheduleRepository = chargingProfile;
+      this.compositeScheduleRepository = chargingProfile;
+      // LocalAuthList cluster
+      const localAuthList = new SequelizeLocalAuthListRepository({
+        config,
+        logger,
+        sequelizeInstance,
+      });
+      this.sendLocalListRepository = localAuthList;
+      this.localListVersionRepository = localAuthList;
     }
-
-    this.variableMonitoringRepository = new SequelizeVariableMonitoringRepository({
-      config,
-      logger,
-      sequelizeInstance,
-    });
   }
 }
