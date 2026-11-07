@@ -124,7 +124,11 @@ export class GetConfigurationEndpoint extends AbstractMessageEndpoint {
       ocppConnectionName,
       'GetConfigurationMaxKeys',
     );
-    return maxKeysConfig?.value ? parseInt(maxKeysConfig.value, 10) : Number.MAX_SAFE_INTEGER;
+    const parsed = maxKeysConfig?.value ? parseInt(maxKeysConfig.value, 10) : Number.NaN;
+    // A zero, negative or non-numeric GetConfigurationMaxKeys cannot bound the
+    // batch size - splitting by 0 would loop forever and a NaN would send an
+    // empty key list (i.e. "the entire configuration") - so treat it as unset.
+    return Number.isInteger(parsed) && parsed > 0 ? parsed : Number.MAX_SAFE_INTEGER;
   }
 
   private _splitKeys(keys: string[], maxKeys: number): string[][] {
