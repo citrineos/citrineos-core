@@ -530,5 +530,47 @@ describe('BootNotificationRequestOcpp2Handler', () => {
         'SetVariables response not found',
       );
     });
+
+    it('sends every variable at once when ItemsPerMessageSetVariables is zero', async () => {
+      const { handler, ocppSender, cache } = makeHandler({
+        status: RegistrationStatusEnum.Pending,
+        bootConfig: { pendingBootSetVariables: [{ id: 1 }] as BootDto['pendingBootSetVariables'] },
+        setVariableData: [VAR_A, VAR_B],
+        itemsPerMessage: 0,
+        setVariablesResponses: [
+          setVariablesResponseJson(SetVariableStatusEnum.Accepted, SetVariableStatusEnum.Accepted),
+        ],
+      });
+
+      await handler.handle(makeMessage(REQUEST));
+
+      // A zero batch size would slice off an empty payload and never shrink
+      // the array, looping forever - fall back to sending all of them instead.
+      expect(ocppSender.sendCall).toHaveBeenCalledTimes(1);
+      expect(ocppSender.sendCall.mock.calls[0][0].payload).toEqual({
+        setVariableData: [VAR_A, VAR_B],
+      });
+      expect(cache.onChange).toHaveBeenCalledTimes(1);
+    });
+
+    it('sends every variable at once when ItemsPerMessageSetVariables is not a number', async () => {
+      const { handler, ocppSender, cache } = makeHandler({
+        status: RegistrationStatusEnum.Pending,
+        bootConfig: { pendingBootSetVariables: [{ id: 1 }] as BootDto['pendingBootSetVariables'] },
+        setVariableData: [VAR_A, VAR_B],
+        itemsPerMessage: Number('not-a-number'),
+        setVariablesResponses: [
+          setVariablesResponseJson(SetVariableStatusEnum.Accepted, SetVariableStatusEnum.Accepted),
+        ],
+      });
+
+      await handler.handle(makeMessage(REQUEST));
+
+      expect(ocppSender.sendCall).toHaveBeenCalledTimes(1);
+      expect(ocppSender.sendCall.mock.calls[0][0].payload).toEqual({
+        setVariableData: [VAR_A, VAR_B],
+      });
+      expect(cache.onChange).toHaveBeenCalledTimes(1);
+    });
   });
 });

@@ -233,12 +233,21 @@ export class BootNotificationRequestOcpp2Handler extends AbstractHandler {
           ocppConnectionName,
         );
 
-      // If ItemsPerMessageSetVariables not set, send all variables at once
-      const itemsPerMessageSetVariables =
-        (await this._deviceModelService.getItemsPerMessageSetVariablesByStationId(
+      // If ItemsPerMessageSetVariables not set, send all variables at once.
+      // The device model may hold an empty or non-numeric value, which Number()
+      // turns into 0 or NaN; batching by either would slice off an empty payload
+      // and never shrink the array (same rule as getBatches in util/parser.ts).
+      const configuredItemsPerMessageSetVariables =
+        await this._deviceModelService.getItemsPerMessageSetVariablesByStationId(
           tenantId,
           ocppConnectionName,
-        )) ?? setVariableData.length;
+        );
+      const itemsPerMessageSetVariables =
+        configuredItemsPerMessageSetVariables !== null &&
+        Number.isInteger(configuredItemsPerMessageSetVariables) &&
+        configuredItemsPerMessageSetVariables > 0
+          ? configuredItemsPerMessageSetVariables
+          : setVariableData.length;
 
       while (setVariableData.length > 0) {
         const correlationId = uuidv4();
