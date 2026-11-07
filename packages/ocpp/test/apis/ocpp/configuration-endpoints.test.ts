@@ -166,6 +166,27 @@ describe('configuration message endpoints', () => {
       expect(sendCall).toHaveBeenCalledTimes(1);
     });
 
+    it('treats a zero max-keys configuration as unlimited instead of hanging', async () => {
+      // Splitting by 0 never advances the loop, which would pin the event loop.
+      findByStationAndKey.mockResolvedValue({ value: '0' });
+
+      await handle({ key: ['a', 'b', 'c', 'd'] });
+
+      expect(sendCall).toHaveBeenCalledTimes(1);
+      expect(sendCall.mock.calls[0][0].payload).toEqual({ key: ['a', 'b', 'c', 'd'] });
+    });
+
+    it('treats a non-numeric max-keys configuration as unlimited instead of sending an empty key list', async () => {
+      // An empty key list asks the station for its ENTIRE configuration, so a
+      // NaN batch size must not leak into the outgoing request either.
+      findByStationAndKey.mockResolvedValue({ value: 'not-a-number' });
+
+      await handle({ key: ['a', 'b', 'c', 'd'] });
+
+      expect(sendCall).toHaveBeenCalledTimes(1);
+      expect(sendCall.mock.calls[0][0].payload).toEqual({ key: ['a', 'b', 'c', 'd'] });
+    });
+
     it('captures a send failure as an unsuccessful batch instead of throwing', async () => {
       findByStationAndKey.mockResolvedValue({ value: '1' });
       sendCall.mockRejectedValueOnce(new Error('boom')).mockResolvedValueOnce({
