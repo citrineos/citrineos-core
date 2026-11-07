@@ -199,7 +199,20 @@ export class MeterValueUtils {
             measurand === MeasurandEnum['Energy.Active.Import.Register'])) &&
         !phased === !sv.phase,
     );
-    return value ? this.normalizeToKwh(value) : null;
+    return value ? this.normalizeToKwhOrNull(value) : null;
+  }
+
+  /**
+   * Convert a sampled energy value to kWh like normalizeToKwh, but treat a
+   * value with no usable energy unit as absent (null) instead of throwing.
+   * One misconfigured reading must not fail the whole calculation.
+   */
+  private static normalizeToKwhOrNull(value: SampledValue): number | null {
+    try {
+      return this.normalizeToKwh(value);
+    } catch {
+      return null;
+    }
   }
 
   /**
@@ -237,7 +250,11 @@ export class MeterValueUtils {
 
       let sum = 0;
       for (const value of phaseNeutralValues) {
-        sum += this.normalizeToKwh(value);
+        const normalized = this.normalizeToKwhOrNull(value);
+        if (normalized === null) {
+          return null;
+        }
+        sum += normalized;
       }
 
       return sum;
@@ -246,7 +263,11 @@ export class MeterValueUtils {
     // Sum all the normalized phase values
     let sum = 0;
     for (const value of phaseValues) {
-      sum += this.normalizeToKwh(value);
+      const normalized = this.normalizeToKwhOrNull(value);
+      if (normalized === null) {
+        return null;
+      }
+      sum += normalized;
     }
 
     return sum;
