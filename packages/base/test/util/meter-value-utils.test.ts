@@ -232,6 +232,27 @@ describe('MeterValueUtils', () => {
       expect(MeterValueUtils.getTotalKwh(meterValues, 0)).toBe(0);
     });
 
+    describe('Unusable energy unit', () => {
+      // "kW" is a legal UnitOfMeasure value and misconfigured stations do send
+      // it on an energy measurand. One such reading must be skipped like any
+      // other unusable reading, not blow up the whole TransactionEvent write.
+
+      it('preserves the running total when the register reading has a power unit', () => {
+        const meterValues = [
+          makeMeterValue('2025-05-29T12:02:00Z', 'Energy.Active.Import.Register', 150, 'kW'),
+        ];
+        expect(MeterValueUtils.getTotalKwh(meterValues, 12.5, 100)).toBe(12.5);
+      });
+
+      it('still uses the good readings in a batch where one has a power unit', () => {
+        const meterValues = [
+          makeMeterValue('2025-05-29T12:01:00Z', 'Energy.Active.Import.Register', 150, 'kW'),
+          makeMeterValue('2025-05-29T12:02:00Z', 'Energy.Active.Import.Register', 300),
+        ];
+        expect(MeterValueUtils.getTotalKwh(meterValues, 0, 100)).toBe(200);
+      });
+    });
+
     describe('Batches with no usable energy reading', () => {
       // Every caller writes this return value straight back to Transaction.totalKwh, so
       // returning 0 for a batch that simply carries nothing energy-bearing wipes the
@@ -306,6 +327,13 @@ describe('MeterValueUtils', () => {
         makeMeterValue('2025-05-29T12:02:00Z', 'Energy.Active.Import.Register', 10000, 'Wh'),
       ];
       expect(MeterValueUtils.getMeterStart(meterValues)).toBe(5); // 5000 Wh = 5 kWh
+    });
+
+    it('returns null when a register reading has a power unit', () => {
+      const meterValues = [
+        makeMeterValue('2025-05-29T12:01:00Z', 'Energy.Active.Import.Register', 150, 'kW'),
+      ];
+      expect(MeterValueUtils.getMeterStart(meterValues)).toBe(null);
     });
   });
 
