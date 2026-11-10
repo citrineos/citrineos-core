@@ -112,4 +112,72 @@ describe('CallbackUrlNotifier', () => {
       expect(logger.error).toHaveBeenCalled();
     });
   });
+
+  // ─── credentials in the url ────────────────────────────────────────────────
+
+  describe('credentials in the url', () => {
+    const SECRET_URL = 'https://user:pw-secret@example.test/callback?token=q-secret';
+
+    function everythingLogged(): string {
+      return [...logger.debug.mock.calls, ...logger.error.mock.calls]
+        .map((call) => call.map(String).join(' '))
+        .join('\n');
+    }
+
+    function expectNoCredentialLogged(): void {
+      const logged = everythingLogged();
+      expect(logged).not.toContain('pw-secret');
+      expect(logged).not.toContain('q-secret');
+    }
+
+    beforeEach(() => {
+      cache.get.mockResolvedValue(SECRET_URL);
+    });
+
+    it('should still POST to the url as given', async () => {
+      await notifier.notify(CORRELATION_ID, STATION_ID, {});
+
+      expect(fetchMock).toHaveBeenCalledWith(SECRET_URL, expect.anything());
+    });
+
+    it('should log where it sends without the credentials', async () => {
+      await notifier.notify(CORRELATION_ID, STATION_ID, {});
+
+      expect(everythingLogged()).toContain('https://example.test/callback');
+      expectNoCredentialLogged();
+    });
+
+    it('should not log the credentials on a non-2xx response', async () => {
+      fetchMock.mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error',
+        text: () => Promise.resolve('boom'),
+      } as Response);
+
+      await notifier.notify(CORRELATION_ID, STATION_ID, {});
+
+      expect(logger.error).toHaveBeenCalled();
+      expectNoCredentialLogged();
+    });
+
+    it('should not log the credentials on a transport failure', async () => {
+      fetchMock.mockRejectedValue(new Error('ECONNREFUSED'));
+
+      await notifier.notify(CORRELATION_ID, STATION_ID, {});
+
+      expect(logger.error).toHaveBeenCalled();
+      expectNoCredentialLogged();
+    });
+
+    it('should not send to, or log, an unparsable url', async () => {
+      cache.get.mockResolvedValue('example.test/callback?token=q-secret');
+
+      await notifier.notify(CORRELATION_ID, STATION_ID, {});
+
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(logger.error).toHaveBeenCalled();
+      expectNoCredentialLogged();
+    });
+  });
 });

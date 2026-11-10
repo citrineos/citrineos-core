@@ -9,6 +9,7 @@ export { serializeError } from './errors.js';
 export { outboundDeadline, type OutboundMessage } from './staleness.js';
 export { childLogger, MASKED_LOG_KEYS, loggerDefaults } from './logging.js';
 export { redactionMiddleware, type RedactionRule } from './log-redaction.js';
+export { redactUrl } from './url.js';
 export {
   IDENTIFIER_DELIMITER,
   createIdentifier,
