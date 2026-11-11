@@ -25,7 +25,7 @@ export function EvseHeader({ evse }: { evse: CheckoutEvse }) {
       <dl className={ui.details}>
         {location && (location.name || address) && (
           <>
-            <dt>{t('checkout.location')}</dt>
+            <dt className="font-semibold">{t('checkout.location')}</dt>
             <dd>
               {location.name && <div>{location.name}</div>}
               {address && <div className={ui.muted}>{address}</div>}
@@ -34,7 +34,7 @@ export function EvseHeader({ evse }: { evse: CheckoutEvse }) {
         )}
         {operatorName && (
           <>
-            <dt>{t('checkout.operator')}</dt>
+            <dt className="font-semibold">{t('checkout.operator')}</dt>
             <dd>{operatorName}</dd>
           </>
         )}
