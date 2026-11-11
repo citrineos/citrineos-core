@@ -10,7 +10,8 @@
 //   node scripts/stack.mjs --local         build server + UI from local source
 //   node scripts/stack.mjs --solo          ocpp-server only (no UI)
 //   node scripts/stack.mjs --ocpi          add the OCPI server
-//   node scripts/stack.mjs --payment       add the payment server (Stripe keys in apps/payment/.env.local)
+//   node scripts/stack.mjs --payment       add the payment server and its driver pages, always built from local
+//                                          source (Stripe keys in apps/payment/.env.local)
 //   node scripts/stack.mjs --everest       add EVerest with OCPP 2.x
 //   node scripts/stack.mjs --everest16     add EVerest with OCPP 1.6
 //   node scripts/stack.mjs --local --ocpi  combine flags freely
@@ -56,7 +57,8 @@ function usage() {
   --local      build the server and UI from local source instead of pulling
   --solo       ocpp-server only (no operator UI)
   --ocpi       also run the OCPI server
-  --payment    also run the payment server; put your Stripe keys in apps/payment/.env.local
+  --payment    also run the payment server and its driver pages on port 9010, built from local source;
+               put your Stripe keys in apps/payment/.env.local
   --everest    also run EVerest with OCPP 2.x (mutually exclusive with --everest16)
   --everest16  also run EVerest with OCPP 1.6 (mutually exclusive with --everest)
   up | down    start (default) or stop the stack — pass the same flags both times

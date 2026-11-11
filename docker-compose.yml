@@ -9,13 +9,16 @@
 #   pnpm citrine --local    # build server + UI from local source
 #   pnpm citrine --solo     # ocpp-server only (no UI)
 #   pnpm citrine --ocpi     # add the OCPI server
+#   pnpm citrine --payment  # add the payment server and its driver pages
 #
-# Profiles: `ui` adds the operator UI, `ocpi` adds the OCPI server. The
+# Profiles: `ui` adds the operator UI, `ocpi` adds the OCPI server, `payment` adds the payment
+# server and its driver pages. The
 # infrastructure services and `citrine` (the OCPP server) are always on.
 # Published images come from ghcr.io (built by push-release-tagged-server.yml,
 # push-release-tagged-operator-ui.yml, and push-release-tagged-ocpi.yml). The
 # OCPI image is published starting with the first release tag; until then,
-# `--ocpi` without `--local` will fail to pull (use `--local` to build it).
+# `--ocpi` without `--local` will fail to pull (use `--local` to build it). No payment image is
+# published yet, so `--payment` always builds it from local source.
 services:
   citrine:
     image: ghcr.io/citrineos/citrineos-server:latest
@@ -69,13 +72,13 @@ services:
       - 9229:9229
     healthcheck:
       test: [
-          'CMD-SHELL',
-          "node -e \"const net = require(\\\"net\\\"); const client =
+        'CMD-SHELL',
+        "node -e \"const net = require(\\\"net\\\"); const client =
           net.createConnection(8080, \\\"127.0.0.1\\\", () => { client.end();
           process.exit(0); }); client.on(\\\"error\\\", () =>
           process.exit(1)); client.setTimeout(5000, () => { client.destroy();
           process.exit(1); });\"",
-        ]
+      ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -118,6 +121,42 @@ services:
       citrine:
         condition: service_healthy
 
+  # The payment server and its driver pages (/, /checkout, /charging, /receipt), on one port.
+  # No image of it is published yet, so it is always built from local source.
+  citrineos-payment:
+    image: citrineos-payment:local
+    build:
+      context: .
+      dockerfile: ./apps/payment/deploy.Dockerfile
+    pull_policy: build
+    profiles:
+      - payment
+    # docker.env has the stack's settings; .env.local, if there, your Stripe keys and overrides.
+    env_file:
+      - path: ./apps/payment/docker.env
+      - path: ./apps/payment/.env.local
+        required: false
+    ports:
+      - 9010:9010
+    depends_on:
+      ocpp-db:
+        condition: service_healthy
+      amqp-broker:
+        condition: service_healthy
+      # Runs Core's migrations, which the payment tables build on.
+      citrine:
+        condition: service_healthy
+    healthcheck:
+      test: [
+        'CMD-SHELL',
+        'node -e "fetch(''http://127.0.0.1:9010/health'').then((r) => process.exit(r.ok ? 0 : 1),
+          () => process.exit(1))"',
+      ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
   amqp-broker:
     image: rabbitmq:3-management
     ports:
@@ -146,7 +185,7 @@ services:
       POSTGRES_USER: citrine
       POSTGRES_PASSWORD: 'citrine'
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -h 127.0.0.1 -p 5432 -U citrine -d citrine']
+      test: [ 'CMD-SHELL', 'pg_isready -h 127.0.0.1 -p 5432 -U citrine -d citrine' ]
       interval: 5s
       timeout: 10s
       retries: 5
@@ -176,7 +215,7 @@ services:
         \"snowflake\":{\"uri\":\"http://data-connector-agent:8081/api/v1/snowfl\
         ake\"}}}}"
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://graphql-engine:8080/healthz']
+      test: [ 'CMD', 'curl', '-f', 'http://graphql-engine:8080/healthz' ]
       interval: 5s
       timeout: 10s
       retries: 20
