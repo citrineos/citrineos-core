@@ -92,8 +92,8 @@ export function Receipt({ publicId }: { publicId: string }) {
             <dd>{evse.evseId}</dd>
           </>
         )}
-        <dt>{t('receipt.session')}</dt>
-        <dd className={ui.mono}>{state.publicId}</dd>
+        <dt className="self-center">{t('receipt.session')}</dt>
+        <dd className={`${ui.mono} self-center`}>{state.publicId}</dd>
         <dt>{t('receipt.start')}</dt>
         <dd>{formatDateTime(transaction.startTime, locale)}</dd>
         {transaction.endTime && (

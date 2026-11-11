@@ -17,7 +17,7 @@ export const ui = {
   small: 'text-sm',
   /** A grid of <dt>/<dd> pairs, the term muted beside its value. */
   details: 'grid grid-cols-[max-content_1fr] gap-x-3 gap-y-1.5 [&>dt]:text-muted-foreground',
-  mono: 'font-mono text-[0.8rem] break-all',
+  mono: 'font-mono text-[0.8rem] break-words',
   primaryButton: `${buttonBase} border-primary bg-primary text-primary-foreground hover:bg-primary/90`,
   button: `${buttonBase} border-input bg-background text-foreground hover:bg-accent`,
 };
