@@ -50,6 +50,10 @@ export default {
             allowNull: false,
             defaultValue: false,
           },
+          termsUrl: {
+            type: DataTypes.STRING(2048),
+            allowNull: true,
+          },
           ...timestamps,
         },
         { transaction },
@@ -147,6 +151,11 @@ export default {
 
       await queryInterface.addIndex('Checkouts', ['tenantId', 'transactionDatabaseId'], {
         name: 'checkouts_tenant_transaction',
+        transaction,
+      });
+      // The reconciliation sweep looks checkouts up by status and how long ago they changed.
+      await queryInterface.addIndex('Checkouts', ['status', 'updatedAt'], {
+        name: 'checkouts_status_updated',
         transaction,
       });
     });
