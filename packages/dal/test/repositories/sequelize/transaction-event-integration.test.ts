@@ -471,6 +471,37 @@ describe('SequelizeTransactionEventRepository', () => {
       expect(otherTenant).toHaveLength(0);
     });
 
+    it('readTransactionById reads a transaction within its tenant', async () => {
+      await aStation();
+      const row = await aTransactionRow();
+      const repo = makeRepo();
+
+      expect((await repo.readTransactionById(TENANT_A, row.id))?.transactionId).toBe(TX);
+      expect(await repo.readTransactionById(TENANT_B, row.id)).toBeUndefined();
+    });
+
+    it('readLatestTransactionByAuthorizationId takes the newest since a moment, ended or not', async () => {
+      await aStation();
+      const auth = await anAuthorization();
+      await aTransactionRow({ transactionId: 'T-OLD', authorizationId: auth.id, isActive: false });
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      const since = new Date();
+      const repo = makeRepo();
+
+      expect(
+        await repo.readLatestTransactionByAuthorizationId(TENANT_A, auth.id, since),
+      ).toBeUndefined();
+
+      await aTransactionRow({ transactionId: 'T-NEW', authorizationId: auth.id, isActive: false });
+      expect(
+        (await repo.readLatestTransactionByAuthorizationId(TENANT_A, auth.id, since))
+          ?.transactionId,
+      ).toBe('T-NEW');
+      expect(
+        await repo.readLatestTransactionByAuthorizationId(TENANT_B, auth.id, since),
+      ).toBeUndefined();
+    });
+
     it('findByTransactionId pulls events and meter values along', async () => {
       await aStation();
       const repo = makeRepo();

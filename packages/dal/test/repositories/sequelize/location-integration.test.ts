@@ -666,6 +666,76 @@ describe('SequelizeLocationRepository', () => {
     });
   });
 
+  describe('readTenantIdByEvseDatabaseId', () => {
+    it('returns the tenant that owns the evse', async () => {
+      const station = await aStation({ tenantId: TENANT_B });
+      const { evseId } = await makeRepo().autoCommissionEvseForOcpp16Connector(
+        TENANT_B,
+        station.ocppConnectionName,
+      );
+
+      expect(await makeRepo().readTenantIdByEvseDatabaseId(evseId)).toBe(TENANT_B);
+    });
+
+    it('returns undefined for an evse that does not exist', async () => {
+      expect(await makeRepo().readTenantIdByEvseDatabaseId(987654)).toBeUndefined();
+    });
+  });
+
+  describe('reads by primary key', () => {
+    it('reads a station, an evse with its connectors, and a connector within their tenant', async () => {
+      const { station, evse, connector1 } = await aCommissionedStation();
+      const repo = makeRepo();
+
+      expect((await repo.readChargingStationById(TENANT_A, station.id))?.ocppConnectionName).toBe(
+        STATION_NAME,
+      );
+      const read = await repo.readEvseById(TENANT_A, evse.id);
+      expect(read?.connectors?.map((connector) => connector.connectorId).sort()).toEqual([1, 2]);
+      expect((await repo.readConnectorById(TENANT_A, connector1.id))?.evseId).toBe(evse.id);
+
+      expect(await repo.readChargingStationById(TENANT_B, station.id)).toBeUndefined();
+      expect(await repo.readEvseById(TENANT_B, evse.id)).toBeUndefined();
+      expect(await repo.readConnectorById(TENANT_B, connector1.id)).toBeUndefined();
+    });
+  });
+
+  describe('readEvsesByEmi3Id', () => {
+    it('finds evses of any tenant without separators or case, and not removed ones', async () => {
+      const a = await aStation();
+      const b = await aStation({ tenantId: TENANT_B, ocppConnectionName: 'CS002' });
+      const evseA = await Evse.create({
+        tenantId: TENANT_A,
+        stationId: a.id,
+        evseTypeId: 1,
+        evseId: 'US*CIT*E1',
+      } as any);
+      const evseB = await Evse.create({
+        tenantId: TENANT_B,
+        stationId: b.id,
+        evseTypeId: 1,
+        evseId: 'US*CIT*E2',
+      } as any);
+      await Evse.create({
+        tenantId: TENANT_A,
+        stationId: a.id,
+        evseTypeId: 2,
+        evseId: 'US*CIT*E3',
+        removed: true,
+      } as any);
+      const repo = makeRepo();
+
+      expect(
+        (await repo.readEvsesByEmi3Id('uscite2')).map((evse) => [evse.id, evse.tenantId]),
+      ).toEqual([[evseB.id, TENANT_B]]);
+      expect((await repo.readEvsesByEmi3Id('US*CIT*E1')).map((evse) => evse.id)).toEqual([
+        evseA.id,
+      ]);
+      expect(await repo.readEvsesByEmi3Id('US*CIT*E3')).toEqual([]);
+      expect(await repo.readEvsesByEmi3Id('***')).toEqual([]);
+    });
+  });
+
   describe('updateChargingStationTimestamp', () => {
     it('stamps only the named station', async () => {
       await aStation();

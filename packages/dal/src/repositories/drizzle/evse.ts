@@ -4,7 +4,7 @@
 
 import type { IEvseRepository } from '@dal/repositories/repositories.js';
 import type { EvseDto } from '@citrineos/types';
-import { and, eq } from 'drizzle-orm';
+import { and, asc, eq, isNull, or, sql } from 'drizzle-orm';
 import {
   type ConnectorEntity,
   connectorTable,
@@ -162,5 +162,56 @@ export class DrizzleEvseRepository
     const created = await this.insert(tenantId, { stationId });
 
     return { evseId: created.id! };
+  }
+
+  async readTenantIdByEvseDatabaseId(evseDatabaseId: number): Promise<number | undefined> {
+    if (this.useTenantSchema) {
+      // Each tenant's EVSEs live in that tenant's own schema, so there is no single table
+      // to look an EVSE up in before the tenant is known.
+      throw new Error('Resolving an EVSE to its tenant is not supported with schema-per-tenant');
+    }
+    const rows = await this.db
+      .select({ tenantId: evseTable.tenantId })
+      .from(evseTable)
+      .where(eq(evseTable.id, evseDatabaseId))
+      .limit(1);
+    return rows[0]?.tenantId;
+  }
+
+  async readEvseById(tenantId: number, id: number): Promise<EvseDto | undefined> {
+    const evse = await this.findById(tenantId, id);
+    if (!evse) {
+      return undefined;
+    }
+    const connectors = this.getConnectorTable(tenantId);
+    const connectorRows = (await this.db
+      .select()
+      .from(connectors)
+      .where(
+        and(eq(connectors.evseId, id), this.tenantFilter(connectors, tenantId)),
+      )) as ConnectorEntity[];
+    return { ...evse, connectors: connectorRows.map(toConnectorDto) };
+  }
+
+  async readEvsesByEmi3Id(emi3EvseId: string): Promise<EvseDto[]> {
+    if (this.useTenantSchema) {
+      // Each tenant's EVSEs live in that tenant's own schema: there is no one table to search.
+      throw new Error('Looking an EVSE up by eMI3 id is not supported with schema-per-tenant');
+    }
+    const normalized = emi3EvseId.replaceAll('*', '').toUpperCase();
+    if (!normalized) {
+      return [];
+    }
+    const rows = (await this.db
+      .select()
+      .from(evseTable)
+      .where(
+        and(
+          sql`upper(replace(${evseTable.evseId}, '*', '')) = ${normalized}`,
+          or(isNull(evseTable.removed), eq(evseTable.removed, false)),
+        ),
+      )
+      .orderBy(asc(evseTable.id))) as EvseEntity[];
+    return rows.map(toEvseDto);
   }
 }

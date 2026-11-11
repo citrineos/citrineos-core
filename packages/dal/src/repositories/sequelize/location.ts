@@ -11,7 +11,14 @@ import {
   type OCPP2_0_1,
   OCPPVersion,
 } from '@citrineos/types';
-import { Op, type Transaction, type WhereOptions } from 'sequelize';
+import {
+  col,
+  fn,
+  Op,
+  where as sequelizeWhere,
+  type Transaction,
+  type WhereOptions,
+} from 'sequelize';
 import {
   type ConnectorStatusNotificationResult,
   type IChargingStationRepository,
@@ -81,6 +88,13 @@ export class SequelizeLocationRepository
       where: { id },
       include: [ChargingStation],
     });
+  }
+
+  async readChargingStationById(
+    tenantId: number,
+    id: number,
+  ): Promise<ChargingStation | undefined> {
+    return (await ChargingStation.findOne({ where: { id, tenantId } })) ?? undefined;
   }
 
   async readChargingStationByOcppConnectionName(
@@ -510,6 +524,33 @@ export class SequelizeLocationRepository
     );
     const evse = await Evse.create({ tenantId, stationId });
     return { evseId: evse.id };
+  }
+
+  async readTenantIdByEvseDatabaseId(evseDatabaseId: number): Promise<number | undefined> {
+    const evse = await Evse.findByPk(evseDatabaseId, { attributes: ['tenantId'] });
+    return evse?.tenantId;
+  }
+
+  async readEvsesByEmi3Id(emi3EvseId: string): Promise<Evse[]> {
+    const normalized = emi3EvseId.replaceAll('*', '').toUpperCase();
+    if (!normalized) {
+      return [];
+    }
+    return await Evse.findAll({
+      where: {
+        removed: { [Op.not]: true },
+        [Op.and]: [sequelizeWhere(fn('upper', fn('replace', col('evseId'), '*', '')), normalized)],
+      },
+      order: [['id', 'ASC']],
+    });
+  }
+
+  async readEvseById(tenantId: number, id: number): Promise<Evse | undefined> {
+    return (await Evse.findOne({ where: { id, tenantId }, include: [Connector] })) ?? undefined;
+  }
+
+  async readConnectorById(tenantId: number, id: number): Promise<Connector | undefined> {
+    return (await Connector.findOne({ where: { id, tenantId } })) ?? undefined;
   }
 
   async updateChargingStationTimestamp(

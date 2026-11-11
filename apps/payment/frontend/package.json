@@ -1,0 +1,35 @@
+{
+  "name": "@citrineos/payment-frontend",
+  "version": "0.1.0",
+  "description": "Driver-facing pages of the CitrineOS payment server",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p tsconfig.json --noEmit && vite build",
+    "dev": "vite",
+    "lint": "eslint . --config eslint.config.js",
+    "lint:fix": "eslint . --config eslint.config.js --fix"
+  },
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@citrineos/types": "workspace:*",
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "devDependencies": {
+    "@eslint/js": "catalog:",
+    "@tailwindcss/vite": "4.3.3",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "5.2.0",
+    "eslint": "catalog:",
+    "eslint-config-prettier": "catalog:",
+    "eslint-plugin-prettier": "catalog:",
+    "jsdom": "30.1.2",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:",
+    "vite": "7.3.7",
+    "vitest": "catalog:"
+  }
+}

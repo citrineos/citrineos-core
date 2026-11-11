@@ -1,0 +1,66 @@
+{
+  "name": "@citrineos/payment",
+  "version": "0.1.0",
+  "description": "CitrineOS payment server",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "private": true,
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b config/tsconfig.src.json && tsc -p config/tsconfig.migrations.json",
+    "lint": "eslint . --config config/eslint.config.js",
+    "lint:fix": "eslint . --config config/eslint.config.js --fix",
+    "db:migrate": "pnpm exec sequelize-cli db:migrate --debug && echo migration completed successfully",
+    "start": "cross-env APP_ENV=local nodemon --config config/nodemon.json",
+    "dev": "pnpm run \"/^dev:/\"",
+    "dev:server": "cross-env PAYMENT_PUBLIC_URL=http://localhost:3010 pnpm start",
+    "dev:frontend": "pnpm --filter @citrineos/payment-frontend run dev",
+    "start:docker": "cross-env APP_ENV=docker pnpm run db:migrate && node --inspect=0.0.0.0:9229 dist/index.js"
+  },
+  "keywords": [
+    "ocpp",
+    "payment",
+    "stripe"
+  ],
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@citrineos/payment-frontend": "workspace:*",
+    "@eslint/js": "catalog:",
+    "@types/amqplib": "catalog:",
+    "@types/jsonwebtoken": "catalog:",
+    "@types/node": "catalog:",
+    "@types/qrcode": "1.5.6",
+    "eslint": "catalog:",
+    "eslint-config-prettier": "catalog:",
+    "eslint-plugin-prettier": "catalog:",
+    "nodemon": "catalog:",
+    "testcontainers": "catalog:",
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:"
+  },
+  "dependencies": {
+    "@citrineos/base": "workspace:*",
+    "@citrineos/dal": "workspace:*",
+    "@citrineos/types": "workspace:*",
+    "@fastify/rate-limit": "11.2.1",
+    "@fastify/static": "10.1.5",
+    "amqplib": "catalog:",
+    "cross-env": "catalog:",
+    "fastify": "catalog:",
+    "jsonwebtoken": "catalog:",
+    "jwks-rsa": "catalog:",
+    "pg": "catalog:",
+    "qrcode": "1.5.4",
+    "sequelize": "catalog:",
+    "sequelize-cli": "catalog:",
+    "stripe": "22.6.2",
+    "tslog": "catalog:",
+    "zod": "catalog:"
+  },
+  "engines": {
+    "node": ">=24.16.0"
+  }
+}

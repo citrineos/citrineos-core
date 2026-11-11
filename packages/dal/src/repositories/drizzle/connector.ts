@@ -103,6 +103,10 @@ export class DrizzleConnectorRepository
     return toConnectorDto(row);
   }
 
+  async readConnectorById(tenantId: number, id: number): Promise<ConnectorDto | undefined> {
+    return await this.findById(tenantId, id);
+  }
+
   private getEvseTable(tenantId: number): typeof evseTable {
     return this.useTenantSchema ? tenantEvseTable(tenantId) : evseTable;
   }

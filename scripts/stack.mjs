@@ -10,6 +10,7 @@
 //   node scripts/stack.mjs --local         build server + UI from local source
 //   node scripts/stack.mjs --solo          ocpp-server only (no UI)
 //   node scripts/stack.mjs --ocpi          add the OCPI server
+//   node scripts/stack.mjs --payment       add the payment server (Stripe keys in apps/payment/.env.local)
 //   node scripts/stack.mjs --everest       add EVerest with OCPP 2.x
 //   node scripts/stack.mjs --everest16     add EVerest with OCPP 1.6
 //   node scripts/stack.mjs --local --ocpi  combine flags freely
@@ -21,6 +22,7 @@
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
+import { existsSync, readFileSync } from 'node:fs';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -35,6 +37,7 @@ const KNOWN_FLAGS = new Set([
   '--local',
   '--solo',
   '--ocpi',
+  '--payment',
   '--everest',
   '--everest16',
   '--help',
@@ -47,12 +50,13 @@ const flags = new Set(argv.filter((a) => a.startsWith('-')));
 const positionals = argv.filter((a) => !a.startsWith('-'));
 
 function usage() {
-  console.log(`Usage: node scripts/stack.mjs [up|down] [--local] [--solo] [--ocpi] [--everest] [--everest16]
+  console.log(`Usage: node scripts/stack.mjs [up|down] [--local] [--solo] [--ocpi] [--payment] [--everest] [--everest16]
 
   (no flags)   ocpp-server + operator UI using ghcr.io images
   --local      build the server and UI from local source instead of pulling
   --solo       ocpp-server only (no operator UI)
   --ocpi       also run the OCPI server
+  --payment    also run the payment server; put your Stripe keys in apps/payment/.env.local
   --everest    also run EVerest with OCPP 2.x (mutually exclusive with --everest16)
   --everest16  also run EVerest with OCPP 1.6 (mutually exclusive with --everest)
   up | down    start (default) or stop the stack — pass the same flags both times
@@ -78,6 +82,7 @@ const command = positionals[0] ?? 'up';
 const local = flags.has('--local');
 const solo = flags.has('--solo');
 const ocpi = flags.has('--ocpi');
+const payment = flags.has('--payment');
 const everest = flags.has('--everest');
 const everest16 = flags.has('--everest16');
 
@@ -93,6 +98,21 @@ if (everest && everest16) {
   process.exit(1);
 }
 
+// The payment server will not start without Stripe keys; say so before compose does.
+if (payment && command === 'up') {
+  const secrets = resolve(repoRoot, 'apps/payment/.env.local');
+  const configured = existsSync(secrets) ? readFileSync(secrets, 'utf8') : '';
+  const missing = ['STRIPE_API_KEY', 'STRIPE_CONNECT_WEBHOOK_SECRET'].filter(
+    (name) => !new RegExp(`^${name}=(?!\\s*$|.*\\.\\.\\.)`, 'm').test(configured),
+  );
+  if (missing.length) {
+    console.warn(
+      `Warning: ${missing.join(' and ')} not set in apps/payment/.env.local ` +
+        '(see apps/payment/.env.local.example); the payment server will not start without them.',
+    );
+  }
+}
+
 // Build the file list: base always, local override only with --local.
 const files = ['-f', 'docker-compose.yml'];
 if (local) files.push('-f', 'docker-compose.local.yml');
@@ -101,6 +121,7 @@ if (local) files.push('-f', 'docker-compose.local.yml');
 const profiles = [];
 if (!solo) profiles.push('ui');
 if (ocpi) profiles.push('ocpi');
+if (payment) profiles.push('payment');
 const profileArgs = profiles.flatMap((p) => ['--profile', p]);
 
 const composeArgs = ['compose', ...files, ...profileArgs];

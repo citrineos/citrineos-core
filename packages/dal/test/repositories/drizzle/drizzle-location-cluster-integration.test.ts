@@ -255,6 +255,16 @@ describe('DrizzleLocationRepository', () => {
 });
 
 describe('DrizzleChargingStationRepository', () => {
+  it('readChargingStationById reads a station within its tenant', async () => {
+    const repo = new DrizzleChargingStationRepository(deps());
+    const station = await aStation(TENANT);
+
+    expect((await repo.readChargingStationById(TENANT, station.id))?.ocppConnectionName).toBe(
+      STATION,
+    );
+    expect(await repo.readChargingStationById(OTHER_TENANT, station.id)).toBeUndefined();
+  });
+
   it('findById maps scalars, the ISO message timestamp and null coordinates', async () => {
     const repo = new DrizzleChargingStationRepository(deps());
     const station = await aStation(TENANT, {
@@ -396,6 +406,46 @@ describe('DrizzleEvseRepository', () => {
     );
     expect(await Evse.count()).toBe(0);
   });
+
+  it('readTenantIdByEvseDatabaseId resolves an evse to the tenant that owns it', async () => {
+    const repo = new DrizzleEvseRepository(deps());
+    const { evse } = await aCommissionedStation(OTHER_TENANT);
+
+    expect(await repo.readTenantIdByEvseDatabaseId(evse.id)).toBe(OTHER_TENANT);
+    expect(await repo.readTenantIdByEvseDatabaseId(evse.id + 1000)).toBeUndefined();
+  });
+
+  it('readEvseById reads an evse with its connectors within its tenant', async () => {
+    const repo = new DrizzleEvseRepository(deps());
+    const { station, typeA, evse } = await aCommissionedStation(TENANT);
+    await aConnector(TENANT, station.id, evse.id, typeA.databaseId, 1);
+
+    const read = await repo.readEvseById(TENANT, evse.id);
+
+    expect(read?.evseId).toBe('DE*ABC*E001');
+    expect(read?.connectors).toHaveLength(1);
+    expect(await repo.readEvseById(OTHER_TENANT, evse.id)).toBeUndefined();
+  });
+
+  it('readEvsesByEmi3Id finds evses of any tenant without separators or case', async () => {
+    const repo = new DrizzleEvseRepository(deps());
+    const { evse } = await aCommissionedStation(OTHER_TENANT);
+
+    expect(
+      (await repo.readEvsesByEmi3Id('deabce001')).map((found) => [found.id, found.tenantId]),
+    ).toEqual([[evse.id, OTHER_TENANT]]);
+    await Evse.update({ removed: true } as any, { where: { id: evse.id } });
+    expect(await repo.readEvsesByEmi3Id('DE*ABC*E001')).toEqual([]);
+    await expect(
+      new DrizzleEvseRepository({ ...deps(), useTenantSchema: true }).readEvsesByEmi3Id('x'),
+    ).rejects.toThrow(/schema-per-tenant/);
+  });
+
+  it('readTenantIdByEvseDatabaseId refuses to run with schema-per-tenant', async () => {
+    const repo = new DrizzleEvseRepository({ ...deps(), useTenantSchema: true });
+
+    await expect(repo.readTenantIdByEvseDatabaseId(1)).rejects.toThrow(/schema-per-tenant/);
+  });
 });
 
 describe('DrizzleEvseTypeRepository', () => {
@@ -418,6 +468,15 @@ describe('DrizzleEvseTypeRepository', () => {
 });
 
 describe('DrizzleConnectorRepository', () => {
+  it('readConnectorById reads a connector within its tenant', async () => {
+    const repo = new DrizzleConnectorRepository(deps());
+    const { station, typeA, evse } = await aCommissionedStation(TENANT);
+    const connector = await aConnector(TENANT, station.id, evse.id, typeA.databaseId, 1);
+
+    expect((await repo.readConnectorById(TENANT, connector.id))?.evseId).toBe(evse.id);
+    expect(await repo.readConnectorById(OTHER_TENANT, connector.id)).toBeUndefined();
+  });
+
   it('findById maps enums, maxima and the ISO timestamp', async () => {
     const repo = new DrizzleConnectorRepository(deps());
     const { station, typeA, evse } = await aCommissionedStation(TENANT);

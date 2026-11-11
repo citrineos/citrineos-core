@@ -297,6 +297,7 @@ export interface ILocationRepository {
 }
 
 export interface IChargingStationRepository {
+  readChargingStationById(tenantId: number, id: number): Promise<ChargingStationDto | undefined>;
   readChargingStationByOcppConnectionName: (
     tenantId: number,
     ocppConnectionName: string,
@@ -360,6 +361,7 @@ export interface IStatusNotificationRepository {
 }
 
 export interface IConnectorRepository {
+  readConnectorById(tenantId: number, id: number): Promise<ConnectorDto | undefined>;
   readConnectorsByStationId: (
     tenantId: number,
     ocppConnectionName: string,
@@ -395,6 +397,8 @@ export interface IConnectorRepository {
 }
 
 export interface IEvseRepository {
+  /** The EVSE with its connectors. */
+  readEvseById(tenantId: number, id: number): Promise<EvseDto | undefined>;
   readEvseByStationIdAndOcpp201EvseId: (
     tenantId: number,
     ocppConnectionName: string,
@@ -405,6 +409,16 @@ export interface IEvseRepository {
     tenantId: number,
     ocppConnectionName: string,
   ): Promise<{ evseId: number }>;
+  /**
+   * Resolves which tenant owns an EVSE, for callers that only know its primary key and have no
+   * tenant yet. Every read after it should be tenant-scoped with the id it returns.
+   */
+  readTenantIdByEvseDatabaseId(evseDatabaseId: number): Promise<number | undefined>;
+  /**
+   * The EVSEs, of any tenant and not removed, printed with this eMI3 id. It compares without the
+   * optional `*` separators and case, as eMI3 allows; each EVSE's tenantId says whose it is.
+   */
+  readEvsesByEmi3Id(emi3EvseId: string): Promise<EvseDto[]>;
 }
 
 export interface ISecurityEventRepository {
@@ -431,6 +445,13 @@ export interface ISubscriptionRepository {
 }
 
 export interface ITransactionRepository {
+  readTransactionById(tenantId: number, id: number): Promise<TransactionDto | undefined>;
+  /** The newest transaction an Authorization started at or after `since`, active or not. */
+  readLatestTransactionByAuthorizationId(
+    tenantId: number,
+    authorizationId: number,
+    since: Date,
+  ): Promise<TransactionDto | undefined>;
   readTransactionByStationIdAndTransactionId(
     tenantId: number,
     ocppConnectionName: string,
