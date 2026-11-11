@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import type {
   IAuthorizationRepository,
   IChargingStationRepository,
@@ -53,7 +54,7 @@ export type EvseView = Pick<EvseDto, 'evseId' | 'evseTypeId' | 'removed'> &
     connectors: ConnectorView[];
     /** The station's location, if it has one. */
     location: LocationView | null;
-    /** The tenant's name: who operates the EVSE. */
+    /** The tenant's name: who operates the EVSE. None for the default tenant: it has no real name. */
     operatorName: TenantDto['name'] | null;
   };
 
@@ -239,7 +240,10 @@ export class CoreData implements ICoreData {
       station.locationId == null
         ? undefined
         : await this._locations.readLocationById(tenantId, station.locationId);
-    const tenant = await this._tenants.readByKey(tenantId, tenantId);
+    const tenant =
+      tenantId === DEFAULT_TENANT_ID
+        ? undefined
+        : await this._tenants.readByKey(tenantId, tenantId);
     return {
       id: evse.id,
       tenantId,

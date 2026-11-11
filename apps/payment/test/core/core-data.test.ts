@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import {
   SequelizeAuthorizationRepository,
   SequelizeChargingStationSequenceRepository,
@@ -129,6 +130,13 @@ describe('CoreData', () => {
       location: null,
       operatorName: 'Tenant B',
     });
+  });
+
+  it('names no operator for the default tenant, which has no real name', async () => {
+    expect(TENANT_A).toBe(DEFAULT_TENANT_ID);
+    const { evseId } = await aStation(TENANT_A);
+
+    expect((await coreData.readEvse(TENANT_A, evseId))?.operatorName).toBeNull();
   });
 
   it('reads where an EVSE stands', async () => {
