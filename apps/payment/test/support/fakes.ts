@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { TariffData } from '@citrineos/dal';
-import { OCPPVersion } from '@citrineos/types';
+import { ConnectorStatusEnum, OCPPVersion } from '@citrineos/types';
 import { randomUUID } from 'node:crypto';
 import type {
   ClearDisplayMessageRequest,
@@ -39,6 +39,7 @@ import type {
   PaymentAccountUpdate,
 } from '../../src/types/index.js';
 import { CheckoutStatus as Status } from '../../src/types/index.js';
+import { PaymentEventType } from '../../src/stripe/payment-provider.js';
 
 export const TENANT = 1;
 export const OTHER_TENANT = 2;
@@ -71,7 +72,7 @@ export function anEvse(overrides: Partial<EvseView> = {}): EvseView {
       {
         id: id * 10,
         evseTypeConnectorId: 1,
-        status: 'Available',
+        status: ConnectorStatusEnum.Available,
         type: 'IEC62196T2',
         powerType: 'AC3Phase',
         maximumPowerWatts: 22000,
@@ -266,7 +267,7 @@ export class RecordingPayments implements IPaymentProvider {
   cancels: { account: string; paymentIntentId: string; key: string }[] = [];
   failSessions = false;
   failCaptures = false;
-  webhookEvent: PaymentEvent = { type: 'unhandled', stripeType: 'ping' };
+  webhookEvent: PaymentEvent = { type: PaymentEventType.Unhandled, stripeType: 'ping' };
 
   async createCheckoutSession(request: CheckoutSessionRequest): Promise<CheckoutSessionCreated> {
     if (this.failSessions) {

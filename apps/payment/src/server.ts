@@ -13,8 +13,7 @@ import type { IAdminAuthenticator } from './admin/admin-auth.js';
 import { registerAdminRoutes } from './admin/admin-routes.js';
 import type { AdminService } from './admin/admin-service.js';
 import type { CheckoutService } from './services/checkout-service.js';
-import { PaymentError } from './services/errors.js';
-import type { PaymentErrorCode } from './services/errors.js';
+import { PaymentError, PaymentErrorCode } from './services/errors.js';
 import type { ScanAndChargeService } from './services/scan-and-charge-service.js';
 import type { StartService } from './services/start-service.js';
 import type { IPaymentProvider } from './stripe/payment-provider.js';
@@ -39,13 +38,13 @@ export interface ServerDependencies {
 const FRONTEND_PAGES = ['/', '/checkout/:evseId', '/charging/:publicId', '/receipt/:publicId'];
 
 const STATUS_BY_CODE: Record<PaymentErrorCode, number> = {
-  not_found: 404,
-  invalid: 400,
-  unavailable: 409,
-  not_payable: 422,
-  forbidden: 403,
-  unauthorized: 401,
-  conflict: 409,
+  [PaymentErrorCode.NotFound]: 404,
+  [PaymentErrorCode.Invalid]: 400,
+  [PaymentErrorCode.Unavailable]: 409,
+  [PaymentErrorCode.NotPayable]: 422,
+  [PaymentErrorCode.Forbidden]: 403,
+  [PaymentErrorCode.Unauthorized]: 401,
+  [PaymentErrorCode.Conflict]: 409,
 };
 
 const id = { type: 'integer', minimum: 1 } as const;

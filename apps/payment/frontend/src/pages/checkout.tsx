@@ -13,7 +13,15 @@ import type { MessageKey } from '../i18n';
 import { useI18n } from '../i18n';
 import { ui } from '../ui';
 
-const OUT_OF_SERVICE = ['Unavailable', 'Faulted'];
+/**
+ * Core's connector statuses, type-checked against its DTO; importing Core's runtime enum would add
+ * zod and all of Core's types to the driver pages.
+ */
+const OUT_OF_SERVICE: readonly NonNullable<Connector['status']>[] = ['Unavailable', 'Faulted'];
+
+function isOutOfService(connector: Connector): boolean {
+  return connector.status !== undefined && OUT_OF_SERVICE.includes(connector.status);
+}
 
 /** Leaves the app for Stripe's payment page. */
 export const redirect = {
@@ -147,9 +155,7 @@ export function Checkout({ evseId }: { evseId: number }) {
           <button
             type="button"
             className={ui.primaryButton}
-            disabled={
-              busy || !connector?.tariff || OUT_OF_SERVICE.includes(connector.status ?? 'Unknown')
-            }
+            disabled={busy || !connector?.tariff || isOutOfService(connector)}
             onClick={onPay}
           >
             <BoltIcon /> {t('checkout.pay')}
@@ -182,7 +188,7 @@ function ConnectorChoice({
   onSelect: () => void;
 }) {
   const { t } = useI18n();
-  const outOfService = OUT_OF_SERVICE.includes(connector.status ?? 'Unknown');
+  const outOfService = isOutOfService(connector);
   return (
     <button
       type="button"

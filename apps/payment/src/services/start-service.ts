@@ -3,19 +3,20 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { childLogger } from '@citrineos/base';
-import { OCPPVersion } from '@citrineos/types';
+import { OCPPVersion, RequestStartStopStatusEnum } from '@citrineos/types';
 import type { ILogObj, Logger } from 'tslog';
 import type { ICoreApiClient } from '../core/core-api-client.js';
 import type { ICoreData } from '../core/core-data.js';
 import { fromMinorUnits } from '../pricing/index.js';
 import type { ICheckoutRepository, IPaymentAccountRepository } from '../repositories/index.js';
 import type { IPaymentProvider, PaymentEvent } from '../stripe/payment-provider.js';
+import { PaymentEventType } from '../stripe/payment-provider.js';
 import type { CheckoutDto } from '../types/index.js';
 import { CheckoutFlow, CheckoutStatus, RemoteStartStatus } from '../types/index.js';
 import type { CallbackSigner } from './callback-signer.js';
 import { cancelCheckout, releaseHold } from './cancel-checkout.js';
 import { clearQrCode } from './display-messages.js';
-import { PaymentError } from './errors.js';
+import { PaymentError, PaymentErrorCode } from './errors.js';
 import type { IdTokens } from './id-tokens.js';
 
 export interface StartServiceDependencies {
@@ -55,7 +56,7 @@ export class StartService {
   }
 
   async handlePaymentEvent(event: PaymentEvent): Promise<void> {
-    if (event.type === 'unhandled') {
+    if (event.type === PaymentEventType.Unhandled) {
       this._logger.debug(`Ignoring Stripe event ${event.stripeType}`);
       return;
     }
@@ -112,11 +113,11 @@ export class StartService {
     answer: unknown,
   ): Promise<void> {
     if (!this._signer.verify(publicId, signature)) {
-      throw new PaymentError('forbidden', 'Bad callback signature');
+      throw new PaymentError(PaymentErrorCode.Forbidden, 'Bad callback signature');
     }
     const checkout = await this._checkouts.findByPublicId(publicId);
     if (!checkout) {
-      throw new PaymentError('not_found', 'No such checkout');
+      throw new PaymentError(PaymentErrorCode.NotFound, 'No such checkout');
     }
 
     if (this._accepted(answer)) {
@@ -225,7 +226,7 @@ export class StartService {
       typeof answer === 'object' &&
       answer !== null &&
       'status' in answer &&
-      answer.status === 'Accepted'
+      answer.status === RequestStartStopStatusEnum.Accepted
     );
   }
 }

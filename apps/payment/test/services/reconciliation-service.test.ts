@@ -8,6 +8,8 @@ import type { CheckoutDto } from '../../src/types/index.js';
 import { CheckoutFlow, CheckoutStatus, RemoteStartStatus } from '../../src/types/index.js';
 import { ACCOUNT, aTransaction, anEvse, TENANT } from '../support/fakes.js';
 import { aWorld, STALE_AFTER_MS } from '../support/world.js';
+import { ReconcileOutcome } from '../../src/services/reconciliation-service.js';
+import { PaymentEventType } from '../../src/stripe/payment-provider.js';
 
 type World = Awaited<ReturnType<typeof aWorld>>;
 
@@ -27,7 +29,7 @@ describe('ReconciliationService', () => {
   async function aPaidCheckout(): Promise<CheckoutDto> {
     const { publicId } = await world.checkoutService.createCheckout(7);
     await world.startService.handlePaymentEvent({
-      type: 'checkout.completed',
+      type: PaymentEventType.CheckoutCompleted,
       stripeAccountId: ACCOUNT,
       checkoutPublicId: publicId,
       paymentIntentId: 'pi_1',
@@ -82,7 +84,7 @@ describe('ReconciliationService', () => {
       const checkout = await aPaidCheckout();
       await aTransactionOf(checkout, SETTLED);
 
-      expect(await world.reconciliationService.reconcile(checkout)).toBe('settled');
+      expect(await world.reconciliationService.reconcile(checkout)).toBe(ReconcileOutcome.Settled);
 
       expect(world.checkouts.only().status).toBe(CheckoutStatus.Captured);
       expect(world.payments.captures).toEqual([
@@ -95,14 +97,18 @@ describe('ReconciliationService', () => {
       // E.g. an earlier session started with the same idToken.
       await aTransactionOf(checkout, { ...SETTLED, startTime: '2026-09-01T10:00:00.000Z' });
 
-      expect(await world.reconciliationService.reconcile(checkout)).toBe('cancelled');
+      expect(await world.reconciliationService.reconcile(checkout)).toBe(
+        ReconcileOutcome.Cancelled,
+      );
       expect(world.payments.captures).toHaveLength(0);
     });
 
     it('releases the hold when the station never started one', async () => {
       const checkout = await aPaidCheckout();
 
-      expect(await world.reconciliationService.reconcile(checkout)).toBe('cancelled');
+      expect(await world.reconciliationService.reconcile(checkout)).toBe(
+        ReconcileOutcome.Cancelled,
+      );
 
       expect(world.checkouts.only()).toMatchObject({
         status: CheckoutStatus.Cancelled,
@@ -132,7 +138,7 @@ describe('ReconciliationService', () => {
     it('is captured once Core has the ended transaction’s figures', async () => {
       Object.assign(transaction, SETTLED);
 
-      expect(await world.reconciliationService.reconcile(checkout)).toBe('settled');
+      expect(await world.reconciliationService.reconcile(checkout)).toBe(ReconcileOutcome.Settled);
       expect(world.checkouts.only()).toMatchObject({
         status: CheckoutStatus.Captured,
         capturedAmount: 855,
@@ -140,10 +146,10 @@ describe('ReconciliationService', () => {
     });
 
     it('waits while the session runs, or the figures are missing', async () => {
-      expect(await world.reconciliationService.reconcile(checkout)).toBe('waiting');
+      expect(await world.reconciliationService.reconcile(checkout)).toBe(ReconcileOutcome.Waiting);
 
       Object.assign(transaction, { isActive: false });
-      expect(await world.reconciliationService.reconcile(checkout)).toBe('waiting');
+      expect(await world.reconciliationService.reconcile(checkout)).toBe(ReconcileOutcome.Waiting);
 
       expect(world.checkouts.only().status).toBe(CheckoutStatus.Charging);
       expect(world.payments.captures).toHaveLength(0);
@@ -163,9 +169,11 @@ describe('ReconciliationService', () => {
       Object.assign(transaction, SETTLED);
       world.checkouts.only().status = CheckoutStatus.Failed;
 
-      expect(await world.reconciliationService.reconcile(world.checkouts.only())).toBe('unchanged');
+      expect(await world.reconciliationService.reconcile(world.checkouts.only())).toBe(
+        ReconcileOutcome.Unchanged,
+      );
       expect(await world.reconciliationService.reconcile(world.checkouts.only(), true)).toBe(
-        'settled',
+        ReconcileOutcome.Settled,
       );
       expect(world.checkouts.only().status).toBe(CheckoutStatus.Captured);
     });
@@ -177,10 +185,10 @@ describe('ReconciliationService', () => {
       const checkout = world.checkouts.only();
 
       later(24 * 60 * 60 * 1000);
-      expect(await world.reconciliationService.reconcile(checkout)).toBe('waiting');
+      expect(await world.reconciliationService.reconcile(checkout)).toBe(ReconcileOutcome.Waiting);
 
       later(25 * 60 * 60 * 1000 + 1);
-      expect(await world.reconciliationService.reconcile(checkout)).toBe('expired');
+      expect(await world.reconciliationService.reconcile(checkout)).toBe(ReconcileOutcome.Expired);
       expect((await world.checkouts.findByPublicId(publicId))?.status).toBe(
         CheckoutStatus.Cancelled,
       );
@@ -198,9 +206,11 @@ describe('ReconciliationService', () => {
       const checkout = world.checkouts.only();
       expect(checkout.flow).toBe(CheckoutFlow.ScanAndCharge);
 
-      expect(await world.reconciliationService.reconcile(checkout)).toBe('waiting');
+      expect(await world.reconciliationService.reconcile(checkout)).toBe(ReconcileOutcome.Waiting);
       Object.assign(transaction, { isActive: false });
-      expect(await world.reconciliationService.reconcile(checkout)).toBe('cancelled');
+      expect(await world.reconciliationService.reconcile(checkout)).toBe(
+        ReconcileOutcome.Cancelled,
+      );
     });
   });
 

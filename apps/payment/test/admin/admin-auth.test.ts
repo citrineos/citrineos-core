@@ -5,9 +5,9 @@
 import { generateKeyPairSync } from 'node:crypto';
 import jwt from 'jsonwebtoken';
 import { describe, expect, it } from 'vitest';
-import { AdminAuthenticator } from '../../src/admin/admin-auth.js';
+import { AdminAuthenticator, AdminScope } from '../../src/admin/admin-auth.js';
 import type { PaymentConfig } from '../../src/config/types.js';
-import { PaymentError } from '../../src/services/errors.js';
+import { PaymentError, PaymentErrorCode } from '../../src/services/errors.js';
 
 const API_KEY = 'an-admin-api-key-that-is-long-enough';
 const ISSUER = 'https://id.example.com';
@@ -59,13 +59,13 @@ const admin = { realm_access: { roles: ['admin'] }, tenant_id: '3' };
 describe('AdminAuthenticator', () => {
   it('grants the platform access to the API key', async () => {
     expect(await anAuthenticator().authenticate(`Bearer ${API_KEY}`)).toEqual({
-      scope: 'platform',
+      scope: AdminScope.Platform,
     });
   });
 
   it('grants a tenant admin’s token access to that tenant', async () => {
     expect(await anAuthenticator().authenticate(`Bearer ${aToken(admin)}`)).toEqual({
-      scope: 'tenant',
+      scope: AdminScope.Tenant,
       tenantId: 3,
     });
   });
@@ -79,32 +79,40 @@ describe('AdminAuthenticator', () => {
   });
 
   it.each([
-    ['nothing', undefined, 'unauthorized'],
-    ['no Bearer scheme', `Basic ${API_KEY}`, 'unauthorized'],
-    ['a wrong API key', `Bearer ${API_KEY.replace('a', 'b')}`, 'forbidden'],
+    ['nothing', undefined, PaymentErrorCode.Unauthorized],
+    ['no Bearer scheme', `Basic ${API_KEY}`, PaymentErrorCode.Unauthorized],
+    ['a wrong API key', `Bearer ${API_KEY.replace('a', 'b')}`, PaymentErrorCode.Forbidden],
     [
       'a token without the role',
       `Bearer ${aToken({ ...admin, realm_access: { roles: ['viewer'] } })}`,
-      'forbidden',
+      PaymentErrorCode.Forbidden,
     ],
     [
       'a token without a tenant',
       `Bearer ${aToken({ realm_access: { roles: ['admin'] } })}`,
-      'forbidden',
+      PaymentErrorCode.Forbidden,
     ],
-    ['a token for another audience', `Bearer ${aToken(admin, { audience: 'core' })}`, 'forbidden'],
+    [
+      'a token for another audience',
+      `Bearer ${aToken(admin, { audience: 'core' })}`,
+      PaymentErrorCode.Forbidden,
+    ],
     [
       'a token from another issuer',
       `Bearer ${aToken(admin, { issuer: 'https://evil.example.com' })}`,
-      'forbidden',
+      PaymentErrorCode.Forbidden,
     ],
-    ['an expired token', `Bearer ${aToken(admin, { expiresIn: -10 })}`, 'forbidden'],
+    ['an expired token', `Bearer ${aToken(admin, { expiresIn: -10 })}`, PaymentErrorCode.Forbidden],
     [
       'a token signed with another key',
       `Bearer ${aToken(admin, {}, otherKeys.privateKey)}`,
-      'forbidden',
+      PaymentErrorCode.Forbidden,
     ],
-    ['a token naming an unknown key', `Bearer ${aToken(admin, { keyid: 'key-2' })}`, 'forbidden'],
+    [
+      'a token naming an unknown key',
+      `Bearer ${aToken(admin, { keyid: 'key-2' })}`,
+      PaymentErrorCode.Forbidden,
+    ],
   ])('refuses %s', async (_name, authorization, code) => {
     expect(await refusal(anAuthenticator().authenticate(authorization))).toBe(code);
   });
@@ -113,8 +121,12 @@ describe('AdminAuthenticator', () => {
     const keyOnly = anAuthenticator({ apiKey: API_KEY, jwt: undefined });
     const closed = new AdminAuthenticator({});
 
-    expect(await refusal(keyOnly.authenticate(`Bearer ${aToken(admin)}`))).toBe('forbidden');
+    expect(await refusal(keyOnly.authenticate(`Bearer ${aToken(admin)}`))).toBe(
+      PaymentErrorCode.Forbidden,
+    );
     expect(closed.enabled).toBe(false);
-    expect(await refusal(closed.authenticate(`Bearer ${API_KEY}`))).toBe('forbidden');
+    expect(await refusal(closed.authenticate(`Bearer ${API_KEY}`))).toBe(
+      PaymentErrorCode.Forbidden,
+    );
   });
 });

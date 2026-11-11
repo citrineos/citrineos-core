@@ -13,6 +13,13 @@ import type {
   TenantDto,
   TransactionDto,
 } from '@citrineos/types';
+import type {
+  CheckoutFlow,
+  CheckoutStatus,
+  RemoteStartStatus,
+} from '../../src/types/checkout-enums';
+
+export { CheckoutFlow, CheckoutStatus, RemoteStartStatus } from '../../src/types/checkout-enums';
 
 /** Where an EVSE stands. */
 export type EvseLocation = Pick<
@@ -68,21 +75,11 @@ export interface Pricing {
   paymentCosts: number;
 }
 
-export type CheckoutStatus =
-  | 'Created'
-  | 'Authorized'
-  | 'StartRequested'
-  | 'Charging'
-  | 'Capturing'
-  | 'Captured'
-  | 'Cancelled'
-  | 'Failed';
-
 export interface CheckoutState {
   publicId: string;
-  flow: 'WebPortal' | 'ScanAndCharge';
+  flow: CheckoutFlow;
   status: CheckoutStatus;
-  remoteStartStatus: 'Accepted' | 'Rejected' | null;
+  remoteStartStatus: RemoteStartStatus | null;
   currency: string;
   authorizedAmount: number | null;
   capturedAmount: number | null;

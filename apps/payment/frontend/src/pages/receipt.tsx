@@ -4,7 +4,7 @@
 
 import { useEffect, useState } from 'react';
 import type { CheckoutState } from '../api';
-import { api } from '../api';
+import { api, CheckoutStatus } from '../api';
 import { Notice, Spinner } from '../components/layout';
 import { errorMessage } from '../errors';
 import { formatDateTime, formatMajor, formatMinor, formatNumber } from '../format';
@@ -37,7 +37,7 @@ export function Receipt({ publicId }: { publicId: string }) {
     return <Spinner />;
   }
   const { pricing, transaction, tariff, evse } = state;
-  if (state.status !== 'Captured' || !pricing || !transaction?.startTime) {
+  if (state.status !== CheckoutStatus.Captured || !pricing || !transaction?.startTime) {
     return <Notice tone="info">{t('receipt.notReady')}</Notice>;
   }
 

@@ -19,9 +19,15 @@ export interface CheckoutSessionCreated {
   url: string;
 }
 
+export const PaymentEventType = {
+  CheckoutCompleted: 'checkout.completed',
+  Unhandled: 'unhandled',
+} as const;
+export type PaymentEventType = (typeof PaymentEventType)[keyof typeof PaymentEventType];
+
 /** A Checkout Session on a connected account was paid: the authorisation hold is in place. */
 export interface CheckoutCompletedEvent {
-  type: 'checkout.completed';
+  type: typeof PaymentEventType.CheckoutCompleted;
   stripeAccountId: string;
   checkoutPublicId: string;
   paymentIntentId: string;
@@ -30,7 +36,7 @@ export interface CheckoutCompletedEvent {
 }
 
 export interface UnhandledEvent {
-  type: 'unhandled';
+  type: typeof PaymentEventType.Unhandled;
   stripeType: string;
 }
 
@@ -138,7 +144,7 @@ export class StripePaymentProvider implements IPaymentProvider {
     }
 
     if (event.type !== 'checkout.session.completed') {
-      return { type: 'unhandled', stripeType: event.type };
+      return { type: PaymentEventType.Unhandled, stripeType: event.type };
     }
     const session = event.data.object;
     const paymentIntentId =
@@ -152,7 +158,7 @@ export class StripePaymentProvider implements IPaymentProvider {
       );
     }
     return {
-      type: 'checkout.completed',
+      type: PaymentEventType.CheckoutCompleted,
       stripeAccountId: event.account,
       checkoutPublicId,
       paymentIntentId,

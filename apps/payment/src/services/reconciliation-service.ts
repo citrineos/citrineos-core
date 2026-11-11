@@ -18,13 +18,15 @@ const CHECKOUT_SESSION_LIFETIME_MS = 25 * 60 * 60 * 1000;
 const SWEEP_BATCH = 100;
 
 /** What reconciling a checkout did. */
-export type ReconcileOutcome =
-  | 'settled'
-  | 'linked'
-  | 'cancelled'
-  | 'expired'
-  | 'waiting'
-  | 'unchanged';
+export const ReconcileOutcome = {
+  Settled: 'settled',
+  Linked: 'linked',
+  Cancelled: 'cancelled',
+  Expired: 'expired',
+  Waiting: 'waiting',
+  Unchanged: 'unchanged',
+} as const;
+export type ReconcileOutcome = (typeof ReconcileOutcome)[keyof typeof ReconcileOutcome];
 
 export interface ReconciliationServiceDependencies {
   coreData: ICoreData;
@@ -100,7 +102,7 @@ export class ReconciliationService {
       for (const checkout of stale) {
         try {
           const outcome = await this.reconcile(checkout);
-          if (outcome !== 'waiting' && outcome !== 'unchanged') {
+          if (outcome !== ReconcileOutcome.Waiting && outcome !== ReconcileOutcome.Unchanged) {
             this._logger.info(`Reconciled checkout ${checkout.publicId}: ${outcome}`);
           }
         } catch (error) {
@@ -129,9 +131,11 @@ export class ReconciliationService {
       case CheckoutStatus.Capturing:
         return this._settleIfEnded(checkout, [CheckoutStatus.Capturing]);
       case CheckoutStatus.Failed:
-        return retryFailed ? this._settleIfEnded(checkout, [CheckoutStatus.Failed]) : 'unchanged';
+        return retryFailed
+          ? this._settleIfEnded(checkout, [CheckoutStatus.Failed])
+          : ReconcileOutcome.Unchanged;
       default:
-        return 'unchanged';
+        return ReconcileOutcome.Unchanged;
     }
   }
 
@@ -143,15 +147,15 @@ export class ReconciliationService {
       );
       if (!transaction?.isActive) {
         await this._cancel(checkout, [CheckoutStatus.Created]);
-        return 'cancelled';
+        return ReconcileOutcome.Cancelled;
       }
     }
     const age = this._now().getTime() - (checkout.createdAt?.getTime() ?? this._now().getTime());
     if (age > CHECKOUT_SESSION_LIFETIME_MS) {
       await this._cancel(checkout, [CheckoutStatus.Created]);
-      return 'expired';
+      return ReconcileOutcome.Expired;
     }
-    return 'waiting';
+    return ReconcileOutcome.Waiting;
   }
 
   /**
@@ -167,7 +171,7 @@ export class ReconciliationService {
       await this._cancel(checkout, [CheckoutStatus.Authorized, CheckoutStatus.StartRequested], {
         remoteStartStatus: RemoteStartStatus.Rejected,
       });
-      return 'cancelled';
+      return ReconcileOutcome.Cancelled;
     }
     const charging = await this._checkouts.transition(
       checkout.tenantId,
@@ -180,11 +184,12 @@ export class ReconciliationService {
       },
     );
     if (!charging) {
-      return 'unchanged';
+      return ReconcileOutcome.Unchanged;
     }
-    return (await this._settleIfEnded(charging, [CheckoutStatus.Charging])) === 'settled'
-      ? 'settled'
-      : 'linked';
+    return (await this._settleIfEnded(charging, [CheckoutStatus.Charging])) ===
+      ReconcileOutcome.Settled
+      ? ReconcileOutcome.Settled
+      : ReconcileOutcome.Linked;
   }
 
   private async _startedTransaction(checkout: CheckoutDto): Promise<TransactionView | undefined> {
@@ -218,7 +223,7 @@ export class ReconciliationService {
         `Checkout ${checkout.publicId} is ${checkout.status} but Core has no transaction ` +
           `${checkout.transactionDatabaseId}; settle it in Stripe`,
       );
-      return 'unchanged';
+      return ReconcileOutcome.Unchanged;
     }
     if (!this._settlement.isSettled(transaction)) {
       if (!transaction.isActive) {
@@ -227,10 +232,10 @@ export class ReconciliationService {
             'without its final kWh and charging time; it cannot be priced yet',
         );
       }
-      return 'waiting';
+      return ReconcileOutcome.Waiting;
     }
     await this._settlement.capture(checkout, transaction, from);
-    return 'settled';
+    return ReconcileOutcome.Settled;
   }
 
   private async _cancel(

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { OCPP1_6, OCPP2_1 } from '@citrineos/types';
-import { OCPP2_0_1, OCPPVersion } from '@citrineos/types';
+import { EventGroup, IdTokenEnum, OCPP_CallAction, OCPP2_0_1, OCPPVersion } from '@citrineos/types';
 import type { ICoreAuth } from './core-auth.js';
 
 export interface RemoteStartRequest {
@@ -57,6 +57,15 @@ interface MessageConfirmation {
   payload?: unknown;
 }
 
+/** The vendor id of CitrineOS's own customData. */
+const CITRINEOS_VENDOR_ID = 'citrineos';
+
+/** Core's route for sending `action` to a station, as Core builds it: /ocpp/<version>/<group>/<action>. */
+function messagePath(protocol: OCPPVersion, group: EventGroup, action: OCPP_CallAction): string {
+  const version = protocol.replace(/^ocpp/, '');
+  return `/ocpp/${version}/${group}/${action.charAt(0).toLowerCase()}${action.slice(1)}`;
+}
+
 /** Sends commands to stations through Core's per-version message API. */
 export class CoreApiClient implements ICoreApiClient {
   constructor(
@@ -79,12 +88,20 @@ export class CoreApiClient implements ICoreApiClient {
         message: { format: OCPP2_0_1.MessageFormatEnumType.URI, content: request.uri },
       },
     };
-    return this._send(request, this._ocpp2Path(request.protocol, 'setDisplayMessage'), body);
+    return this._send(
+      request,
+      this._ocpp2Path(request.protocol, OCPP_CallAction.SetDisplayMessage),
+      body,
+    );
   }
 
   async clearDisplayMessage(request: ClearDisplayMessageRequest): Promise<RemoteStartResult> {
     const body: OCPP2_0_1.ClearDisplayMessageRequest = { id: request.id };
-    return this._send(request, this._ocpp2Path(request.protocol, 'clearDisplayMessage'), body);
+    return this._send(
+      request,
+      this._ocpp2Path(request.protocol, OCPP_CallAction.ClearDisplayMessage),
+      body,
+    );
   }
 
   private async _send(
@@ -128,11 +145,11 @@ export class CoreApiClient implements ICoreApiClient {
   }
 
   /** Display messages live in Core's configuration module and exist from OCPP 2.0.1 on. */
-  private _ocpp2Path(protocol: OCPPVersion, action: string): string {
+  private _ocpp2Path(protocol: OCPPVersion, action: OCPP_CallAction): string {
     if (protocol === OCPPVersion.OCPP1_6) {
       throw new Error(`${action} needs OCPP 2.0.1 or later`);
     }
-    return `/ocpp/${protocol.replace(/^ocpp/, '')}/configuration/${action}`;
+    return messagePath(protocol, EventGroup.Configuration, action);
   }
 
   private _remoteStartMessage(request: RemoteStartRequest): {
@@ -145,7 +162,14 @@ export class CoreApiClient implements ICoreApiClient {
         if (request.ocpp16ConnectorId !== null) {
           body.connectorId = request.ocpp16ConnectorId;
         }
-        return { path: '/ocpp/1.6/evdriver/remoteStartTransaction', body };
+        return {
+          path: messagePath(
+            request.protocol,
+            EventGroup.EVDriver,
+            OCPP_CallAction.RemoteStartTransaction,
+          ),
+          body,
+        };
       }
       case OCPPVersion.OCPP2_0_1:
       case OCPPVersion.OCPP2_1: {
@@ -154,19 +178,25 @@ export class CoreApiClient implements ICoreApiClient {
         }
         const body: OCPP2_1.RequestStartTransactionRequest = {
           remoteStartId: request.remoteStartId,
-          idToken: { idToken: request.idToken, type: 'Central' },
+          idToken: { idToken: request.idToken, type: IdTokenEnum.Central },
         };
         if (request.evseTypeId !== null) {
           body.evseId = request.evseTypeId;
         }
         if (request.protocol === OCPPVersion.OCPP2_1 && request.maxCost !== null) {
           body.customData = {
-            vendorId: 'citrineos',
+            vendorId: CITRINEOS_VENDOR_ID,
             transactionLimit: { maxCost: request.maxCost },
           };
         }
-        const version = request.protocol.replace(/^ocpp/, '');
-        return { path: `/ocpp/${version}/evdriver/requestStartTransaction`, body };
+        return {
+          path: messagePath(
+            request.protocol,
+            EventGroup.EVDriver,
+            OCPP_CallAction.RequestStartTransaction,
+          ),
+          body,
+        };
       }
     }
   }

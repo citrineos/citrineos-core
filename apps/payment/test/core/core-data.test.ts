@@ -10,7 +10,12 @@ import {
   SequelizeTenantRepository,
   SequelizeTransactionEventRepository,
 } from '@citrineos/dal';
-import { OCPPVersion } from '@citrineos/types';
+import {
+  AuthorizationStatusEnum,
+  ConnectorStatusEnum,
+  IdTokenEnum,
+  OCPPVersion,
+} from '@citrineos/types';
 import { QueryTypes } from 'sequelize';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { CoreData } from '../../src/core/core-data.js';
@@ -23,6 +28,7 @@ import {
   TENANT_B,
   type TestDatabase,
 } from '../support/database.js';
+import { RuntimeEnv } from '../../src/config/types.js';
 
 let db: TestDatabase;
 let coreData: CoreData;
@@ -31,7 +37,7 @@ beforeAll(async () => {
   db = await startTestDatabase();
   const dependencies = {
     config: toSystemConfig({
-      env: 'development',
+      env: RuntimeEnv.Development,
       database: { host: 'unused', port: 1, database: 'unused', username: 'unused', password: '' },
     }),
     sequelizeInstance: db.sequelize,
@@ -90,7 +96,7 @@ async function aStation(tenantId: number, protocol: OCPPVersion | null = OCPPVer
     evseId,
     connectorId: 2,
     evseTypeConnectorId: 1,
-    status: 'Available',
+    status: ConnectorStatusEnum.Available,
     tariffId: tariff.id,
     tenantId,
   });
@@ -114,7 +120,7 @@ describe('CoreData', () => {
           id: connectorId,
           connectorId: 2,
           evseTypeConnectorId: 1,
-          status: 'Available',
+          status: ConnectorStatusEnum.Available,
           type: null,
           powerType: null,
           maximumPowerWatts: null,
@@ -217,7 +223,10 @@ describe('CoreData', () => {
       'SELECT "idTokenType", status FROM "Authorizations" WHERE id = :id',
       { replacements: { id: first }, type: QueryTypes.SELECT },
     );
-    expect(row).toEqual({ idTokenType: 'Central', status: 'Accepted' });
+    expect(row).toEqual({
+      idTokenType: IdTokenEnum.Central,
+      status: AuthorizationStatusEnum.Accepted,
+    });
   });
 
   it('reads where a transaction runs', async () => {

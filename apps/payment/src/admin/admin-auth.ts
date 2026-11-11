@@ -8,10 +8,19 @@ import jwt from 'jsonwebtoken';
 import type { Algorithm, JwtPayload } from 'jsonwebtoken';
 import jwksClient from 'jwks-rsa';
 import type { PaymentConfig } from '../config/types.js';
-import { PaymentError } from '../services/errors.js';
+import { PaymentError, PaymentErrorCode } from '../services/errors.js';
 
 /** Who is calling the admin API: the platform, for every tenant, or one tenant's admin. */
-export type AdminPrincipal = { scope: 'platform' } | { scope: 'tenant'; tenantId: number };
+/** Whom an admin credential speaks for: every tenant, or one. */
+export const AdminScope = {
+  Platform: 'platform',
+  Tenant: 'tenant',
+} as const;
+export type AdminScope = (typeof AdminScope)[keyof typeof AdminScope];
+
+export type AdminPrincipal =
+  | { scope: typeof AdminScope.Platform }
+  | { scope: typeof AdminScope.Tenant; tenantId: number };
 
 export interface IAdminAuthenticator {
   /** Throws `unauthorized` without credentials and `forbidden` for ones that do not grant access. */
@@ -74,14 +83,20 @@ export class AdminAuthenticator implements IAdminAuthenticator {
   async authenticate(authorization: string | undefined): Promise<AdminPrincipal> {
     const match = /^Bearer\s+(\S+)$/i.exec(authorization ?? '');
     if (!match) {
-      throw new PaymentError('unauthorized', 'An Authorization: Bearer header is required');
+      throw new PaymentError(
+        PaymentErrorCode.Unauthorized,
+        'An Authorization: Bearer header is required',
+      );
     }
     const credential = match[1];
     if (this._isApiKey(credential)) {
-      return { scope: 'platform' };
+      return { scope: AdminScope.Platform };
     }
     if (!this._jwt || !this._resolveKey || credential.split('.').length !== 3) {
-      throw new PaymentError('forbidden', 'These credentials do not grant admin access');
+      throw new PaymentError(
+        PaymentErrorCode.Forbidden,
+        'These credentials do not grant admin access',
+      );
     }
     return this._tenantOf(credential, this._jwt, this._resolveKey);
   }
@@ -117,7 +132,7 @@ export class AdminAuthenticator implements IAdminAuthenticator {
       }
       payload = verified;
     } catch (error) {
-      throw new PaymentError('forbidden', `Invalid token: ${String(error)}`);
+      throw new PaymentError(PaymentErrorCode.Forbidden, `Invalid token: ${String(error)}`);
     }
 
     const roles = readClaim(payload, config.rolesClaim);
@@ -127,12 +142,12 @@ export class AdminAuthenticator implements IAdminAuthenticator {
         ? roles.split(' ')
         : [];
     if (!roleList.includes(config.role)) {
-      throw new PaymentError('forbidden', `The token lacks the ${config.role} role`);
+      throw new PaymentError(PaymentErrorCode.Forbidden, `The token lacks the ${config.role} role`);
     }
     const tenantId = Number(readClaim(payload, config.tenantClaim));
     if (!Number.isInteger(tenantId) || tenantId < 1) {
-      throw new PaymentError('forbidden', 'The token names no tenant');
+      throw new PaymentError(PaymentErrorCode.Forbidden, 'The token names no tenant');
     }
-    return { scope: 'tenant', tenantId };
+    return { scope: AdminScope.Tenant, tenantId };
   }
 }

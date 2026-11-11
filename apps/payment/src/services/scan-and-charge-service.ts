@@ -14,7 +14,7 @@ import type { CheckoutDto } from '../types/index.js';
 import { CheckoutFlow, CheckoutStatus } from '../types/index.js';
 import { cancelCheckout } from './cancel-checkout.js';
 import { clearQrCode } from './display-messages.js';
-import { PaymentError } from './errors.js';
+import { PaymentError, PaymentErrorCode } from './errors.js';
 import { holdAmountOf } from './hold-amount.js';
 import type { IdTokens } from './id-tokens.js';
 import type { PollOptions } from './poll.js';
@@ -233,7 +233,7 @@ export class ScanAndChargeService {
   private async _findScanAndCharge(publicId: string): Promise<CheckoutDto> {
     const checkout = await this._checkouts.findByPublicId(publicId);
     if (!checkout || checkout.flow !== CheckoutFlow.ScanAndCharge) {
-      throw new PaymentError('not_found', 'No such checkout');
+      throw new PaymentError(PaymentErrorCode.NotFound, 'No such checkout');
     }
     return checkout;
   }

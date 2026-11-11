@@ -3,11 +3,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { PaymentConfigInput } from '../types.js';
+import { RuntimeEnv } from '../types.js';
 import { coreAuthFromEnv, sharedPaymentSettings } from './shared.js';
 
 export function createDockerPaymentConfig(): PaymentConfigInput {
   return {
-    env: 'development',
+    env: RuntimeEnv.Development,
 
     server: {
       host: '0.0.0.0',

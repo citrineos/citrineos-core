@@ -8,10 +8,11 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { buildServer } from '../src/server.js';
-import { InvalidWebhookError } from '../src/stripe/payment-provider.js';
+import { InvalidWebhookError, PaymentEventType } from '../src/stripe/payment-provider.js';
 import { CheckoutStatus } from '../src/types/index.js';
 import { ACCOUNT, aTariff, aTransaction, anEvse, OTHER_TENANT, TENANT } from './support/fakes.js';
 import { aWorld } from './support/world.js';
+import { ConnectorStatusEnum, RequestStartStopStatusEnum } from '@citrineos/types';
 
 type World = Awaited<ReturnType<typeof aWorld>>;
 
@@ -95,7 +96,7 @@ describe('buildServer', () => {
   ])('refuses a checkout for %s', async (_name, payload, status) => {
     world.coreData.addEvse(anEvse({ id: 8, tenantId: OTHER_TENANT }));
     const outOfService = anEvse({ id: 9 });
-    outOfService.connectors[0].status = 'Faulted';
+    outOfService.connectors[0].status = ConnectorStatusEnum.Faulted;
     world.coreData.addEvse(outOfService, aTariff());
 
     expect((await post('/api/checkouts', payload)).statusCode).toBe(status);
@@ -131,7 +132,7 @@ describe('buildServer', () => {
     it('acts on a verified payment', async () => {
       const { publicId } = await world.checkoutService.createCheckout(7);
       world.payments.webhookEvent = {
-        type: 'checkout.completed',
+        type: PaymentEventType.CheckoutCompleted,
         stripeAccountId: ACCOUNT,
         checkoutPublicId: publicId,
         paymentIntentId: 'pi_1',
@@ -211,7 +212,7 @@ describe('buildServer', () => {
 
       const response = await post(
         `/api/callbacks/remote-start/${publicId}?signature=${encodeURIComponent(signature)}`,
-        { status: 'Accepted' },
+        { status: RequestStartStopStatusEnum.Accepted },
       );
 
       expect(response.statusCode).toBe(204);
@@ -221,7 +222,7 @@ describe('buildServer', () => {
       const { publicId } = await world.checkoutService.createCheckout(7);
 
       const response = await post(`/api/callbacks/remote-start/${publicId}?signature=forged`, {
-        status: 'Rejected',
+        status: RequestStartStopStatusEnum.Rejected,
       });
 
       expect(response.statusCode).toBe(403);

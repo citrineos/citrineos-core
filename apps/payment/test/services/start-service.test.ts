@@ -2,12 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { OCPPVersion } from '@citrineos/types';
+import { OCPPVersion, RequestStartStopStatusEnum } from '@citrineos/types';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { CheckoutCompletedEvent } from '../../src/stripe/payment-provider.js';
 import { CheckoutStatus, RemoteStartStatus } from '../../src/types/index.js';
 import { ACCOUNT, anEvse, OTHER_TENANT, TENANT } from '../support/fakes.js';
 import { aWorld, INTERNAL_URL } from '../support/world.js';
+import { PaymentErrorCode } from '../../src/services/errors.js';
+import { PaymentEventType } from '../../src/stripe/payment-provider.js';
 
 type World = Awaited<ReturnType<typeof aWorld>>;
 
@@ -17,7 +19,7 @@ describe('StartService', () => {
 
   function paid(overrides: Partial<CheckoutCompletedEvent> = {}): CheckoutCompletedEvent {
     return {
-      type: 'checkout.completed',
+      type: PaymentEventType.CheckoutCompleted,
       stripeAccountId: ACCOUNT,
       checkoutPublicId: publicId,
       paymentIntentId: 'pi_1',
@@ -105,7 +107,7 @@ describe('StartService', () => {
 
     it('ignores events it does not act on', async () => {
       await world.startService.handlePaymentEvent({
-        type: 'unhandled',
+        type: PaymentEventType.Unhandled,
         stripeType: 'charge.refunded',
       });
 
@@ -137,7 +139,7 @@ describe('StartService', () => {
 
     it('records that the station accepted', async () => {
       await world.startService.handleRemoteStartAnswer(publicId, world.signer.sign(publicId), {
-        status: 'Accepted',
+        status: RequestStartStopStatusEnum.Accepted,
       });
 
       expect(world.checkouts.only()).toMatchObject({
@@ -147,7 +149,7 @@ describe('StartService', () => {
     });
 
     it.each([
-      ['Rejected', { status: 'Rejected' }],
+      [RequestStartStopStatusEnum.Rejected, { status: RequestStartStopStatusEnum.Rejected }],
       ['an error', { code: 'InternalError', description: 'boom' }],
     ])('releases the hold when the station answers %s', async (_name, answer) => {
       await world.startService.handleRemoteStartAnswer(
@@ -164,7 +166,7 @@ describe('StartService', () => {
       world.checkouts.only().status = CheckoutStatus.Charging;
 
       await world.startService.handleRemoteStartAnswer(publicId, world.signer.sign(publicId), {
-        status: 'Rejected',
+        status: RequestStartStopStatusEnum.Rejected,
       });
 
       expect(world.checkouts.only().status).toBe(CheckoutStatus.Charging);
@@ -173,8 +175,10 @@ describe('StartService', () => {
 
     it('refuses an answer that Core did not sign', async () => {
       await expect(
-        world.startService.handleRemoteStartAnswer(publicId, 'forged', { status: 'Rejected' }),
-      ).rejects.toMatchObject({ code: 'forbidden' });
+        world.startService.handleRemoteStartAnswer(publicId, 'forged', {
+          status: RequestStartStopStatusEnum.Rejected,
+        }),
+      ).rejects.toMatchObject({ code: PaymentErrorCode.Forbidden });
       expect(world.checkouts.only().status).toBe(CheckoutStatus.StartRequested);
     });
   });

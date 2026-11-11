@@ -5,6 +5,7 @@
 import { act } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import type { CheckoutState } from '../../src/api';
+import { CheckoutFlow, CheckoutStatus, RemoteStartStatus } from '../../src/api';
 import { Charging, POLL_INTERVAL_MS } from '../../src/pages/charging';
 import { aState, PUBLIC_ID } from '../fixtures';
 import { fakeApi, link, render, settle, text } from '../render';
@@ -47,10 +48,10 @@ describe('Charging', () => {
   it('keeps asking until the session is settled, then shows what was charged', async () => {
     vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] });
     const { container, requests } = await show(
-      aState({ status: 'StartRequested', transaction: null, pricing: null }),
+      aState({ status: CheckoutStatus.StartRequested, transaction: null, pricing: null }),
       aState(),
       aState({
-        status: 'Captured',
+        status: CheckoutStatus.Captured,
         capturedAmount: 856,
         transaction: {
           startTime: '2026-10-23T10:00:00.000Z',
@@ -78,8 +79,8 @@ describe('Charging', () => {
   it('reassures the driver when the charger refused to start', async () => {
     const { container } = await show(
       aState({
-        status: 'Cancelled',
-        remoteStartStatus: 'Rejected',
+        status: CheckoutStatus.Cancelled,
+        remoteStartStatus: RemoteStartStatus.Rejected,
         transaction: null,
         pricing: null,
       }),
@@ -92,7 +93,12 @@ describe('Charging', () => {
 
   it('sends a scan-and-charge driver who has not paid back to pay', async () => {
     const { container } = await show(
-      aState({ flow: 'ScanAndCharge', status: 'Created', transaction: null, pricing: null }),
+      aState({
+        flow: CheckoutFlow.ScanAndCharge,
+        status: CheckoutStatus.Created,
+        transaction: null,
+        pricing: null,
+      }),
     );
 
     expect(text(container)).toContain('Waiting for your payment.');
@@ -101,7 +107,7 @@ describe('Charging', () => {
 
   it('sends a web-portal driver who left the payment back to the charger', async () => {
     const { container } = await show(
-      aState({ status: 'Created', transaction: null, pricing: null }),
+      aState({ status: CheckoutStatus.Created, transaction: null, pricing: null }),
     );
 
     expect(text(container)).toContain('The payment was not completed.');

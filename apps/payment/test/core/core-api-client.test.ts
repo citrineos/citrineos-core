@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { OCPPVersion } from '@citrineos/types';
+import { IdTokenEnum, OCPPVersion } from '@citrineos/types';
 import { describe, expect, it } from 'vitest';
 import type { RemoteStartRequest } from '../../src/core/core-api-client.js';
 import { CoreApiClient } from '../../src/core/core-api-client.js';
@@ -67,7 +67,7 @@ describe('CoreApiClient.remoteStart', () => {
     expect(request.headers.get('Authorization')).toBe('Bearer default');
     expect(request.body).toEqual({
       remoteStartId: 9,
-      idToken: { idToken: 'PAY_5', type: 'Central' },
+      idToken: { idToken: 'PAY_5', type: IdTokenEnum.Central },
       evseId: 1,
     });
   });

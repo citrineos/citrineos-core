@@ -5,14 +5,14 @@
 import { createDockerPaymentConfig } from './envs/docker.js';
 import { createLocalPaymentConfig } from './envs/local.js';
 import type { PaymentConfig, PaymentConfigInput } from './types.js';
-import { PaymentConfigSchema } from './types.js';
+import { AppEnv, PaymentConfigSchema } from './types.js';
 
 export function loadPaymentConfig(input: PaymentConfigInput): PaymentConfig {
   return PaymentConfigSchema.parse(input);
 }
 
 function configInputForEnv(appEnv: string | undefined): PaymentConfigInput {
-  return appEnv === 'docker' ? createDockerPaymentConfig() : createLocalPaymentConfig();
+  return appEnv === AppEnv.Docker ? createDockerPaymentConfig() : createLocalPaymentConfig();
 }
 
 export function getPaymentConfigForEnv(appEnv: string | undefined): PaymentConfig {

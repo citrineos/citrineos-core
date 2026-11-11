@@ -8,6 +8,7 @@ import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainer
 import { toSystemConfig } from '../../src/db/database.js';
 import { PAYMENT_MODELS } from '../../src/models/index.js';
 import { PAYMENT_MIGRATIONS } from './migrations.js';
+import { RuntimeEnv } from '../../src/config/types.js';
 
 export const TENANT_A = 1;
 export const TENANT_B = 2;
@@ -36,7 +37,7 @@ export async function startTestDatabase(): Promise<TestDatabase> {
 
   const sequelize = DefaultSequelizeInstance.getInstance(
     toSystemConfig({
-      env: 'development',
+      env: RuntimeEnv.Development,
       database: {
         host: container.getHost(),
         port: container.getMappedPort(5432),

@@ -4,7 +4,11 @@
 
 import Stripe from 'stripe';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { InvalidWebhookError, StripePaymentProvider } from '../../src/stripe/payment-provider.js';
+import {
+  InvalidWebhookError,
+  PaymentEventType,
+  StripePaymentProvider,
+} from '../../src/stripe/payment-provider.js';
 
 const SECRET = 'whsec_test';
 
@@ -135,7 +139,7 @@ describe('StripePaymentProvider', () => {
       const { body, signature } = signed(completed());
 
       expect(recording.provider.parseWebhook(body, signature)).toEqual({
-        type: 'checkout.completed',
+        type: PaymentEventType.CheckoutCompleted,
         stripeAccountId: 'acct_1',
         checkoutPublicId: 'c0ffee00-0000-4000-8000-000000000000',
         paymentIntentId: 'pi_1',
@@ -147,7 +151,7 @@ describe('StripePaymentProvider', () => {
       const { body, signature } = signed({ ...completed(), type: 'charge.refunded' });
 
       expect(recording.provider.parseWebhook(body, signature)).toEqual({
-        type: 'unhandled',
+        type: PaymentEventType.Unhandled,
         stripeType: 'charge.refunded',
       });
     });

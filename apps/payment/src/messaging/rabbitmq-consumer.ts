@@ -8,7 +8,11 @@ import amqp from 'amqplib';
 import type { ILogObj, Logger } from 'tslog';
 import type { ScanAndChargeService } from '../services/scan-and-charge-service.js';
 import type { SettlementService } from '../services/settlement-service.js';
-import { parseTransactionMessage, TRANSACTION_ACTIONS } from './transaction-messages.js';
+import {
+  parseTransactionMessage,
+  TRANSACTION_ACTIONS,
+  TransactionMessageKind,
+} from './transaction-messages.js';
 
 const RECONNECT_DELAY_MS = 5_000;
 
@@ -91,14 +95,14 @@ export class RabbitMqConsumer {
     try {
       for (const message of parseTransactionMessage(headers, body)) {
         switch (message.kind) {
-          case 'plugged-in':
+          case TransactionMessageKind.PluggedIn:
             await this._scanAndCharge.onTransactionPluggedIn(message);
             break;
-          case 'started':
+          case TransactionMessageKind.Started:
             await this._settlement.onTransactionStarted(message);
             await this._scanAndCharge.onTransactionAuthorized(message);
             break;
-          case 'ended':
+          case TransactionMessageKind.Ended:
             await this._settlement.onTransactionEnded(message);
             break;
         }

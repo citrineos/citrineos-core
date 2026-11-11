@@ -7,6 +7,7 @@ import type { TransactionView } from '../../src/core/core-data.js';
 import { CheckoutStatus } from '../../src/types/index.js';
 import { ACCOUNT, aTransaction, anEvse, OTHER_TENANT, TENANT } from '../support/fakes.js';
 import { aWorld } from '../support/world.js';
+import { PaymentEventType } from '../../src/stripe/payment-provider.js';
 
 type World = Awaited<ReturnType<typeof aWorld>>;
 
@@ -22,7 +23,7 @@ describe('SettlementService', () => {
     world.coreData.addEvse(anEvse());
     const { publicId } = await world.checkoutService.createCheckout(7);
     await world.startService.handlePaymentEvent({
-      type: 'checkout.completed',
+      type: PaymentEventType.CheckoutCompleted,
       stripeAccountId: ACCOUNT,
       checkoutPublicId: publicId,
       paymentIntentId: 'pi_1',
