@@ -27,7 +27,10 @@
       "startTime": "Início",
       "endTime": "Término",
       "tariff": "Tarifa",
-      "timeSpentCharging": "Tempo Efetivo de Recarga"
+      "timeSpentCharging": "Tempo Efetivo de Recarga",
+      "payment": "Pagamento",
+      "viewReceipt": "Ver recibo",
+      "viewDriverPage": "Ver página do motorista"
     },
     "tabs": {
       "meterValueData": "Dados de Valores de Medição",

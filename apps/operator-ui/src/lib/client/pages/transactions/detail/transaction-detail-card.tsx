@@ -23,6 +23,7 @@ import { ActionType, ResourceType } from '@lib/utils/access-types';
 import { NOT_APPLICABLE } from '@lib/utils/consts';
 import { openModal } from '@lib/utils/store/modal-slice';
 import { TimestampDisplay } from '@lib/client/components/timestamp-display';
+import { PaymentCheckoutLink } from '@lib/client/pages/transactions/detail/payment-checkout-link';
 
 /**
  * Contains the total seconds that energy flowed from EVSE to EV during the transaction,
@@ -192,6 +193,7 @@ export const TransactionDetailCard = ({ transaction }: TransactionDetailCardProp
             keyLabel={translate('Transactions.detail.timeSpentCharging')}
             value={formatTimeSpentCharging(transaction.timeSpentCharging)}
           />
+          <PaymentCheckoutLink transaction={transaction} />
         </div>
       </CardContent>
     </Card>

@@ -417,6 +417,8 @@ export class InMemoryCheckouts implements ICheckoutRepository {
         (c) =>
           (filter.tenantId === undefined || c.tenantId === filter.tenantId) &&
           (!filter.statuses || filter.statuses.includes(c.status)) &&
+          (filter.transactionDatabaseId === undefined ||
+            c.transactionDatabaseId === filter.transactionDatabaseId) &&
           (filter.beforeId === undefined || c.id < filter.beforeId),
       )
       .sort((a, b) => b.id - a.id)

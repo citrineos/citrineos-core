@@ -27,7 +27,10 @@
       "startTime": "Start Time",
       "endTime": "End Time",
       "tariff": "Tariff",
-      "timeSpentCharging": "Time Spent Charging"
+      "timeSpentCharging": "Time Spent Charging",
+      "payment": "Payment",
+      "viewReceipt": "View receipt",
+      "viewDriverPage": "View driver's page"
     },
     "tabs": {
       "meterValueData": "Meter Value Data",

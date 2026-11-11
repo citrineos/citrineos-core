@@ -16,6 +16,8 @@ export interface CheckoutFilter {
   /** Every tenant's when absent. */
   tenantId?: number;
   statuses?: CheckoutStatus[];
+  /** Core's database id of the transaction the checkout paid for. */
+  transactionDatabaseId?: number;
   /** Newest first; continue a page with the smallest id seen. */
   beforeId?: number;
   limit: number;

@@ -93,7 +93,13 @@ export function registerAdminRoutes(
     );
 
     admin.get<{
-      Querystring: { tenantId?: number; status?: string; beforeId?: number; limit?: number };
+      Querystring: {
+        tenantId?: number;
+        status?: string;
+        transactionDatabaseId?: number;
+        beforeId?: number;
+        limit?: number;
+      };
     }>(
       '/api/admin/checkouts',
       {
@@ -103,6 +109,7 @@ export function registerAdminRoutes(
             properties: {
               tenantId: id,
               status: { type: 'string', maxLength: 200 },
+              transactionDatabaseId: id,
               beforeId: id,
               limit: { type: 'integer', minimum: 1, maximum: 200 },
             },

@@ -68,6 +68,9 @@ export class SequelizeCheckoutRepository implements ICheckoutRepository {
     const where: WhereOptions<Checkout> = {
       ...(filter.tenantId !== undefined && { tenantId: filter.tenantId }),
       ...(filter.statuses && { status: filter.statuses }),
+      ...(filter.transactionDatabaseId !== undefined && {
+        transactionDatabaseId: filter.transactionDatabaseId,
+      }),
       ...(filter.beforeId !== undefined && { id: { [Op.lt]: filter.beforeId } }),
     };
     return await Checkout.findAll({ where, order: [['id', 'DESC']], limit: filter.limit });
