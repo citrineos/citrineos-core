@@ -172,19 +172,35 @@ Every `/api/admin` route needs `Authorization: Bearer <credential>`: the platfor
 every tenant, or a JWT from the issuer Core trusts in auth mode jwt, carrying the admin role, for the tenant it
 names. Core's localDev tokens are signed with a key that never leaves Core, so local development uses the API key.
 
-| Route                                                     | Does                                                                                     |
-| --------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `GET /api/admin/payment-accounts`                         | The payment accounts the caller may see                                                  |
-| `GET /api/admin/tenants/:tenantId/payment-account`        | A tenant's account                                                                       |
-| `PUT /api/admin/tenants/:tenantId/payment-account`        | Creates (201) or changes it: `stripeAccountId`, `scanAndChargeEnabled`, `termsUrl`       |
-| `DELETE /api/admin/tenants/:tenantId/payment-account`     | Stops the tenant taking payments                                                         |
-| `GET /api/admin/checkouts?tenantId&status&beforeId&limit` | Checkouts, newest first; `status` takes a comma-separated list; page with `nextBeforeId` |
-| `GET /api/admin/checkouts/:publicId`                      | One checkout, with its payment intent                                                    |
-| `POST /api/admin/checkouts/:publicId/settle`              | Reconciles it now, as the sweep would, and also retries a failed capture                 |
-| `POST /api/admin/checkouts/:publicId/cancel`              | Releases the hold of a checkout that has not started charging, or whose capture failed   |
+| Route                                                                           | Does                                                                                                                                       |
+| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `GET /api/admin/payment-accounts`                                               | The payment accounts the caller may see                                                                                                    |
+| `GET /api/admin/tenants/:tenantId/payment-account`                              | A tenant's account                                                                                                                         |
+| `PUT /api/admin/tenants/:tenantId/payment-account`                              | Creates (201) or changes it: `stripeAccountId`, `scanAndChargeEnabled`, `termsUrl`                                                         |
+| `DELETE /api/admin/tenants/:tenantId/payment-account`                           | Stops the tenant taking payments                                                                                                           |
+| `GET /api/admin/checkouts?tenantId&status&transactionDatabaseId&beforeId&limit` | Checkouts, newest first; `status` takes a comma-separated list; `transactionDatabaseId` is Core's transaction id; page with `nextBeforeId` |
+| `GET /api/admin/checkouts/:publicId`                                            | One checkout, with its payment intent                                                                                                      |
+| `POST /api/admin/checkouts/:publicId/settle`                                    | Reconciles it now, as the sweep would, and also retries a failed capture                                                                   |
+| `POST /api/admin/checkouts/:publicId/cancel`                                    | Releases the hold of a checkout that has not started charging, or whose capture failed                                                     |
 
 A tenant's Stripe account cannot be changed or removed while it has open checkouts: Stripe's webhooks find a
 checkout's tenant through it.
+
+### In the operator UI
+
+The operator UI's transaction page links a transaction a driver paid for here to what the driver saw: the receipt once
+the payment is captured, else the page that follows the session. Its server looks the checkout up with
+`GET /api/admin/checkouts?tenantId&transactionDatabaseId`, using the API key and always naming the signed-in user's
+tenant. It only asks about transactions with no authorization yet (scan and charge) or one of this app's
+`Central` idTokens; another token's transaction can have at most a scan-and-charge checkout cancelled unpaid. Set
+these in the operator UI's environment (`apps/operator-ui/.env.local`); without them it shows no link:
+
+| Variable                              | Value                                                                                        |
+| ------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `PAYMENT_URL`                         | Where the operator UI's server reaches this app; `http://citrineos-payment:9010` in docker   |
+| `PAYMENT_PUBLIC_URL`                  | Where browsers reach the driver pages (`PAYMENT_PUBLIC_URL` here); defaults to `PAYMENT_URL` |
+| `PAYMENT_ADMIN_API_KEY`               | This app's `PAYMENT_ADMIN_API_KEY`                                                           |
+| `NEXT_PUBLIC_PAYMENT_ID_TOKEN_PREFIX` | This app's `PAYMENT_ID_TOKEN_PREFIX`, if not the default `PAY_`                              |
 
 ## Reconciliation
 

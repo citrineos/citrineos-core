@@ -35,6 +35,7 @@ export interface PaymentAccountView {
 export interface CheckoutQuery {
   tenantId?: number;
   status?: CheckoutStatus[];
+  transactionDatabaseId?: number;
   beforeId?: number;
   limit?: number;
 }
@@ -171,6 +172,7 @@ export class AdminService {
     const checkouts = await this._checkouts.list({
       tenantId: principal.scope === AdminScope.Tenant ? principal.tenantId : query.tenantId,
       statuses: query.status,
+      transactionDatabaseId: query.transactionDatabaseId,
       beforeId: query.beforeId,
       limit,
     });

@@ -168,12 +168,16 @@ describe('SequelizeCheckoutRepository', () => {
     expect(found?.tariffSnapshot).toEqual(tariff);
   });
 
-  it('lists checkouts newest first, by tenant, status and page', async () => {
+  it('lists checkouts newest first, by tenant, status, transaction and page', async () => {
     const a1 = await repository.create(TENANT_A, aCheckout());
     const b1 = await repository.create(TENANT_B, aCheckout({ stripeAccountId: 'acct_b' }));
     const a2 = await repository.create(TENANT_A, aCheckout());
     await repository.transition(TENANT_A, a1.id, [CheckoutStatus.Created], {
       status: CheckoutStatus.Failed,
+    });
+    await repository.transition(TENANT_A, a2.id, [CheckoutStatus.Created], {
+      status: CheckoutStatus.Charging,
+      transactionDatabaseId: 500,
     });
 
     const ids = (checkouts: { id: number }[]) => checkouts.map((checkout) => checkout.id);
@@ -182,6 +186,7 @@ describe('SequelizeCheckoutRepository', () => {
     expect(ids(await repository.list({ statuses: [CheckoutStatus.Failed], limit: 10 }))).toEqual([
       a1.id,
     ]);
+    expect(ids(await repository.list({ transactionDatabaseId: 500, limit: 10 }))).toEqual([a2.id]);
     expect(ids(await repository.list({ beforeId: a2.id, limit: 1 }))).toEqual([b1.id]);
   });
 

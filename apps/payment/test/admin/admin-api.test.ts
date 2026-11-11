@@ -222,6 +222,26 @@ describe('admin API', () => {
       expect((await call('GET', '/api/admin/checkouts?status=Lost')).statusCode).toBe(400);
     });
 
+    it('finds the checkout that paid for a Core transaction', async () => {
+      await world.checkoutService.createCheckout(7);
+      await world.checkoutService.createCheckout(7);
+      world.checkouts.checkouts[0].transactionDatabaseId = 500;
+
+      const found = (
+        await call('GET', `/api/admin/checkouts?tenantId=${TENANT}&transactionDatabaseId=500`)
+      ).json();
+      expect(found.checkouts.map((c: { id: number }) => c.id)).toEqual([1]);
+      expect(
+        (
+          await call(
+            'GET',
+            '/api/admin/checkouts?transactionDatabaseId=500',
+            asTenant(OTHER_TENANT),
+          )
+        ).json().checkouts,
+      ).toEqual([]);
+    });
+
     it('shows a tenant admin only their own', async () => {
       const publicId = await aPaidCheckout();
 
