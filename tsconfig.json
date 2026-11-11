@@ -19,6 +19,7 @@
     { "path": "./packages/ocpp/tsconfig.src.json" },
     { "path": "./packages/ocpi/tsconfig.src.json" },
     { "path": "./apps/ocpp-server/config/tsconfig.src.json" },
-    { "path": "./apps/ocpi-server/config/tsconfig.src.json" }
+    { "path": "./apps/ocpi-server/config/tsconfig.src.json" },
+    { "path": "./apps/payment/config/tsconfig.src.json" }
   ]
 }

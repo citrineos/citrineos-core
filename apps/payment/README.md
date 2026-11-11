@@ -52,19 +52,39 @@ To work on the pages with hot reload, run `pnpm dev` in `apps/payment` instead o
 and Vite together. Open the pages on port 3010, where Vite serves them and forwards `/api` to the server; the server
 sends drivers back there after paying (`PAYMENT_PUBLIC_URL=http://localhost:3010`).
 
+#### Where the pages are, and what has to point there
+
+The pages call the API with relative paths, so they need no base URL of their own and work wherever they are served.
+What does depend on it is everything that links to them:
+
+| Run with                       | Driver pages            | API (Stripe webhooks, Core's callbacks) |
+| ------------------------------ | ----------------------- | --------------------------------------- |
+| `pnpm start`, the docker stack | `http://localhost:9010` | `http://localhost:9010`                 |
+| `pnpm dev`                     | `http://localhost:3010` | `http://localhost:9010`                 |
+
+- `PAYMENT_PUBLIC_URL` (this app): where Stripe sends drivers after paying and where a scan-and-charge QR code points.
+  `pnpm dev` sets it to port 3010 itself; behind a proxy or in production, set it to the address drivers use.
+- `PAYMENT_PUBLIC_URL` in the operator UI: where its links to receipts point, so port 3010 while you use `pnpm dev`
+  (see [In the operator UI](#in-the-operator-ui)).
+- QR codes printed on chargers: they encode `<PAYMENT_PUBLIC_URL>/checkout/<EVSE database id>`, so print them for the
+  address drivers will use in production, not a development one.
+- `stripe listen` and Core's callbacks (`PAYMENT_INTERNAL_URL`) go to the server itself, port 9010 in every case.
+
 ### In the docker stack
 
 ```bash
 cp apps/payment/.env.local.example apps/payment/.env.local   # then fill in your Stripe test keys
-pnpm citrine --local --payment
+pnpm citrine --payment
 ```
 
-`--payment` adds the `citrineos-payment` service (compose profile `payment`) on port 9010. It reads
+`--payment` adds the `citrineos-payment` service (compose profile `payment`) on port 9010: the payment API and the
+driver pages, served together, so `http://localhost:9010/checkout/<EVSE database id>` works once it is up. No image of
+it is published yet, so it is always built from local source (`apps/payment/deploy.Dockerfile`, from the repository
+root), with or without `--local`; the first build takes a few minutes. It reads
 `apps/payment/docker.env`, the stack's settings, then `apps/payment/.env.local` (ignored by git), so the keys and
 any override go there. In the stack, Core runs in auth mode localDev and the payment server mints its Core tokens
 from Core's `/dev/token` (`CORE_AUTH_MODE=localDev`); the admin API key is `docker.env`'s
-`PAYMENT_ADMIN_API_KEY`. Both are for local use only. The image is `apps/payment/deploy.Dockerfile`, built from the
-repository root; it runs this app's migrations on start, after Core's.
+`PAYMENT_ADMIN_API_KEY`. Both are for local use only. The image runs this app's migrations on start, after Core's.
 
 ## Stripe for local development
 

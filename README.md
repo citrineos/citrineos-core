@@ -56,14 +56,14 @@ The system features:
 - Dynamic **OCPP 1.6 and 2.0.1** message schema validation, prior to transmission using `AJV`
 - Generated OpenAPIv3 specification for easy developer access
 - Configurable logical modules
-  - `@AsRequestHandler` / `@AsResponseHandler` to declare a handler class for an incoming OCPP message
-  - A dedicated `Api` module exposing every HTTP surface, kept separate from message handling
-    - `AbstractMessageEndpoint` classes under `/ocpp/<version>/…` to send messages to charging stations
-    - `AbstractEndpoint` classes under `/commands` for CitrineOS-native admin operations
-  - Each endpoint declares its route as a static `route` and is listed in its module's `register.ts`
+    - `@AsRequestHandler` / `@AsResponseHandler` to declare a handler class for an incoming OCPP message
+    - A dedicated `Api` module exposing every HTTP surface, kept separate from message handling
+        - `AbstractMessageEndpoint` classes under `/ocpp/<version>/…` to send messages to charging stations
+        - `AbstractEndpoint` classes under `/commands` for CitrineOS-native admin operations
+    - Each endpoint declares its route as a static `route` and is listed in its module's `register.ts`
 - Utilities to connect and extend various message broker and cache mechanisms
-  - Currently supported broker is **RabbitMQ**
-  - Currently supported caches are **In Memory** and **Redis**
+    - Currently supported broker is **RabbitMQ**
+    - Currently supported caches are **In Memory** and **Redis**
 - A web-based **Operator UI** for managing locations, stations, transactions, and authorizations
 
 For more information on the project go to [citrineos.github.io](https://citrineos.github.io).
@@ -321,6 +321,7 @@ pnpm citrine                  # ocpp-server + operator UI, from published ghcr.i
 pnpm citrine --local          # build the server and UI from local source instead of pulling
 pnpm citrine --solo           # ocpp-server only (no operator UI)
 pnpm citrine --ocpi           # also run the OCPI server
+pnpm citrine --payment        # also run the payment server (needs --local until an image is published)
 pnpm citrine --everest        # also run EVerest with OCPP 2.x (mutually exclusive with --everest16)
 pnpm citrine --everest16      # also run EVerest with OCPP 1.6 (mutually exclusive with --everest)
 pnpm citrine --local --ocpi   # flags combine freely
@@ -329,7 +330,9 @@ pnpm citrine down             # stop the stack (pass the same flags you started 
 
 Published images are the default because most issues users hit come from stale local builds; reach for `--local` when
 you are working on the code itself. The OCPI image is published starting with the first release tag — until that tag
-exists, run `--ocpi` together with `--local` so it builds from source instead of trying to pull.
+exists, run `--ocpi` together with `--local` so it builds from source instead of trying to pull. The same goes for
+`--payment`, which also needs Stripe test keys in `apps/payment/.env.local` (see the
+[Payment README](./apps/payment/README.md)).
 
 Once everything is up, the operator UI is available at [http://localhost:3000](http://localhost:3000) and the server's
 Swagger docs at [http://localhost:8080/docs](http://localhost:8080/docs).
@@ -347,8 +350,8 @@ integrated development environment.
 
 The stack is defined by two Compose files at the repository root, driven by the `scripts/stack.mjs` launcher:
 
-- `docker-compose.yml` — the base stack from published `ghcr.io` images. The operator UI (`ui`) and OCPI server
-  (`ocpi`) are gated behind [Compose profiles](https://docs.docker.com/compose/profiles/); the infrastructure and the
+- `docker-compose.yml` — the base stack from published `ghcr.io` images. The operator UI (`ui`), OCPI server
+  (`ocpi`) and payment server (`payment`) are gated behind [Compose profiles](https://docs.docker.com/compose/profiles/); the infrastructure and the
   OCPP server are always on.
 - `docker-compose.local.yml` — an override (merged on top of the base) that builds the server and operator UI from
   local source. Applied by the launcher's `--local` flag.
@@ -360,22 +363,24 @@ matrix — e.g. `pnpm citrine --local --ocpi` expands to
 Once a stack is running, the following services should be available:
 
 - **CitrineOS Server** (service name: citrine)
-  - `8080`: webserver HTTP - [Swagger](http://localhost:8080/docs)
-  - `8081`: websocket server, security profile 0 (no auth)
-  - `8082`: websocket server, security profile 1 (basic HTTP auth)
-  - `8443` / `8444`: websocket servers, security profiles 2 (TLS) and 3 (mTLS)
-  - `9229`: Node.js debugger
+    - `8080`: webserver HTTP - [Swagger](http://localhost:8080/docs)
+    - `8081`: websocket server, security profile 0 (no auth)
+    - `8082`: websocket server, security profile 1 (basic HTTP auth)
+    - `8443` / `8444`: websocket servers, security profiles 2 (TLS) and 3 (mTLS)
+    - `9229`: Node.js debugger
 - **Operator UI** (service name: citrine-ui) — `ui` profile, on by default (omitted with `--solo`)
-  - `3000`: [Operator UI](http://localhost:3000)
+    - `3000`: [Operator UI](http://localhost:3000)
 - **OCPI Server** (service name: citrineos-ocpi) — `ocpi` profile, added with `--ocpi`
-  - `8085`: OCPI HTTP API
+    - `8085`: OCPI HTTP API
+- **Payment Server** (service name: citrineos-payment) — `payment` profile, added with `--payment`
+    - `9010`: driver pages, payment API and [admin API](./apps/payment/README.md#admin-api)
 - **RabbitMQ Broker** (service name: amqp-broker)
-  - `5672`: AMQP TCP connection
-  - `15672`: RabbitMQ [management interface](http://localhost:15672)
+    - `5672`: AMQP TCP connection
+    - `15672`: RabbitMQ [management interface](http://localhost:15672)
 - **PostgreSQL** (service name: ocpp-db), PostGIS-enabled PostgreSQL database for persistence
-  - `5432`: SQL TCP connection
+    - `5432`: SQL TCP connection
 - **Hasura GraphQL Engine** (service name: graphql-engine)
-  - `8090`: [Hasura console](http://localhost:8090)
+    - `8090`: [Hasura console](http://localhost:8090)
 
 These services live inside the docker network with their respective ports. By default these ports are directly
 accessible using `localhost:8080` for example.
