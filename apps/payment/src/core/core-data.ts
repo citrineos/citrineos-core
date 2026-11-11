@@ -23,7 +23,12 @@ import type {
   TenantDto,
   TransactionDto,
 } from '@citrineos/types';
-import { ChargingStationSequenceTypeEnum } from '@citrineos/types';
+import {
+  AuthorizationStatusEnum,
+  ChargingStationSequenceTypeEnum,
+  ConnectorStatusEnum,
+  IdTokenEnum,
+} from '@citrineos/types';
 
 /** A row Core has saved: its primary key and tenant are set. */
 type Saved = { id: number; tenantId: number };
@@ -250,7 +255,7 @@ export class CoreData implements ICoreData {
                   id: connector.id,
                   connectorId: connector.connectorId,
                   evseTypeConnectorId: connector.evseTypeConnectorId,
-                  status: connector.status ?? 'Unknown',
+                  status: connector.status ?? ConnectorStatusEnum.Unknown,
                   type: connector.type ?? null,
                   powerType: connector.powerType ?? null,
                   maximumPowerWatts: connector.maximumPowerWatts ?? null,
@@ -306,8 +311,8 @@ export class CoreData implements ICoreData {
     }
     const created = await this._authorizations.createAuthorization(tenantId, {
       idToken,
-      idTokenType: 'Central',
-      status: 'Accepted',
+      idTokenType: IdTokenEnum.Central,
+      status: AuthorizationStatusEnum.Accepted,
       concurrentTransaction: false,
     });
     if (created.id == null) {
@@ -319,7 +324,7 @@ export class CoreData implements ICoreData {
   async readAuthorizationId(tenantId: number, idToken: string): Promise<number | undefined> {
     const authorization = await this._authorizations.readOnlyOneByQuerystring(tenantId, {
       idToken,
-      type: 'Central',
+      type: IdTokenEnum.Central,
     });
     return authorization?.id ?? undefined;
   }

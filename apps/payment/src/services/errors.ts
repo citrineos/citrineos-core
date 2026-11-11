@@ -2,21 +2,23 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-export type PaymentErrorCode =
+export const PaymentErrorCode = {
   /** The EVSE, connector or checkout does not exist, or is not this caller's to see. */
-  | 'not_found'
+  NotFound: 'not_found',
   /** The request is malformed for this EVSE, e.g. a connector is needed and none was named. */
-  | 'invalid'
+  Invalid: 'invalid',
   /** The station or connector cannot take a session right now. */
-  | 'unavailable'
+  Unavailable: 'unavailable',
   /** Nothing is set up to take payment here: no tariff, hold amount or Stripe account. */
-  | 'not_payable'
+  NotPayable: 'not_payable',
   /** The caller is not who it claims to be, or may not do this. */
-  | 'forbidden'
+  Forbidden: 'forbidden',
   /** The caller did not say who it is. */
-  | 'unauthorized'
+  Unauthorized: 'unauthorized',
   /** The change would leave things inconsistent, e.g. an account still in use. */
-  | 'conflict';
+  Conflict: 'conflict',
+} as const;
+export type PaymentErrorCode = (typeof PaymentErrorCode)[keyof typeof PaymentErrorCode];
 
 export class PaymentError extends Error {
   constructor(

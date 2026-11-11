@@ -4,12 +4,13 @@
 
 import { describe, expect, it, vi } from 'vitest';
 import type { CheckoutState } from '../../src/api';
+import { CheckoutStatus } from '../../src/api';
 import { Receipt } from '../../src/pages/receipt';
 import { aState, PUBLIC_ID } from '../fixtures';
 import { fakeApi, render, settle, text } from '../render';
 
 const SETTLED = aState({
-  status: 'Captured',
+  status: CheckoutStatus.Captured,
   capturedAmount: 856,
   transaction: {
     startTime: '2026-10-23T10:00:00.000Z',

@@ -3,30 +3,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { TariffData } from '@citrineos/dal';
+import type { CheckoutFlow, RemoteStartStatus } from './checkout-enums.js';
+import { CheckoutStatus } from './checkout-enums.js';
 
-export const CheckoutFlow = {
-  WebPortal: 'WebPortal',
-  ScanAndCharge: 'ScanAndCharge',
-} as const;
-export type CheckoutFlow = (typeof CheckoutFlow)[keyof typeof CheckoutFlow];
-
-export const CheckoutStatus = {
-  Created: 'Created',
-  Authorized: 'Authorized',
-  StartRequested: 'StartRequested',
-  Charging: 'Charging',
-  Capturing: 'Capturing',
-  Captured: 'Captured',
-  Cancelled: 'Cancelled',
-  Failed: 'Failed',
-} as const;
-export type CheckoutStatus = (typeof CheckoutStatus)[keyof typeof CheckoutStatus];
-
-export const RemoteStartStatus = {
-  Accepted: 'Accepted',
-  Rejected: 'Rejected',
-} as const;
-export type RemoteStartStatus = (typeof RemoteStartStatus)[keyof typeof RemoteStartStatus];
+export { CheckoutFlow, CheckoutStatus, RemoteStartStatus } from './checkout-enums.js';
 
 export interface PaymentAccountDto {
   id: number;

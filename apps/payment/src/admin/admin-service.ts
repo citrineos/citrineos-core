@@ -6,7 +6,7 @@ import { childLogger } from '@citrineos/base';
 import type { ILogObj, Logger } from 'tslog';
 import type { ICheckoutRepository, IPaymentAccountRepository } from '../repositories/index.js';
 import { cancelCheckout } from '../services/cancel-checkout.js';
-import { PaymentError } from '../services/errors.js';
+import { PaymentError, PaymentErrorCode } from '../services/errors.js';
 import type {
   ReconcileOutcome,
   ReconciliationService,
@@ -15,6 +15,7 @@ import type { IPaymentProvider } from '../stripe/payment-provider.js';
 import type { CheckoutDto, CheckoutStatus, PaymentAccountDto } from '../types/index.js';
 import { CheckoutStatus as Status, OPEN_CHECKOUT_STATUSES } from '../types/index.js';
 import type { AdminPrincipal } from './admin-auth.js';
+import { AdminScope } from './admin-auth.js';
 
 export interface PaymentAccountInput {
   stripeAccountId: string;
@@ -81,7 +82,7 @@ export class AdminService {
 
   async listAccounts(principal: AdminPrincipal): Promise<PaymentAccountView[]> {
     const accounts = await this._accounts.list(
-      principal.scope === 'tenant' ? principal.tenantId : undefined,
+      principal.scope === AdminScope.Tenant ? principal.tenantId : undefined,
     );
     return accounts.map(view);
   }
@@ -90,7 +91,10 @@ export class AdminService {
     this._authorize(principal, tenantId);
     const account = await this._accounts.findByTenantId(tenantId);
     if (!account) {
-      throw new PaymentError('not_found', `Tenant ${tenantId} has no payment account`);
+      throw new PaymentError(
+        PaymentErrorCode.NotFound,
+        `Tenant ${tenantId} has no payment account`,
+      );
     }
     return view(account);
   }
@@ -125,18 +129,21 @@ export class AdminService {
         ...(termsUrl !== undefined && { termsUrl }),
       });
       if (!updated) {
-        throw new PaymentError('not_found', `Tenant ${tenantId} has no payment account`);
+        throw new PaymentError(
+          PaymentErrorCode.NotFound,
+          `Tenant ${tenantId} has no payment account`,
+        );
       }
       return { account: view(updated), created: false };
     } catch (error) {
       // By name: the DAL may load its own copy of Sequelize, whose classes instanceof misses.
       const name = error instanceof Error ? error.name : '';
       if (name === 'SequelizeForeignKeyConstraintError') {
-        throw new PaymentError('not_found', `No tenant ${tenantId}`);
+        throw new PaymentError(PaymentErrorCode.NotFound, `No tenant ${tenantId}`);
       }
       if (name === 'SequelizeUniqueConstraintError') {
         throw new PaymentError(
-          'conflict',
+          PaymentErrorCode.Conflict,
           `Stripe account ${input.stripeAccountId} belongs to another tenant`,
         );
       }
@@ -148,7 +155,10 @@ export class AdminService {
     this._authorize(principal, tenantId);
     await this._refuseWhileOpen(tenantId, 'stop taking payments');
     if (!(await this._accounts.delete(tenantId))) {
-      throw new PaymentError('not_found', `Tenant ${tenantId} has no payment account`);
+      throw new PaymentError(
+        PaymentErrorCode.NotFound,
+        `Tenant ${tenantId} has no payment account`,
+      );
     }
     this._logger.info(`Tenant ${tenantId} no longer takes payments`);
   }
@@ -159,7 +169,7 @@ export class AdminService {
     }
     const limit = Math.min(query.limit ?? DEFAULT_PAGE, MAX_PAGE);
     const checkouts = await this._checkouts.list({
-      tenantId: principal.scope === 'tenant' ? principal.tenantId : query.tenantId,
+      tenantId: principal.scope === AdminScope.Tenant ? principal.tenantId : query.tenantId,
       statuses: query.status,
       beforeId: query.beforeId,
       limit,
@@ -173,8 +183,11 @@ export class AdminService {
   async getCheckout(principal: AdminPrincipal, publicId: string): Promise<CheckoutDto> {
     const checkout = await this._checkouts.findByPublicId(publicId);
     // Another tenant's checkout is not acknowledged to exist.
-    if (!checkout || (principal.scope === 'tenant' && checkout.tenantId !== principal.tenantId)) {
-      throw new PaymentError('not_found', 'No such checkout');
+    if (
+      !checkout ||
+      (principal.scope === AdminScope.Tenant && checkout.tenantId !== principal.tenantId)
+    ) {
+      throw new PaymentError(PaymentErrorCode.NotFound, 'No such checkout');
     }
     return checkout;
   }
@@ -199,7 +212,7 @@ export class AdminService {
     );
     if (!cancelled) {
       throw new PaymentError(
-        'conflict',
+        PaymentErrorCode.Conflict,
         `A ${checkout.status} checkout cannot be cancelled; only ${CANCELLABLE.join(', ')} can`,
       );
     }
@@ -208,9 +221,9 @@ export class AdminService {
   }
 
   private _authorize(principal: AdminPrincipal, tenantId: number): void {
-    if (principal.scope === 'tenant' && principal.tenantId !== tenantId) {
+    if (principal.scope === AdminScope.Tenant && principal.tenantId !== tenantId) {
       throw new PaymentError(
-        'forbidden',
+        PaymentErrorCode.Forbidden,
         `This token administers tenant ${principal.tenantId} only`,
       );
     }
@@ -221,7 +234,7 @@ export class AdminService {
     const open = await this._checkouts.countByStatus(tenantId, OPEN_CHECKOUT_STATUSES);
     if (open > 0) {
       throw new PaymentError(
-        'conflict',
+        PaymentErrorCode.Conflict,
         `Tenant ${tenantId} has ${open} open checkout(s); it cannot ${change} until they settle`,
       );
     }
@@ -251,5 +264,5 @@ function webPage(url: string | null): string | null {
   } catch {
     // Reported below.
   }
-  throw new PaymentError('invalid', 'termsUrl must be an http(s) address');
+  throw new PaymentError(PaymentErrorCode.Invalid, 'termsUrl must be an http(s) address');
 }

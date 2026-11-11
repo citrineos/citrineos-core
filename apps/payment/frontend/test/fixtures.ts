@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { CheckoutState, Connector, EvseOffer, Pricing } from '../src/api';
+import { CheckoutFlow, CheckoutStatus, RemoteStartStatus } from '../src/api';
 
 export const PUBLIC_ID = 'c0ffee00-0000-4000-8000-000000000000';
 
@@ -67,9 +68,9 @@ export const PRICING: Pricing = {
 export function aState(overrides: Partial<CheckoutState> = {}): CheckoutState {
   return {
     publicId: PUBLIC_ID,
-    flow: 'WebPortal',
-    status: 'Charging',
-    remoteStartStatus: 'Accepted',
+    flow: CheckoutFlow.WebPortal,
+    status: CheckoutStatus.Charging,
+    remoteStartStatus: RemoteStartStatus.Accepted,
     currency: 'USD',
     authorizedAmount: 5000,
     capturedAmount: null,

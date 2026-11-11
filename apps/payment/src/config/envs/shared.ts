@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { PaymentConfigInput } from '../types.js';
+import { CoreAuthMode } from '../types.js';
 
 function integer(name: string): number | undefined {
   const value = process.env[name];
@@ -39,11 +40,11 @@ export function sharedPaymentSettings(): Pick<
 
 /** `defaultMode` applies when CORE_AUTH_MODE is unset or not a mode this app knows. */
 export function coreAuthFromEnv(
-  defaultMode?: 'headers' | 'localDev',
+  defaultMode?: CoreAuthMode,
 ): Pick<NonNullable<PaymentConfigInput['core']>, 'authMode' | 'localDevRoles'> {
   const mode = process.env.CORE_AUTH_MODE;
   return {
-    authMode: mode === 'localDev' || mode === 'headers' ? mode : defaultMode,
+    authMode: Object.values(CoreAuthMode).find((known) => known === mode) ?? defaultMode,
     localDevRoles: process.env.CORE_LOCAL_DEV_ROLES
       ? process.env.CORE_LOCAL_DEV_ROLES.split(',').map((role) => role.trim())
       : undefined,

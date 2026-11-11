@@ -4,10 +4,30 @@
 
 import { z } from 'zod';
 
+/** APP_ENV: which defaults the config starts from. */
+export const AppEnv = {
+  Docker: 'docker',
+  Local: 'local',
+} as const;
+export type AppEnv = (typeof AppEnv)[keyof typeof AppEnv];
+
+export const RuntimeEnv = {
+  Development: 'development',
+  Production: 'production',
+} as const;
+export type RuntimeEnv = (typeof RuntimeEnv)[keyof typeof RuntimeEnv];
+
+/** How the server authenticates to Core's HTTP API. */
+export const CoreAuthMode = {
+  Headers: 'headers',
+  LocalDev: 'localDev',
+} as const;
+export type CoreAuthMode = (typeof CoreAuthMode)[keyof typeof CoreAuthMode];
+
 const port = z.number().int().min(1).max(65535);
 
 export const PaymentConfigSchema = z.object({
-  env: z.enum(['development', 'production']),
+  env: z.enum(RuntimeEnv),
   server: z.object({
     host: z.string().min(1),
     port,
@@ -49,7 +69,7 @@ export const PaymentConfigSchema = z.object({
      * `headers` sends `headers`/`tenantHeaders` as configured. `localDev` instead mints a token for
      * each tenant from the /dev/token endpoint of a Core in auth mode localDev, for development.
      */
-    authMode: z.enum(['headers', 'localDev']).default('headers'),
+    authMode: z.enum(CoreAuthMode).default(CoreAuthMode.Headers),
     /** The roles asked for in localDev tokens. */
     localDevRoles: z.array(z.string().min(1)).min(1).default(['admin']),
   }),

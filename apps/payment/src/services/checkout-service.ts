@@ -6,6 +6,7 @@ import { childLogger } from '@citrineos/base';
 import type { TariffData } from '@citrineos/dal';
 import type { ILogObj, Logger } from 'tslog';
 import type { TariffDto } from '@citrineos/types';
+import { ConnectorStatusEnum } from '@citrineos/types';
 import type { ConnectorView, EvseView, ICoreData, TransactionView } from '../core/core-data.js';
 import type { Pricing } from '../pricing/index.js';
 import { calculatePricing, toMinorUnits } from '../pricing/index.js';
@@ -13,10 +14,13 @@ import type { ICheckoutRepository, IPaymentAccountRepository } from '../reposito
 import type { IPaymentProvider } from '../stripe/payment-provider.js';
 import type { CheckoutStatus, RemoteStartStatus } from '../types/index.js';
 import { CheckoutFlow, CheckoutStatus as Status } from '../types/index.js';
-import { PaymentError } from './errors.js';
+import { PaymentError, PaymentErrorCode } from './errors.js';
 import { holdAmountOf } from './hold-amount.js';
 
-const OUT_OF_SERVICE: readonly string[] = ['Unavailable', 'Faulted'];
+const OUT_OF_SERVICE: readonly string[] = [
+  ConnectorStatusEnum.Unavailable,
+  ConnectorStatusEnum.Faulted,
+];
 
 /** A tariff as the driver is shown it. */
 export type TariffSummary = Pick<
@@ -101,7 +105,7 @@ export class CheckoutService {
       this._logger.error(`eMI3 id ${trimmed} names ${evseIds.length} EVSEs: ${evseIds.join(', ')}`);
     }
     if (evseIds.length !== 1) {
-      throw new PaymentError('not_found', `No EVSE ${trimmed}`);
+      throw new PaymentError(PaymentErrorCode.NotFound, `No EVSE ${trimmed}`);
     }
     return { evseId: evseIds[0] };
   }
@@ -128,23 +132,35 @@ export class CheckoutService {
     const evse = await this._findEvse(evseDatabaseId);
     const tenantId = evse.tenantId;
     if (evse.station.protocol == null) {
-      throw new PaymentError('unavailable', 'The charging station has not connected yet');
+      throw new PaymentError(
+        PaymentErrorCode.Unavailable,
+        'The charging station has not connected yet',
+      );
     }
 
     const connector = this._pickConnector(evse, connectorId);
-    if (OUT_OF_SERVICE.includes(connector.status ?? 'Unknown')) {
-      throw new PaymentError('unavailable', `Connector ${connector.id} is ${connector.status}`);
+    if (OUT_OF_SERVICE.includes(connector.status ?? ConnectorStatusEnum.Unknown)) {
+      throw new PaymentError(
+        PaymentErrorCode.Unavailable,
+        `Connector ${connector.id} is ${connector.status}`,
+      );
     }
 
     const tariff = await this._coreData.readTariffForConnector(tenantId, connector.id);
     if (!tariff) {
-      throw new PaymentError('not_payable', `Connector ${connector.id} has no tariff`);
+      throw new PaymentError(
+        PaymentErrorCode.NotPayable,
+        `Connector ${connector.id} has no tariff`,
+      );
     }
     const authorizationAmount = holdAmountOf(tariff);
 
     const account = await this._accounts.findByTenantId(tenantId);
     if (!account) {
-      throw new PaymentError('not_payable', `Tenant ${tenantId} has no payment account`);
+      throw new PaymentError(
+        PaymentErrorCode.NotPayable,
+        `Tenant ${tenantId} has no payment account`,
+      );
     }
 
     const checkout = await this._checkouts.create(tenantId, {
@@ -177,7 +193,7 @@ export class CheckoutService {
   async getState(publicId: string): Promise<CheckoutState> {
     const checkout = await this._checkouts.findByPublicId(publicId);
     if (!checkout) {
-      throw new PaymentError('not_found', 'No such checkout');
+      throw new PaymentError(PaymentErrorCode.NotFound, 'No such checkout');
     }
     const transaction =
       checkout.transactionDatabaseId === null
@@ -250,7 +266,7 @@ export class CheckoutService {
     const evse =
       tenantId === undefined ? undefined : await this._coreData.readEvse(tenantId, evseDatabaseId);
     if (!evse || evse.removed) {
-      throw new PaymentError('not_found', `No EVSE ${evseDatabaseId}`);
+      throw new PaymentError(PaymentErrorCode.NotFound, `No EVSE ${evseDatabaseId}`);
     }
     return evse;
   }
@@ -259,13 +275,16 @@ export class CheckoutService {
     if (connectorId !== undefined) {
       const connector = evse.connectors.find((candidate) => candidate.id === connectorId);
       if (!connector) {
-        throw new PaymentError('not_found', `EVSE ${evse.id} has no connector ${connectorId}`);
+        throw new PaymentError(
+          PaymentErrorCode.NotFound,
+          `EVSE ${evse.id} has no connector ${connectorId}`,
+        );
       }
       return connector;
     }
     if (evse.connectors.length !== 1) {
       throw new PaymentError(
-        'invalid',
+        PaymentErrorCode.Invalid,
         `EVSE ${evse.id} has ${evse.connectors.length} connectors; name the one to charge on`,
       );
     }

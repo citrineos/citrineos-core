@@ -15,6 +15,7 @@ import type { FastifyInstance } from 'fastify';
 import { fileURLToPath } from 'node:url';
 import type { ILogObj, Logger } from 'tslog';
 import type { PaymentConfig } from './config/types.js';
+import { CoreAuthMode } from './config/types.js';
 import { CoreApiClient } from './core/core-api-client.js';
 import { LocalDevCoreAuth, StaticCoreAuth } from './core/core-auth.js';
 import { CoreData } from './core/core-data.js';
@@ -92,7 +93,7 @@ export async function createApp(
     logger,
   });
   const coreAuth =
-    config.core.authMode === 'localDev'
+    config.core.authMode === CoreAuthMode.LocalDev
       ? new LocalDevCoreAuth(config.core.url, config.core.localDevRoles)
       : new StaticCoreAuth(config.core.headers, config.core.tenantHeaders);
   const coreApi = new CoreApiClient(config.core.url, coreAuth);

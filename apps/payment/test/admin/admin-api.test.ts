@@ -11,6 +11,8 @@ import { buildServer } from '../../src/server.js';
 import { CheckoutStatus } from '../../src/types/index.js';
 import { ACCOUNT, anEvse, OTHER_TENANT, TENANT } from '../support/fakes.js';
 import { aWorld } from '../support/world.js';
+import { ReconcileOutcome } from '../../src/services/reconciliation-service.js';
+import { PaymentEventType } from '../../src/stripe/payment-provider.js';
 
 type World = Awaited<ReturnType<typeof aWorld>>;
 
@@ -75,7 +77,7 @@ describe('admin API', () => {
   async function aPaidCheckout(): Promise<string> {
     const { publicId } = await world.checkoutService.createCheckout(7);
     await world.startService.handlePaymentEvent({
-      type: 'checkout.completed',
+      type: PaymentEventType.CheckoutCompleted,
       stripeAccountId: ACCOUNT,
       checkoutPublicId: publicId,
       paymentIntentId: 'pi_1',
@@ -244,7 +246,7 @@ describe('admin API', () => {
       const settled = await call('POST', `/api/admin/checkouts/${publicId}/settle`);
 
       expect(settled.json()).toMatchObject({
-        outcome: 'cancelled',
+        outcome: ReconcileOutcome.Cancelled,
         checkout: { status: CheckoutStatus.Cancelled },
       });
     });

@@ -3,7 +3,16 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { describe, expect, it } from 'vitest';
-import { parseTransactionMessage } from '../../src/messaging/transaction-messages.js';
+import {
+  parseTransactionMessage,
+  TransactionMessageKind,
+} from '../../src/messaging/transaction-messages.js';
+import {
+  IdTokenEnum,
+  OCPP_CallAction,
+  TransactionEventEnum,
+  TriggerReasonEnum,
+} from '@citrineos/types';
 
 // Headers as Core's toAmqpHeaders sets them: the message context is spread in, tenantId as a string.
 function headers(action: string) {
@@ -21,107 +30,121 @@ describe('parseTransactionMessage', () => {
   it('reads the idTag of an OCPP 1.6 StartTransaction', () => {
     expect(
       parseTransactionMessage(
-        headers('StartTransaction'),
+        headers(OCPP_CallAction.StartTransaction),
         body({ connectorId: 1, idTag: 'PAY_12', meterStart: 0, timestamp: '2026-10-23T10:00:00Z' }),
       ),
-    ).toEqual([{ kind: 'started', ...station, idToken: 'PAY_12' }]);
+    ).toEqual([{ kind: TransactionMessageKind.Started, ...station, idToken: 'PAY_12' }]);
   });
 
   it('reads the transaction of an OCPP 1.6 StopTransaction', () => {
     expect(
       parseTransactionMessage(
-        headers('StopTransaction'),
+        headers(OCPP_CallAction.StopTransaction),
         body({ transactionId: 44, meterStop: 900, timestamp: '2026-10-23T11:00:00Z' }, true),
       ),
-    ).toEqual([{ kind: 'ended', ...station, transactionId: '44' }]);
+    ).toEqual([{ kind: TransactionMessageKind.Ended, ...station, transactionId: '44' }]);
   });
 
   it('reads the idToken of an OCPP 2.x TransactionEvent', () => {
     expect(
       parseTransactionMessage(
-        headers('TransactionEvent'),
+        headers(OCPP_CallAction.TransactionEvent),
         body({
-          eventType: 'Started',
+          eventType: TransactionEventEnum.Started,
           triggerReason: 'RemoteStart',
           transactionInfo: { transactionId: 'abc' },
-          idToken: { idToken: 'PAY_12', type: 'Central' },
+          idToken: { idToken: 'PAY_12', type: IdTokenEnum.Central },
         }),
       ),
-    ).toEqual([{ kind: 'started', ...station, idToken: 'PAY_12', transactionId: 'abc' }]);
+    ).toEqual([
+      { kind: TransactionMessageKind.Started, ...station, idToken: 'PAY_12', transactionId: 'abc' },
+    ]);
   });
 
   it('reads the end of an OCPP 2.x transaction', () => {
     expect(
       parseTransactionMessage(
-        headers('TransactionEvent'),
+        headers(OCPP_CallAction.TransactionEvent),
         body({
-          eventType: 'Ended',
+          eventType: TransactionEventEnum.Ended,
           triggerReason: 'EVCommunicationLost',
           transactionInfo: { transactionId: 'abc' },
         }),
       ),
-    ).toEqual([{ kind: 'ended', ...station, transactionId: 'abc' }]);
+    ).toEqual([{ kind: TransactionMessageKind.Ended, ...station, transactionId: 'abc' }]);
   });
 
-  it.each(['CablePluggedIn', 'EVDetected', 'SignedDataReceived'])(
+  it.each([
+    TriggerReasonEnum.CablePluggedIn,
+    TriggerReasonEnum.EVDetected,
+    TriggerReasonEnum.SignedDataReceived,
+  ])(
     'reads an OCPP 2.x transaction started by %s, before anyone is authorised',
     (triggerReason) => {
       expect(
         parseTransactionMessage(
-          headers('TransactionEvent'),
-          body({ eventType: 'Started', triggerReason, transactionInfo: { transactionId: 'abc' } }),
+          headers(OCPP_CallAction.TransactionEvent),
+          body({
+            eventType: TransactionEventEnum.Started,
+            triggerReason,
+            transactionInfo: { transactionId: 'abc' },
+          }),
         ),
-      ).toEqual([{ kind: 'plugged-in', ...station, transactionId: 'abc' }]);
+      ).toEqual([{ kind: TransactionMessageKind.PluggedIn, ...station, transactionId: 'abc' }]);
     },
   );
 
   it('reads both from an event that authorises and ends', () => {
     expect(
       parseTransactionMessage(
-        headers('TransactionEvent'),
+        headers(OCPP_CallAction.TransactionEvent),
         body({
-          eventType: 'Ended',
+          eventType: TransactionEventEnum.Ended,
           triggerReason: 'StopAuthorized',
           transactionInfo: { transactionId: 'abc' },
-          idToken: { idToken: 'PAY_12', type: 'Central' },
+          idToken: { idToken: 'PAY_12', type: IdTokenEnum.Central },
         }),
       ).map((message) => message.kind),
-    ).toEqual(['started', 'ended']);
+    ).toEqual([TransactionMessageKind.Started, TransactionMessageKind.Ended]);
   });
 
   it.each([
     [
       'an update without an idToken',
-      headers('TransactionEvent'),
+      headers(OCPP_CallAction.TransactionEvent),
       {
-        eventType: 'Updated',
+        eventType: TransactionEventEnum.Updated,
         triggerReason: 'MeterValuePeriodic',
         transactionInfo: { transactionId: 'abc' },
       },
     ],
     [
       'a start without an idToken that is not the EV’s doing',
-      headers('TransactionEvent'),
+      headers(OCPP_CallAction.TransactionEvent),
       {
-        eventType: 'Started',
+        eventType: TransactionEventEnum.Started,
         triggerReason: 'Deauthorized',
         transactionInfo: { transactionId: 'abc' },
       },
     ],
     [
       'a plug-in that does not start a transaction',
-      headers('TransactionEvent'),
+      headers(OCPP_CallAction.TransactionEvent),
       {
-        eventType: 'Updated',
-        triggerReason: 'CablePluggedIn',
+        eventType: TransactionEventEnum.Updated,
+        triggerReason: TriggerReasonEnum.CablePluggedIn,
         transactionInfo: { transactionId: 'abc' },
       },
     ],
     ['another action', headers('Heartbeat'), {}],
-    ['a payload it cannot read', headers('StopTransaction'), { transactionId: 'not-a-number' }],
+    [
+      'a payload it cannot read',
+      headers(OCPP_CallAction.StopTransaction),
+      { transactionId: 'not-a-number' },
+    ],
     [
       'headers without a station',
-      { action: 'StopTransaction', tenantId: '3' },
+      { action: OCPP_CallAction.StopTransaction, tenantId: '3' },
       { transactionId: 1 },
     ],
   ])('ignores %s', (_name, messageHeaders, payload) => {

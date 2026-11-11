@@ -2,23 +2,37 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import { OCPP_CallAction, TransactionEventEnum, TriggerReasonEnum } from '@citrineos/types';
 import { z } from 'zod';
 import type { TransactionPluggedIn } from '../services/scan-and-charge-service.js';
 import type { TransactionEnded, TransactionStarted } from '../services/settlement-service.js';
 
 /** The station-to-CSMS calls this app follows, as Core publishes them. */
-export const TRANSACTION_ACTIONS = ['StartTransaction', 'StopTransaction', 'TransactionEvent'];
+export const TRANSACTION_ACTIONS: readonly OCPP_CallAction[] = [
+  OCPP_CallAction.StartTransaction,
+  OCPP_CallAction.StopTransaction,
+  OCPP_CallAction.TransactionEvent,
+];
+
+/** What a bus message means to this app. */
+export const TransactionMessageKind = {
+  Started: 'started',
+  Ended: 'ended',
+  PluggedIn: 'plugged-in',
+} as const;
+export type TransactionMessageKind =
+  (typeof TransactionMessageKind)[keyof typeof TransactionMessageKind];
 
 export type TransactionMessage =
-  | ({ kind: 'started' } & TransactionStarted)
-  | ({ kind: 'ended' } & TransactionEnded)
-  | ({ kind: 'plugged-in' } & TransactionPluggedIn);
+  | ({ kind: typeof TransactionMessageKind.Started } & TransactionStarted)
+  | ({ kind: typeof TransactionMessageKind.Ended } & TransactionEnded)
+  | ({ kind: typeof TransactionMessageKind.PluggedIn } & TransactionPluggedIn);
 
 /** What starts a 2.x transaction before anyone is authorised: the EV, not a driver's token. */
 const UNAUTHORIZED_START_TRIGGERS: readonly string[] = [
-  'CablePluggedIn',
-  'EVDetected',
-  'SignedDataReceived',
+  TriggerReasonEnum.CablePluggedIn,
+  TriggerReasonEnum.EVDetected,
+  TriggerReasonEnum.SignedDataReceived,
 ];
 
 const Headers = z.object({
@@ -30,7 +44,7 @@ const Headers = z.object({
 const StartTransaction = z.object({ idTag: z.string() });
 const StopTransaction = z.object({ transactionId: z.number().int() });
 const TransactionEvent = z.object({
-  eventType: z.enum(['Started', 'Updated', 'Ended']),
+  eventType: z.enum(TransactionEventEnum),
   triggerReason: z.string(),
   transactionInfo: z.object({ transactionId: z.string() }),
   idToken: z.object({ idToken: z.string() }).nullish(),
@@ -61,17 +75,25 @@ export function parseTransactionMessage(
   const station = { tenantId, ocppConnectionName };
 
   switch (action) {
-    case 'StartTransaction': {
+    case OCPP_CallAction.StartTransaction: {
       const start = StartTransaction.safeParse(payload);
-      return start.success ? [{ kind: 'started', ...station, idToken: start.data.idTag }] : [];
-    }
-    case 'StopTransaction': {
-      const stop = StopTransaction.safeParse(payload);
-      return stop.success
-        ? [{ kind: 'ended', ...station, transactionId: String(stop.data.transactionId) }]
+      return start.success
+        ? [{ kind: TransactionMessageKind.Started, ...station, idToken: start.data.idTag }]
         : [];
     }
-    case 'TransactionEvent': {
+    case OCPP_CallAction.StopTransaction: {
+      const stop = StopTransaction.safeParse(payload);
+      return stop.success
+        ? [
+            {
+              kind: TransactionMessageKind.Ended,
+              ...station,
+              transactionId: String(stop.data.transactionId),
+            },
+          ]
+        : [];
+    }
+    case OCPP_CallAction.TransactionEvent: {
       const event = TransactionEvent.safeParse(payload);
       if (!event.success) {
         return [];
@@ -80,19 +102,19 @@ export function parseTransactionMessage(
       const messages: TransactionMessage[] = [];
       if (event.data.idToken?.idToken) {
         messages.push({
-          kind: 'started',
+          kind: TransactionMessageKind.Started,
           ...station,
           idToken: event.data.idToken.idToken,
           transactionId,
         });
       } else if (
-        event.data.eventType === 'Started' &&
+        event.data.eventType === TransactionEventEnum.Started &&
         UNAUTHORIZED_START_TRIGGERS.includes(event.data.triggerReason)
       ) {
-        messages.push({ kind: 'plugged-in', ...station, transactionId });
+        messages.push({ kind: TransactionMessageKind.PluggedIn, ...station, transactionId });
       }
-      if (event.data.eventType === 'Ended') {
-        messages.push({ kind: 'ended', ...station, transactionId });
+      if (event.data.eventType === TransactionEventEnum.Ended) {
+        messages.push({ kind: TransactionMessageKind.Ended, ...station, transactionId });
       }
       return messages;
     }

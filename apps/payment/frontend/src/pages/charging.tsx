@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { useCallback, useEffect, useState } from 'react';
-import type { CheckoutState, CheckoutStatus } from '../api';
+import type { CheckoutState } from '../api';
+import { CheckoutFlow, CheckoutStatus, RemoteStartStatus } from '../api';
 import { api } from '../api';
 import { BoltIcon, Notice, Spinner } from '../components/layout';
 import { EvseHeader } from '../components/evse-header';
@@ -16,11 +17,11 @@ import { ui } from '../ui';
 
 /** Statuses that will still change on their own; the page keeps asking while in one. */
 const ONGOING: CheckoutStatus[] = [
-  'Created',
-  'Authorized',
-  'StartRequested',
-  'Charging',
-  'Capturing',
+  CheckoutStatus.Created,
+  CheckoutStatus.Authorized,
+  CheckoutStatus.StartRequested,
+  CheckoutStatus.Charging,
+  CheckoutStatus.Capturing,
 ];
 
 export const POLL_INTERVAL_MS = 5_000;
@@ -65,11 +66,14 @@ export function Charging({ publicId }: { publicId: string }) {
 
   const money = (amount: number) => formatMinor(amount, state.currency, locale);
   const { transaction, pricing } = state;
-  const rejected = state.status === 'Cancelled' && state.remoteStartStatus === 'Rejected';
-  const finished = state.status === 'Capturing' || state.status === 'Captured';
+  const rejected =
+    state.status === CheckoutStatus.Cancelled &&
+    state.remoteStartStatus === RemoteStartStatus.Rejected;
+  const finished =
+    state.status === CheckoutStatus.Capturing || state.status === CheckoutStatus.Captured;
   const headline: MessageKey =
-    state.status === 'Created'
-      ? state.flow === 'ScanAndCharge'
+    state.status === CheckoutStatus.Created
+      ? state.flow === CheckoutFlow.ScanAndCharge
         ? 'status.Created.ScanAndCharge'
         : 'status.Created.WebPortal'
       : rejected
@@ -81,7 +85,7 @@ export function Charging({ publicId }: { publicId: string }) {
       {state.evse && <EvseHeader evse={state.evse} />}
       <section className={`${ui.card} text-center`} aria-live="polite">
         <div className="flex min-h-8 justify-center text-primary">
-          {state.status === 'Charging' ? (
+          {state.status === CheckoutStatus.Charging ? (
             <BoltIcon className="size-8" />
           ) : ongoing ? (
             <Spinner />
@@ -89,25 +93,31 @@ export function Charging({ publicId }: { publicId: string }) {
         </div>
         <h1 className={ui.title}>{t(headline)}</h1>
 
-        {state.status === 'Created' && state.flow === 'ScanAndCharge' && (
+        {state.status === CheckoutStatus.Created && state.flow === CheckoutFlow.ScanAndCharge && (
           <a className={ui.primaryButton} href={api.payUrl(publicId)}>
             {t('charging.payNow')}
           </a>
         )}
-        {state.status === 'Created' && state.flow === 'WebPortal' && state.evse && (
-          <a className={ui.primaryButton} href={`/checkout/${state.evse.id}`} onClick={followLink}>
-            {t('action.retry')}
-          </a>
-        )}
-        {state.status === 'Cancelled' && <p>{t('charging.noCharge')}</p>}
+        {state.status === CheckoutStatus.Created &&
+          state.flow === CheckoutFlow.WebPortal &&
+          state.evse && (
+            <a
+              className={ui.primaryButton}
+              href={`/checkout/${state.evse.id}`}
+              onClick={followLink}
+            >
+              {t('action.retry')}
+            </a>
+          )}
+        {state.status === CheckoutStatus.Cancelled && <p>{t('charging.noCharge')}</p>}
         {rejected && state.evse && (
           <a className={ui.primaryButton} href={`/checkout/${state.evse.id}`} onClick={followLink}>
             {t('action.retry')}
           </a>
         )}
-        {state.status === 'Failed' && <p>{t('charging.failedHelp')}</p>}
+        {state.status === CheckoutStatus.Failed && <p>{t('charging.failedHelp')}</p>}
 
-        {transaction?.startTime && (state.status === 'Charging' || finished) && (
+        {transaction?.startTime && (state.status === CheckoutStatus.Charging || finished) && (
           <dl className="my-4 grid gap-3 [&_dd]:text-lg [&_dd]:font-semibold [&_dt]:text-muted-foreground">
             <div>
               <dt>{finished ? t('charging.finalCost') : t('charging.cost')}</dt>
@@ -132,7 +142,7 @@ export function Charging({ publicId }: { publicId: string }) {
           </dl>
         )}
 
-        {state.status === 'Captured' && (
+        {state.status === CheckoutStatus.Captured && (
           <a className={ui.button} href={`/receipt/${publicId}`} onClick={followLink}>
             {t('charging.receipt')}
           </a>

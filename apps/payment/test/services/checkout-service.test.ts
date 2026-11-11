@@ -3,10 +3,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import { PaymentError } from '../../src/services/errors.js';
+import { PaymentError, PaymentErrorCode } from '../../src/services/errors.js';
 import { CheckoutFlow, CheckoutStatus } from '../../src/types/index.js';
 import { ACCOUNT, aTariff, aTransaction, anEvse, OTHER_TENANT, TENANT } from '../support/fakes.js';
 import { aWorld, PUBLIC_URL } from '../support/world.js';
+import { ConnectorStatusEnum } from '@citrineos/types';
 
 type World = Awaited<ReturnType<typeof aWorld>>;
 
@@ -42,13 +43,17 @@ describe('CheckoutService', () => {
       ['an unknown eMI3 id', 'US*CIT*E99'],
       ['an unknown database id', '99'],
     ])('does not find %s', async (_name, query) => {
-      expect((await rejection(world.checkoutService.findEvse(query))).code).toBe('not_found');
+      expect((await rejection(world.checkoutService.findEvse(query))).code).toBe(
+        PaymentErrorCode.NotFound,
+      );
     });
 
     it('finds nothing when two EVSEs share an eMI3 id', async () => {
       world.coreData.addEvse(anEvse({ id: 8, tenantId: OTHER_TENANT, evseId: 'US*CIT*E7' }));
 
-      expect((await rejection(world.checkoutService.findEvse('US*CIT*E7'))).code).toBe('not_found');
+      expect((await rejection(world.checkoutService.findEvse('US*CIT*E7'))).code).toBe(
+        PaymentErrorCode.NotFound,
+      );
     });
   });
 
@@ -110,7 +115,9 @@ describe('CheckoutService', () => {
     ])('does not show %s', async (_name, evseId) => {
       world.coreData.addEvse(anEvse({ id: 8, removed: true }));
 
-      expect((await rejection(world.checkoutService.describeEvse(evseId))).code).toBe('not_found');
+      expect((await rejection(world.checkoutService.describeEvse(evseId))).code).toBe(
+        PaymentErrorCode.NotFound,
+      );
     });
   });
 
@@ -161,23 +168,29 @@ describe('CheckoutService', () => {
       evse.connectors.push({ ...evse.connectors[0], id: 71 });
       world.coreData.addEvse(evse);
 
-      expect((await rejection(world.checkoutService.createCheckout(8))).code).toBe('invalid');
+      expect((await rejection(world.checkoutService.createCheckout(8))).code).toBe(
+        PaymentErrorCode.Invalid,
+      );
       await world.checkoutService.createCheckout(8, 71);
       expect(world.checkouts.only().connectorId).toBe(71);
     });
 
     it('refuses a connector of another EVSE', async () => {
-      expect((await rejection(world.checkoutService.createCheckout(7, 71))).code).toBe('not_found');
+      expect((await rejection(world.checkoutService.createCheckout(7, 71))).code).toBe(
+        PaymentErrorCode.NotFound,
+      );
     });
 
-    it.each(['Unavailable', 'Faulted'] as const)(
+    it.each([ConnectorStatusEnum.Unavailable, ConnectorStatusEnum.Faulted])(
       'refuses a connector that is %s',
       async (status) => {
         const evse = anEvse({ id: 8 });
         evse.connectors[0].status = status;
         world.coreData.addEvse(evse);
 
-        expect((await rejection(world.checkoutService.createCheckout(8))).code).toBe('unavailable');
+        expect((await rejection(world.checkoutService.createCheckout(8))).code).toBe(
+          PaymentErrorCode.Unavailable,
+        );
       },
     );
 
@@ -186,7 +199,9 @@ describe('CheckoutService', () => {
       evse.station.protocol = null;
       world.coreData.addEvse(evse);
 
-      expect((await rejection(world.checkoutService.createCheckout(8))).code).toBe('unavailable');
+      expect((await rejection(world.checkoutService.createCheckout(8))).code).toBe(
+        PaymentErrorCode.Unavailable,
+      );
     });
 
     it.each([
@@ -197,14 +212,18 @@ describe('CheckoutService', () => {
     ])('refuses a connector with %s', async (_name, tariff) => {
       world.coreData.addEvse(anEvse({ id: 8 }), tariff);
 
-      expect((await rejection(world.checkoutService.createCheckout(8))).code).toBe('not_payable');
+      expect((await rejection(world.checkoutService.createCheckout(8))).code).toBe(
+        PaymentErrorCode.NotPayable,
+      );
       expect(world.checkouts.checkouts).toEqual([]);
     });
 
     it('refuses a tenant without a payment account', async () => {
       world.coreData.addEvse(anEvse({ id: 8, tenantId: OTHER_TENANT }));
 
-      expect((await rejection(world.checkoutService.createCheckout(8))).code).toBe('not_payable');
+      expect((await rejection(world.checkoutService.createCheckout(8))).code).toBe(
+        PaymentErrorCode.NotPayable,
+      );
     });
 
     it('marks the checkout failed when Stripe refuses the session', async () => {
@@ -265,7 +284,7 @@ describe('CheckoutService', () => {
       expect(
         (await rejection(world.checkoutService.getState('00000000-0000-4000-8000-000000000000')))
           .code,
-      ).toBe('not_found');
+      ).toBe(PaymentErrorCode.NotFound);
     });
   });
 });

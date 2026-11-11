@@ -9,6 +9,7 @@ import { PaymentError } from '../../src/services/errors.js';
 import { CheckoutFlow, CheckoutStatus } from '../../src/types/index.js';
 import { ACCOUNT, aTariff, aTransaction, anEvse, OTHER_TENANT, TENANT } from '../support/fakes.js';
 import { aWorld, PUBLIC_URL } from '../support/world.js';
+import { PaymentEventType } from '../../src/stripe/payment-provider.js';
 
 type World = Awaited<ReturnType<typeof aWorld>>;
 
@@ -25,7 +26,7 @@ describe('ScanAndChargeService', () => {
 
   const paid = (paymentIntentId = 'pi_1') =>
     world.startService.handlePaymentEvent({
-      type: 'checkout.completed',
+      type: PaymentEventType.CheckoutCompleted,
       stripeAccountId: ACCOUNT,
       checkoutPublicId: world.checkouts.only().publicId,
       paymentIntentId,

@@ -9,6 +9,7 @@ import {
   loadPaymentConfig,
 } from '../src/config/loader.js';
 import { createLocalPaymentConfig } from '../src/config/envs/local.js';
+import { AppEnv, CoreAuthMode } from '../src/config/types.js';
 
 function stubSecrets() {
   vi.stubEnv('PAYMENT_CALLBACK_SECRET', 'a-callback-secret-that-is-long-enough!');
@@ -32,7 +33,7 @@ describe('getPaymentConfigForEnv', () => {
       url: 'http://localhost:8080',
       headers: {},
       tenantHeaders: {},
-      authMode: 'localDev',
+      authMode: CoreAuthMode.LocalDev,
       localDevRoles: ['admin'],
     });
     expect(config.admin).toEqual({});
@@ -47,9 +48,9 @@ describe('getPaymentConfigForEnv', () => {
   });
 
   it('uses the docker defaults when APP_ENV is docker', () => {
-    const config = getPaymentConfigForEnv('docker');
+    const config = getPaymentConfigForEnv(AppEnv.Docker);
     expect(config.database.host).toBe('ocpp-db');
-    expect(config.core.authMode).toBe('headers');
+    expect(config.core.authMode).toBe(CoreAuthMode.Headers);
     expect(config.core.url).toBe('http://citrine:8080');
     expect(config.amqp.url).toBe('amqp://guest:guest@amqp-broker:5672');
   });
@@ -67,7 +68,7 @@ describe('getPaymentConfigForEnv', () => {
     vi.stubEnv('CORE_TENANT_HEADERS', '{"2":{"Authorization":"Bearer b"}}');
     vi.stubEnv('AMQP_QUEUE', 'payment-eu');
 
-    const config = getPaymentConfigForEnv('local');
+    const config = getPaymentConfigForEnv(AppEnv.Local);
 
     expect(config.server.port).toBe(9999);
     expect(config.database).toEqual({
@@ -85,14 +86,14 @@ describe('getPaymentConfigForEnv', () => {
   });
 
   it('sends Core the configured headers locally when CORE_AUTH_MODE is headers', () => {
-    vi.stubEnv('CORE_AUTH_MODE', 'headers');
+    vi.stubEnv('CORE_AUTH_MODE', CoreAuthMode.Headers);
 
-    expect(getPaymentConfigForEnv('local').core.authMode).toBe('headers');
+    expect(getPaymentConfigForEnv(AppEnv.Local).core.authMode).toBe(CoreAuthMode.Headers);
   });
 
   it('reads how Core, admins and the sweep are set up', () => {
     vi.stubEnv('PAYMENT_TRUST_PROXY', 'true');
-    vi.stubEnv('CORE_AUTH_MODE', 'localDev');
+    vi.stubEnv('CORE_AUTH_MODE', CoreAuthMode.LocalDev);
     vi.stubEnv('CORE_LOCAL_DEV_ROLES', 'admin, operator');
     vi.stubEnv('PAYMENT_ADMIN_API_KEY', 'an-admin-api-key-that-is-long-enough');
     vi.stubEnv('PAYMENT_ADMIN_JWT_JWKS_URI', 'https://id.example.com/jwks');
@@ -102,10 +103,10 @@ describe('getPaymentConfigForEnv', () => {
     vi.stubEnv('PAYMENT_RECONCILE_INTERVAL_SECONDS', '30');
     vi.stubEnv('PAYMENT_RECONCILE_STALE_AFTER_SECONDS', '900');
 
-    const config = getPaymentConfigForEnv('docker');
+    const config = getPaymentConfigForEnv(AppEnv.Docker);
 
     expect(config.server.trustProxy).toBe(true);
-    expect(config.core.authMode).toBe('localDev');
+    expect(config.core.authMode).toBe(CoreAuthMode.LocalDev);
     expect(config.core.localDevRoles).toEqual(['admin', 'operator']);
     expect(config.admin).toEqual({
       apiKey: 'an-admin-api-key-that-is-long-enough',
@@ -127,25 +128,25 @@ describe('getPaymentConfigForEnv', () => {
     ['a sweep that acts within a minute', 'PAYMENT_RECONCILE_STALE_AFTER_SECONDS', '30'],
   ])('rejects %s', (_name, variable, value) => {
     vi.stubEnv(variable, value);
-    expect(() => getPaymentConfigForEnv('local')).toThrow();
+    expect(() => getPaymentConfigForEnv(AppEnv.Local)).toThrow();
   });
 
   it('rejects a port that is not a number', () => {
     vi.stubEnv('PAYMENT_PORT', 'not-a-port');
-    expect(() => getPaymentConfigForEnv('local')).toThrow();
+    expect(() => getPaymentConfigForEnv(AppEnv.Local)).toThrow();
   });
 
   it.each(['PAYMENT_CALLBACK_SECRET', 'STRIPE_API_KEY', 'STRIPE_CONNECT_WEBHOOK_SECRET'])(
     'requires %s',
     (name) => {
       vi.stubEnv(name, '');
-      expect(() => getPaymentConfigForEnv('local')).toThrow();
+      expect(() => getPaymentConfigForEnv(AppEnv.Local)).toThrow();
     },
   );
 
   it('rejects a callback secret too short to sign with', () => {
     vi.stubEnv('PAYMENT_CALLBACK_SECRET', 'short');
-    expect(() => getPaymentConfigForEnv('local')).toThrow();
+    expect(() => getPaymentConfigForEnv(AppEnv.Local)).toThrow();
   });
 });
 

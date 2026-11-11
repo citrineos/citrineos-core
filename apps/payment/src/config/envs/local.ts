@@ -3,11 +3,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { PaymentConfigInput } from '../types.js';
+import { CoreAuthMode, RuntimeEnv } from '../types.js';
 import { coreAuthFromEnv, sharedPaymentSettings } from './shared.js';
 
 export function createLocalPaymentConfig(): PaymentConfigInput {
   return {
-    env: 'development',
+    env: RuntimeEnv.Development,
 
     server: {
       host: '0.0.0.0',
@@ -40,7 +41,7 @@ export function createLocalPaymentConfig(): PaymentConfigInput {
       headers: JSON.parse(process.env.CORE_HEADERS || '{}'),
       tenantHeaders: JSON.parse(process.env.CORE_TENANT_HEADERS || '{}'),
       // A Core run locally is in auth mode localDev, so tokens come from its /dev/token.
-      ...coreAuthFromEnv('localDev'),
+      ...coreAuthFromEnv(CoreAuthMode.LocalDev),
     },
 
     amqp: {
