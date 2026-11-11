@@ -1,0 +1,51 @@
+// SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
+
+import type { PaymentConfigInput } from '../types.js';
+
+function integer(name: string): number | undefined {
+  const value = process.env[name];
+  return value ? parseInt(value) : undefined;
+}
+
+/** The settings read from the same variables in every environment. */
+export function sharedPaymentSettings(): Pick<
+  PaymentConfigInput,
+  'admin' | 'rateLimitPerMinute' | 'reconciliation'
+> {
+  const jwksUri = process.env.PAYMENT_ADMIN_JWT_JWKS_URI;
+  return {
+    admin: {
+      apiKey: process.env.PAYMENT_ADMIN_API_KEY || undefined,
+      jwt: jwksUri
+        ? {
+            jwksUri,
+            issuer: process.env.PAYMENT_ADMIN_JWT_ISSUER ?? '',
+            audience: process.env.PAYMENT_ADMIN_JWT_AUDIENCE || undefined,
+            rolesClaim: process.env.PAYMENT_ADMIN_JWT_ROLES_CLAIM || undefined,
+            tenantClaim: process.env.PAYMENT_ADMIN_JWT_TENANT_CLAIM || undefined,
+            role: process.env.PAYMENT_ADMIN_JWT_ROLE || undefined,
+          }
+        : undefined,
+    },
+    rateLimitPerMinute: integer('PAYMENT_RATE_LIMIT_PER_MINUTE'),
+    reconciliation: {
+      intervalSeconds: integer('PAYMENT_RECONCILE_INTERVAL_SECONDS'),
+      staleAfterSeconds: integer('PAYMENT_RECONCILE_STALE_AFTER_SECONDS'),
+    },
+  };
+}
+
+/** `defaultMode` applies when CORE_AUTH_MODE is unset or not a mode this app knows. */
+export function coreAuthFromEnv(
+  defaultMode?: 'headers' | 'localDev',
+): Pick<NonNullable<PaymentConfigInput['core']>, 'authMode' | 'localDevRoles'> {
+  const mode = process.env.CORE_AUTH_MODE;
+  return {
+    authMode: mode === 'localDev' || mode === 'headers' ? mode : defaultMode,
+    localDevRoles: process.env.CORE_LOCAL_DEV_ROLES
+      ? process.env.CORE_LOCAL_DEV_ROLES.split(',').map((role) => role.trim())
+      : undefined,
+  };
+}

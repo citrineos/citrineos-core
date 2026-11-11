@@ -113,6 +113,13 @@ export class DrizzleChargingStationRepository
     return toChargingStationDto(row);
   }
 
+  async readChargingStationById(
+    tenantId: number,
+    id: number,
+  ): Promise<ChargingStationDto | undefined> {
+    return await this.findById(tenantId, id);
+  }
+
   private getEvseTable(tenantId: number): typeof evseTable {
     return this.useTenantSchema ? tenantEvseTable(tenantId) : evseTable;
   }

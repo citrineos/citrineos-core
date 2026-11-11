@@ -12,7 +12,7 @@ import type {
 } from '@citrineos/types';
 import { ChargingStationSequenceTypeEnum, OCPP2_0_1 } from '@citrineos/types';
 import { MeterValueUtils } from '@citrineos/base';
-import { and, desc, eq, inArray, isNotNull, ne } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, isNotNull, ne } from 'drizzle-orm';
 import {
   tenantTransactionTable,
   type TransactionEntity,
@@ -462,6 +462,31 @@ export class DrizzleTransactionRepository
         ? toStartTransactionDto(row.startTransaction)
         : undefined,
     };
+  }
+
+  async readTransactionById(tenantId: number, id: number): Promise<TransactionDto | undefined> {
+    return await this.findById(tenantId, id);
+  }
+
+  async readLatestTransactionByAuthorizationId(
+    tenantId: number,
+    authorizationId: number,
+    since: Date,
+  ): Promise<TransactionDto | undefined> {
+    const transactions = this.getTable(tenantId);
+    const rows = (await this.db
+      .select()
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.authorizationId, authorizationId),
+          gte(transactions.createdAt, since),
+          this.tenantFilter(transactions, tenantId),
+        ),
+      )
+      .orderBy(desc(transactions.createdAt))
+      .limit(1)) as TransactionEntity[];
+    return rows[0] ? toTransactionDto(rows[0]) : undefined;
   }
 
   async readAllActiveTransactionsByAuthorizationId(

@@ -1,0 +1,120 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+@import 'tailwindcss';
+
+/*
+ * The operator UI's typeface, from its own files rather than a copy (they are excluded from the
+ * licence check in .reuse/ignore-files.txt). Only the weights these pages use: Vite bundles each
+ * as a hashed asset, and a browser downloads one only when text needs it.
+ */
+@font-face {
+  font-family: 'Roobert';
+  src: url('../../../operator-ui/src/app/_fonts/Roobert-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Roobert';
+  src: url('../../../operator-ui/src/app/_fonts/Roobert-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Roobert';
+  src: url('../../../operator-ui/src/app/_fonts/Roobert-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme {
+  --font-sans: 'Roobert', system-ui, sans-serif;
+}
+
+/*
+ * The operator UI's palette (apps/operator-ui/src/app/globals.css), under the same token names.
+ * The driver pages follow the system's dark mode rather than a theme switch.
+ */
+:root {
+  --radius: 0.375rem;
+  --background: oklch(1 0 0);
+  --foreground: #131211;
+  --card: oklch(1 0 0);
+  --card-foreground: #131211;
+  --primary: #ffae0b;
+  --primary-foreground: #6e4900;
+  --muted: #e7e6e4;
+  --muted-foreground: #32302e;
+  --accent: hsl(40, 5.88%, 95%);
+  --accent-foreground: #6e87ff;
+  --destructive: #f61631;
+  --border: #e7e6e4;
+  --input: #c3bdb9;
+  --ring: #9c9793;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #16151e;
+    --foreground: #f0f0f0;
+    --card: #23242e;
+    --card-foreground: #f0f0f0;
+    --primary: hsl(40.08, 100%, 60%);
+    --primary-foreground: #6e4900;
+    --muted: #32302e;
+    --muted-foreground: #c3bdb9;
+    --accent: hsl(234.55, 13.58%, 25%);
+    --accent-foreground: #a5b2ff;
+    --destructive: hsl(352.77, 92.56%, 60%);
+    --border: hsl(234.55, 13.58%, 30%);
+    --input: hsl(234.55, 13.58%, 35%);
+    --ring: hsl(234.55, 13.58%, 30%);
+    color-scheme: dark;
+  }
+}
+
+/* Utilities such as bg-primary and text-muted-foreground, which follow the variables above. */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: calc(var(--radius));
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 6px);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+
+  a {
+    @apply text-accent-foreground;
+  }
+}
