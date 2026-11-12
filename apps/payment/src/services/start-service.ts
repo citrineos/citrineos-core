@@ -57,7 +57,11 @@ export class StartService {
 
   async handlePaymentEvent(event: PaymentEvent): Promise<void> {
     if (event.type === PaymentEventType.Unhandled) {
-      this._logger.debug(`Ignoring Stripe event ${event.stripeType}`);
+      if (event.reason) {
+        this._logger.info(`Ignoring Stripe event ${event.stripeType}: ${event.reason}`);
+      } else {
+        this._logger.debug(`Ignoring Stripe event ${event.stripeType}`);
+      }
       return;
     }
 

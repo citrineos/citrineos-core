@@ -301,6 +301,65 @@ currency's minor units. Each component (energy, time, session fee) is rounded do
 component, so totals can be a cent or two below a total rounded once at the end. The tariff's `paymentFee` is
 reported as `paymentCosts` and never charged.
 
+## Moving from citrineos-payment (Python)
+
+This app replaces [citrineos-payment](https://github.com/citrineos/citrineos-payment); the two do not share pages,
+QR codes or checkouts, so an installation moves over once. The Python service kept its tables (`payment_operators`,
+`payment_evses` and so on, after its `DB_TABLE_PREFIX`) in Core's database, which this app uses too. It predates
+tenants in Core: its EVSEs name the old tenant id (`T01`), and Core's own upgrade moved every station to the default
+tenant, so the migration finds each station by its OCPP identity instead.
+
+Before you start: the two must not share a RabbitMQ queue. The Python service consumed
+`MESSAGE_BROKER_EVENT_CONSUMER_QUEUE_NAME` (`paymentService` in its example), this app `AMQP_QUEUE` (`payment`); on
+one queue they would take turns at the messages and each miss the other's half. Both apps also need the same Stripe
+platform: the operators' accounts are connected to the platform of the Python service's `STRIPE_API_KEY`, and this
+app can only take payments on them with a key of that platform.
+
+1. **Stop new Python checkouts.** It has no switch for this: block `POST <WEBSERVER_PATH>/checkouts/` (`/api/...`
+   by default) at the proxy in front of it, leaving `<WEBSERVER_PATH>/webhooks/stripe` reachable, and set
+   `CITRINEOS_SCAN_AND_CHARGE=false` and restart it, so it stops putting payment links on stations' screens. Keep it
+   running otherwise, with its Stripe webhook: a driver who already opened a Checkout Session can still pay for up to
+   24 hours, and only it starts that session. Then deactivate the scan and charge payment links it created ("Charging
+   Session Authorization Amount", under Payment links on each connected account in the Stripe Dashboard): unpaid
+   ones stay payable, and once it is gone nothing would start the session.
+2. **Dry run.** With this app's database settings (the `DB_*` variables) pointing at Core's database and its
+   `STRIPE_API_KEY` set, run `pnpm migrate:python` in `apps/payment` (in the docker stack:
+   `docker compose exec citrineos-payment node dist/migration/cli.js …`; `--prefix` if its `DB_TABLE_PREFIX` was not
+   `payment_`, `--source <Postgres URL>` if its tables are not in Core's database). It changes nothing and reports:
+   - the sessions it took payment for that still hold money: those still charging in Core, which it captures when
+     they end, and those held on Stripe with nothing charging, which it will not settle any more (a failed capture,
+     or a station that did not report the session's end with the `remoteStartId` it matches on): capture or cancel
+     those in the Stripe Dashboard, or Stripe cancels them 7 days after the payment. Without a Stripe key it can only
+     list the ones that never ended;
+   - each tenant's payment account, from the operator whose EVSEs it holds, and conflicts to decide by hand, and any
+     operator account this app's Stripe key cannot reach;
+   - the QR code to print for each EVSE, `<PAYMENT_PUBLIC_URL>/checkout/<Core EVSE id>` (`--public-url`);
+   - what to fix in Core, as drivers see it there now: EVSEs, connectors or tariffs it does not have or that differ,
+     eMI3 ids drivers type on the home page, the address (Core's location of the station, where the Python service
+     kept its own copy) and the tenant name drivers now see as the operator;
+   - warnings: per-minute prices, which the Python service charged from the session's start to its end and this app
+     charges on Core's time spent charging, and EVSE ids of digits only, whose old QR codes would open the Core EVSE
+     of that number here.
+3. **Add this app's webhook.** Add its Connect endpoint in Stripe (see [Stripe](#stripe-for-local-development)).
+   While both endpoints are set, each receives the other's `checkout.session.completed` events. This app acknowledges
+   sessions it did not open; the Python service answers 404 to this app's, which Stripe retries for up to 3 days and
+   reports as failures of its endpoint, so keep the overlap short.
+4. **Apply.** Run it again with `--apply` (and `--scan-and-charge` to turn scan and charge on). It only creates the
+   payment accounts it could decide and moves this app's checkout ids past every id the Python service used, so a new
+   idToken (`PAYMENT_ID_TOKEN_PREFIX` + id) can never name one of its Authorizations; pass
+   `--python-id-token-prefix` if its `OCPP_REMOTESTART_IDTAG_PREFIX` was different. Run it before this app opens any
+   checkout. It refuses while a session the Python service took payment for is still charging (exit code 3) unless
+   `--ignore-open-checkouts`. Set conflicting accounts with `PUT /api/admin/tenants/:tenantId/payment-account`.
+5. **Fix Core** as the report lists.
+6. **Reprint the QR codes.** The Python service's codes encode `<its address>/checkout/<eMI3 id>`, which this app
+   does not serve: drivers who scan one land on the home page and have to type the EVSE ID.
+7. **Retire the Python service** once the report lists no sessions it still has to settle: stop it, remove its Stripe
+   webhook endpoint, and delete its RabbitMQ queue, which otherwise keeps collecting every transaction event. Its
+   charging and receipt pages (`/charging/<EVSE>/<checkout>`, `/receipt/<EVSE>/<checkout>`) stop working with it. Its
+   tables are only read, never changed, and stay as the archive of its checkouts. The Authorizations it created in
+   Core (`<prefix><checkout id>`, and random ids for scan and charge, type `Central`) stay `Accepted`; set them to
+   `Invalid` if you do not want them to authorize anything again.
+
 ## Migrations
 
 Migrations live in `db/migrations` and run against Core's database with `pnpm db:migrate`, through `.sequelizerc` and

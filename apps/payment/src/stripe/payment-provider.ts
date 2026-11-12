@@ -38,6 +38,8 @@ export interface CheckoutCompletedEvent {
 export interface UnhandledEvent {
   type: typeof PaymentEventType.Unhandled;
   stripeType: string;
+  /** Why an event of a type this app handles is still not its own to act on. */
+  reason?: string;
 }
 
 export type PaymentEvent = CheckoutCompletedEvent | UnhandledEvent;
@@ -152,7 +154,16 @@ export class StripePaymentProvider implements IPaymentProvider {
         ? session.payment_intent
         : session.payment_intent?.id;
     const checkoutPublicId = session.metadata?.checkoutPublicId;
-    if (!event.account || !paymentIntentId || !checkoutPublicId || session.amount_total == null) {
+    if (!checkoutPublicId) {
+      // Another app's session on the same connected account, e.g. citrineos-payment's while both
+      // run during a migration: acknowledged, so Stripe does not retry it here or fail this endpoint.
+      return {
+        type: PaymentEventType.Unhandled,
+        stripeType: event.type,
+        reason: `Checkout Session ${session.id} was not opened by this app`,
+      };
+    }
+    if (!event.account || !paymentIntentId || session.amount_total == null) {
       throw new InvalidWebhookError(
         `checkout.session.completed ${event.id} is missing its account, payment intent, checkout or amount`,
       );
