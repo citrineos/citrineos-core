@@ -250,7 +250,7 @@ describe('CheckoutService', () => {
 
       expect(state).toMatchObject({
         status: CheckoutStatus.Charging,
-        transaction: { isActive: true },
+        transaction: { transactionId: 'tx-1', isActive: true },
         pricing: { energyCosts: 420, timeCosts: 50, sessionCosts: 150, totalCostsNet: 620 },
       });
     });

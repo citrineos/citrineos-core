@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import type { I18n, MessageKey } from './i18n';
+
 function currencyFormat(locale: string, currency: string): Intl.NumberFormat {
   return new Intl.NumberFormat(locale, { style: 'currency', currency });
 }
@@ -40,12 +42,33 @@ export function formatDuration(totalSeconds: number): string {
   return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
+/**
+ * A length of time in its non-zero units, largest first, in the locale's words for them: `3m 5s`,
+ * `12h` or `1h 2m` in English, `3 Min. 5 Sek.` in German. Rounded to the second; zero seconds when
+ * there is none.
+ */
+export function formatElapsed(totalSeconds: number, t: I18n['t']): string {
+  const seconds = Math.max(0, Math.round(totalSeconds));
+  const parts: [MessageKey, number][] = [
+    ['elapsed.hours', Math.floor(seconds / 3600)],
+    ['elapsed.minutes', Math.floor((seconds % 3600) / 60)],
+    ['elapsed.seconds', seconds % 60],
+  ];
+  return (
+    parts
+      .filter(([, count]) => count > 0)
+      .map(([key, count]) => t(key, { count }))
+      .join(' ') || t('elapsed.seconds', { count: 0 })
+  );
+}
+
 export function formatNumber(value: number, locale: string, maximumFractionDigits = 2): string {
   return new Intl.NumberFormat(locale, { maximumFractionDigits }).format(value);
 }
 
+/** A date and time to the second, as a receipt shows a session's start and end. */
 export function formatDateTime(iso: string, locale: string): string {
-  return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(
+  return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'medium' }).format(
     new Date(iso),
   );
 }

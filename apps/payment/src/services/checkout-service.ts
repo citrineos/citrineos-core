@@ -63,7 +63,8 @@ export interface CheckoutState {
   /** The tariff the checkout was priced with, as it was then. */
   tariff: TariffSummary;
   evse: CheckoutEvse | null;
-  transaction: Pick<TransactionView, 'startTime' | 'endTime' | 'isActive'> | null;
+  /** `transactionId` is the station's OCPP id for the session, shown on the receipt. */
+  transaction: Pick<TransactionView, 'transactionId' | 'startTime' | 'endTime' | 'isActive'> | null;
   pricing: Pricing | null;
 }
 
@@ -214,6 +215,7 @@ export class CheckoutService {
       evse: await this._evseOf(checkout.tenantId, checkout.connectorId),
       transaction: transaction
         ? {
+            transactionId: transaction.transactionId,
             startTime: transaction.startTime,
             endTime: transaction.endTime,
             isActive: transaction.isActive,
