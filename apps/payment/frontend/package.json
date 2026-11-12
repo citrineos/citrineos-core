@@ -1,6 +1,6 @@
 {
   "name": "@citrineos/payment-frontend",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Driver-facing pages of the CitrineOS payment server",
   "type": "module",
   "private": true,
