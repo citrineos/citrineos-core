@@ -6,6 +6,8 @@ import type { CheckoutState, Connector, EvseOffer, Pricing } from '../src/api';
 import { CheckoutFlow, CheckoutStatus, RemoteStartStatus } from '../src/api';
 
 export const PUBLIC_ID = 'c0ffee00-0000-4000-8000-000000000000';
+/** The station's OCPP id for the session. */
+export const TRANSACTION_ID = '2f7c9a4e-1b3d-4e6f-8a5c-0d9e7b6a4c21';
 
 export const TARIFF = {
   currency: 'USD',
@@ -81,7 +83,11 @@ export function aState(overrides: Partial<CheckoutState> = {}): CheckoutState {
       location: anOffer().location,
       operatorName: 'CitrineOS',
     },
-    transaction: { startTime: '2026-10-23T10:00:00.000Z', isActive: true },
+    transaction: {
+      transactionId: TRANSACTION_ID,
+      startTime: '2026-10-23T10:00:00.000Z',
+      isActive: true,
+    },
     pricing: PRICING,
     ...overrides,
   };

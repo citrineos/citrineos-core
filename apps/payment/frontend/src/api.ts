@@ -85,7 +85,7 @@ export interface CheckoutState {
   capturedAmount: number | null;
   tariff: TariffSummary;
   evse: CheckoutEvse | null;
-  transaction: Pick<TransactionDto, 'startTime' | 'endTime' | 'isActive'> | null;
+  transaction: Pick<TransactionDto, 'transactionId' | 'startTime' | 'endTime' | 'isActive'> | null;
   pricing: Pricing | null;
 }
 

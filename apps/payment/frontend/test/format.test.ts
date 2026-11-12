@@ -4,13 +4,16 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+  formatDateTime,
   formatDuration,
+  formatElapsed,
   formatMajor,
   formatMinor,
   formatPower,
   secondsBetween,
   withVat,
 } from '../src/format';
+import { createI18n } from '../src/i18n';
 
 describe('format', () => {
   it('shows minor units in the currency’s major unit', () => {
@@ -43,5 +46,24 @@ describe('format', () => {
   it('shows power in kW', () => {
     expect(formatPower(22000, 'en')).toBe('22 kW');
     expect(formatPower(7400, 'de')).toBe('7,4 kW');
+  });
+
+  it('shows a length of time in its non-zero units', () => {
+    const { t } = createI18n('en');
+    expect(formatElapsed(185, t)).toBe('3m 5s');
+    expect(formatElapsed(12 * 3600, t)).toBe('12h');
+    expect(formatElapsed(3600 + 120 + 5, t)).toBe('1h 2m 5s');
+    expect(formatElapsed(3605, t)).toBe('1h 5s');
+    expect(formatElapsed(29.6, t)).toBe('30s');
+    expect(formatElapsed(0, t)).toBe('0s');
+    expect(formatElapsed(3600 + 185, createI18n('de').t)).toBe('1 Std. 3 Min. 5 Sek.');
+  });
+
+  it('shows a date and time to the second', () => {
+    // Seconds read the same in every time zone; the hour and day depend on where the tests run.
+    expect(formatDateTime('2026-10-23T10:00:05.000Z', 'en')).toMatch(
+      /2026, \d{1,2}:\d{2}:05\s[AP]M$/,
+    );
+    expect(formatDateTime('2026-10-23T10:00:05.000Z', 'de')).toMatch(/2026, \d{2}:\d{2}:05$/);
   });
 });

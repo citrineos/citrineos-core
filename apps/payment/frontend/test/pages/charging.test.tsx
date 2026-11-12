@@ -7,7 +7,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { CheckoutState } from '../../src/api';
 import { CheckoutFlow, CheckoutStatus, RemoteStartStatus } from '../../src/api';
 import { Charging, POLL_INTERVAL_MS } from '../../src/pages/charging';
-import { aState, PUBLIC_ID } from '../fixtures';
+import { aState, PUBLIC_ID, TRANSACTION_ID } from '../fixtures';
 import { fakeApi, link, render, settle, text } from '../render';
 
 const PATH = `GET /api/checkouts/${PUBLIC_ID}`;
@@ -54,6 +54,7 @@ describe('Charging', () => {
         status: CheckoutStatus.Captured,
         capturedAmount: 856,
         transaction: {
+          transactionId: TRANSACTION_ID,
           startTime: '2026-10-23T10:00:00.000Z',
           endTime: '2026-10-23T10:30:00.000Z',
           isActive: false,
