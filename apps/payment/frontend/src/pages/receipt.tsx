@@ -82,7 +82,7 @@ export function Receipt({ publicId }: { publicId: string }) {
         )}
         <div className={row}>
           <dt>{t('receipt.id')}</dt>
-          <dd className={`${ui.mono} min-w-0 text-right`}>{transaction.transactionId}</dd>
+          <dd className={`${ui.mono} min-w-0 self-end text-right`}>{transaction.transactionId}</dd>
         </div>
         <div className={row}>
           <dt>{t('receipt.start')}</dt>
