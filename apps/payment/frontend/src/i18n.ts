@@ -16,7 +16,7 @@ const en = {
   'action.home': 'Find another charger',
 
   'home.instructions':
-    'Scan the QR code on the charger with your phone’s camera, or enter the charger’s EVSE ID.',
+    'Scan the QR code on the charger with your phone’s camera, or enter the charger’s EVSE ID (upper or lower case both work).',
   'home.evseId': 'EVSE ID',
   'home.notFound': 'We could not find a charger with that ID.',
   'home.missing': 'Please enter an EVSE ID.',
@@ -99,7 +99,7 @@ const de: Record<MessageKey, string> = {
   'action.home': 'Andere Ladestation suchen',
 
   'home.instructions':
-    'Scanne den QR-Code an der Ladestation mit der Kamera deines Handys oder gib die EVSE-ID der Ladestation ein.',
+    'Scanne den QR-Code an der Ladestation mit der Kamera deines Handys oder gib die EVSE-ID der Ladestation ein (Groß- und Kleinschreibung spielt keine Rolle).',
   'home.evseId': 'EVSE-ID',
   'home.notFound': 'Wir haben keine Ladestation mit dieser ID gefunden.',
   'home.missing': 'Bitte gib eine EVSE-ID ein.',

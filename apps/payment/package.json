@@ -51,6 +51,7 @@
     "cross-env": "catalog:",
     "fastify": "catalog:",
     "pg": "catalog:",
+    "pg-hstore": "catalog:",
     "qrcode": "1.5.4",
     "sequelize": "catalog:",
     "sequelize-cli": "catalog:",
