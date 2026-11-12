@@ -121,7 +121,7 @@ export function Checkout({ evseId }: { evseId: number }) {
 
       {connector && (
         <section className={ui.card}>
-          {offer.connectors.length === 1 && <ConnectorFacts connector={connector} />}
+          {offer.connectors.length === 1 && <ConnectorInfo connector={connector} />}
           {connector.tariff ? (
             <Tariff tariff={connector.tariff} />
           ) : (
@@ -166,7 +166,7 @@ export function Checkout({ evseId }: { evseId: number }) {
   );
 }
 
-function ConnectorFacts({ connector }: { connector: Connector }) {
+function ConnectorInfo({ connector }: { connector: Connector }) {
   const { locale } = useI18n();
   const facts = [
     connector.type,
@@ -199,7 +199,7 @@ function ConnectorChoice({
       onClick={onSelect}
     >
       <strong>{t('checkout.connector', { number })}</strong>
-      <ConnectorFacts connector={connector} />
+      <ConnectorInfo connector={connector} />
     </button>
   );
 }
