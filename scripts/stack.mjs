@@ -126,6 +126,13 @@ if (ocpi) profiles.push('ocpi');
 if (payment) profiles.push('payment');
 const profileArgs = profiles.flatMap((p) => ['--profile', p]);
 
+// The operator UI reaches the payment app's API by its service name, and browsers its driver pages
+// on the published port (docker-compose.yml passes these to citrine-ui).
+if (payment) {
+  process.env.CITRINE_UI_PAYMENT_URL = 'http://citrineos-payment:9010';
+  process.env.CITRINE_UI_PAYMENT_PUBLIC_URL = 'http://localhost:9010';
+}
+
 const composeArgs = ['compose', ...files, ...profileArgs];
 if (command === 'down') {
   composeArgs.push('down');
