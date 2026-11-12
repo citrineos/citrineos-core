@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 'use server';
 
-import { AuthProviderTypeEnum } from '@lib/providers/auth-provider/types';
 import { authedAction, type ActionResult } from '@lib/utils/action-guard';
 import config from '@lib/utils/config';
 import {
@@ -14,34 +13,28 @@ import {
 
 /**
  * The payment app's checkout for a Core transaction, if a driver paid for it there; null when
- * there is none or no payment app is configured.
+ * there is none or no payment app is configured. `coreToken` is the signed-in user's own Core
+ * token: the payment app asks Core whether its roles grant `payment.checkouts.get`, and for which
+ * tenant, so the user sees only what Core lets them.
  */
 export async function getPaymentCheckoutAction(
   transactionDatabaseId: number,
+  coreToken: string | undefined,
 ): Promise<ActionResult<PaymentCheckoutLink | null>> {
-  return authedAction(async (session) => {
+  return authedAction(async (_session) => {
     if (!Number.isInteger(transactionDatabaseId) || transactionDatabaseId < 1) {
       throw new Error('Invalid transaction id');
     }
-    const { paymentUrl, paymentAdminApiKey } = config;
-    if (!paymentUrl || !paymentAdminApiKey) {
+    const { paymentUrl } = config;
+    if (!paymentUrl) {
       return null;
-    }
-    // The API key sees every tenant's checkouts: only ever ask for the signed-in user's.
-    const tenantId =
-      config.authProvider === AuthProviderTypeEnum.enum.generic
-        ? config.tenantId
-        : session.user.tenantId;
-    if (!/^\d+$/.test(String(tenantId ?? ''))) {
-      throw new Error('The session names no tenant');
     }
 
     const url = new URL('/api/admin/checkouts', paymentUrl);
-    url.searchParams.set('tenantId', String(tenantId));
     url.searchParams.set('transactionDatabaseId', String(transactionDatabaseId));
     url.searchParams.set('limit', '1');
     const response = await fetch(url, {
-      headers: { Authorization: `Bearer ${paymentAdminApiKey}` },
+      headers: coreToken ? { Authorization: `Bearer ${coreToken}` } : {},
       cache: 'no-store',
     });
     if (!response.ok) {

@@ -79,23 +79,14 @@ export const PaymentConfigSchema = z.object({
     exchange: z.string().min(1),
     queue: z.string().min(1),
   }),
-  /** Who may use /api/admin. Without either, the admin API refuses every request. */
+  /**
+   * Who may use /api/admin besides callers Core grants a `payment.*` permission (see Core's role
+   * seed): the platform, with an API key.
+   */
   admin: z
     .object({
       /** Platform-wide access, for operators and automation; sent as `Authorization: Bearer <key>`. */
       apiKey: z.string().min(32).optional(),
-      /** Tenant-scoped access with the JWTs Core accepts in auth mode jwt. */
-      jwt: z
-        .object({
-          jwksUri: z.url(),
-          issuer: z.string().min(1),
-          audience: z.string().min(1).optional(),
-          rolesClaim: z.string().min(1).default('roles'),
-          tenantClaim: z.string().min(1).default('tenant_id'),
-          /** The role a token needs to administer its tenant's payments. */
-          role: z.string().min(1).default('admin'),
-        })
-        .optional(),
     })
     .default({}),
   /** Requests per minute and client address to the endpoints that open Stripe sessions; 0 is no limit. */

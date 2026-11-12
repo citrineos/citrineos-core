@@ -42,7 +42,6 @@ const getConfig: () => {
   allowImageUpload: boolean;
   paymentUrl?: string; // Where this server reaches the payment app's API, e.g. http://citrineos-payment:9010 in the docker stack.
   paymentPublicUrl?: string; // Where browsers reach the payment app's driver pages; defaults to paymentUrl.
-  paymentAdminApiKey?: string; // The payment app's PAYMENT_ADMIN_API_KEY. Server-side only.
   paymentIdTokenPrefix: string; // The payment app's PAYMENT_ID_TOKEN_PREFIX: how its idTokens start.
 } = () => {
   const authProviderResult = AuthProviderTypeEnum.safeParse(process.env.NEXT_PUBLIC_AUTH_PROVIDER);
@@ -93,7 +92,6 @@ const getConfig: () => {
     allowImageUpload: process.env.ALLOW_IMAGE_UPLOAD === 'true',
     paymentUrl: process.env.PAYMENT_URL || undefined,
     paymentPublicUrl: process.env.PAYMENT_PUBLIC_URL || undefined,
-    paymentAdminApiKey: process.env.PAYMENT_ADMIN_API_KEY || undefined,
     paymentIdTokenPrefix: process.env.NEXT_PUBLIC_PAYMENT_ID_TOKEN_PREFIX || 'PAY_',
   };
 };

@@ -94,6 +94,12 @@
       "ocpprouter.tlsReload.post",
       "ocpprouter.websocketMapping.delete",
       "ocpprouter.websocketMapping.put",
+      "payment.accounts.delete",
+      "payment.accounts.get",
+      "payment.accounts.put",
+      "payment.checkouts.cancel",
+      "payment.checkouts.get",
+      "payment.checkouts.settle",
       "permissions.get"
     ]
   },
@@ -182,7 +188,12 @@
       "ocpprouter.subscription.get",
       "ocpprouter.subscription.post",
       "ocpprouter.tlsReload.post",
-      "ocpprouter.websocketMapping.put"
+      "ocpprouter.websocketMapping.put",
+      "payment.accounts.get",
+      "payment.accounts.put",
+      "payment.checkouts.cancel",
+      "payment.checkouts.get",
+      "payment.checkouts.settle"
     ]
   },
   "partner": {

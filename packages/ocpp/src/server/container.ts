@@ -514,7 +514,9 @@ function registerServices(container: AwilixContainer): void {
     realTimeAuthorizer: asClass(RealTimeAuthorizer).singleton(),
     authorizationAttemptService: asClass(AuthorizationAttemptService).singleton(),
     authorizers: asValue([]),
-    permissionCatalog: asValue(buildPermissionCatalog()),
+    permissionCatalog: asFunction(({ config }: { config: SystemConfig }) =>
+      buildPermissionCatalog(config.roles.externalPermissions),
+    ).singleton(),
     roleProvider: asClass(SeedFileRoleProvider).singleton(),
     policyStore: asClass(PolicyStore).singleton(),
     devKeyPair: asClass(DevKeyPair).singleton(),

@@ -2,46 +2,30 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { generateKeyPairSync } from 'node:crypto';
-import jwt from 'jsonwebtoken';
 import { describe, expect, it } from 'vitest';
-import { AdminAuthenticator, AdminScope } from '../../src/admin/admin-auth.js';
-import type { PaymentConfig } from '../../src/config/types.js';
+import { AdminAuthenticator, AdminScope, PaymentPermission } from '../../src/admin/admin-auth.js';
+import type { CallerPermissions, ICorePermissions } from '../../src/admin/core-permissions.js';
 import { PaymentError, PaymentErrorCode } from '../../src/services/errors.js';
 
 const API_KEY = 'an-admin-api-key-that-is-long-enough';
-const ISSUER = 'https://id.example.com';
-const keys = generateKeyPairSync('rsa', { modulusLength: 2048 });
-const otherKeys = generateKeyPairSync('rsa', { modulusLength: 2048 });
 
-const JWT = {
-  jwksUri: `${ISSUER}/jwks`,
-  issuer: ISSUER,
-  audience: 'payment',
-  rolesClaim: 'realm_access.roles',
-  tenantClaim: 'tenant_id',
-  role: 'admin',
+/** Core, as far as the authenticator sees it: what it says about each Authorization header. */
+class FakeCorePermissions implements ICorePermissions {
+  asked: (string | undefined)[] = [];
+
+  constructor(private readonly _callers: Record<string, CallerPermissions> = {}) {}
+
+  async forCaller(authorization: string | undefined): Promise<CallerPermissions | undefined> {
+    this.asked.push(authorization);
+    return this._callers[authorization ?? ''];
+  }
+}
+
+const operator: CallerPermissions = {
+  tenantId: 3,
+  permissions: [PaymentPermission.CheckoutsGet, 'permissions.user.get'],
+  enforcing: true,
 };
-
-function aToken(claims: object, options: jwt.SignOptions = {}, key = keys.privateKey) {
-  return jwt.sign(claims, key, {
-    algorithm: 'RS256',
-    keyid: 'key-1',
-    issuer: ISSUER,
-    audience: 'payment',
-    expiresIn: 300,
-    ...options,
-  });
-}
-
-function anAuthenticator(config: PaymentConfig['admin'] = { apiKey: API_KEY, jwt: JWT }) {
-  return new AdminAuthenticator(config, async (kid) => {
-    if (kid !== 'key-1') {
-      throw new Error(`Unknown key ${kid}`);
-    }
-    return keys.publicKey;
-  });
-}
 
 async function refusal(promise: Promise<unknown>): Promise<string> {
   const error = await promise.then(
@@ -54,79 +38,67 @@ async function refusal(promise: Promise<unknown>): Promise<string> {
   return error.code;
 }
 
-const admin = { realm_access: { roles: ['admin'] }, tenant_id: '3' };
-
 describe('AdminAuthenticator', () => {
-  it('grants the platform access to the API key', async () => {
-    expect(await anAuthenticator().authenticate(`Bearer ${API_KEY}`)).toEqual({
-      scope: AdminScope.Platform,
-    });
+  it('grants the platform access to the API key, without asking Core', async () => {
+    const core = new FakeCorePermissions();
+
+    expect(
+      await new AdminAuthenticator({ apiKey: API_KEY }, core).authenticate(
+        `Bearer ${API_KEY}`,
+        PaymentPermission.AccountsDelete,
+      ),
+    ).toEqual({ scope: AdminScope.Platform });
+    expect(core.asked).toEqual([]);
   });
 
-  it('grants a tenant admin’s token access to that tenant', async () => {
-    expect(await anAuthenticator().authenticate(`Bearer ${aToken(admin)}`)).toEqual({
+  it('grants a caller Core gives the permission access to the caller’s tenant', async () => {
+    const authenticator = new AdminAuthenticator(
+      {},
+      new FakeCorePermissions({ 'Bearer op': operator }),
+    );
+
+    expect(await authenticator.authenticate('Bearer op', PaymentPermission.CheckoutsGet)).toEqual({
       scope: AdminScope.Tenant,
       tenantId: 3,
     });
   });
 
-  it('reads roles given as a space-separated string', async () => {
-    const token = aToken({ ...admin, realm_access: { roles: 'viewer admin' } });
+  it('refuses a caller Core does not give the permission', async () => {
+    const authenticator = new AdminAuthenticator(
+      {},
+      new FakeCorePermissions({ 'Bearer op': operator }),
+    );
 
-    expect(await anAuthenticator().authenticate(`Bearer ${token}`)).toMatchObject({
-      tenantId: 3,
+    expect(
+      await refusal(authenticator.authenticate('Bearer op', PaymentPermission.CheckoutsCancel)),
+    ).toBe(PaymentErrorCode.Forbidden);
+  });
+
+  it('grants everything, in the caller’s tenant, when Core enforces no permissions', async () => {
+    const authenticator = new AdminAuthenticator(
+      {},
+      new FakeCorePermissions({ '': { tenantId: 1, permissions: [], enforcing: false } }),
+    );
+
+    expect(await authenticator.authenticate(undefined, PaymentPermission.AccountsDelete)).toEqual({
+      scope: AdminScope.Tenant,
+      tenantId: 1,
     });
   });
 
   it.each([
-    ['nothing', undefined, PaymentErrorCode.Unauthorized],
-    ['no Bearer scheme', `Basic ${API_KEY}`, PaymentErrorCode.Unauthorized],
-    ['a wrong API key', `Bearer ${API_KEY.replace('a', 'b')}`, PaymentErrorCode.Forbidden],
+    ['nothing, which Core refuses', undefined, PaymentErrorCode.Unauthorized],
+    ['credentials Core refuses', 'Bearer stolen', PaymentErrorCode.Forbidden],
     [
-      'a token without the role',
-      `Bearer ${aToken({ ...admin, realm_access: { roles: ['viewer'] } })}`,
-      PaymentErrorCode.Forbidden,
-    ],
-    [
-      'a token without a tenant',
-      `Bearer ${aToken({ realm_access: { roles: ['admin'] } })}`,
-      PaymentErrorCode.Forbidden,
-    ],
-    [
-      'a token for another audience',
-      `Bearer ${aToken(admin, { audience: 'core' })}`,
-      PaymentErrorCode.Forbidden,
-    ],
-    [
-      'a token from another issuer',
-      `Bearer ${aToken(admin, { issuer: 'https://evil.example.com' })}`,
-      PaymentErrorCode.Forbidden,
-    ],
-    ['an expired token', `Bearer ${aToken(admin, { expiresIn: -10 })}`, PaymentErrorCode.Forbidden],
-    [
-      'a token signed with another key',
-      `Bearer ${aToken(admin, {}, otherKeys.privateKey)}`,
-      PaymentErrorCode.Forbidden,
-    ],
-    [
-      'a token naming an unknown key',
-      `Bearer ${aToken(admin, { keyid: 'key-2' })}`,
+      'a wrong API key, which Core refuses too',
+      `Bearer ${API_KEY.replace('a', 'b')}`,
       PaymentErrorCode.Forbidden,
     ],
   ])('refuses %s', async (_name, authorization, code) => {
-    expect(await refusal(anAuthenticator().authenticate(authorization))).toBe(code);
-  });
+    const authenticator = new AdminAuthenticator({ apiKey: API_KEY }, new FakeCorePermissions());
 
-  it('refuses tokens when only the API key is configured, and everything when nothing is', async () => {
-    const keyOnly = anAuthenticator({ apiKey: API_KEY, jwt: undefined });
-    const closed = new AdminAuthenticator({});
-
-    expect(await refusal(keyOnly.authenticate(`Bearer ${aToken(admin)}`))).toBe(
-      PaymentErrorCode.Forbidden,
-    );
-    expect(closed.enabled).toBe(false);
-    expect(await refusal(closed.authenticate(`Bearer ${API_KEY}`))).toBe(
-      PaymentErrorCode.Forbidden,
-    );
+    expect(
+      await refusal(authenticator.authenticate(authorization, PaymentPermission.CheckoutsGet)),
+    ).toBe(code);
   });
 });

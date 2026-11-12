@@ -2,11 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { generateKeyPairSync } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
-import jwt from 'jsonwebtoken';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { AdminAuthenticator } from '../../src/admin/admin-auth.js';
+import { AdminAuthenticator, PaymentPermission } from '../../src/admin/admin-auth.js';
+import type { CallerPermissions, ICorePermissions } from '../../src/admin/core-permissions.js';
 import { buildServer } from '../../src/server.js';
 import { CheckoutStatus } from '../../src/types/index.js';
 import { ACCOUNT, anEvse, OTHER_TENANT, TENANT } from '../support/fakes.js';
@@ -17,20 +16,26 @@ import { PaymentEventType } from '../../src/stripe/payment-provider.js';
 type World = Awaited<ReturnType<typeof aWorld>>;
 
 const API_KEY = 'an-admin-api-key-that-is-long-enough';
-const ISSUER = 'https://id.example.com';
-const keys = generateKeyPairSync('rsa', { modulusLength: 2048 });
+const ALL_PERMISSIONS: string[] = Object.values(PaymentPermission);
 
-function tenantToken(tenantId: number): string {
-  return jwt.sign({ roles: ['admin'], tenant_id: String(tenantId) }, keys.privateKey, {
-    algorithm: 'RS256',
-    keyid: 'key-1',
-    issuer: ISSUER,
-    expiresIn: 300,
-  });
-}
+/** Core: `Bearer tenant-<id>` is that tenant's admin; `Bearer viewer-<id>` may only look. */
+const core: ICorePermissions = {
+  async forCaller(authorization): Promise<CallerPermissions | undefined> {
+    const match = /^Bearer (tenant|viewer)-(\d+)$/.exec(authorization ?? '');
+    if (!match) {
+      return undefined;
+    }
+    return {
+      tenantId: Number(match[2]),
+      permissions: match[1] === 'tenant' ? ALL_PERMISSIONS : [PaymentPermission.CheckoutsGet],
+      enforcing: true,
+    };
+  },
+};
 
 const PLATFORM = { authorization: `Bearer ${API_KEY}` };
-const asTenant = (tenantId: number) => ({ authorization: `Bearer ${tenantToken(tenantId)}` });
+const asTenant = (tenantId: number) => ({ authorization: `Bearer tenant-${tenantId}` });
+const asViewer = (tenantId: number) => ({ authorization: `Bearer viewer-${tenantId}` });
 
 describe('admin API', () => {
   let world: World;
@@ -45,19 +50,7 @@ describe('admin API', () => {
       scanAndChargeService: world.scanAndChargeService,
       payments: world.payments,
       admin: {
-        authenticator: new AdminAuthenticator(
-          {
-            apiKey: API_KEY,
-            jwt: {
-              jwksUri: `${ISSUER}/jwks`,
-              issuer: ISSUER,
-              rolesClaim: 'roles',
-              tenantClaim: 'tenant_id',
-              role: 'admin',
-            },
-          },
-          async () => keys.publicKey,
-        ),
+        authenticator: new AdminAuthenticator({ apiKey: API_KEY }, core),
         service: world.adminService,
       },
     });
@@ -111,6 +104,33 @@ describe('admin API', () => {
             asTenant(TENANT),
             { stripeAccountId: 'acct_mine' },
           )
+        ).statusCode,
+      ).toBe(403);
+    });
+
+    it('lets each route through only with the permission Core grants for it', async () => {
+      const publicId = await aPaidCheckout();
+
+      expect((await call('GET', '/api/admin/checkouts', asViewer(TENANT))).statusCode).toBe(200);
+      expect(
+        (await call('GET', `/api/admin/checkouts/${publicId}`, asViewer(TENANT))).statusCode,
+      ).toBe(200);
+      for (const [method, url] of [
+        ['GET', '/api/admin/payment-accounts'],
+        ['GET', `/api/admin/tenants/${TENANT}/payment-account`],
+        ['DELETE', `/api/admin/tenants/${TENANT}/payment-account`],
+        ['POST', `/api/admin/checkouts/${publicId}/settle`],
+        ['POST', `/api/admin/checkouts/${publicId}/cancel`],
+      ] as const) {
+        expect((await call(method, url, asViewer(TENANT))).statusCode, `${method} ${url}`).toBe(
+          403,
+        );
+      }
+      expect(
+        (
+          await call('PUT', `/api/admin/tenants/${TENANT}/payment-account`, asViewer(TENANT), {
+            stripeAccountId: ACCOUNT,
+          })
         ).statusCode,
       ).toBe(403);
     });

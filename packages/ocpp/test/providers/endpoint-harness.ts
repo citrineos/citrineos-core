@@ -35,8 +35,11 @@ export async function mountEndpoint(
   endpoint: AbstractEndpoint,
   route: ICommandEndpointMetadata,
   prefix = '/commands',
+  /** Runs before the route is registered, e.g. to add hooks standing in for the auth plugin. */
+  prepare?: (server: FastifyInstance) => void,
 ): Promise<MountedEndpoint> {
   const server = fastify();
+  prepare?.(server);
   const { logger, errors } = aCapturingLogger();
   const built: BuiltEndpoint[] = [{ route, endpoint }];
 

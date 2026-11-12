@@ -15,20 +15,9 @@ export function sharedPaymentSettings(): Pick<
   PaymentConfigInput,
   'admin' | 'rateLimitPerMinute' | 'reconciliation'
 > {
-  const jwksUri = process.env.PAYMENT_ADMIN_JWT_JWKS_URI;
   return {
     admin: {
       apiKey: process.env.PAYMENT_ADMIN_API_KEY || undefined,
-      jwt: jwksUri
-        ? {
-            jwksUri,
-            issuer: process.env.PAYMENT_ADMIN_JWT_ISSUER ?? '',
-            audience: process.env.PAYMENT_ADMIN_JWT_AUDIENCE || undefined,
-            rolesClaim: process.env.PAYMENT_ADMIN_JWT_ROLES_CLAIM || undefined,
-            tenantClaim: process.env.PAYMENT_ADMIN_JWT_TENANT_CLAIM || undefined,
-            role: process.env.PAYMENT_ADMIN_JWT_ROLE || undefined,
-          }
-        : undefined,
     },
     rateLimitPerMinute: integer('PAYMENT_RATE_LIMIT_PER_MINUTE'),
     reconciliation: {

@@ -114,8 +114,9 @@ Stripe account in [test mode](https://docs.stripe.com/test-mode); no real money 
 4. **A connected account for the tenant.** In the Dashboard, create a test connected account under
    [Connect → Accounts](https://dashboard.stripe.com/test/connect/accounts/overview)
    ([testing Connect](https://docs.stripe.com/connect/testing)) and register its `acct_…` id for the tenant through
-   the [admin API](#admin-api). Outside the docker stack, set `PAYMENT_ADMIN_API_KEY` (at least 32 characters)
-   in `.env.local` first; the stack's is in `docker.env`.
+   the [admin API](#admin-api), with a token from Core for a role that grants `payment.accounts.put` (in auth mode
+   localDev, `POST /dev/token` with `{"roles": ["admin"]}`) or the platform API key: set `PAYMENT_ADMIN_API_KEY` (at
+   least 32 characters) in `.env.local` outside the docker stack; the stack's is in `docker.env`.
 
    ```bash
    curl -X PUT http://localhost:9010/api/admin/tenants/1/payment-account \
@@ -164,12 +165,6 @@ to start without the three secrets.
 | `AMQP_QUEUE`                            | `payment`                                                  | This app's durable queue                                   |
 | `PAYMENT_ID_TOKEN_PREFIX`               | `PAY_`                                                     | Prefix of the idTokens issued for remote starts            |
 | `PAYMENT_ADMIN_API_KEY`                 | none; at least 32 characters                               | Platform-wide access to `/api/admin`                       |
-| `PAYMENT_ADMIN_JWT_JWKS_URI`            | none                                                       | Enables tenant admins' JWTs on `/api/admin`                |
-| `PAYMENT_ADMIN_JWT_ISSUER`              | _required with the JWKS URI_                               | The tokens' issuer                                         |
-| `PAYMENT_ADMIN_JWT_AUDIENCE`            | none (any)                                                 | The tokens' audience                                       |
-| `PAYMENT_ADMIN_JWT_ROLES_CLAIM`         | `roles`                                                    | Claim, or dotted path, holding the roles                   |
-| `PAYMENT_ADMIN_JWT_TENANT_CLAIM`        | `tenant_id`                                                | Claim, or dotted path, holding the tenant id               |
-| `PAYMENT_ADMIN_JWT_ROLE`                | `admin`                                                    | The role that grants admin access to the token's tenant    |
 | `PAYMENT_RATE_LIMIT_PER_MINUTE`         | `20`                                                       | Per client address on lookup, checkout and pay; `0` is off |
 | `PAYMENT_TRUST_PROXY`                   | `false`                                                    | `true` behind a proxy: client address from X-Forwarded-For |
 | `PAYMENT_RECONCILE_INTERVAL_SECONDS`    | `60`                                                       | How often the sweep runs; `0` turns it off                 |
@@ -188,20 +183,27 @@ but they would share the RabbitMQ queue and could handle a station's transaction
 
 ## Admin API
 
-Every `/api/admin` route needs `Authorization: Bearer <credential>`: the platform's `PAYMENT_ADMIN_API_KEY`, for
-every tenant, or a JWT from the issuer Core trusts in auth mode jwt, carrying the admin role, for the tenant it
-names. Core's localDev tokens are signed with a key that never leaves Core, so local development uses the API key.
+Core decides who may use `/api/admin`. A request's `Authorization` header goes to Core's `GET /permissions/user`, which
+says which tenant the caller belongs to and which permissions its roles grant; every route needs the permission below,
+for the caller's tenant only. This works in each of Core's auth modes: a jwt-mode token, a localDev token from
+`/dev/token`, or, under localBypass, no credentials at all. Answers are kept for 30 seconds per caller, so a role change
+takes effect within that. The `payment.*` permissions are granted in Core's role seed
+(`apps/ocpp-server/src/assets/roles-seed.json`: all of them to `admin`, all but `payment.accounts.delete` to `user`),
+and Core's `roles.externalPermissions` lists them in its permission catalog.
 
-| Route                                                                           | Does                                                                                                                                       |
-| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `GET /api/admin/payment-accounts`                                               | The payment accounts the caller may see                                                                                                    |
-| `GET /api/admin/tenants/:tenantId/payment-account`                              | A tenant's account                                                                                                                         |
-| `PUT /api/admin/tenants/:tenantId/payment-account`                              | Creates (201) or changes it: `stripeAccountId`, `scanAndChargeEnabled`, `termsUrl`                                                         |
-| `DELETE /api/admin/tenants/:tenantId/payment-account`                           | Stops the tenant taking payments                                                                                                           |
-| `GET /api/admin/checkouts?tenantId&status&transactionDatabaseId&beforeId&limit` | Checkouts, newest first; `status` takes a comma-separated list; `transactionDatabaseId` is Core's transaction id; page with `nextBeforeId` |
-| `GET /api/admin/checkouts/:publicId`                                            | One checkout, with its payment intent                                                                                                      |
-| `POST /api/admin/checkouts/:publicId/settle`                                    | Reconciles it now, as the sweep would, and also retries a failed capture                                                                   |
-| `POST /api/admin/checkouts/:publicId/cancel`                                    | Releases the hold of a checkout that has not started charging, or whose capture failed                                                     |
+The platform's `PAYMENT_ADMIN_API_KEY`, sent as `Authorization: Bearer <key>`, also works, for every tenant and every
+route, without asking Core: for automation.
+
+| Route                                                                           | Permission                 | Does                                                                                                                                       |
+| ------------------------------------------------------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `GET /api/admin/payment-accounts`                                               | `payment.accounts.get`     | The payment accounts the caller may see                                                                                                    |
+| `GET /api/admin/tenants/:tenantId/payment-account`                              | `payment.accounts.get`     | A tenant's account                                                                                                                         |
+| `PUT /api/admin/tenants/:tenantId/payment-account`                              | `payment.accounts.put`     | Creates (201) or changes it: `stripeAccountId`, `scanAndChargeEnabled`, `termsUrl`                                                         |
+| `DELETE /api/admin/tenants/:tenantId/payment-account`                           | `payment.accounts.delete`  | Stops the tenant taking payments                                                                                                           |
+| `GET /api/admin/checkouts?tenantId&status&transactionDatabaseId&beforeId&limit` | `payment.checkouts.get`    | Checkouts, newest first; `status` takes a comma-separated list; `transactionDatabaseId` is Core's transaction id; page with `nextBeforeId` |
+| `GET /api/admin/checkouts/:publicId`                                            | `payment.checkouts.get`    | One checkout, with its payment intent                                                                                                      |
+| `POST /api/admin/checkouts/:publicId/settle`                                    | `payment.checkouts.settle` | Reconciles it now, as the sweep would, and also retries a failed capture                                                                   |
+| `POST /api/admin/checkouts/:publicId/cancel`                                    | `payment.checkouts.cancel` | Releases the hold of a checkout that has not started charging, or whose capture failed                                                     |
 
 A tenant's Stripe account cannot be changed or removed while it has open checkouts: Stripe's webhooks find a
 checkout's tenant through it.
@@ -210,8 +212,9 @@ checkout's tenant through it.
 
 The operator UI's transaction page links a transaction a driver paid for here to what the driver saw: the receipt once
 the payment is captured, else the page that follows the session. Its server looks the checkout up with
-`GET /api/admin/checkouts?tenantId&transactionDatabaseId`, using the API key and always naming the signed-in user's
-tenant. It only asks about transactions with no authorization yet (scan and charge) or one of this app's
+`GET /api/admin/checkouts?transactionDatabaseId`, sending the signed-in user's own Core token, so the payment app
+answers for the user's tenant and only when the user's roles grant `payment.checkouts.get`; the page does not ask
+otherwise. It only asks about transactions with no authorization yet (scan and charge) or one of this app's
 `Central` idTokens; another token's transaction can have at most a scan-and-charge checkout cancelled unpaid. Set
 these in the operator UI's environment (`apps/operator-ui/.env.local`); without them it shows no link:
 
@@ -219,7 +222,6 @@ these in the operator UI's environment (`apps/operator-ui/.env.local`); without 
 | ------------------------------------- | -------------------------------------------------------------------------------------------- |
 | `PAYMENT_URL`                         | Where the operator UI's server reaches this app; `http://citrineos-payment:9010` in docker   |
 | `PAYMENT_PUBLIC_URL`                  | Where browsers reach the driver pages (`PAYMENT_PUBLIC_URL` here); defaults to `PAYMENT_URL` |
-| `PAYMENT_ADMIN_API_KEY`               | This app's `PAYMENT_ADMIN_API_KEY`                                                           |
 | `NEXT_PUBLIC_PAYMENT_ID_TOKEN_PREFIX` | This app's `PAYMENT_ID_TOKEN_PREFIX`, if not the default `PAY_`                              |
 
 ## Reconciliation
