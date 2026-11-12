@@ -156,6 +156,17 @@ describe('StripePaymentProvider', () => {
       });
     });
 
+    it('acknowledges a session another app opened, e.g. citrineos-payment while both run', () => {
+      // The Python service tagged its sessions with `checkoutId`, not `checkoutPublicId`.
+      const { body, signature } = signed(completed({ metadata: { checkoutId: '57' } }));
+
+      expect(recording.provider.parseWebhook(body, signature)).toEqual({
+        type: PaymentEventType.Unhandled,
+        stripeType: 'checkout.session.completed',
+        reason: expect.stringContaining('was not opened by this app'),
+      });
+    });
+
     it('refuses a body that does not match its signature', () => {
       const { signature } = signed(completed());
       const tampered = Buffer.from(JSON.stringify(completed({ amount_total: 1 })));
@@ -168,7 +179,6 @@ describe('StripePaymentProvider', () => {
     it.each([
       ['a platform event (no connected account)', completed({}, null)],
       ['a session without a payment intent', completed({ payment_intent: null })],
-      ['a session that is not a checkout of this app', completed({ metadata: {} })],
     ])('refuses %s', (_name, event) => {
       const { body, signature } = signed(event);
 
