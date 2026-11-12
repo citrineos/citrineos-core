@@ -16,6 +16,8 @@ interface Deps extends AbstractEndpointDependencies {
 }
 
 interface UserPermissions {
+  /** The caller's tenant, so another service can scope what it grants. */
+  tenantId?: string;
   roles: string[];
   resources: Record<string, string[]>;
   permissions: string[];
@@ -41,6 +43,7 @@ export class GetUserPermissionsEndpoint extends AbstractEndpoint {
   async handle(request: FastifyRequest): Promise<UserPermissions> {
     const roles = request.user?.roles ?? [];
     return {
+      tenantId: request.user?.tenantId,
       roles,
       ...this._policyStore.permissionsFor(roles),
       enforcing: this._config.auth.mode !== 'localBypass',

@@ -6,6 +6,7 @@ import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { CheckoutStatus } from '../types/index.js';
 import { CheckoutStatus as Status } from '../types/index.js';
 import type { AdminPrincipal, IAdminAuthenticator } from './admin-auth.js';
+import { PaymentPermission } from './admin-auth.js';
 import type { AdminService, PaymentAccountInput } from './admin-service.js';
 
 const id = { type: 'integer', minimum: 1 } as const;
@@ -27,7 +28,14 @@ function isStatus(value: string): value is CheckoutStatus {
   return STATUSES.includes(value);
 }
 
-/** /api/admin: every route needs the platform's API key or a tenant admin's token. */
+/** Each route's permission, as Core's role seed grants it. */
+declare module 'fastify' {
+  interface FastifyContextConfig {
+    permission?: PaymentPermission;
+  }
+}
+
+/** /api/admin: every route needs the platform's API key, or credentials Core grants its permission. */
 export function registerAdminRoutes(
   app: FastifyInstance,
   authenticator: IAdminAuthenticator,
@@ -36,7 +44,14 @@ export function registerAdminRoutes(
   app.register(async (admin) => {
     const principals = new WeakMap<FastifyRequest, AdminPrincipal>();
     admin.addHook('onRequest', async (request) => {
-      principals.set(request, await authenticator.authenticate(request.headers.authorization));
+      const permission = request.routeOptions.config.permission;
+      if (!permission) {
+        throw new Error(`${request.method} ${request.url} declares no permission`);
+      }
+      principals.set(
+        request,
+        await authenticator.authenticate(request.headers.authorization, permission),
+      );
     });
     const principalOf = (request: FastifyRequest): AdminPrincipal => {
       const principal = principals.get(request);
@@ -46,19 +61,24 @@ export function registerAdminRoutes(
       return principal;
     };
 
-    admin.get('/api/admin/payment-accounts', async (request) => ({
-      accounts: await service.listAccounts(principalOf(request)),
-    }));
+    admin.get(
+      '/api/admin/payment-accounts',
+      { config: { permission: PaymentPermission.AccountsGet } },
+      async (request) => ({
+        accounts: await service.listAccounts(principalOf(request)),
+      }),
+    );
 
     admin.get<{ Params: { tenantId: number } }>(
       '/api/admin/tenants/:tenantId/payment-account',
-      { schema: { params: tenantParams } },
+      { schema: { params: tenantParams }, config: { permission: PaymentPermission.AccountsGet } },
       async (request) => service.getAccount(principalOf(request), request.params.tenantId),
     );
 
     admin.put<{ Params: { tenantId: number }; Body: PaymentAccountInput }>(
       '/api/admin/tenants/:tenantId/payment-account',
       {
+        config: { permission: PaymentPermission.AccountsPut },
         schema: {
           params: tenantParams,
           body: {
@@ -85,7 +105,10 @@ export function registerAdminRoutes(
 
     admin.delete<{ Params: { tenantId: number } }>(
       '/api/admin/tenants/:tenantId/payment-account',
-      { schema: { params: tenantParams } },
+      {
+        schema: { params: tenantParams },
+        config: { permission: PaymentPermission.AccountsDelete },
+      },
       async (request, reply) => {
         await service.deleteAccount(principalOf(request), request.params.tenantId);
         return reply.code(204).send();
@@ -103,6 +126,7 @@ export function registerAdminRoutes(
     }>(
       '/api/admin/checkouts',
       {
+        config: { permission: PaymentPermission.CheckoutsGet },
         schema: {
           querystring: {
             type: 'object',
@@ -135,19 +159,28 @@ export function registerAdminRoutes(
 
     admin.get<{ Params: { publicId: string } }>(
       '/api/admin/checkouts/:publicId',
-      { schema: { params: checkoutParams } },
+      {
+        schema: { params: checkoutParams },
+        config: { permission: PaymentPermission.CheckoutsGet },
+      },
       async (request) => service.getCheckout(principalOf(request), request.params.publicId),
     );
 
     admin.post<{ Params: { publicId: string } }>(
       '/api/admin/checkouts/:publicId/settle',
-      { schema: { params: checkoutParams } },
+      {
+        schema: { params: checkoutParams },
+        config: { permission: PaymentPermission.CheckoutsSettle },
+      },
       async (request) => service.settle(principalOf(request), request.params.publicId),
     );
 
     admin.post<{ Params: { publicId: string } }>(
       '/api/admin/checkouts/:publicId/cancel',
-      { schema: { params: checkoutParams } },
+      {
+        schema: { params: checkoutParams },
+        config: { permission: PaymentPermission.CheckoutsCancel },
+      },
       async (request) => service.cancel(principalOf(request), request.params.publicId),
     );
   });

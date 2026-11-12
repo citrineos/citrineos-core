@@ -861,12 +861,6 @@ importers:
       fastify:
         specifier: 'catalog:'
         version: 5.12.7
-      jsonwebtoken:
-        specifier: 'catalog:'
-        version: 9.0.3
-      jwks-rsa:
-        specifier: 'catalog:'
-        version: 4.1.0
       pg:
         specifier: 'catalog:'
         version: 8.11.3
@@ -898,9 +892,6 @@ importers:
       '@types/amqplib':
         specifier: 'catalog:'
         version: 0.10.8
-      '@types/jsonwebtoken':
-        specifier: 'catalog:'
-        version: 9.0.10
       '@types/node':
         specifier: 'catalog:'
         version: 25.9.9

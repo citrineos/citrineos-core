@@ -96,9 +96,6 @@ describe('getPaymentConfigForEnv', () => {
     vi.stubEnv('CORE_AUTH_MODE', CoreAuthMode.LocalDev);
     vi.stubEnv('CORE_LOCAL_DEV_ROLES', 'admin, operator');
     vi.stubEnv('PAYMENT_ADMIN_API_KEY', 'an-admin-api-key-that-is-long-enough');
-    vi.stubEnv('PAYMENT_ADMIN_JWT_JWKS_URI', 'https://id.example.com/jwks');
-    vi.stubEnv('PAYMENT_ADMIN_JWT_ISSUER', 'https://id.example.com');
-    vi.stubEnv('PAYMENT_ADMIN_JWT_TENANT_CLAIM', 'org.tenant');
     vi.stubEnv('PAYMENT_RATE_LIMIT_PER_MINUTE', '0');
     vi.stubEnv('PAYMENT_RECONCILE_INTERVAL_SECONDS', '30');
     vi.stubEnv('PAYMENT_RECONCILE_STALE_AFTER_SECONDS', '900');
@@ -108,23 +105,13 @@ describe('getPaymentConfigForEnv', () => {
     expect(config.server.trustProxy).toBe(true);
     expect(config.core.authMode).toBe(CoreAuthMode.LocalDev);
     expect(config.core.localDevRoles).toEqual(['admin', 'operator']);
-    expect(config.admin).toEqual({
-      apiKey: 'an-admin-api-key-that-is-long-enough',
-      jwt: {
-        jwksUri: 'https://id.example.com/jwks',
-        issuer: 'https://id.example.com',
-        rolesClaim: 'roles',
-        tenantClaim: 'org.tenant',
-        role: 'admin',
-      },
-    });
+    expect(config.admin).toEqual({ apiKey: 'an-admin-api-key-that-is-long-enough' });
     expect(config.rateLimitPerMinute).toBe(0);
     expect(config.reconciliation).toEqual({ intervalSeconds: 30, staleAfterSeconds: 900 });
   });
 
   it.each([
     ['an admin API key too short to guess at', 'PAYMENT_ADMIN_API_KEY', 'short'],
-    ['admin JWTs without an issuer', 'PAYMENT_ADMIN_JWT_JWKS_URI', 'https://id.example.com/jwks'],
     ['a sweep that acts within a minute', 'PAYMENT_RECONCILE_STALE_AFTER_SECONDS', '30'],
   ])('rejects %s', (_name, variable, value) => {
     vi.stubEnv(variable, value);

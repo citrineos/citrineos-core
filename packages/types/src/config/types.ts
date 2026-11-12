@@ -365,6 +365,19 @@ export const configSchema = z.object({
       seedFile: z.string().default('roles-seed.json'),
       refreshIntervalSeconds: z.number().int().min(1).default(60),
       common: z.array(z.string()).default(['permissions.user.get']),
+      // Permissions other services check against these roles through GET /permissions/user,
+      // e.g. the payment app's admin API. They are not routes of this server, but the catalog
+      // lists them so a role seed can grant them.
+      externalPermissions: z
+        .array(z.string())
+        .default([
+          'payment.accounts.get',
+          'payment.accounts.put',
+          'payment.accounts.delete',
+          'payment.checkouts.get',
+          'payment.checkouts.settle',
+          'payment.checkouts.cancel',
+        ]),
     })
     .prefault({}),
 

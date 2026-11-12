@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import type { Sequelize } from '@citrineos/dal';
 import {
   SequelizeAuthorizationRepository,
   SequelizeChargingStationSequenceRepository,
@@ -10,7 +11,6 @@ import {
   SequelizeTenantRepository,
   SequelizeTransactionEventRepository,
 } from '@citrineos/dal';
-import type { Sequelize } from '@citrineos/dal';
 import type { FastifyInstance } from 'fastify';
 import { fileURLToPath } from 'node:url';
 import type { ILogObj, Logger } from 'tslog';
@@ -26,6 +26,7 @@ import {
   SequelizePaymentAccountRepository,
 } from './repositories/index.js';
 import { AdminAuthenticator } from './admin/admin-auth.js';
+import { CorePermissions } from './admin/core-permissions.js';
 import { AdminService } from './admin/admin-service.js';
 import { buildServer } from './server.js';
 import { CallbackSigner } from './services/callback-signer.js';
@@ -136,12 +137,10 @@ export async function createApp(
     staleAfterMs: config.reconciliation.staleAfterSeconds * 1000,
     logger,
   });
-  const adminAuthenticator = new AdminAuthenticator(config.admin);
-  if (!adminAuthenticator.enabled) {
-    logger.warn(
-      'Neither PAYMENT_ADMIN_API_KEY nor admin JWTs are configured: /api/admin is closed',
-    );
-  }
+  const adminAuthenticator = new AdminAuthenticator(
+    config.admin,
+    new CorePermissions(config.core.url),
+  );
 
   return {
     server: buildServer({
