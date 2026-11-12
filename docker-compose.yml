@@ -91,6 +91,11 @@ services:
       - ui
     env_file:
       - ./apps/operator-ui/.env.local
+    environment:
+      # The payment app, set by `pnpm citrine --payment`; empty (no payment links) without it.
+      # These override .env.local, whose localhost URLs only work outside a container.
+      PAYMENT_URL: ${CITRINE_UI_PAYMENT_URL:-}
+      PAYMENT_PUBLIC_URL: ${CITRINE_UI_PAYMENT_PUBLIC_URL:-}
     ports:
       - 3000:3000
     depends_on:
@@ -132,6 +137,12 @@ services:
     profiles:
       - payment
     # docker.env has the stack's settings; .env.local, if there, your Stripe keys and overrides.
+    environment:
+      APP_NAME: 'payment'
+      APP_ENV: 'docker'
+      DB_HOST: 'ocpp-db'
+      AMQP_URL: 'amqp://guest:guest@amqp-broker:5672'
+      AMQP_EXCHANGE: 'citrineos'
     env_file:
       - path: ./apps/payment/docker.env
       - path: ./apps/payment/.env.local
