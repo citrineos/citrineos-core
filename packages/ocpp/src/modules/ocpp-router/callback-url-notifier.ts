@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { AbstractModule, childLogger, type ICache } from '@citrineos/base';
+import { AbstractModule, childLogger, type ICache, redactUrl } from '@citrineos/base';
 import type { SystemConfig } from '@citrineos/types';
 import { OidcTokenProvider } from '@/apis/index.js';
 import type { ILogObj, Logger } from 'tslog';
@@ -40,7 +40,8 @@ export class CallbackUrlNotifier {
     );
     if (!url) return;
 
-    this._logger.debug(`Sending callback to ${url} for correlationId: ${correlationId}`);
+    const loggableUrl = redactUrl(url);
+    this._logger.debug(`Sending callback to ${loggableUrl} for correlationId: ${correlationId}`);
 
     const headers: { [key: string]: string } = { 'Content-Type': 'application/json' };
 
@@ -55,6 +56,13 @@ export class CallbackUrlNotifier {
     }
 
     try {
+      // Avoid print url in the error log when fetch failed due to an unparsable URL
+      if (!URL.canParse(url)) {
+        this._logger.error(
+          `Callback for correlationId ${correlationId} not sent: ${loggableUrl} is not a valid URL`,
+        );
+        return;
+      }
       const response = await fetch(url, {
         method: 'POST',
         headers,
@@ -63,11 +71,11 @@ export class CallbackUrlNotifier {
       if (!response.ok) {
         const errorText = await response.text();
         this._logger.error(
-          `Callback to ${url} failed: ${response.status} ${response.statusText} - ${errorText}`,
+          `Callback to ${loggableUrl} failed: ${response.status} ${response.statusText} - ${errorText}`,
         );
       }
     } catch (error) {
-      this._logger.error(`Callback to ${url} failed:`, error);
+      this._logger.error(`Callback to ${loggableUrl} failed:`, error);
     }
   }
 }
