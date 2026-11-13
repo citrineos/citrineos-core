@@ -30,6 +30,7 @@ export const LOCATIONS_LIST_QUERY = gql`
           ${EVSE_CORE_FIELDS}
           connectors: Connectors {
             id
+            status
             latestStatusNotification: LatestStatusNotification {
               ${STATUS_NOTIFICATION_FIELDS}
             }

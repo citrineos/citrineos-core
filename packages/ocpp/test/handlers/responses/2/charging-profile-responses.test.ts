@@ -19,7 +19,11 @@ import {
   OCPPVersion,
   TariffSetStatusEnum,
 } from '@citrineos/types';
-import type { IChargingProfileRepository, ITariffRepository } from '@citrineos/dal';
+import type {
+  IChargingProfileRepository,
+  ICompositeScheduleRepository,
+  ITariffRepository,
+} from '@citrineos/dal';
 import {
   ClearChargingProfileResponseOcpp2Handler,
   GetChargingProfilesResponseOcpp2Handler,
@@ -62,9 +66,14 @@ function makeMessage<T extends OcppResponse, R extends OcppRequest = OcppRequest
 
 function makeChargingProfileRepository(): Mocked<IChargingProfileRepository> {
   return {
-    updateAllByQuery: vi.fn().mockResolvedValue([]),
-    createCompositeSchedule: vi.fn().mockResolvedValue({ databaseId: 1 }),
+    deactivateChargingProfiles: vi.fn().mockResolvedValue(0),
   } as unknown as Mocked<IChargingProfileRepository>;
+}
+
+function makeCompositeScheduleRepository(): Mocked<ICompositeScheduleRepository> {
+  return {
+    createCompositeSchedule: vi.fn().mockResolvedValue({ databaseId: 1 }),
+  } as unknown as Mocked<ICompositeScheduleRepository>;
 }
 
 function makeIdGenerator(): Mocked<IdGenerator> {
@@ -98,18 +107,11 @@ describe('ClearChargingProfileResponseOcpp2Handler', () => {
       } as never),
     );
 
-    expect(chargingProfileRepository.updateAllByQuery).toHaveBeenCalledTimes(1);
-    expect(chargingProfileRepository.updateAllByQuery).toHaveBeenCalledWith(
+    expect(chargingProfileRepository.deactivateChargingProfiles).toHaveBeenCalledTimes(1);
+    expect(chargingProfileRepository.deactivateChargingProfiles).toHaveBeenCalledWith(
       DEFAULT_TENANT_ID,
-      { isActive: false },
-      {
-        where: {
-          tenantId: DEFAULT_TENANT_ID,
-          ocppConnectionName: STATION,
-          isActive: true,
-        },
-        returning: false,
-      },
+      STATION,
+      {},
     );
   });
 
@@ -153,7 +155,7 @@ describe('ClearChargingProfileResponseOcpp2Handler', () => {
       } as never),
     );
 
-    expect(chargingProfileRepository.updateAllByQuery).not.toHaveBeenCalled();
+    expect(chargingProfileRepository.deactivateChargingProfiles).not.toHaveBeenCalled();
     expect(ocppSender.sendCall).not.toHaveBeenCalled();
     expect(logger.error).toHaveBeenCalledWith(
       `Failed to clear charging profile: ${JSON.stringify({ status: ClearChargingProfileStatusEnum.Unknown })}`,
@@ -186,19 +188,11 @@ describe('SetChargingProfileResponseOcpp2Handler', () => {
       } as never),
     );
 
-    expect(chargingProfileRepository.updateAllByQuery).toHaveBeenCalledTimes(1);
-    expect(chargingProfileRepository.updateAllByQuery).toHaveBeenCalledWith(
+    expect(chargingProfileRepository.deactivateChargingProfiles).toHaveBeenCalledTimes(1);
+    expect(chargingProfileRepository.deactivateChargingProfiles).toHaveBeenCalledWith(
       DEFAULT_TENANT_ID,
-      { isActive: false },
-      {
-        where: {
-          tenantId: DEFAULT_TENANT_ID,
-          ocppConnectionName: STATION,
-          isActive: true,
-          chargingLimitSource: ChargingLimitSourceEnum.CSO,
-        },
-        returning: false,
-      },
+      STATION,
+      { chargingLimitSource: ChargingLimitSourceEnum.CSO },
     );
   });
 
@@ -237,7 +231,7 @@ describe('SetChargingProfileResponseOcpp2Handler', () => {
       } as never),
     );
 
-    expect(chargingProfileRepository.updateAllByQuery).not.toHaveBeenCalled();
+    expect(chargingProfileRepository.deactivateChargingProfiles).not.toHaveBeenCalled();
     expect(logger.error).toHaveBeenCalledWith(
       `Failed to set charging profile: ${JSON.stringify({ status: ChargingProfileStatusEnum.Rejected })}`,
     );
@@ -355,15 +349,15 @@ describe('GetChargingProfilesResponseOcpp2Handler', () => {
 
 describe('GetCompositeScheduleResponseOcpp201Handler', () => {
   const { container, logger } = createTestContainer();
-  let chargingProfileRepository: Mocked<IChargingProfileRepository>;
+  let compositeScheduleRepository: Mocked<ICompositeScheduleRepository>;
   let handler: GetCompositeScheduleResponseOcpp201Handler;
 
   const SCHEDULE_START = '2026-08-27T09:00:00.000Z';
 
   beforeEach(() => {
-    chargingProfileRepository = makeChargingProfileRepository();
+    compositeScheduleRepository = makeCompositeScheduleRepository();
     handler = getTestInstance(container, GetCompositeScheduleResponseOcpp201Handler, {
-      chargingProfileRepository,
+      compositeScheduleRepository,
     });
   });
 
@@ -381,8 +375,8 @@ describe('GetCompositeScheduleResponseOcpp201Handler', () => {
       } as never),
     );
 
-    expect(chargingProfileRepository.createCompositeSchedule).toHaveBeenCalledTimes(1);
-    expect(chargingProfileRepository.createCompositeSchedule).toHaveBeenCalledWith(
+    expect(compositeScheduleRepository.createCompositeSchedule).toHaveBeenCalledTimes(1);
+    expect(compositeScheduleRepository.createCompositeSchedule).toHaveBeenCalledWith(
       DEFAULT_TENANT_ID,
       {
         evseId: 1,
@@ -403,7 +397,7 @@ describe('GetCompositeScheduleResponseOcpp201Handler', () => {
       } as never),
     );
 
-    expect(chargingProfileRepository.createCompositeSchedule).not.toHaveBeenCalled();
+    expect(compositeScheduleRepository.createCompositeSchedule).not.toHaveBeenCalled();
     expect(logger.error).toHaveBeenCalledWith(
       `Missing schedule in response: ${GenericStatusEnum.Accepted} ${JSON.stringify({ reasonCode: 'NoSchedule' })}`,
     );
@@ -416,7 +410,7 @@ describe('GetCompositeScheduleResponseOcpp201Handler', () => {
       } as never),
     );
 
-    expect(chargingProfileRepository.createCompositeSchedule).not.toHaveBeenCalled();
+    expect(compositeScheduleRepository.createCompositeSchedule).not.toHaveBeenCalled();
     expect(logger.error).toHaveBeenCalledWith(
       `Failed to get composite schedule: ${GenericStatusEnum.Rejected} ${JSON.stringify(undefined)}`,
     );
@@ -425,15 +419,15 @@ describe('GetCompositeScheduleResponseOcpp201Handler', () => {
 
 describe('GetCompositeScheduleResponseOcpp21Handler', () => {
   const { container, logger } = createTestContainer();
-  let chargingProfileRepository: Mocked<IChargingProfileRepository>;
+  let compositeScheduleRepository: Mocked<ICompositeScheduleRepository>;
   let handler: GetCompositeScheduleResponseOcpp21Handler;
 
   const SCHEDULE_START = '2026-09-23T09:00:00.000Z';
 
   beforeEach(() => {
-    chargingProfileRepository = makeChargingProfileRepository();
+    compositeScheduleRepository = makeCompositeScheduleRepository();
     handler = getTestInstance(container, GetCompositeScheduleResponseOcpp21Handler, {
-      chargingProfileRepository,
+      compositeScheduleRepository,
     });
   });
 
@@ -464,8 +458,8 @@ describe('GetCompositeScheduleResponseOcpp21Handler', () => {
       makeMessage(OCPP_CallAction.GetCompositeSchedule, OCPPVersion.OCPP2_1, response),
     );
 
-    expect(chargingProfileRepository.createCompositeSchedule).toHaveBeenCalledTimes(1);
-    expect(chargingProfileRepository.createCompositeSchedule).toHaveBeenCalledWith(
+    expect(compositeScheduleRepository.createCompositeSchedule).toHaveBeenCalledTimes(1);
+    expect(compositeScheduleRepository.createCompositeSchedule).toHaveBeenCalledWith(
       DEFAULT_TENANT_ID,
       {
         evseId: 1,
@@ -497,7 +491,7 @@ describe('GetCompositeScheduleResponseOcpp21Handler', () => {
       }),
     );
 
-    expect(chargingProfileRepository.createCompositeSchedule).not.toHaveBeenCalled();
+    expect(compositeScheduleRepository.createCompositeSchedule).not.toHaveBeenCalled();
     expect(logger.error).toHaveBeenCalledWith(
       `Missing schedule in response: ${GenericStatusEnum.Accepted} ${JSON.stringify({ reasonCode: 'NoSchedule' })}`,
     );
@@ -510,7 +504,7 @@ describe('GetCompositeScheduleResponseOcpp21Handler', () => {
       }),
     );
 
-    expect(chargingProfileRepository.createCompositeSchedule).not.toHaveBeenCalled();
+    expect(compositeScheduleRepository.createCompositeSchedule).not.toHaveBeenCalled();
     expect(logger.error).toHaveBeenCalledWith(
       `Failed to get composite schedule: ${GenericStatusEnum.Rejected} ${JSON.stringify(undefined)}`,
     );

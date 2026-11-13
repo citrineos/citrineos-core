@@ -25,10 +25,11 @@ out of the "hot path" and expand to process messages more flexibly without addin
    which is then routed to the "frame" queue.
 4. The MessagesModule consumes (with the help of MessagesEventConsumer) the message and runs all frame processors against
    the message (with the help of MessagesEventPipeline).
-   - As of time of writing, four processors exist for OCPP Messages: one to store the OCPP message in the
+   - As of time of writing, five processors exist for OCPP Messages: one to store the OCPP message in the
      OCPPMessages database table, one to dispatch the message via the webhook-dispatcher (for any Charging Station
      message subscribers), one to stamp `ChargingStations.latestOcppMessageTimestamp` with the receipt time of
-     each inbound frame, and one to record CallErrors as network alerts (see below).
+     each inbound frame, one to record CallErrors as network alerts (see below), and one to record a station's
+     CallError to a remote start as a failed authorization attempt (see below).
 
 ## Example: Websocket Connection
 
@@ -93,7 +94,16 @@ event for each one that did not complete: `timeout` when the station has not ans
 `timeouts.maxCallLengthSeconds`, and `send_failed` when the router held the station's connection but
 could not write the Call to it. Like connection events, these come from the router rather than the
 transport, so they hold whatever manages the station's socket. The timers behind `timeout` live in
-the router's memory: a router that crashes loses them.
+the router's memory: a router that crashes loses them. Each event carries the Call's payload, since
+neither outcome leaves a frame behind to read it from.
+
+## Example: Remote start authorization attempts
+
+A RemoteStartTransaction (1.6) or RequestStartTransaction (2.x) is recorded in AuthorizationAttempts
+by its response handler when the station answers it. When it does not, the attempt is recorded from
+whichever of three places sees the failure: a frame processor for a CallError (the idToken is read
+from the Call stored in OCPPMessages), a call processor for a `timeout` or `send_failed` event, and an
+OCPP dead-letter processor for a Call that was never delivered.
 
 # Dead-letter queues
 
@@ -115,7 +125,8 @@ or module gives up on are published to the fanout exchange "citrineos.dlx" and d
 `ocpp_dead_letter_received_total` by reason and action, for alerting, and logged, then handed to
 the dead-letter processors before it is acked. One processor records each message the CSMS meant
 for a station and gave up delivering (`stale`, `expired`, `unroutable`, `overflow`, `shutdown`) as a
-`SendFailed` network alert. A processor that fails is logged; the dead letter is acked regardless. The first dead
+`SendFailed` network alert; another records an undelivered remote start as a failed authorization
+attempt. A processor that fails is logged; the dead letter is acked regardless. The first dead
 letter of a given reason, action and source in each minute is logged in full; the rest are
 summarised in one line when the minute ends.
 

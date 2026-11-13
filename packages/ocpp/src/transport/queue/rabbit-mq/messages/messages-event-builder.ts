@@ -132,6 +132,7 @@ export interface BuildCallEventInput {
   action: string;
   protocol: OCPPVersionType;
   timestamp: string;
+  request?: unknown;
   meta?: Record<string, string>;
 }
 

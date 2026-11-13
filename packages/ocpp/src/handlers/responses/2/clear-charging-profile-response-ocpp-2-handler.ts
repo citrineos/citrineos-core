@@ -59,19 +59,10 @@ export class ClearChargingProfileResponseOcpp2Handler extends AbstractHandler {
     if (message.payload.status === ClearChargingProfileStatusEnum.Accepted) {
       const ocppConnectionName: string = message.context.ocppConnectionName;
       // Set existed profiles to isActive false
-      await this._chargingProfileRepository.updateAllByQuery(
+      await this._chargingProfileRepository.deactivateChargingProfiles(
         tenantId,
-        {
-          isActive: false,
-        },
-        {
-          where: {
-            tenantId: tenantId,
-            ocppConnectionName: ocppConnectionName,
-            isActive: true,
-          },
-          returning: false,
-        },
+        ocppConnectionName,
+        {},
       );
       // Request charging profiles to get the latest data
       await this._ocppSender.sendCall({

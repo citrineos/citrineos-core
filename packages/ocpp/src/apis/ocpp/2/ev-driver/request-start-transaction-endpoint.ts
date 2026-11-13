@@ -21,6 +21,7 @@ import {
   type OCPP2_request_types,
 } from '@citrineos/types';
 import type {
+  IChargingNeedsRepository,
   IChargingProfileRepository,
   IVariableAttributeRepository,
   ITransactionRepository,
@@ -35,6 +36,7 @@ interface Dependencies extends AbstractMessageEndpointDependencies {
   ocppSender: IOcppSender;
   cache: ICache;
   variableAttributeRepository: IVariableAttributeRepository;
+  chargingNeedsRepository: IChargingNeedsRepository;
   chargingProfileRepository: IChargingProfileRepository;
   transactionRepository: ITransactionRepository;
 }
@@ -50,6 +52,7 @@ export class RequestStartTransactionEndpoint extends AbstractMessageEndpoint {
   private readonly _ocppSender: IOcppSender;
   private readonly _cache: ICache;
   private readonly _variableAttributeRepository: IVariableAttributeRepository;
+  private readonly _chargingNeedsRepository: IChargingNeedsRepository;
   private readonly _chargingProfileRepository: IChargingProfileRepository;
   private readonly _transactionRepository: ITransactionRepository;
 
@@ -58,6 +61,7 @@ export class RequestStartTransactionEndpoint extends AbstractMessageEndpoint {
     ocppSender,
     cache,
     variableAttributeRepository,
+    chargingNeedsRepository,
     chargingProfileRepository,
     transactionRepository,
   }: Dependencies) {
@@ -65,6 +69,7 @@ export class RequestStartTransactionEndpoint extends AbstractMessageEndpoint {
     this._ocppSender = ocppSender;
     this._cache = cache;
     this._variableAttributeRepository = variableAttributeRepository;
+    this._chargingNeedsRepository = chargingNeedsRepository;
     this._chargingProfileRepository = chargingProfileRepository;
     this._transactionRepository = transactionRepository;
   }
@@ -116,7 +121,7 @@ export class RequestStartTransactionEndpoint extends AbstractMessageEndpoint {
             tenantId,
             ocppConnectionName,
             this._variableAttributeRepository,
-            this._chargingProfileRepository,
+            this._chargingNeedsRepository,
             this._transactionRepository,
             this._logger,
             request.evseId,

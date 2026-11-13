@@ -24,6 +24,9 @@ import { LatestOcppMessageTimestampProcessor } from '@modules/messages/processor
 import { OcppCallFailureAlertProcessor } from '@modules/messages/processors/ocpp-call-failure-alert-processor.js';
 import { OcppDeadLetterAlertProcessor } from '@modules/messages/processors/ocpp-dead-letter-alert-processor.js';
 import { OcppMessagePersistProcessor } from '@modules/messages/processors/ocpp-message-persist-processor.js';
+import { RemoteStartCallErrorProcessor } from '@modules/messages/processors/remote-start-call-error-processor.js';
+import { RemoteStartCallOutcomeProcessor } from '@modules/messages/processors/remote-start-call-outcome-processor.js';
+import { RemoteStartDeadLetterProcessor } from '@modules/messages/processors/remote-start-dead-letter-processor.js';
 import { StationConnectivityAlertProcessor } from '@modules/messages/processors/station-connectivity-alert-processor.js';
 import { WebsocketEventPersistProcessor } from '@modules/messages/processors/websocket-event-persist-processor.js';
 import { WebhookDispatcher } from './webhook-dispatcher.js';
@@ -39,6 +42,9 @@ interface MessagesCradle {
   stationConnectivityAlertProcessor: StationConnectivityAlertProcessor;
   callOutcomeAlertProcessor: CallOutcomeAlertProcessor;
   ocppDeadLetterAlertProcessor: OcppDeadLetterAlertProcessor;
+  remoteStartCallErrorProcessor: RemoteStartCallErrorProcessor;
+  remoteStartCallOutcomeProcessor: RemoteStartCallOutcomeProcessor;
+  remoteStartDeadLetterProcessor: RemoteStartDeadLetterProcessor;
 }
 
 /**
@@ -52,6 +58,7 @@ export function registerMessagesServices(container: AwilixContainer): void {
       cradle.frameWebhookProcessor,
       cradle.latestOcppMessageTimestampProcessor,
       cradle.ocppCallFailureAlertProcessor,
+      cradle.remoteStartCallErrorProcessor,
     ]).singleton(),
 
     connectionEventProcessors: asFunction((cradle: MessagesCradle): IConnectionEventProcessor[] => [
@@ -67,10 +74,12 @@ export function registerMessagesServices(container: AwilixContainer): void {
 
     callEventProcessors: asFunction((cradle: MessagesCradle): ICallEventProcessor[] => [
       cradle.callOutcomeAlertProcessor,
+      cradle.remoteStartCallOutcomeProcessor,
     ]).singleton(),
 
     ocppDeadLetterProcessors: asFunction((cradle: MessagesCradle): IOcppDeadLetterProcessor[] => [
       cradle.ocppDeadLetterAlertProcessor,
+      cradle.remoteStartDeadLetterProcessor,
     ]).singleton(),
 
     ocppMessagePersistProcessor: asClass(OcppMessagePersistProcessor).singleton(),
@@ -82,6 +91,9 @@ export function registerMessagesServices(container: AwilixContainer): void {
     stationConnectivityAlertProcessor: asClass(StationConnectivityAlertProcessor).singleton(),
     callOutcomeAlertProcessor: asClass(CallOutcomeAlertProcessor).singleton(),
     ocppDeadLetterAlertProcessor: asClass(OcppDeadLetterAlertProcessor).singleton(),
+    remoteStartCallErrorProcessor: asClass(RemoteStartCallErrorProcessor).singleton(),
+    remoteStartCallOutcomeProcessor: asClass(RemoteStartCallOutcomeProcessor).singleton(),
+    remoteStartDeadLetterProcessor: asClass(RemoteStartDeadLetterProcessor).singleton(),
     webhookDispatcher: asClass(WebhookDispatcher).singleton(),
 
     messagesEventConsumer: asClass(MessagesEventConsumer).singleton(),

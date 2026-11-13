@@ -4,6 +4,8 @@
 
 import { type IMessage, DEFAULT_TENANT_ID } from '@citrineos/base';
 import {
+  OCPP2_0_1,
+  AuthorizationAttemptReasonEnum,
   type OcppRequest,
   type OcppResponse,
   type SystemConfig,
@@ -34,6 +36,8 @@ import {
   getTestInstance,
   makeMockOcppSender,
   type MockOcppSender,
+  makeMockAuthorizationAttemptService,
+  type MockAuthorizationAttemptService,
 } from '@test/test-container.js';
 import type { Mocked } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -77,18 +81,20 @@ beforeEach(() => {
 });
 
 describe('RequestStartTransactionResponseOcpp2Handler', () => {
+  let authorizationAttemptService: MockAuthorizationAttemptService;
   let chargingProfileRepository: Mocked<IChargingProfileRepository>;
   let idGenerator: Mocked<IdGenerator>;
   let ocppSender: MockOcppSender;
 
   beforeEach(() => {
     chargingProfileRepository = {
-      updateAllByQuery: vi.fn().mockResolvedValue([]),
+      deactivateChargingProfiles: vi.fn().mockResolvedValue([]),
     } as unknown as Mocked<IChargingProfileRepository>;
     idGenerator = {
       generateRequestId: vi.fn().mockResolvedValue(GENERATED_REQUEST_ID),
     } as unknown as Mocked<IdGenerator>;
     ocppSender = makeMockOcppSender();
+    authorizationAttemptService = makeMockAuthorizationAttemptService();
   });
 
   function makeHandler(enableGetChargingProfilesOnStartTransaction?: boolean) {
@@ -97,6 +103,7 @@ describe('RequestStartTransactionResponseOcpp2Handler', () => {
       evdriver: { enableGetChargingProfilesOnStartTransaction },
     } as unknown as SystemConfig;
     return getTestInstance(container, RequestStartTransactionResponseOcpp2Handler, {
+      authorizationAttemptService,
       config,
       ocppSender,
       chargingProfileRepository,
@@ -113,18 +120,13 @@ describe('RequestStartTransactionResponseOcpp2Handler', () => {
       } as never),
     );
 
-    expect(chargingProfileRepository.updateAllByQuery).toHaveBeenCalledTimes(1);
-    expect(chargingProfileRepository.updateAllByQuery).toHaveBeenCalledWith(
+    expect(chargingProfileRepository.deactivateChargingProfiles).toHaveBeenCalledTimes(1);
+    expect(chargingProfileRepository.deactivateChargingProfiles).toHaveBeenCalledWith(
       DEFAULT_TENANT_ID,
-      { isActive: false },
+      STATION,
       {
-        where: {
-          ocppConnectionName: STATION,
-          isActive: true,
-          chargingLimitSource: ChargingLimitSourceEnum.CSO,
-          chargingProfilePurpose: ChargingProfilePurposeEnum.TxProfile,
-        },
-        returning: false,
+        chargingLimitSource: ChargingLimitSourceEnum.CSO,
+        chargingProfilePurpose: ChargingProfilePurposeEnum.TxProfile,
       },
     );
   });
@@ -170,9 +172,42 @@ describe('RequestStartTransactionResponseOcpp2Handler', () => {
       } as never),
     );
 
-    expect(chargingProfileRepository.updateAllByQuery).toHaveBeenCalledTimes(1);
+    expect(chargingProfileRepository.deactivateChargingProfiles).toHaveBeenCalledTimes(1);
     expect(idGenerator.generateRequestId).not.toHaveBeenCalled();
     expect(ocppSender.sendCall).not.toHaveBeenCalled();
+  });
+
+  it('records the station answer, and any transaction it names, as an authorization attempt', async () => {
+    const request = {
+      idToken: { idToken: 'TOKEN-1', type: 'ISO14443' },
+      remoteStartId: 77,
+    } as OCPP2_0_1.RequestStartTransactionRequest;
+    const handler = makeHandler();
+
+    await handler.handle(
+      makeMessage(
+        OCPP_CallAction.RequestStartTransaction,
+        {
+          status: RequestStartStopStatusEnum.Rejected,
+          transactionId: 'txn-9',
+          statusInfo: { reasonCode: 'TxInProgress' },
+        } as never,
+        request,
+      ),
+    );
+
+    expect(authorizationAttemptService.recordRemoteStart).toHaveBeenCalledWith(
+      expect.objectContaining({ ocppConnectionName: STATION }),
+      OCPPVersion.OCPP2_0_1,
+      OCPP_CallAction.RequestStartTransaction,
+      request,
+      {
+        reason: AuthorizationAttemptReasonEnum.StationResponded,
+        responseStatus: RequestStartStopStatusEnum.Rejected,
+        details: { statusInfo: { reasonCode: 'TxInProgress' } },
+        transactionId: 'txn-9',
+      },
+    );
   });
 
   it('Rejected logs the failure and performs no writes or calls', async () => {
@@ -184,7 +219,7 @@ describe('RequestStartTransactionResponseOcpp2Handler', () => {
       } as never),
     );
 
-    expect(chargingProfileRepository.updateAllByQuery).not.toHaveBeenCalled();
+    expect(chargingProfileRepository.deactivateChargingProfiles).not.toHaveBeenCalled();
     expect(ocppSender.sendCall).not.toHaveBeenCalled();
     expect(logger.error).toHaveBeenCalledTimes(1);
     expect(logger.error).toHaveBeenCalledWith(

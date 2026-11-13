@@ -181,6 +181,7 @@ describe('MessageRouterImpl with a MemoryCache', () => {
           action: ACTION,
           protocol: PROTOCOL,
           timestamp: expect.any(String),
+          request: PAYLOAD,
         },
       ]);
     });
@@ -250,6 +251,7 @@ describe('MessageRouterImpl with a MemoryCache', () => {
           correlationId: 'call-1',
           action: ACTION,
           protocol: PROTOCOL,
+          request: PAYLOAD,
         }),
       ]);
     });

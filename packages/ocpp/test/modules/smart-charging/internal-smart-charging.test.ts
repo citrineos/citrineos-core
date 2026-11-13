@@ -5,7 +5,11 @@
 import { beforeEach, describe, expect, it, vi, type Mocked } from 'vitest';
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import { AttributeEnum, OCPP2_0_1 } from '@citrineos/types';
-import type { IChargingProfileRepository, IVariableAttributeRepository } from '@citrineos/dal';
+import type {
+  IChargingProfileRepository,
+  IChargingScheduleRepository,
+  IVariableAttributeRepository,
+} from '@citrineos/dal';
 import type { Transaction } from '@citrineos/dal';
 import { InternalSmartCharging } from '@modules/smart-charging/internal-smart-charging.js';
 import { createTestContainer } from '@test/test-container.js';
@@ -40,6 +44,7 @@ function aTransaction(): Transaction {
 describe('InternalSmartCharging.calculateChargingProfile', () => {
   let smartCharging: InternalSmartCharging;
   let chargingProfileRepository: Mocked<IChargingProfileRepository>;
+  let chargingScheduleRepository: Mocked<IChargingScheduleRepository>;
   let readAllByQuerystring: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
@@ -47,15 +52,18 @@ describe('InternalSmartCharging.calculateChargingProfile', () => {
 
     chargingProfileRepository = {
       getNextChargingProfileId: vi.fn().mockResolvedValue(1),
-      getNextChargingScheduleId: vi.fn().mockResolvedValue(1),
       getNextStackLevel: vi.fn().mockResolvedValue(0),
       // No pre-existing profile, so the limit is not validated against anything.
-      readAllByQuery: vi.fn().mockResolvedValue([]),
+      readHighestStackLevelTxProfile: vi.fn().mockResolvedValue(undefined),
     } as unknown as Mocked<IChargingProfileRepository>;
+    chargingScheduleRepository = {
+      getNextChargingScheduleId: vi.fn().mockResolvedValue(1),
+    } as unknown as Mocked<IChargingScheduleRepository>;
     readAllByQuerystring = vi.fn().mockResolvedValue([]);
 
     smartCharging = new InternalSmartCharging({
       chargingProfileRepository,
+      chargingScheduleRepository,
       variableAttributeRepository: {
         readAllByQuerystring,
       } as unknown as IVariableAttributeRepository,

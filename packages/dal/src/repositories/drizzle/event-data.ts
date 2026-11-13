@@ -2,13 +2,15 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { EventDataDto } from '@citrineos/types';
+import type { EventDataDto, OCPP2_common_types } from '@citrineos/types';
 import {
   type EventDataEntity,
   eventDataTable,
   tenantEventDataTable,
 } from '../../db/drizzle/schema/event-data.js';
+import type { IEventDataRepository } from '../repositories.js';
 import { DrizzleRepository } from './base.js';
+import { resolveStationIdOrThrow } from './resolve-station-id.js';
 
 // ─── Mapper ──────────────────────────────────────────────────────────────────
 // Maps a Drizzle entity (DB row) to the external EventDataDto contract.
@@ -41,10 +43,10 @@ export function toEventDataDto(entity: EventDataEntity): EventDataDto {
   } as EventDataDto;
 }
 
-export class DrizzleEventDataRepository extends DrizzleRepository<
-  typeof eventDataTable,
-  EventDataDto
-> {
+export class DrizzleEventDataRepository
+  extends DrizzleRepository<typeof eventDataTable, EventDataDto>
+  implements IEventDataRepository
+{
   protected getTable(tenantId: number): typeof eventDataTable {
     return this.useTenantSchema ? tenantEventDataTable(tenantId) : eventDataTable;
   }
@@ -53,5 +55,36 @@ export class DrizzleEventDataRepository extends DrizzleRepository<
     return toEventDataDto(row);
   }
 
-  // Domain query/write methods intentionally omitted — stub outline only.
+  async createEventDatumByComponentIdAndVariableIdAndStationId(
+    tenantId: number,
+    event: OCPP2_common_types.EventDataType,
+    ocppConnectionName: string,
+    componentId?: number,
+    variableId?: number,
+  ): Promise<EventDataDto> {
+    const stationId = await resolveStationIdOrThrow(
+      this.db,
+      tenantId,
+      ocppConnectionName,
+      'record event data',
+      this.useTenantSchema,
+    );
+
+    return await this.insert(tenantId, {
+      stationId,
+      variableId: variableId ?? null,
+      componentId: componentId ?? null,
+      eventId: event.eventId,
+      trigger: event.trigger,
+      cause: event.cause ?? null,
+      timestamp: new Date(event.timestamp),
+      actualValue: event.actualValue,
+      techCode: event.techCode ?? null,
+      techInfo: event.techInfo ?? null,
+      cleared: event.cleared ?? null,
+      transactionId: event.transactionId ?? null,
+      variableMonitoringId: event.variableMonitoringId ?? null,
+      eventNotificationType: event.eventNotificationType,
+    });
+  }
 }

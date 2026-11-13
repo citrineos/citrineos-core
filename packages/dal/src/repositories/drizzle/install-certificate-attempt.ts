@@ -15,11 +15,11 @@ import {
   tenantInstallCertificateAttemptTable,
 } from '../../db/drizzle/schema/install-certificate-attempt.js';
 import { type CertificateEntity, certificateTable } from '../../db/drizzle/schema/certificate.js';
-import { chargingStationTable } from '../../db/drizzle/schema/charging-station.js';
 import { type Explicit } from '../../db/drizzle/types.js';
 import { DrizzleRepository } from './base.js';
 import { toCertificateDto } from './certificate.js';
 import { type IInstallCertificateAttemptRepository } from '../../../index.js';
+import { resolveStationId } from './resolve-station-id.js';
 import { and, eq, isNull } from 'drizzle-orm';
 
 // ─── Mapper ──────────────────────────────────────────────────────────────────
@@ -63,7 +63,12 @@ export class DrizzleInstallCertificateAttemptRepository
     certificateFileHash: string,
     requestId?: number | null,
   ): Promise<InstallCertificateAttemptDto | undefined> {
-    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    const stationId = await resolveStationId(
+      this.db,
+      tenantId,
+      ocppConnectionName,
+      this.useTenantSchema,
+    );
     if (stationId === undefined) {
       return undefined;
     }
@@ -98,7 +103,12 @@ export class DrizzleInstallCertificateAttemptRepository
     requestId?: number | null,
     certificateType?: CertificateUseEnumType,
   ): Promise<InstallCertificateAttemptDto | undefined> {
-    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    const stationId = await resolveStationId(
+      this.db,
+      tenantId,
+      ocppConnectionName,
+      this.useTenantSchema,
+    );
     if (stationId === undefined) {
       return undefined;
     }
@@ -128,7 +138,12 @@ export class DrizzleInstallCertificateAttemptRepository
     input: Omit<InstallCertificateAttemptCreate, 'stationId'>,
   ): Promise<InstallCertificateAttemptDto> {
     // The row references its station by FK only; the caller supplies the name.
-    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    const stationId = await resolveStationId(
+      this.db,
+      tenantId,
+      ocppConnectionName,
+      this.useTenantSchema,
+    );
     if (stationId === undefined) {
       throw new Error(
         `Cannot record an install-certificate attempt: no charging station named ` +
@@ -174,23 +189,5 @@ export class DrizzleInstallCertificateAttemptRepository
       .limit(1)) as CertificateEntity[];
 
     return certRows[0] ? toCertificateDto(certRows[0]) : undefined;
-  }
-
-  private async resolveStationId(
-    tenantId: number,
-    ocppConnectionName: string,
-  ): Promise<number | undefined> {
-    const rows = await this.db
-      .select({ id: chargingStationTable.id })
-      .from(chargingStationTable)
-      .where(
-        and(
-          eq(chargingStationTable.ocppConnectionName, ocppConnectionName),
-          eq(chargingStationTable.tenantId, tenantId),
-        ),
-      )
-      .limit(1);
-
-    return rows[0]?.id;
   }
 }

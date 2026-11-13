@@ -6,17 +6,13 @@ import type { IConnectorRepository } from '@dal/repositories/repositories.js';
 import type { ConnectorDto, OCPP2_common_types } from '@citrineos/types';
 import { and, eq, isNotNull } from 'drizzle-orm';
 import {
-  chargingStationTable,
-  tenantChargingStationTable,
-} from '../../db/drizzle/schema/charging-station.js';
-import {
   type ConnectorEntity,
   connectorTable,
   tenantConnectorTable,
 } from '../../db/drizzle/schema/connector.js';
 import { type EvseEntity, evseTable, tenantEvseTable } from '../../db/drizzle/schema/evse.js';
 import { type Explicit } from '../../db/drizzle/types.js';
-import { DrizzleRepository, type DrizzleExecutor, type DrizzleWriteContext } from './base.js';
+import { DrizzleRepository, type DrizzleWriteContext } from './base.js';
 import { toEvseDto } from './evse.js';
 import {
   type TariffEntity,
@@ -24,6 +20,7 @@ import {
   tenantTariffTable,
 } from '../../db/drizzle/schema/tariff.js';
 import { toTariffDto } from './tariff.js';
+import { resolveStationId } from './resolve-station-id.js';
 
 // ─── Mapper ──────────────────────────────────────────────────────────────────
 // Maps a Drizzle entity (DB row) to the external ConnectorDto contract.
@@ -114,30 +111,6 @@ export class DrizzleConnectorRepository
     return this.useTenantSchema ? tenantTariffTable(tenantId) : tariffTable;
   }
 
-  private getChargingStationTable(tenantId: number): typeof chargingStationTable {
-    return this.useTenantSchema ? tenantChargingStationTable(tenantId) : chargingStationTable;
-  }
-
-  private async resolveStationId(
-    tenantId: number,
-    ocppConnectionName: string,
-    db: DrizzleExecutor = this.db,
-  ): Promise<number | undefined> {
-    const stations = this.getChargingStationTable(tenantId);
-    const rows = await db
-      .select({ id: stations.id })
-      .from(stations)
-      .where(
-        and(
-          eq(stations.ocppConnectionName, ocppConnectionName),
-          this.tenantFilter(stations, tenantId),
-        ),
-      )
-      .limit(1);
-
-    return rows[0]?.id;
-  }
-
   // attached evse explicitly.
   private async withEvse(tenantId: number, row: ConnectorEntity): Promise<ConnectorDto> {
     const evses = this.getEvseTable(tenantId);
@@ -160,7 +133,12 @@ export class DrizzleConnectorRepository
     ocppConnectionName: string,
     ocpp16ConnectorId: number,
   ): Promise<ConnectorDto | undefined> {
-    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    const stationId = await resolveStationId(
+      this.db,
+      tenantId,
+      ocppConnectionName,
+      this.useTenantSchema,
+    );
     if (stationId === undefined) {
       return undefined;
     }
@@ -186,7 +164,12 @@ export class DrizzleConnectorRepository
     ocppConnectionName: string,
     ocpp201EvseType: OCPP2_common_types.EVSEType,
   ): Promise<ConnectorDto | undefined> {
-    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    const stationId = await resolveStationId(
+      this.db,
+      tenantId,
+      ocppConnectionName,
+      this.useTenantSchema,
+    );
     if (stationId === undefined) {
       return undefined;
     }
@@ -289,7 +272,12 @@ export class DrizzleConnectorRepository
     ocppConnectionName: string,
     evseTypeId?: number,
   ): Promise<ConnectorDto[]> {
-    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    const stationId = await resolveStationId(
+      this.db,
+      tenantId,
+      ocppConnectionName,
+      this.useTenantSchema,
+    );
     if (stationId === undefined) {
       return [];
     }
@@ -329,7 +317,12 @@ export class DrizzleConnectorRepository
     tenantId: number,
     ocppConnectionName: string,
   ): Promise<ConnectorDto[]> {
-    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    const stationId = await resolveStationId(
+      this.db,
+      tenantId,
+      ocppConnectionName,
+      this.useTenantSchema,
+    );
     if (stationId === undefined) {
       return [];
     }

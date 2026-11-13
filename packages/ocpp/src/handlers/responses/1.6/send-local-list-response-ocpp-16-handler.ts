@@ -15,24 +15,28 @@ import {
   OCPP_CallAction,
   OCPPVersion,
 } from '@citrineos/types';
-import type { ILocalAuthListRepository } from '@citrineos/dal';
+import type { ILocalListVersionRepository, ISendLocalListRepository } from '@citrineos/dal';
 
 @AsResponseHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.SendLocalList)
 export class SendLocalListResponseOcpp16Handler extends AbstractHandler {
   protected _ocppSender: IOcppSender;
-  protected _localAuthListRepository: ILocalAuthListRepository;
+  protected _sendLocalListRepository: ISendLocalListRepository;
+  protected _localListVersionRepository: ILocalListVersionRepository;
 
   constructor({
     logger,
     ocppSender,
-    localAuthListRepository,
+    sendLocalListRepository,
+    localListVersionRepository,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
-    localAuthListRepository: ILocalAuthListRepository;
+    sendLocalListRepository: ISendLocalListRepository;
+    localListVersionRepository: ILocalListVersionRepository;
   }) {
     super(logger);
     this._ocppSender = ocppSender;
-    this._localAuthListRepository = localAuthListRepository;
+    this._sendLocalListRepository = sendLocalListRepository;
+    this._localListVersionRepository = localListVersionRepository;
   }
 
   async handle(
@@ -48,7 +52,7 @@ export class SendLocalListResponseOcpp16Handler extends AbstractHandler {
     const stationId = message.context.ocppConnectionName;
 
     const sendLocalListRequest =
-      await this._localAuthListRepository.getSendLocalListRequestByStationIdAndCorrelationId(
+      await this._sendLocalListRepository.getSendLocalListRequestByStationIdAndCorrelationId(
         message.context.tenantId,
         stationId,
         message.context.correlationId,
@@ -63,7 +67,7 @@ export class SendLocalListResponseOcpp16Handler extends AbstractHandler {
 
     switch (message.payload.status) {
       case OCPP1_6.SendLocalListResponseStatus.Accepted:
-        await this._localAuthListRepository.createOrUpdateLocalListVersionFromStationIdAndSendLocalList(
+        await this._localListVersionRepository.createOrUpdateLocalListVersionFromStationIdAndSendLocalList(
           message.context.tenantId,
           stationId,
           sendLocalListRequest,

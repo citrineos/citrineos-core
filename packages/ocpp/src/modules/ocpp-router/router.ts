@@ -539,6 +539,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
                   protocol,
                   correlationId,
                   String(action),
+                  payload,
                 );
               }
             },
@@ -590,6 +591,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
             protocol,
             correlationId,
             String(action),
+            payload,
           );
           const removed = await this._cache.remove(correlationId, transactionNamespace);
           await this._cache.remove(correlationId, CacheNamespace.CallRequests + identifier);
@@ -1228,6 +1230,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
     protocol: OCPPVersionType,
     correlationId: string,
     action: string,
+    request: OcppRequest,
   ): void {
     // Built inside the chain, so a malformed event is logged rather than thrown into the caller.
     Promise.resolve()
@@ -1241,6 +1244,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
             action,
             protocol,
             timestamp: new Date().toISOString(),
+            request,
           }),
         ),
       )

@@ -18,7 +18,11 @@ import {
   Variable,
   VariableStatus,
 } from '../../../index.js';
-import { EventData } from '@dal/models/variable-monitoring/index.js';
+import {
+  EventData,
+  VariableMonitoring,
+  VariableMonitoringStatus,
+} from '@dal/models/variable-monitoring/index.js';
 import { ComponentVariable } from '@dal/models/device-model/component-variable.js';
 import { Connector, Evse } from '@dal/models/location/index.js';
 import { DrizzleComponentRepository, toComponentDto } from '@dal/repositories/drizzle/component.js';
@@ -26,6 +30,7 @@ import {
   DrizzleEventDataRepository,
   toEventDataDto,
 } from '@dal/repositories/drizzle/event-data.js';
+import { DrizzleVariableMonitoringRepository } from '@dal/repositories/drizzle/variable-monitoring.js';
 import { DrizzleVariableRepository, toVariableDto } from '@dal/repositories/drizzle/variable.js';
 import { toVariableAttributeDto } from '@dal/repositories/drizzle/variable-attribute.js';
 import {
@@ -42,6 +47,7 @@ import type { VariableEntity } from '@dal/db/drizzle/schema/variable.js';
 import type { VariableAttributeEntity } from '@dal/db/drizzle/schema/variable-attribute.js';
 import type { VariableCharacteristicsEntity } from '@dal/db/drizzle/schema/variable-characteristics.js';
 import type { VariableStatusEntity } from '@dal/db/drizzle/schema/variable-status.js';
+import { OCPP_CallAction } from '@citrineos/types';
 import { type PgHarness, resetDb, startPgHarness } from '../../utils/pg-harness.js';
 
 // Drizzle device-model cluster repositories over the sequelize-synced schema.
@@ -700,6 +706,328 @@ describe('DrizzleEventDataRepository', () => {
 
     expect(dto!.cleared).toBe(true);
     expect((await EventData.findByPk(event.id))!.get('cleared')).toBe(true);
+  });
+
+  it('createEventDatumByComponentIdAndVariableIdAndStationId stores the event against the station', async () => {
+    const component = await aComponent(TENANT, 'Connector');
+    const variable = await aVariable(TENANT, 'Temperature');
+    const stationId = await stationIdFor(TENANT, STATION);
+
+    const dto = await new DrizzleEventDataRepository(
+      deps(),
+    ).createEventDatumByComponentIdAndVariableIdAndStationId(
+      TENANT,
+      {
+        eventId: 3,
+        timestamp: '2025-04-01T08:30:00.000Z',
+        trigger: 'Delta',
+        actualValue: '22.5',
+        eventNotificationType: 'HardWiredNotification',
+        cleared: false,
+        component: { name: 'Connector' },
+        variable: { name: 'Temperature' },
+      } as any,
+      STATION,
+      component.id,
+      variable.id,
+    );
+
+    expect(dto.timestamp).toBe('2025-04-01T08:30:00.000Z');
+    expect(dto.stationId).toBe(stationId);
+    expect(dto.componentId).toBe(component.id);
+    expect(dto.variableId).toBe(variable.id);
+    expect(await EventData.count()).toBe(1);
+  });
+
+  it('createEventDatumByComponentIdAndVariableIdAndStationId rejects an unknown connection name', async () => {
+    await expect(
+      new DrizzleEventDataRepository(deps()).createEventDatumByComponentIdAndVariableIdAndStationId(
+        TENANT,
+        {
+          eventId: 3,
+          timestamp: '2025-04-01T08:30:00.000Z',
+          trigger: 'Delta',
+          actualValue: '22.5',
+          eventNotificationType: 'HardWiredNotification',
+          component: { name: 'Connector' },
+          variable: { name: 'Temperature' },
+        } as any,
+        'NOT-A-STATION',
+      ),
+    ).rejects.toThrow(/no charging station named/);
+  });
+});
+
+describe('DrizzleVariableMonitoringRepository', () => {
+  const MONITORING = { type: 'UpperThreshold', severity: 3 } as const;
+
+  function repo() {
+    return new DrizzleVariableMonitoringRepository(deps());
+  }
+
+  async function aMonitoring(
+    tenantId: number,
+    overrides: Record<string, unknown> = {},
+  ): Promise<{ databaseId: number }> {
+    const { ocppConnectionName = STATION, ...rest } = overrides;
+    const monitoring = await VariableMonitoring.create({
+      stationId: await stationIdFor(tenantId, ocppConnectionName as string),
+      id: 1,
+      transaction: false,
+      value: 42,
+      ...MONITORING,
+      tenantId,
+      ...rest,
+    } as any);
+    return monitoring as unknown as { databaseId: number };
+  }
+
+  function aMonitoringReport(variableMonitoring: Record<string, unknown>[]) {
+    return {
+      component: { name: 'Connector' },
+      variable: { name: 'Temperature' },
+      variableMonitoring,
+    } as any;
+  }
+
+  async function statusesFor(databaseId: number): Promise<VariableMonitoringStatus[]> {
+    return (await VariableMonitoringStatus.findAll({
+      where: { variableMonitoringId: databaseId },
+    })) as VariableMonitoringStatus[];
+  }
+
+  it('createOrUpdateByMonitoringDataTypeAndStationId stores the report and accepts each monitor', async () => {
+    await aStation(TENANT);
+    const component = await aComponent(TENANT, 'Connector');
+    const variable = await aVariable(TENANT, 'Temperature');
+
+    const saved = await repo().createOrUpdateByMonitoringDataTypeAndStationId(
+      TENANT,
+      aMonitoringReport([
+        { id: 7, transaction: true, value: 55.5, ...MONITORING },
+        { id: 8, transaction: false, value: 10, ...MONITORING },
+      ]),
+      STATION,
+      component.id,
+      variable.id,
+    );
+
+    expect(saved).toHaveLength(2);
+    expect(saved.map((m) => m.id).sort()).toEqual([7, 8]);
+    // DECIMAL comes back from node-postgres as a string; the mapper restores the number.
+    expect(saved.find((m) => m.id === 7)!.value).toBe(55.5);
+    expect(saved.every((m) => m.componentId === component.id)).toBe(true);
+    expect(await VariableMonitoring.count()).toBe(2);
+
+    for (const monitoring of saved) {
+      const statuses = await statusesFor(monitoring.databaseId);
+      expect(statuses).toHaveLength(1);
+      expect(statuses[0].get('status')).toBe('Accepted');
+      expect(statuses[0].get('statusInfo')).toEqual({ reasonCode: 'NotifyMonitoringReport' });
+    }
+  });
+
+  it('a repeated report updates the monitor in place rather than inserting a second row', async () => {
+    await aStation(TENANT);
+    const first = await repo().createOrUpdateByMonitoringDataTypeAndStationId(
+      TENANT,
+      aMonitoringReport([{ id: 7, transaction: false, value: 1, ...MONITORING }]),
+      STATION,
+    );
+    const second = await repo().createOrUpdateByMonitoringDataTypeAndStationId(
+      TENANT,
+      aMonitoringReport([{ id: 7, transaction: true, value: 99, ...MONITORING }]),
+      STATION,
+    );
+
+    expect(second[0].databaseId).toBe(first[0].databaseId);
+    expect(second[0].value).toBe(99);
+    expect(second[0].transaction).toBe(true);
+    expect(await VariableMonitoring.count()).toBe(1);
+    // One status per report, so the second report adds to the first one's.
+    expect(await statusesFor(first[0].databaseId)).toHaveLength(2);
+  });
+
+  it('createOrUpdateByMonitoringDataTypeAndStationId rejects an unknown connection name', async () => {
+    await expect(
+      repo().createOrUpdateByMonitoringDataTypeAndStationId(
+        TENANT,
+        aMonitoringReport([{ id: 7, transaction: false, value: 1, ...MONITORING }]),
+        'NOT-A-STATION',
+      ),
+    ).rejects.toThrow(/no charging station named/);
+  });
+
+  it('createOrUpdateBySetMonitoringDataTypeAndStationId inserts when the station has assigned no id', async () => {
+    await aStation(TENANT);
+
+    const saved = await repo().createOrUpdateBySetMonitoringDataTypeAndStationId(
+      TENANT,
+      { transaction: false, value: 20, component: {}, variable: {}, ...MONITORING } as any,
+      STATION,
+    );
+
+    expect(saved.id).toBeNull();
+    expect(saved.value).toBe(20);
+    expect(await VariableMonitoring.count()).toBe(1);
+  });
+
+  it('createOrUpdateBySetMonitoringDataTypeAndStationId updates the row carrying that id', async () => {
+    const existing = await aMonitoring(TENANT, { id: 4, value: 1 });
+
+    const saved = await repo().createOrUpdateBySetMonitoringDataTypeAndStationId(
+      TENANT,
+      { id: 4, transaction: true, value: 77, component: {}, variable: {}, ...MONITORING } as any,
+      STATION,
+    );
+
+    expect(saved.databaseId).toBe(existing.databaseId);
+    expect(saved.value).toBe(77);
+    expect(await VariableMonitoring.count()).toBe(1);
+  });
+
+  it('rejectAllVariableMonitoringsByStationId records a rejection against every monitor', async () => {
+    const first = await aMonitoring(TENANT, { id: 1 });
+    const second = await aMonitoring(TENANT, { id: 2 });
+    const otherStation = await aMonitoring(TENANT, { id: 3, ocppConnectionName: 'CS-OTHER' });
+
+    await repo().rejectAllVariableMonitoringsByStationId(
+      TENANT,
+      OCPP_CallAction.SetVariableMonitoring,
+      STATION,
+    );
+
+    expect(await statusesFor(first.databaseId)).toHaveLength(1);
+    expect((await statusesFor(second.databaseId))[0].get('status')).toBe('Rejected');
+    expect(await statusesFor(otherStation.databaseId)).toHaveLength(0);
+  });
+
+  it('rejectAllVariableMonitoringsByStationId writes nothing for an unknown connection name', async () => {
+    const monitoring = await aMonitoring(TENANT, { id: 1 });
+
+    await repo().rejectAllVariableMonitoringsByStationId(
+      TENANT,
+      OCPP_CallAction.SetVariableMonitoring,
+      'NOT-A-STATION',
+    );
+
+    expect(await statusesFor(monitoring.databaseId)).toHaveLength(0);
+  });
+
+  // VariableMonitorings is keyed on databaseId while `id` holds the OCPP monitoring
+  // id, so the two are seeded crossed over here: keying on the wrong column rejects
+  // the other row.
+  it('rejectVariableMonitoringByIdAndStationId matches the OCPP id, not the primary key', async () => {
+    const first = await aMonitoring(TENANT, { id: 2 });
+    const second = await aMonitoring(TENANT, { id: 1 });
+    expect(first.databaseId).toBe(1);
+    expect(second.databaseId).toBe(2);
+
+    await repo().rejectVariableMonitoringByIdAndStationId(
+      TENANT,
+      OCPP_CallAction.ClearVariableMonitoring,
+      1,
+      STATION,
+    );
+
+    expect(await statusesFor(second.databaseId)).toHaveLength(1);
+    expect(await statusesFor(first.databaseId)).toHaveLength(0);
+  });
+
+  it('updateResultByStationId assigns the accepted id and records the status', async () => {
+    const component = await aComponent(TENANT, 'Connector', 'A');
+    const variable = await aVariable(TENANT, 'Temperature');
+    const existing = await aMonitoring(TENANT, {
+      id: null,
+      componentId: component.id,
+      variableId: variable.id,
+    });
+
+    const updated = await repo().updateResultByStationId(
+      TENANT,
+      {
+        id: 12,
+        status: 'Accepted',
+        statusInfo: { reasonCode: 'Ok' },
+        component: { name: 'Connector', instance: 'A' },
+        variable: { name: 'Temperature' },
+        ...MONITORING,
+      } as any,
+      STATION,
+    );
+
+    expect(updated.databaseId).toBe(existing.databaseId);
+    expect(updated.id).toBe(12);
+    const statuses = await statusesFor(existing.databaseId);
+    expect(statuses).toHaveLength(1);
+    expect(statuses[0].get('status')).toBe('Accepted');
+    expect(statuses[0].get('statusInfo')).toEqual({ reasonCode: 'Ok' });
+  });
+
+  it('updateResultByStationId leaves the id alone when the station rejected the monitor', async () => {
+    const component = await aComponent(TENANT, 'Connector');
+    const variable = await aVariable(TENANT, 'Temperature');
+    const existing = await aMonitoring(TENANT, {
+      id: null,
+      componentId: component.id,
+      variableId: variable.id,
+    });
+
+    const updated = await repo().updateResultByStationId(
+      TENANT,
+      {
+        id: 12,
+        status: 'Rejected',
+        component: { name: 'Connector' },
+        variable: { name: 'Temperature' },
+        ...MONITORING,
+      } as any,
+      STATION,
+    );
+
+    expect(updated.id).toBeNull();
+    expect((await statusesFor(existing.databaseId))[0].get('status')).toBe('Rejected');
+  });
+
+  it('updateResultByStationId throws when no monitor carries that component and variable', async () => {
+    await aStation(TENANT);
+
+    await expect(
+      repo().updateResultByStationId(
+        TENANT,
+        {
+          status: 'Accepted',
+          component: { name: 'Connector' },
+          variable: { name: 'Temperature' },
+          ...MONITORING,
+        } as any,
+        STATION,
+      ),
+    ).rejects.toThrow(/Unable to update set monitoring result/);
+  });
+
+  it("updateResultByStationId does not reach another tenant's monitor", async () => {
+    const component = await aComponent(OTHER_TENANT, 'Connector');
+    const variable = await aVariable(OTHER_TENANT, 'Temperature');
+    await aMonitoring(OTHER_TENANT, {
+      id: null,
+      componentId: component.id,
+      variableId: variable.id,
+    });
+    await aStation(TENANT);
+
+    await expect(
+      repo().updateResultByStationId(
+        TENANT,
+        {
+          status: 'Accepted',
+          component: { name: 'Connector' },
+          variable: { name: 'Temperature' },
+          ...MONITORING,
+        } as any,
+        STATION,
+      ),
+    ).rejects.toThrow(/Unable to update set monitoring result/);
   });
 });
 

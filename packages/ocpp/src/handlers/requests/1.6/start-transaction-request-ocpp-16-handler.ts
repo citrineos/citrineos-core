@@ -9,9 +9,20 @@ import {
   type IOcppSender,
   recordAuthorizeResult,
 } from '@citrineos/base';
-import { type HandlerProperties, OCPP1_6, OCPP_CallAction, OCPPVersion } from '@citrineos/types';
-import type { TransactionService } from '@modules/transactions/transaction-service.js';
 import type { IConnectorRepository, ITransactionRepository } from '@citrineos/dal';
+import {
+  AuthorizationAttemptReasonEnum,
+  type HandlerProperties,
+  OCPP1_6,
+  OCPP_CallAction,
+  OCPPVersion,
+  type TransactionDto,
+} from '@citrineos/types';
+import type { TransactionService } from '@modules/transactions/transaction-service.js';
+import {
+  type AuthorizationAttemptService,
+  newAuthorizationDecision,
+} from '@services/authorization-attempts/index.js';
 
 @AsRequestHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.StartTransaction)
 export class StartTransactionRequestOcpp16Handler extends AbstractHandler {
@@ -19,6 +30,7 @@ export class StartTransactionRequestOcpp16Handler extends AbstractHandler {
   protected _connectorRepository: IConnectorRepository;
   protected _transactionRepository: ITransactionRepository;
   protected _transactionService: TransactionService;
+  protected _authorizationAttemptService: Pick<AuthorizationAttemptService, 'record'>;
 
   constructor({
     logger,
@@ -26,11 +38,13 @@ export class StartTransactionRequestOcpp16Handler extends AbstractHandler {
     connectorRepository,
     transactionRepository,
     transactionService,
+    authorizationAttemptService,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
     connectorRepository: IConnectorRepository;
     transactionRepository: ITransactionRepository;
     transactionService: TransactionService;
+    authorizationAttemptService: Pick<AuthorizationAttemptService, 'record'>;
   }) {
     super(logger);
 
@@ -38,6 +52,7 @@ export class StartTransactionRequestOcpp16Handler extends AbstractHandler {
     this._connectorRepository = connectorRepository;
     this._transactionRepository = transactionRepository;
     this._transactionService = transactionService;
+    this._authorizationAttemptService = authorizationAttemptService;
   }
 
   async handle(
@@ -52,12 +67,16 @@ export class StartTransactionRequestOcpp16Handler extends AbstractHandler {
     const tenantId = message.context.tenantId;
     const ocppConnectionName = message.context.ocppConnectionName;
     const request = message.payload;
+    // Sending replaces the message's payload and context with the response's.
+    const context = message.context;
 
     // Authorize
+    const decision = newAuthorizationDecision();
     const response = await this._transactionService.authorizeOcpp16IdToken(
       message.context,
       request.idTag,
       request.connectorId,
+      decision,
     );
     recordAuthorizeResult({
       status: response.idTagInfo.status,
@@ -66,17 +85,17 @@ export class StartTransactionRequestOcpp16Handler extends AbstractHandler {
     });
 
     // Send response to charger
+    let newTransaction: TransactionDto | undefined;
     if (response.idTagInfo.status !== OCPP1_6.StartTransactionResponseStatus.Accepted) {
       await this._ocppSender.sendCallResultWithMessage(message, response);
     } else {
       try {
         // Create transaction
-        const newTransaction =
-          await this._transactionRepository.createTransactionByStartTransaction(
-            tenantId,
-            request,
-            ocppConnectionName,
-          );
+        newTransaction = await this._transactionRepository.createTransactionByStartTransaction(
+          tenantId,
+          request,
+          ocppConnectionName,
+        );
         response.transactionId = parseInt(newTransaction.transactionId);
       } catch (error) {
         const errorMessage = (error as Error).message || '';
@@ -87,12 +106,23 @@ export class StartTransactionRequestOcpp16Handler extends AbstractHandler {
         } else {
           this._logger.error(`Failed to create transaction for idTag ${request.idTag}`, error);
         }
+        decision.reason = AuthorizationAttemptReasonEnum.Error;
         response.idTagInfo = {
           status: OCPP1_6.StartTransactionResponseStatus.Invalid,
         };
       }
       await this._ocppSender.sendCallResultWithMessage(message, response);
     }
+
+    await this._authorizationAttemptService.record(context, {
+      ocppVersion: message.protocol,
+      action: message.action,
+      idToken: request.idTag,
+      decision,
+      responseStatus: response.idTagInfo.status,
+      connectorId: request.connectorId,
+      transaction: newTransaction,
+    });
 
     if (response.idTagInfo.status === OCPP1_6.StartTransactionResponseStatus.Accepted) {
       await this.deactivateOtherActiveTransactionsAtEvse16(

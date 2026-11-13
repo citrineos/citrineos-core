@@ -9,22 +9,22 @@ import {
   type IOcppSender,
 } from '@citrineos/base';
 import {
+  AuthorizationAttemptReasonEnum,
   type AuthorizationDto,
   AuthorizationStatusEnum,
   type HandlerProperties,
   OCPP1_6,
   OCPP_CallAction,
   OCPPVersion,
+  type TransactionCreate,
 } from '@citrineos/types';
-import {
-  type IAuthorizationRepository,
-  type ITransactionRepository,
-  StartTransaction,
-  Transaction,
-} from '@citrineos/dal';
+import { type IAuthorizationRepository, type ITransactionRepository } from '@citrineos/dal';
 import { OCPP1_6_Mapper } from '@citrineos/dal';
-import { stationIdFilter } from '@citrineos/dal';
 import type { CostCalculator } from '@modules/transactions/cost-calculator.js';
+import {
+  type AuthorizationAttemptService,
+  newAuthorizationDecision,
+} from '@services/authorization-attempts/index.js';
 
 @AsRequestHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.StopTransaction)
 export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
@@ -32,6 +32,7 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
   protected _authorizationRepository: IAuthorizationRepository;
   protected _transactionRepository: ITransactionRepository;
   protected _costCalculator: CostCalculator;
+  protected _authorizationAttemptService: Pick<AuthorizationAttemptService, 'record'>;
 
   constructor({
     logger,
@@ -39,11 +40,13 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
     authorizationRepository,
     transactionRepository,
     costCalculator,
+    authorizationAttemptService,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
     authorizationRepository: IAuthorizationRepository;
     transactionRepository: ITransactionRepository;
     costCalculator: CostCalculator;
+    authorizationAttemptService: Pick<AuthorizationAttemptService, 'record'>;
   }) {
     super(logger);
 
@@ -51,6 +54,7 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
     this._authorizationRepository = authorizationRepository;
     this._transactionRepository = transactionRepository;
     this._costCalculator = costCalculator;
+    this._authorizationAttemptService = authorizationAttemptService;
   }
 
   async handle(
@@ -62,6 +66,8 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
     const tenantId = message.context.tenantId;
     const ocppConnectionName = message.context.ocppConnectionName;
     const request = message.payload;
+    // Sending replaces the message's payload and context with the response's.
+    const context = message.context;
 
     const authorizations: AuthorizationDto[] = request.idTag
       ? await this._authorizationRepository.readAllByQuerystring(tenantId, {
@@ -74,17 +80,26 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
     const authorization: AuthorizationDto | undefined =
       authorizations.length === 1 ? authorizations[0] : undefined;
 
+    const decision = newAuthorizationDecision();
+    decision.authorization = authorization;
     let idTokenInfoStatus = authorization?.status;
     if (authorization === undefined && request.idTag) {
       // Unknown idTag, fallback to Invalid
       idTokenInfoStatus = 'Invalid';
-    }
-    if (
-      idTokenInfoStatus === AuthorizationStatusEnum.Accepted &&
+      decision.reason =
+        authorizations.length > 1
+          ? AuthorizationAttemptReasonEnum.MultipleFound
+          : AuthorizationAttemptReasonEnum.NotFound;
+    } else if (idTokenInfoStatus !== AuthorizationStatusEnum.Accepted) {
+      decision.reason = AuthorizationAttemptReasonEnum.StoredStatus;
+    } else if (
       authorization?.cacheExpiryDateTime &&
       new Date() > new Date(authorization.cacheExpiryDateTime)
     ) {
       idTokenInfoStatus = AuthorizationStatusEnum.Expired;
+      decision.reason = AuthorizationAttemptReasonEnum.CacheExpired;
+    } else {
+      decision.reason = AuthorizationAttemptReasonEnum.Accepted;
     }
     switch (idTokenInfoStatus) {
       case AuthorizationStatusEnum.Accepted:
@@ -121,16 +136,27 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
 
     await this._ocppSender.sendCallResultWithMessage(message, stopTransactionResponse);
 
-    const transaction = await Transaction.findOne({
-      where: {
-        stationId: await stationIdFilter(tenantId, ocppConnectionName),
+    const transactionId = request.transactionId.toString();
+    const transaction =
+      await this._transactionRepository.readTransactionWithStartTransactionByStationIdAndTransactionId(
         tenantId,
-        transactionId: request.transactionId.toString(),
-      },
-      include: [StartTransaction],
-    });
+        ocppConnectionName,
+        transactionId,
+      );
 
-    if (!transaction) {
+    if (request.idTag) {
+      await this._authorizationAttemptService.record(context, {
+        ocppVersion: message.protocol,
+        action: message.action,
+        idToken: request.idTag,
+        decision,
+        responseStatus: stopTransactionResponse.idTagInfo?.status,
+        transaction,
+        transactionId,
+      });
+    }
+
+    if (!transaction?.id) {
       this._logger.error(`Transaction ${request.transactionId} not found.`);
       return;
     }
@@ -171,29 +197,44 @@ export class StopTransactionRequestOcpp16Handler extends AbstractHandler {
       );
     }
 
+    // Sole owner of the final timeSpentCharging: 1.6 reports no charging duration, so the whole
+    // session is billed as charging time. Always set, so cost calculation never sees it unset.
+    const startTime = transaction.startTime ? Date.parse(transaction.startTime) : Number.NaN;
+    const stopTime = Date.parse(request.timestamp);
+    const elapsedSeconds = Math.floor((stopTime - startTime) / 1000);
+
+    const updates: Partial<TransactionCreate> = {
+      isActive: false,
+      stoppedReason,
+      endTime: request.timestamp,
+      timeSpentCharging: Number.isFinite(elapsedSeconds) ? Math.max(0, elapsedSeconds) : 0,
+    };
+
     if (transaction.startTransaction) {
-      transaction.totalKwh = (request.meterStop - transaction.startTransaction.meterStart) / 1000; // Convert from Wh to kWh
+      updates.totalKwh = (request.meterStop - transaction.startTransaction.meterStart) / 1000; // Convert from Wh to kWh
     } else {
       this._logger.warn(
         `StartTransaction record not found at station ${ocppConnectionName} for transactionId ${request.transactionId}.
         Cannot calculate totalKwh.`,
       );
     }
-    transaction.isActive = false;
-    transaction.stoppedReason = stoppedReason;
-    transaction.endTime = request.timestamp;
 
-    // Sole owner of the final timeSpentCharging: 1.6 reports no charging duration, so the whole
-    // session is billed as charging time. Always set, so cost calculation never sees it unset.
-    const startTime = transaction.startTime ? Date.parse(transaction.startTime) : Number.NaN;
-    const stopTime = Date.parse(request.timestamp);
-    const elapsedSeconds = Math.floor((stopTime - startTime) / 1000);
-    transaction.timeSpentCharging = Number.isFinite(elapsedSeconds)
-      ? Math.max(0, elapsedSeconds)
-      : 0;
-    await transaction.save();
+    const updatedTransaction =
+      await this._transactionRepository.updateTransactionByStationIdAndTransactionId(
+        tenantId,
+        updates,
+        transactionId,
+        ocppConnectionName,
+      );
 
-    const totalCost = await this._costCalculator.calculateTotalCost(tenantId, transaction);
+    if (!updatedTransaction) {
+      this._logger.error(
+        `Failed to end transaction ${request.transactionId} at station ${ocppConnectionName}.`,
+      );
+      return;
+    }
+
+    const totalCost = await this._costCalculator.calculateTotalCost(tenantId, updatedTransaction);
     if (totalCost != null) {
       await this._transactionRepository.updateTransactionTotalCostById(
         tenantId,

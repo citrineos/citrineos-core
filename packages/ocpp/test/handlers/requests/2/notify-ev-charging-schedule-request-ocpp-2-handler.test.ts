@@ -64,10 +64,10 @@ describe('NotifyEVChargingScheduleRequestOcpp2Handler', () => {
     getActiveTransactionByStationIdAndEvseId: ReturnType<typeof vi.fn>;
   };
   let chargingProfileRepository: {
-    getNextChargingScheduleId: ReturnType<typeof vi.fn>;
     getNextChargingProfileId: ReturnType<typeof vi.fn>;
     getNextStackLevel: ReturnType<typeof vi.fn>;
   };
+  let chargingScheduleRepository: { getNextChargingScheduleId: ReturnType<typeof vi.fn> };
   let variableAttributeRepository: { readAllByQuerystring: ReturnType<typeof vi.fn> };
   let smartChargingService: { checkLimitsOfChargingSchedule: ReturnType<typeof vi.fn> };
   let ocppSender: ReturnType<typeof makeMockOcppSender>;
@@ -79,9 +79,11 @@ describe('NotifyEVChargingScheduleRequestOcpp2Handler', () => {
       getActiveTransactionByStationIdAndEvseId: vi.fn().mockResolvedValue(TRANSACTION),
     };
     chargingProfileRepository = {
-      getNextChargingScheduleId: vi.fn().mockResolvedValue(SCHEDULE_ID),
       getNextChargingProfileId: vi.fn().mockResolvedValue(PROFILE_ID),
       getNextStackLevel: vi.fn().mockResolvedValue(STACK_LEVEL),
+    };
+    chargingScheduleRepository = {
+      getNextChargingScheduleId: vi.fn().mockResolvedValue(SCHEDULE_ID),
     };
     variableAttributeRepository = { readAllByQuerystring: vi.fn().mockResolvedValue([]) };
     smartChargingService = { checkLimitsOfChargingSchedule: vi.fn().mockResolvedValue(undefined) };
@@ -93,6 +95,7 @@ describe('NotifyEVChargingScheduleRequestOcpp2Handler', () => {
         ocppSender,
         transactionRepository,
         chargingProfileRepository,
+        chargingScheduleRepository,
         variableAttributeRepository,
         smartChargingService,
       }),
@@ -154,7 +157,7 @@ describe('NotifyEVChargingScheduleRequestOcpp2Handler', () => {
     await handler.handle(aNotifyEVChargingScheduleMessage(aNotifyEVChargingScheduleRequest()));
 
     expect(ocppSender.sendCall).not.toHaveBeenCalled();
-    expect(chargingProfileRepository.getNextChargingScheduleId).not.toHaveBeenCalled();
+    expect(chargingScheduleRepository.getNextChargingScheduleId).not.toHaveBeenCalled();
     expect(chargingProfileRepository.getNextChargingProfileId).not.toHaveBeenCalled();
   });
 
@@ -169,8 +172,8 @@ describe('NotifyEVChargingScheduleRequestOcpp2Handler', () => {
       ),
     );
 
-    expect(chargingProfileRepository.getNextChargingScheduleId).toHaveBeenCalledOnce();
-    expect(chargingProfileRepository.getNextChargingScheduleId).toHaveBeenCalledWith(
+    expect(chargingScheduleRepository.getNextChargingScheduleId).toHaveBeenCalledOnce();
+    expect(chargingScheduleRepository.getNextChargingScheduleId).toHaveBeenCalledWith(
       DEFAULT_TENANT_ID,
       STATION_ID,
     );

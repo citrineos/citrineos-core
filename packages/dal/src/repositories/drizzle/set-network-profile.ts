@@ -9,7 +9,6 @@ import type {
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import type { SetNetworkProfileDto } from '@citrineos/types';
 import { and, eq } from 'drizzle-orm';
-import { chargingStationTable } from '../../db/drizzle/schema/charging-station.js';
 import {
   type SetNetworkProfileEntity,
   setNetworkProfileTable,
@@ -17,6 +16,7 @@ import {
 } from '../../db/drizzle/schema/set-network-profile.js';
 import { type Explicit } from '../../db/drizzle/types.js';
 import { DrizzleRepository } from './base.js';
+import { resolveStationId } from './resolve-station-id.js';
 
 // ─── Mapper ──────────────────────────────────────────────────────────────────
 // Maps a Drizzle entity (DB row) to the external SetNetworkProfileDto contract.
@@ -62,7 +62,12 @@ export class DrizzleSetNetworkProfileRepository
     const tenantId = values.tenantId ?? DEFAULT_TENANT_ID;
     const stationId =
       values.stationId ??
-      (await this.resolveStationId(tenantId, values.ocppConnectionName ?? undefined));
+      (await resolveStationId(
+        this.db,
+        tenantId,
+        values.ocppConnectionName ?? undefined,
+        this.useTenantSchema,
+      ));
     return this.insert(tenantId, {
       stationId,
       correlationId: values.correlationId,
@@ -85,7 +90,12 @@ export class DrizzleSetNetworkProfileRepository
     correlationId: string,
   ): Promise<SetNetworkProfileDto | undefined> {
     // The SetNetworkProfile row is keyed on stationId, so resolve it from the connection name.
-    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    const stationId = await resolveStationId(
+      this.db,
+      tenantId,
+      ocppConnectionName,
+      this.useTenantSchema,
+    );
     if (stationId === undefined) {
       return undefined;
     }
@@ -103,25 +113,5 @@ export class DrizzleSetNetworkProfileRepository
       .limit(1)) as SetNetworkProfileEntity[];
 
     return rows[0] ? this.toDto(rows[0]) : undefined;
-  }
-
-  private async resolveStationId(
-    tenantId: number,
-    ocppConnectionName?: string,
-  ): Promise<number | undefined> {
-    if (!ocppConnectionName) {
-      return undefined;
-    }
-    const rows = await this.db
-      .select({ id: chargingStationTable.id })
-      .from(chargingStationTable)
-      .where(
-        and(
-          eq(chargingStationTable.ocppConnectionName, ocppConnectionName),
-          eq(chargingStationTable.tenantId, tenantId),
-        ),
-      )
-      .limit(1);
-    return rows[0]?.id;
   }
 }

@@ -1,0 +1,317 @@
+{
+  "Common": {
+    "save": "保存",
+    "cancel": "取消",
+    "delete": "删除",
+    "create": "创建",
+    "edit": "编辑",
+    "clear": "清除",
+    "search": "搜索",
+    "searchOptions": "搜索选项",
+    "searchColumns": "搜索列",
+    "export": "导出",
+    "refresh": "刷新",
+    "close": "关闭",
+    "confirm": "确认",
+    "back": "返回",
+    "add": "添加",
+    "remove": "移除",
+    "ok": "确定",
+    "submit": "提交",
+    "apply": "应用",
+    "reset": "重置",
+    "loading": "加载中",
+    "loadingEllipsis": "加载中...",
+    "yes": "是",
+    "no": "否",
+    "actions": "操作",
+    "status": "状态",
+    "online": "在线",
+    "offline": "离线",
+    "active": "活跃",
+    "inactive": "未激活",
+    "unknown": "未知",
+    "time": "时间",
+    "copiedToClipboard": "已复制到剪贴板。",
+    "copiedValueToClipboard": "已将 {value} 复制到剪贴板。",
+    "enabled": "已启用",
+    "disabled": "已禁用",
+    "noResults": "未找到结果",
+    "noDataFound": "未找到数据",
+    "nothingFound": "未找到任何内容。",
+    "error": "错误",
+    "success": "成功",
+    "select": "选择",
+    "selectItem": "选择项目",
+    "selectOption": "请选择一个选项",
+    "selectOptions": "请选择选项...",
+    "selected": "已选择",
+    "openMenu": "打开菜单",
+    "filters": "筛选",
+    "activeFilters": "当前筛选条件",
+    "addFilter": "添加筛选条件",
+    "addFilterButton": "添加筛选",
+    "clearAll": "全部清除",
+    "searchField": "搜索{field}…",
+    "atMost": "最多 {value}",
+    "after": "{value} 之后",
+    "rowsSelected": "已选择 {selected} / {total} 行。",
+    "pageOf": "第 {page} 页，共 {total} 页",
+    "pickDateRange": "选择日期范围",
+    "startTypingAddress": "开始输入地址...",
+    "useValue": "使用“{value}”",
+    "removeFilter": "移除筛选条件：{field}"
+  },
+  "filters": {
+    "valueOrLess": "{unit} 或更少",
+    "previewText": "“{label}”包含“{value}”",
+    "previewNumber": "“{label}”最多为 {value}",
+    "previewDate": "“{label}”在{preset}内",
+    "previewEnum": "“{label}”为 {value}",
+    "previewYes": "“{label}”为是",
+    "previewNo": "“{label}”为否"
+  },
+  "filterPresets": {
+    "today": "今天",
+    "last7Days": "最近7天",
+    "last30Days": "最近30天",
+    "last3Months": "最近3个月",
+    "thisYear": "今年"
+  },
+  "openingHours": {
+    "title": "营业时间",
+    "twentyFourSeven": "24/7全天候营业",
+    "twentyFourSevenDescription": "此位置每周7天、每天24小时开放",
+    "regularHours": "常规营业时间",
+    "noRegularHours": "未指定常规营业时间",
+    "exceptionalOpenings": "特殊开放",
+    "exceptionalClosings": "特殊关闭",
+    "specialOpening": "特殊开放",
+    "closed": "已关闭",
+    "form": {
+      "addHours": "添加时段",
+      "addOpening": "添加开放日期",
+      "addClosing": "添加关闭日期",
+      "selectDay": "选择日期",
+      "exceptionalOpeningsDescription": "此位置开放的特殊日期",
+      "exceptionalClosingsDescription": "此位置关闭的特殊日期",
+      "removeTimeSlot": "移除时段？",
+      "removeTimeSlotConfirm": "确定要移除此时段吗？",
+      "removeOpening": "移除特殊开放？",
+      "removeOpeningConfirm": "确定要移除此特殊开放吗？",
+      "removeClosing": "移除特殊关闭？",
+      "removeClosingConfirm": "确定要移除此特殊关闭吗？"
+    },
+    "weekdays": {
+      "monday": "星期一",
+      "tuesday": "星期二",
+      "wednesday": "星期三",
+      "thursday": "星期四",
+      "friday": "星期五",
+      "saturday": "星期六",
+      "sunday": "星期日"
+    }
+  },
+  "pages": {
+    "login": {
+      "title": "登录您的账户",
+      "description": "输入您的凭据以访问控制台",
+      "signin": "登录",
+      "signingIn": "正在登录...",
+      "signup": "注册",
+      "divider": "或",
+      "invalidCredentials": "邮箱或密码无效",
+      "fields": {
+        "email": "邮箱",
+        "password": "密码",
+        "role": "角色"
+      },
+      "placeholders": {
+        "email": "admin@example.com",
+        "password": "请输入密码"
+      },
+      "errors": {
+        "validEmail": "邮箱地址无效",
+        "requiredEmail": "邮箱为必填项",
+        "requiredPassword": "密码为必填项"
+      },
+      "buttons": {
+        "submit": "登录",
+        "forgotPassword": "忘记密码？",
+        "noAccount": "还没有账户？",
+        "rememberMe": "记住我"
+      },
+      "localDevNotice": "当前正在本地开发模式下运行，仅供开发使用。"
+    },
+    "forgotPassword": {
+      "title": "忘记密码？",
+      "fields": {
+        "email": "邮箱"
+      },
+      "errors": {
+        "validEmail": "邮箱地址无效",
+        "requiredEmail": "邮箱为必填项"
+      },
+      "buttons": {
+        "submit": "发送重置说明"
+      }
+    },
+    "register": {
+      "title": "注册您的账户",
+      "fields": {
+        "email": "邮箱",
+        "password": "密码"
+      },
+      "errors": {
+        "validEmail": "邮箱地址无效",
+        "requiredEmail": "邮箱为必填项",
+        "requiredPassword": "密码为必填项"
+      },
+      "buttons": {
+        "submit": "注册",
+        "haveAccount": "已有账户？"
+      }
+    },
+    "updatePassword": {
+      "title": "更新密码",
+      "fields": {
+        "password": "新密码",
+        "confirmPassword": "确认新密码"
+      },
+      "errors": {
+        "confirmPasswordNotMatch": "两次输入的密码不一致",
+        "requiredPassword": "密码为必填项",
+        "requiredConfirmPassword": "确认密码为必填项"
+      },
+      "buttons": {
+        "submit": "更新"
+      }
+    },
+    "error": {
+      "info": "您可能忘记将 {action} 组件添加到 {resource} 资源。",
+      "title": "页面未找到。",
+      "description": "您要查找的页面不存在。",
+      "404": "抱歉，您访问的页面不存在。",
+      "resource404": "请确认您已创建 {resource} 资源。",
+      "backHome": "返回首页"
+    },
+    "redirectingToLogin": "正在跳转到登录页...",
+    "checkingAuth": "正在验证身份...",
+    "redirectingToKeycloak": "正在跳转到Keycloak...",
+    "redirectingToKeycloakLogin": "正在跳转到Keycloak登录..."
+  },
+  "actions": {
+    "create": "创建",
+    "delete": "删除",
+    "edit": "编辑",
+    "list": "列表",
+    "show": "查看"
+  },
+  "buttons": {
+    "add": "添加",
+    "cancel": "取消",
+    "clear": "清除",
+    "clone": "克隆",
+    "columns": "列",
+    "confirm": "确定吗？",
+    "confirmText": "确认",
+    "create": "创建",
+    "delete": "删除",
+    "download": "下载",
+    "edit": "编辑",
+    "exportToCsv": "导出为CSV",
+    "filter": "筛选",
+    "import": "导入",
+    "logout": "退出登录",
+    "notAccessTitle": "您没有权限访问此资源。",
+    "ok": "确定",
+    "refresh": "刷新",
+    "save": "保存",
+    "saving": "正在保存...",
+    "show": "查看",
+    "submit": "提交",
+    "undo": "撤销",
+    "upload": "上传"
+  },
+  "warnWhenUnsavedChanges": "确定要离开吗？您有未保存的更改。",
+  "notifications": {
+    "success": "成功",
+    "error": "错误（状态码：{statusCode}）",
+    "undoable": "您有 {seconds} 秒时间撤销",
+    "createSuccess": "已成功创建{resource}",
+    "createError": "创建{resource}时出错（状态码：{statusCode}）",
+    "deleteSuccess": "已成功删除{resource}",
+    "deleteError": "删除{resource}时出错（状态码：{statusCode}）",
+    "editSuccess": "已成功编辑{resource}",
+    "editError": "编辑{resource}时出错（状态码：{statusCode}）",
+    "importProgress": "正在导入：{processed}/{total}"
+  },
+  "notificationProvider": {
+    "notAllowed": "不允许",
+    "missingRequiredParameter": "缺少必需参数：{parameter}",
+    "noPermission": "您没有权限访问此资源。",
+    "contactAdministrator": "如果您认为这是错误，请联系管理员。"
+  },
+  "messages": {
+    "requestSuccessful": "请求成功 {payload}",
+    "requestFailed": "请求失败",
+    "noSuccessfulResponse": "请求未收到成功响应。",
+    "requestFailedWithMessage": "请求失败，消息：{message}"
+  },
+  "auth": {
+    "loginFailed": "登录失败"
+  },
+  "confirmDialog": {
+    "title": "确定吗？",
+    "description": "此操作无法撤销。"
+  },
+  "accessDenied": "访问被拒绝",
+  "imageUploadFailed": "图片上传失败。",
+  "loading": "加载中",
+  "noDataFound": "未找到数据",
+  "somethingWentWrong": "出错了。",
+  "loggedOut": "已退出登录！正在跳转到登录页...",
+  "tags": {
+    "clone": "克隆"
+  },
+  "table": {
+    "actions": "操作",
+    "bulkActions": "批量操作",
+    "clearFilters": "清除筛选",
+    "noResultsFound": "未找到结果",
+    "selectAll": "全选",
+    "selected": "已选择",
+    "toggleColumns": "切换列",
+    "resetColumns": "重置列"
+  },
+  "dialogs": {
+    "areYouSure": "确定吗？",
+    "thisActionCannotBeUndone": "此操作无法撤销。"
+  },
+  "placeholders": {
+    "search": "搜索",
+    "select": "选择"
+  },
+  "pagination": {
+    "buttons": {
+      "goToFirstPage": "转到第一页",
+      "goToNextPage": "转到下一页",
+      "goToPreviousPage": "转到上一页",
+      "goToLastPage": "转到最后一页"
+    },
+    "rowsPerPage": "每页行数"
+  },
+  "menu": {
+    "overview": "概览",
+    "help": "帮助",
+    "language": "语言",
+    "expandSidebar": "展开侧边栏",
+    "collapseSidebar": "收起侧边栏",
+    "themes": {
+      "changeTo": "切换到",
+      "dark": "深色",
+      "light": "浅色",
+      "mode": "模式"
+    }
+  }
+}

@@ -166,7 +166,7 @@ describe('A composite schedule reported for a station EVSE number', () => {
 
   function aHandler() {
     return getTestInstance(container, GetCompositeScheduleResponseOcpp201Handler, {
-      chargingProfileRepository: new SequelizeChargingProfileRepository({
+      compositeScheduleRepository: new SequelizeChargingProfileRepository({
         config,
         logger: undefined,
         sequelizeInstance,
@@ -283,7 +283,7 @@ describe('A composite schedule reported by an OCPP 2.1 station', () => {
       1,
     );
     const handler = getTestInstance(container, GetCompositeScheduleResponseOcpp21Handler, {
-      chargingProfileRepository: new SequelizeChargingProfileRepository({
+      compositeScheduleRepository: new SequelizeChargingProfileRepository({
         config,
         logger: undefined,
         sequelizeInstance,

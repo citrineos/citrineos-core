@@ -9,7 +9,10 @@ import {
   tenantChargingScheduleTable,
 } from '../../db/drizzle/schema/charging-schedule.js';
 import { type Explicit } from '../../db/drizzle/types.js';
-import { DrizzleRepository } from './base.js';
+import { and, desc, eq, inArray, max } from 'drizzle-orm';
+import type { ChargingScheduleInput } from '../../mappers/2.0.1/charging-profile-mapper.js';
+import type { IChargingScheduleRepository } from '../repositories.js';
+import { DrizzleRepository, type DrizzleWriteContext } from './base.js';
 
 // ─── Mapper ──────────────────────────────────────────────────────────────────
 // Maps a Drizzle entity (DB row) to the external ChargingScheduleDto contract.
@@ -37,10 +40,10 @@ export function toChargingScheduleDto(entity: ChargingScheduleEntity): ChargingS
   return dto;
 }
 
-export class DrizzleChargingScheduleRepository extends DrizzleRepository<
-  typeof chargingScheduleTable,
-  ChargingScheduleDto
-> {
+export class DrizzleChargingScheduleRepository
+  extends DrizzleRepository<typeof chargingScheduleTable, ChargingScheduleDto>
+  implements IChargingScheduleRepository
+{
   protected getTable(tenantId: number): typeof chargingScheduleTable {
     return this.useTenantSchema ? tenantChargingScheduleTable(tenantId) : chargingScheduleTable;
   }
@@ -49,5 +52,93 @@ export class DrizzleChargingScheduleRepository extends DrizzleRepository<
     return toChargingScheduleDto(row);
   }
 
-  // Domain query/write methods intentionally omitted — stub outline only.
+  async createForProfile(
+    tenantId: number,
+    ocppConnectionName: string,
+    chargingProfileDatabaseId: number,
+    input: ChargingScheduleInput,
+    ctx?: DrizzleWriteContext,
+  ): Promise<ChargingScheduleDto> {
+    return await this.insert(
+      tenantId,
+      {
+        id: input.id,
+        ocppConnectionName,
+        chargingProfileDatabaseId,
+        chargingRateUnit: input.chargingRateUnit,
+        chargingSchedulePeriod: input.chargingSchedulePeriod,
+        duration: input.duration ?? null,
+        // DECIMAL columns are written as strings.
+        minChargingRate: input.minChargingRate != null ? input.minChargingRate.toString() : null,
+        startSchedule: input.startSchedule ?? null,
+      },
+      ctx,
+    );
+  }
+
+  /** Returns the databaseIds of the rows removed, so their sales tariffs can follow. */
+  async deleteByChargingProfileDatabaseId(
+    tenantId: number,
+    chargingProfileDatabaseId: number,
+    ctx?: DrizzleWriteContext,
+  ): Promise<number[]> {
+    const schedules = this.getTable(tenantId);
+    const rows = (await (ctx?.db ?? this.db)
+      .delete(schedules)
+      .where(
+        and(
+          eq(schedules.chargingProfileDatabaseId, chargingProfileDatabaseId),
+          this.tenantFilter(schedules, tenantId),
+        ),
+      )
+      .returning()) as ChargingScheduleEntity[];
+    for (const row of rows) {
+      this.raise(ctx, 'deleted', [toChargingScheduleDto(row)]);
+    }
+    return rows.map((row) => row.databaseId);
+  }
+
+  async readByChargingProfileDatabaseIds(
+    tenantId: number,
+    chargingProfileDatabaseIds: number[],
+  ): Promise<Map<number, ChargingScheduleDto[]>> {
+    const byProfile = new Map<number, ChargingScheduleDto[]>();
+    if (chargingProfileDatabaseIds.length === 0) {
+      return byProfile;
+    }
+    const schedules = this.getTable(tenantId);
+    const rows = (await this.db
+      .select()
+      .from(schedules)
+      .where(
+        and(
+          inArray(schedules.chargingProfileDatabaseId, chargingProfileDatabaseIds),
+          this.tenantFilter(schedules, tenantId),
+        ),
+      )
+      .orderBy(desc(schedules.databaseId))) as ChargingScheduleEntity[];
+
+    for (const row of rows) {
+      if (row.chargingProfileDatabaseId == null) continue;
+      const bucket = byProfile.get(row.chargingProfileDatabaseId) ?? [];
+      bucket.push(toChargingScheduleDto(row));
+      byProfile.set(row.chargingProfileDatabaseId, bucket);
+    }
+    return byProfile;
+  }
+
+  /** Matches CrudRepository.readNextValue: max + 1, or 1 when the station has none. */
+  async getNextChargingScheduleId(tenantId: number, ocppConnectionName: string): Promise<number> {
+    const schedules = this.getTable(tenantId);
+    const rows = await this.db
+      .select({ value: max(schedules.id) })
+      .from(schedules)
+      .where(
+        and(
+          eq(schedules.ocppConnectionName, ocppConnectionName),
+          this.tenantFilter(schedules, tenantId),
+        ),
+      );
+    return (rows[0]?.value ?? 0) + 1;
+  }
 }
