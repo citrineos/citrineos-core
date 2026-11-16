@@ -6,7 +6,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { CheckoutState } from '../api';
 import { CheckoutFlow, CheckoutStatus, RemoteStartStatus } from '../api';
 import { api } from '../api';
-import { BoltIcon, Notice, Spinner } from '../components/layout';
+import { BoltIcon, CircleCheckIcon, CircleXIcon, Notice, Spinner } from '../components/layout';
 import { EvseHeader } from '../components/evse-header';
 import { errorMessage } from '../errors';
 import { formatDuration, formatMinor, formatNumber, secondsBetween } from '../format';
@@ -87,6 +87,13 @@ export function Charging({ publicId }: { publicId: string }) {
         <div className="flex min-h-8 justify-center text-primary">
           {state.status === CheckoutStatus.Charging ? (
             <BoltIcon className="size-8" />
+          ) : state.status === CheckoutStatus.Captured ? (
+            <CircleCheckIcon className="size-8 text-green-600" />
+          ) : state.status === CheckoutStatus.Failed ? (
+            <CircleXIcon className="size-8 text-red-600" />
+          ) : state.status === CheckoutStatus.Cancelled ? (
+            // Cancelled is not an error: nothing was charged, and the driver can try again.
+            <CircleXIcon className="size-8 text-muted-foreground" />
           ) : ongoing ? (
             <Spinner />
           ) : null}

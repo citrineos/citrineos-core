@@ -28,19 +28,40 @@ async function open(
 }
 
 describe('Checkout', () => {
-  it('shows where the charger is, who runs it and what it costs with VAT', async () => {
+  it('shows where the charger is, who runs it and what it costs without VAT', async () => {
     const { container } = await open(anOffer());
 
     const shown = text(container);
     expect(shown).toContain('US*CIT*E7');
-    expect(shown).toContain('1 Main Street, 02110 Boston, USA');
-    expect(shown).toContain('CitrineOS');
-    expect(shown).toContain('$0.4998per kWh');
-    expect(shown).toContain('$0.0595per minute');
-    expect(shown).toContain('$1.785per session');
-    expect(shown).toContain('incl. 19% VAT');
+    expect(
+      [...container.querySelectorAll('dd > span.block')].map((line) => line.textContent),
+    ).toEqual(['1 Main Street', '02110 Boston, USA']);
+    expect(shown).not.toContain('Depot');
+    expect(shown).toContain('OperatorCitrineOS');
+    expect(shown).toContain('ConnectorIEC62196T2');
+    expect(shown).toContain('Max. power22 kW');
+    expect(shown).toContain('StatusAvailable');
+    expect(shown).toContain('$0.42per kWh');
+    expect(shown).toContain('$0.05per minute');
+    expect(shown).toContain('$1.50per session');
+    expect(shown).toContain(
+      'Unit prices exclude VAT. A 19% VAT is added at the end of the session.',
+    );
+    expect(container.querySelector('[role="switch"]')).toBeNull();
     expect(shown).toContain('$50.00 will be reserved on your card');
-    expect(shown).toContain('22 kW');
+  });
+
+  it('mentions no VAT for a tariff without VAT', async () => {
+    const offer = anOffer();
+    const { container } = await open({
+      ...offer,
+      connectors: offer.connectors.map((connector) => ({
+        ...connector,
+        tariff: connector.tariff && { ...connector.tariff, taxRate: 0 },
+      })),
+    });
+
+    expect(text(container)).not.toContain('VAT');
   });
 
   it('opens a checkout for the connector and sends the driver to pay', async () => {
@@ -103,9 +124,15 @@ describe('Checkout', () => {
     await click(button(container, 'Pay and charge'));
     expect(text(container)).toContain('Choose a connector');
     expect(requests.filter((request) => request.method === 'POST')).toHaveLength(0);
-    expect(button(container, 'Connector 3').disabled).toBe(true);
+    const choices = [...container.querySelectorAll<HTMLButtonElement>('[role="radio"]')];
+    expect(choices.map((choice) => choice.querySelector('span')?.textContent)).toEqual([
+      '1',
+      '2',
+      '3',
+    ]);
+    expect(choices[2].disabled).toBe(true);
 
-    await click(button(container, 'Connector 2'));
+    await click(choices[1]);
     await click(button(container, 'Pay and charge'));
     expect(requests.at(-1)?.body).toEqual({ evseId: 7, connectorId: 71 });
   });

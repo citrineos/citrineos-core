@@ -5,6 +5,7 @@
 import { useEffect, useState } from 'react';
 import type { CheckoutState } from '../api';
 import { api, CheckoutStatus } from '../api';
+import { AddressLines, addressLines } from '../components/address';
 import { Notice, Spinner } from '../components/layout';
 import { errorMessage } from '../errors';
 import { formatDateTime, formatElapsed, formatMajor, formatMinor, formatNumber } from '../format';
@@ -12,9 +13,9 @@ import type { MessageKey } from '../i18n';
 import { useI18n } from '../i18n';
 import { ui } from '../ui';
 
-const rowStyle = 'flex items-center justify-between gap-3 py-1.5 [&>dt]:shrink-0';
-const listStyle = 'divide-y divide-border text-sm ml-4';
-const labelStyle = 'font-semibold text-primary-foreground';
+const rowStyle = ui.row;
+const listStyle = `${ui.rows} ml-4`;
+const labelStyle = ui.rowLabel;
 
 export function Receipt({ publicId }: { publicId: string }) {
   const { t, locale } = useI18n();
@@ -49,16 +50,7 @@ export function Receipt({ publicId }: { publicId: string }) {
   const unit = (amount: number | null | undefined) =>
     amount == null ? '–' : formatMajor(amount, pricing.currency, locale);
 
-  const location = evse?.location;
-  const address = location
-    ? [
-        location.address,
-        [location.postalCode, location.city].filter(Boolean).join(' '),
-        location.country,
-      ]
-        .filter(Boolean)
-        .join(', ')
-    : null;
+  const address = addressLines(evse?.location);
 
   return (
     <article className={`${ui.card} print:border-0`}>
@@ -70,10 +62,12 @@ export function Receipt({ publicId }: { publicId: string }) {
             <dd className="text-right">{evse.operatorName}</dd>
           </div>
         )}
-        {address && (
+        {address.length > 0 && (
           <div className={rowStyle}>
             <dt className={labelStyle}>{t('checkout.location')}</dt>
-            <dd className="text-right">{address}</dd>
+            <dd>
+              <AddressLines lines={address} />
+            </dd>
           </div>
         )}
         {evse?.evseId && (

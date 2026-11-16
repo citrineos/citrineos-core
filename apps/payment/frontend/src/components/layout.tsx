@@ -33,6 +33,46 @@ export function BoltIcon({ className = 'size-[22px]' }: { className?: string }) 
   );
 }
 
+/** A tick in a circle: something finished well. */
+export function CircleCheckIcon({ className = 'size-[22px]' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      data-icon="circle-check"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <path d="m8 12 3 3 5-6" />
+    </svg>
+  );
+}
+
+/** A cross in a circle: something stopped or went wrong. */
+export function CircleXIcon({ className = 'size-[22px]' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      data-icon="circle-x"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <path d="m15 9-6 6M9 9l6 6" />
+    </svg>
+  );
+}
+
 export function Spinner() {
   return (
     <div

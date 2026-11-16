@@ -7,8 +7,9 @@ import type { Connector, EvseOffer, TariffSummary } from '../api';
 import { api } from '../api';
 import { BoltIcon, Notice, Spinner } from '../components/layout';
 import { EvseHeader } from '../components/evse-header';
+import { StatusBadge } from '../components/status-badge';
 import { errorMessage } from '../errors';
-import { formatMajor, formatMinor, formatPower, withVat } from '../format';
+import { formatMajor, formatMinor, formatNumber, formatPower } from '../format';
 import type { MessageKey } from '../i18n';
 import { useI18n } from '../i18n';
 import { ui } from '../ui';
@@ -97,12 +98,12 @@ export function Checkout({ evseId }: { evseId: number }) {
 
   return (
     <>
-      <EvseHeader evse={offer} />
+      <EvseHeader evse={offer} connector={connector} />
 
       {offer.connectors.length > 1 && (
         <section className={ui.card}>
           <h2 className={ui.heading}>{t('checkout.chooseConnector')}</h2>
-          <div className="grid gap-2" role="radiogroup">
+          <div className="grid gap-1.5" role="radiogroup">
             {offer.connectors.map((candidate, index) => (
               <ConnectorChoice
                 key={candidate.id}
@@ -121,7 +122,6 @@ export function Checkout({ evseId }: { evseId: number }) {
 
       {connector && (
         <section className={ui.card}>
-          {offer.connectors.length === 1 && <ConnectorInfo connector={connector} />}
           {connector.tariff ? (
             <Tariff tariff={connector.tariff} />
           ) : (
@@ -166,16 +166,6 @@ export function Checkout({ evseId }: { evseId: number }) {
   );
 }
 
-function ConnectorInfo({ connector }: { connector: Connector }) {
-  const { locale } = useI18n();
-  const facts = [
-    connector.type,
-    connector.maximumPowerWatts ? formatPower(connector.maximumPowerWatts, locale) : null,
-    connector.status,
-  ].filter(Boolean);
-  return <p className={`${ui.muted} font-normal`}>{facts.join(' · ')}</p>;
-}
-
 function ConnectorChoice({
   connector,
   number,
@@ -187,27 +177,35 @@ function ConnectorChoice({
   selected: boolean;
   onSelect: () => void;
 }) {
-  const { t } = useI18n();
+  const { locale } = useI18n();
   const outOfService = isOutOfService(connector);
+  const facts = [
+    connector.maximumPowerWatts ? formatPower(connector.maximumPowerWatts, locale) : null,
+    connector.type,
+  ].filter(Boolean);
+
   return (
     <button
       type="button"
       role="radio"
       aria-checked={selected}
-      className={`${ui.button} flex-col items-start! text-left ${selected ? 'border-2 border-primary' : ''}`}
+      className={`flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-md border bg-background px-3 py-1.5 text-left text-sm text-foreground hover:bg-accent disabled:opacity-50 ${selected ? 'border-primary ring-1 ring-primary' : 'border-input'}`}
       disabled={outOfService}
       onClick={onSelect}
     >
-      <strong>{t('checkout.connector', { number })}</strong>
-      <ConnectorInfo connector={connector} />
+      <span className="shrink-0 font-semibold">{number}</span>
+      <span className={`${ui.muted} min-w-0 flex-1 truncate`}>{facts.join(' · ')}</span>
+      {connector.status && <StatusBadge status={connector.status} />}
     </button>
   );
 }
 
 function Tariff({ tariff }: { tariff: TariffSummary }) {
   const { t, locale } = useI18n();
-  const gross = (net: number) =>
-    formatMajor(withVat(net, tariff.taxRate ?? null, tariff.currency), tariff.currency, locale);
+  // The tariff's own figures, without VAT: the exact rates a session is priced at. VAT is added
+  // to each part of the session's cost, so prices with VAT would only be approximations.
+  const taxRate = tariff.taxRate ?? 0;
+  const price = (net: number) => formatMajor(net, tariff.currency, locale);
   const lines: [string, number][] = [
     [t('checkout.perKwh'), tariff.pricePerKwh],
     [t('checkout.perMin'), tariff.pricePerMin ?? 0],
@@ -215,22 +213,24 @@ function Tariff({ tariff }: { tariff: TariffSummary }) {
   ];
   return (
     <>
-      <h2 className={ui.heading}>{t('checkout.tariff')}</h2>
+      <div className="space-y-0.5">
+        <h2 className={ui.heading}>{t('checkout.tariff')}</h2>
+        {taxRate > 0 && (
+          <p className={`${ui.muted} ${ui.small}`}>
+            {t('checkout.plusVat', { rate: formatNumber(taxRate, locale) })}
+          </p>
+        )}
+      </div>
       <dl>
         {lines
           .filter(([, net]) => net > 0)
           .map(([label, net]) => (
             <div key={label} className="flex justify-between border-b border-border py-1.5">
-              <dt className="font-semibold">{gross(net)}</dt>
+              <dt className="font-semibold">{price(net)}</dt>
               <dd>{label}</dd>
             </div>
           ))}
       </dl>
-      {tariff.taxRate != null && tariff.taxRate > 0 && (
-        <p className={`${ui.muted} ${ui.small}`}>
-          {t('checkout.inclVat', { rate: tariff.taxRate })}
-        </p>
-      )}
       {tariff.authorizationAmount !== null && (
         <p className={ui.small}>
           {t('checkout.hold', {

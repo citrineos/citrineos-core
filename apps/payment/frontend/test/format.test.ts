@@ -11,7 +11,6 @@ import {
   formatMinor,
   formatPower,
   secondsBetween,
-  withVat,
 } from '../src/format';
 import { createI18n } from '../src/i18n';
 
@@ -25,11 +24,6 @@ describe('format', () => {
   it('shows unit prices with as many decimals as they have, up to four', () => {
     expect(formatMajor(0.5, 'USD', 'en')).toBe('$0.50');
     expect(formatMajor(0.4998, 'USD', 'en')).toBe('$0.4998');
-  });
-
-  it('adds VAT to a net price', () => {
-    expect(withVat(0.42, 19, 'USD')).toBe(0.4998);
-    expect(withVat(1.5, null, 'USD')).toBe(1.5);
   });
 
   it('shows a duration as h:mm:ss', () => {

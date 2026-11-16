@@ -74,6 +74,19 @@ export default defineConfig({
       nodeProject('base', './packages/base'),
       nodeProject('ocpi', './packages/ocpi'),
       nodeProject('mock-msp', './apps/mock-msp'),
+      nodeProject('payment', './apps/payment', ['frontend/**']),
+      {
+        test: {
+          name: 'payment-frontend',
+          root: r('./apps/payment/frontend'),
+          environment: 'jsdom' as const,
+          include: testGlob,
+          exclude: sharedExclude,
+          setupFiles: ['./test/setup.ts'],
+          typecheck: typecheck(),
+          ...TIMEOUTS,
+        },
+      },
       // operator-ui owns its own Playwright e2e specs; vitest can't run them
       // (they call @playwright/test's test.use(), which only works under the
       // Playwright runner). Only that tests/ tree is excluded — unit tests
@@ -108,6 +121,8 @@ export default defineConfig({
         'packages/ocpp/src/**',
         'packages/ocpi/src/**',
         'apps/mock-msp/src/**',
+        'apps/payment/src/**',
+        'apps/payment/frontend/src/**',
       ],
       thresholds: {
         lines: 75,

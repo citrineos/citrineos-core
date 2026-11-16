@@ -27,13 +27,6 @@ export function formatMajor(amount: number, currency: string, locale: string): s
   }).format(amount);
 }
 
-/** A net price with VAT added, rounded to the currency's minor unit. */
-export function withVat(net: number, taxRate: number | null, currency: string): number {
-  const digits = currencyFormat('en', currency).resolvedOptions().maximumFractionDigits ?? 2;
-  const factor = 10 ** Math.max(digits, 4);
-  return Math.round(net * (1 + (taxRate ?? 0) / 100) * factor) / factor;
-}
-
 export function formatDuration(totalSeconds: number): string {
   const seconds = Math.max(0, Math.floor(totalSeconds));
   const h = Math.floor(seconds / 3600);
