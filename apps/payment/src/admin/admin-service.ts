@@ -5,6 +5,7 @@
 import { childLogger } from '@citrineos/base';
 import type { ILogObj, Logger } from 'tslog';
 import type { ICheckoutRepository, IPaymentAccountRepository } from '../repositories/index.js';
+import { ForeignKeyViolationError, UniqueViolationError } from '../repositories/index.js';
 import { cancelCheckout } from '../services/cancel-checkout.js';
 import { PaymentError, PaymentErrorCode } from '../services/errors.js';
 import type {
@@ -137,12 +138,10 @@ export class AdminService {
       }
       return { account: view(updated), created: false };
     } catch (error) {
-      // By name: the DAL may load its own copy of Sequelize, whose classes instanceof misses.
-      const name = error instanceof Error ? error.name : '';
-      if (name === 'SequelizeForeignKeyConstraintError') {
+      if (error instanceof ForeignKeyViolationError) {
         throw new PaymentError(PaymentErrorCode.NotFound, `No tenant ${tenantId}`);
       }
-      if (name === 'SequelizeUniqueConstraintError') {
+      if (error instanceof UniqueViolationError) {
         throw new PaymentError(
           PaymentErrorCode.Conflict,
           `Stripe account ${input.stripeAccountId} belongs to another tenant`,

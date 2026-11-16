@@ -19,10 +19,9 @@ RUN pnpm --filter "@citrineos/payment" deploy --legacy --prod /deploy
 FROM node:24.16.0-slim
 
 COPY --from=build /deploy /usr/local/apps/citrineos/apps/payment
-# pnpm deploy honours the package's `files` list (["dist"]), so runtime files
-# living outside dist/ must be copied explicitly.
+# pnpm deploy honours the package's `files` list (dist/ and the SQL migrations), so other
+# runtime files must be copied explicitly.
 COPY --from=build /usr/local/apps/citrineos/apps/payment/entrypoint.sh /usr/local/apps/citrineos/apps/payment/entrypoint.sh
-COPY --from=build /usr/local/apps/citrineos/apps/payment/.sequelizerc /usr/local/apps/citrineos/apps/payment/.sequelizerc
 # The driver pages, where the server looks for them by default.
 COPY --from=build /usr/local/apps/citrineos/apps/payment/frontend/dist /usr/local/apps/citrineos/apps/payment/frontend/dist
 

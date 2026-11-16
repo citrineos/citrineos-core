@@ -4,12 +4,15 @@
 
 import { DEFAULT_TENANT_ID } from '@citrineos/base';
 import {
-  SequelizeAuthorizationRepository,
-  SequelizeChargingStationSequenceRepository,
-  SequelizeLocationRepository,
-  SequelizeTariffRepository,
-  SequelizeTenantRepository,
-  SequelizeTransactionEventRepository,
+  DrizzleAuthorizationRepository,
+  DrizzleChargingStationRepository,
+  DrizzleChargingStationSequenceRepository,
+  DrizzleConnectorRepository,
+  DrizzleEvseRepository,
+  DrizzleLocationRepository,
+  DrizzleTariffRepository,
+  DrizzleTenantRepository,
+  DrizzleTransactionRepository,
 } from '@citrineos/dal';
 import {
   AuthorizationStatusEnum,
@@ -17,12 +20,12 @@ import {
   IdTokenEnum,
   OCPPVersion,
 } from '@citrineos/types';
-import { QueryTypes } from 'sequelize';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { CoreData } from '../../src/core/core-data.js';
 import { toSystemConfig } from '../../src/db/database.js';
 import {
   aTariff,
+  query,
   resetDatabase,
   startTestDatabase,
   TENANT_A,
@@ -41,19 +44,18 @@ beforeAll(async () => {
       env: RuntimeEnv.Development,
       database: { host: 'unused', port: 1, database: 'unused', username: 'unused', password: '' },
     }),
-    sequelizeInstance: db.sequelize,
+    drizzleInstance: db.db,
   };
-  const locationRepository = new SequelizeLocationRepository(dependencies);
   coreData = new CoreData({
-    evseRepository: locationRepository,
-    connectorRepository: locationRepository,
-    chargingStationRepository: locationRepository,
-    locationRepository,
-    tenantRepository: new SequelizeTenantRepository(dependencies),
-    tariffRepository: new SequelizeTariffRepository(dependencies),
-    authorizationRepository: new SequelizeAuthorizationRepository(dependencies),
-    chargingStationSequenceRepository: new SequelizeChargingStationSequenceRepository(dependencies),
-    transactionRepository: new SequelizeTransactionEventRepository(dependencies),
+    evseRepository: new DrizzleEvseRepository(dependencies),
+    connectorRepository: new DrizzleConnectorRepository(dependencies),
+    chargingStationRepository: new DrizzleChargingStationRepository(dependencies),
+    locationRepository: new DrizzleLocationRepository(dependencies),
+    tenantRepository: new DrizzleTenantRepository(dependencies),
+    tariffRepository: new DrizzleTariffRepository(dependencies),
+    authorizationRepository: new DrizzleAuthorizationRepository(dependencies),
+    chargingStationSequenceRepository: new DrizzleChargingStationSequenceRepository(dependencies),
+    transactionRepository: new DrizzleTransactionRepository(dependencies),
   });
 }, 90_000);
 
@@ -62,7 +64,8 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  await db.sequelize.query(
+  await query(
+    db,
     'TRUNCATE TABLE "Transactions", "Authorizations", "ChargingStationSequences", "Connectors", "Evses", "ChargingStations" RESTART IDENTITY CASCADE;',
   );
   await resetDatabase(db);
@@ -70,10 +73,11 @@ beforeEach(async () => {
 
 async function insert(table: string, row: Record<string, unknown>): Promise<number> {
   const columns = Object.keys(row);
-  const [result] = await db.sequelize.query<{ id: number }>(
+  const [result] = await query<{ id: number }>(
+    db,
     `INSERT INTO "${table}" (${columns.map((c) => `"${c}"`).join(', ')}, "createdAt", "updatedAt")
      VALUES (${columns.map((c) => `:${c}`).join(', ')}, now(), now()) RETURNING id`,
-    { replacements: row, type: QueryTypes.SELECT },
+    row,
   );
   return result.id;
 }
@@ -91,7 +95,7 @@ async function aStation(tenantId: number, protocol: OCPPVersion | null = OCPPVer
     evseId: `US*CIT*E${tenantId}`,
     tenantId,
   });
-  const tariff = await aTariff(tenantId);
+  const tariff = await aTariff(db, tenantId);
   const connectorId = await insert('Connectors', {
     stationId,
     evseId,
@@ -141,19 +145,18 @@ describe('CoreData', () => {
 
   it('reads where an EVSE stands', async () => {
     const { stationId, evseId } = await aStation(TENANT_A);
-    const [location] = await db.sequelize.query<{ id: number }>(
+    const [location] = await query<{ id: number }>(
+      db,
       `INSERT INTO "Locations" (name, address, city, "postalCode", state, country, "publishUpstream",
          "timeZone", coordinates, "tenantId", "createdAt", "updatedAt")
        VALUES ('Depot', '1 Main Street', 'Boston', '02110', 'MA', 'USA', false, 'America/New_York',
          ST_GeomFromText('POINT(13.4 52.5)', 4326), :tenantId, now(), now()) RETURNING id`,
-      { replacements: { tenantId: TENANT_A }, type: QueryTypes.SELECT },
+      { tenantId: TENANT_A },
     );
-    await db.sequelize.query(
-      'UPDATE "ChargingStations" SET "locationId" = :locationId WHERE id = :id',
-      {
-        replacements: { locationId: location.id, id: stationId },
-      },
-    );
+    await query(db, 'UPDATE "ChargingStations" SET "locationId" = :locationId WHERE id = :id', {
+      locationId: location.id,
+      id: stationId,
+    });
 
     expect((await coreData.readEvse(TENANT_A, evseId))?.location).toEqual({
       name: 'Depot',
@@ -174,9 +177,7 @@ describe('CoreData', () => {
     expect(await coreData.findEvsesByEmi3Id('US*CIT*E9')).toEqual([]);
     expect(await coreData.findEvsesByEmi3Id('***')).toEqual([]);
 
-    await db.sequelize.query('UPDATE "Evses" SET removed = true WHERE id = :id', {
-      replacements: { id: a.evseId },
-    });
+    await query(db, 'UPDATE "Evses" SET removed = true WHERE id = :id', { id: a.evseId });
     expect(await coreData.findEvsesByEmi3Id(`USCITE${TENANT_A}`)).toEqual([]);
   });
 
@@ -212,9 +213,10 @@ describe('CoreData', () => {
 
   it('reads no tariff for a connector priced with another tenant’s tariff', async () => {
     const { connectorId } = await aStation(TENANT_A);
-    const foreign = await aTariff(TENANT_B);
-    await db.sequelize.query('UPDATE "Connectors" SET "tariffId" = :tariffId WHERE id = :id', {
-      replacements: { tariffId: foreign.id, id: connectorId },
+    const foreign = await aTariff(db, TENANT_B);
+    await query(db, 'UPDATE "Connectors" SET "tariffId" = :tariffId WHERE id = :id', {
+      tariffId: foreign.id,
+      id: connectorId,
     });
 
     expect(await coreData.readTariffForConnector(TENANT_A, connectorId)).toBeUndefined();
@@ -227,9 +229,10 @@ describe('CoreData', () => {
     expect(second).toBe(first);
     expect(await coreData.readAuthorizationId(TENANT_A, 'PAY_1')).toBe(first);
     expect(await coreData.readAuthorizationId(TENANT_B, 'PAY_1')).toBeUndefined();
-    const [row] = await db.sequelize.query<{ idTokenType: string; status: string }>(
+    const [row] = await query<{ idTokenType: string; status: string }>(
+      db,
       'SELECT "idTokenType", status FROM "Authorizations" WHERE id = :id',
-      { replacements: { id: first }, type: QueryTypes.SELECT },
+      { id: first },
     );
     expect(row).toEqual({
       idTokenType: IdTokenEnum.Central,
@@ -280,9 +283,10 @@ describe('CoreData', () => {
       isActive: true,
     });
 
-    await db.sequelize.query(
+    await query(
+      db,
       'UPDATE "Transactions" SET "isActive" = false, "totalKwh" = 7.5, "timeSpentCharging" = 600 WHERE id = :id',
-      { replacements: { id } },
+      { id },
     );
     expect(
       await coreData.readActiveTransactionForAuthorization(TENANT_A, authorizationId),
@@ -292,8 +296,8 @@ describe('CoreData', () => {
       isActive: false,
       totalKwh: 7.5,
       timeSpentCharging: 600,
-      evseId: null,
-      connectorId: null,
+      evseId: undefined,
+      connectorId: undefined,
     });
     expect(await coreData.readTransactionById(TENANT_A, id)).toMatchObject({ id });
     expect(await coreData.readTransactionById(TENANT_B, id)).toBeUndefined();
@@ -309,9 +313,10 @@ describe('CoreData', () => {
       authorizationId,
       tenantId: TENANT_A,
     });
-    await db.sequelize.query(
+    await query(
+      db,
       `UPDATE "Transactions" SET "createdAt" = now() - interval '30 days' WHERE id = :id`,
-      { replacements: { id: old } },
+      { id: old },
     );
     const since = new Date(Date.now() - 60_000);
 

@@ -7,13 +7,15 @@
   "type": "module",
   "private": true,
   "files": [
-    "dist"
+    "dist",
+    "db/migrations"
   ],
   "scripts": {
-    "build": "tsc -b config/tsconfig.src.json && tsc -p config/tsconfig.migrations.json",
+    "build": "tsc -b config/tsconfig.src.json",
     "lint": "eslint . --config config/eslint.config.js",
     "lint:fix": "eslint . --config config/eslint.config.js --fix",
-    "db:migrate": "pnpm exec sequelize-cli db:migrate --debug && echo migration completed successfully",
+    "db:migrate": "node --env-file-if-exists=.env.local dist/db/migrate-cli.js",
+    "db:generate": "pnpm run build && drizzle-kit generate --config config/drizzle.config.ts",
     "migrate:python": "node dist/migration/cli.js",
     "start": "cross-env APP_ENV=local nodemon --config config/nodemon.json",
     "dev": "pnpm run \"/^dev:/\"",
@@ -33,6 +35,7 @@
     "@types/amqplib": "catalog:",
     "@types/node": "catalog:",
     "@types/qrcode": "1.5.6",
+    "drizzle-kit": "catalog:",
     "eslint": "catalog:",
     "eslint-config-prettier": "catalog:",
     "eslint-plugin-prettier": "catalog:",
@@ -49,12 +52,10 @@
     "@fastify/static": "10.1.5",
     "amqplib": "catalog:",
     "cross-env": "catalog:",
+    "drizzle-orm": "catalog:",
     "fastify": "catalog:",
     "pg": "catalog:",
-    "pg-hstore": "catalog:",
     "qrcode": "1.5.4",
-    "sequelize": "catalog:",
-    "sequelize-cli": "catalog:",
     "stripe": "22.6.2",
     "tslog": "catalog:",
     "zod": "catalog:"

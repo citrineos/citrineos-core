@@ -8,6 +8,7 @@ import { AdminAuthenticator, PaymentPermission } from '../../src/admin/admin-aut
 import type { CallerPermissions, ICorePermissions } from '../../src/admin/core-permissions.js';
 import { buildServer } from '../../src/server.js';
 import { CheckoutStatus } from '../../src/types/index.js';
+import { ForeignKeyViolationError } from '../../src/repositories/index.js';
 import { ACCOUNT, anEvse, OTHER_TENANT, TENANT } from '../support/fakes.js';
 import { aWorld } from '../support/world.js';
 import { ReconcileOutcome } from '../../src/services/reconciliation-service.js';
@@ -189,7 +190,7 @@ describe('admin API', () => {
 
     it('says which tenant does not exist', async () => {
       world.accounts.create = async () => {
-        throw Object.assign(new Error('fk'), { name: 'SequelizeForeignKeyConstraintError' });
+        throw new ForeignKeyViolationError('fk');
       };
 
       expect(

@@ -8,9 +8,8 @@ import Stripe from 'stripe';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { getDatabaseConfigForEnv } from '../config/loader.js';
-import { RuntimeEnv } from '../config/types.js';
-import { initializeDatabase } from '../db/database.js';
-import { SequelizePaymentAccountRepository } from '../repositories/index.js';
+import { connectDatabase } from '../db/database.js';
+import { DrizzlePaymentAccountRepository } from '../repositories/index.js';
 import { applyPlan, OpenPythonCheckoutsError } from './apply.js';
 import { readCoreSnapshot } from './core-snapshot.js';
 import { planMigration } from './plan.js';
@@ -86,9 +85,9 @@ async function main(): Promise<number> {
     : undefined;
   // Warnings and errors only: the report is the output.
   const logger = new Logger<ILogObj>({ name: 'Python migration', minLevel: 4 });
-  const sequelize = await initializeDatabase({ env: RuntimeEnv.Development, database }, logger);
+  const connection = await connectDatabase({ database }, logger);
   try {
-    const core = await readCoreSnapshot(sequelize, values['id-token-prefix']);
+    const core = await readCoreSnapshot(connection.db, values['id-token-prefix']);
     const plan = planMigration(python, core, {
       publicUrl: values['public-url'],
       pythonIdTokenPrefix: values['python-id-token-prefix'] ?? values['id-token-prefix'],
@@ -98,7 +97,7 @@ async function main(): Promise<number> {
     let applied = false;
     if (values.apply) {
       try {
-        await applyPlan(plan, sequelize, new SequelizePaymentAccountRepository(), {
+        await applyPlan(plan, connection.db, new DrizzlePaymentAccountRepository(connection.db), {
           scanAndChargeEnabled: values['scan-and-charge'],
           ignoreOpenPythonCheckouts: values['ignore-open-checkouts'],
         });
@@ -119,7 +118,7 @@ async function main(): Promise<number> {
     }
     return plan.accounts.some((account) => account.action === AccountAction.Conflict) ? 2 : 0;
   } finally {
-    await sequelize.close();
+    await connection.close();
   }
 }
 

@@ -3,7 +3,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { SequelizePaymentAccountRepository } from '../../src/repositories/index.js';
+import {
+  DrizzlePaymentAccountRepository,
+  ForeignKeyViolationError,
+  UniqueViolationError,
+} from '../../src/repositories/index.js';
 import {
   resetDatabase,
   startTestDatabase,
@@ -13,10 +17,11 @@ import {
 } from '../support/database.js';
 
 let db: TestDatabase;
-const repository = new SequelizePaymentAccountRepository();
+let repository: DrizzlePaymentAccountRepository;
 
 beforeAll(async () => {
   db = await startTestDatabase();
+  repository = new DrizzlePaymentAccountRepository(db.db);
 }, 90_000);
 
 afterAll(async () => {
@@ -27,7 +32,7 @@ beforeEach(async () => {
   await resetDatabase(db);
 });
 
-describe('SequelizePaymentAccountRepository', () => {
+describe('DrizzlePaymentAccountRepository', () => {
   it('creates an account with scan-and-charge off and no terms unless asked', async () => {
     const account = await repository.create(TENANT_A, { stripeAccountId: 'acct_a' });
 
@@ -72,20 +77,22 @@ describe('SequelizePaymentAccountRepository', () => {
   it('allows one account per tenant', async () => {
     await repository.create(TENANT_A, { stripeAccountId: 'acct_a' });
 
-    await expect(repository.create(TENANT_A, { stripeAccountId: 'acct_a2' })).rejects.toThrow();
+    await expect(repository.create(TENANT_A, { stripeAccountId: 'acct_a2' })).rejects.toThrow(
+      UniqueViolationError,
+    );
   });
 
   it('does not let two tenants share a connected account', async () => {
     await repository.create(TENANT_A, { stripeAccountId: 'acct_shared' });
 
     await expect(repository.create(TENANT_B, { stripeAccountId: 'acct_shared' })).rejects.toThrow(
-      expect.objectContaining({ name: 'SequelizeUniqueConstraintError' }),
+      UniqueViolationError,
     );
   });
 
   it('refuses an account for a tenant that does not exist', async () => {
     await expect(repository.create(999, { stripeAccountId: 'acct_orphan' })).rejects.toThrow(
-      expect.objectContaining({ name: 'SequelizeForeignKeyConstraintError' }),
+      ForeignKeyViolationError,
     );
   });
 

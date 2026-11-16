@@ -44,7 +44,8 @@ describe('Receipt', () => {
     expect(sections(container)).toEqual([
       [
         ['Operator', 'CitrineOS'],
-        ['Location', '1 Main Street, 02110 Boston, USA'],
+        // Two lines: the street, then postcode, city and country.
+        ['Location', '1 Main Street02110 Boston, USA'],
         ['EVSE ID', 'US*CIT*E7'],
         ['ID', TRANSACTION_ID],
         // In the time zone the tests run in.
@@ -73,7 +74,6 @@ describe('Receipt', () => {
     ]);
     const shown = text(container);
     expect(shown).toContain('CitrineOS');
-    expect(shown).toContain('1 Main Street, 02110 Boston, USA');
     expect(shown).not.toContain('Limited to the amount reserved');
   });
 

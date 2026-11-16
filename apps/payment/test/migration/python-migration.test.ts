@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { QueryTypes } from 'sequelize';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { applyPlan, OpenPythonCheckoutsError } from '../../src/migration/apply.js';
 import { readCoreSnapshot } from '../../src/migration/core-snapshot.js';
@@ -10,8 +9,9 @@ import { planMigration } from '../../src/migration/plan.js';
 import { readPythonData } from '../../src/migration/python-source.js';
 import type { PlanOptions } from '../../src/migration/types.js';
 import { AccountAction, Comparison, TariffMatch } from '../../src/migration/types.js';
-import { SequelizePaymentAccountRepository } from '../../src/repositories/index.js';
+import { DrizzlePaymentAccountRepository } from '../../src/repositories/index.js';
 import {
+  query,
   resetDatabase,
   startTestDatabase,
   TENANT_A,
@@ -21,7 +21,7 @@ import {
 let db: TestDatabase;
 let source: string;
 let stationId: number;
-const accounts = new SequelizePaymentAccountRepository();
+let accounts: DrizzlePaymentAccountRepository;
 const OPTIONS: PlanOptions = {
   publicUrl: 'http://localhost:9010',
   pythonIdTokenPrefix: 'PAY_',
@@ -30,7 +30,8 @@ const OPTIONS: PlanOptions = {
 
 beforeAll(async () => {
   db = await startTestDatabase();
-  const { host, port, database, username, password } = db.sequelize.config;
+  accounts = new DrizzlePaymentAccountRepository(db.db);
+  const { host, port, database, username, password } = db.config;
   source = `postgres://${username}:${password}@${host}:${port}/${database}`;
 }, 90_000);
 
@@ -40,7 +41,9 @@ afterAll(async () => {
 
 /** The tables citrineos-payment's init_db.py creates, with DB_TABLE_PREFIX `ampay_`. */
 async function aPythonInstallation() {
-  await db.sequelize.query(`
+  await query(
+    db,
+    `
     DROP TABLE IF EXISTS ampay_checkouts, ampay_connectors, ampay_evses, ampay_locations,
       ampay_operators, ampay_tariffs CASCADE;
     CREATE TABLE ampay_operators (id serial PRIMARY KEY, name varchar(255) NOT NULL UNIQUE,
@@ -77,25 +80,28 @@ async function aPythonInstallation() {
       transaction_end_time) VALUES (57, 'pi_old', 5000, 1, now() - interval '30 days');
     -- Opened, never paid: its payment intent id was set when the Checkout Session was created.
     INSERT INTO ampay_checkouts (id, payment_intent_id, connector_id) VALUES (56, 'pi_abandoned', 1);
-  `);
+  `,
+  );
 }
 
 async function insert(table: string, row: Record<string, unknown>): Promise<number> {
   const columns = Object.keys(row);
-  const [result] = await db.sequelize.query<{ id: number }>(
+  const [result] = await query<{ id: number }>(
+    db,
     `INSERT INTO "${table}" (${columns.map((c) => `"${c}"`).join(', ')}, "createdAt", "updatedAt")
      VALUES (${columns.map((c) => `:${c}`).join(', ')}, now(), now()) RETURNING id`,
-    { replacements: row, type: QueryTypes.SELECT },
+    row,
   );
   return result.id;
 }
 
 beforeEach(async () => {
-  await db.sequelize.query(
+  await query(
+    db,
     'TRUNCATE TABLE "Authorizations", "Transactions", "Connectors", "Evses", "ChargingStations" RESTART IDENTITY CASCADE;',
   );
   await resetDatabase(db);
-  await db.sequelize.query(`SELECT setval('"Checkouts_id_seq"', 1, false)`);
+  await query(db, `SELECT setval('"Checkouts_id_seq"', 1, false)`);
   await aPythonInstallation();
   stationId = await insert('ChargingStations', {
     ocppConnectionName: 'CS-1',
@@ -124,7 +130,7 @@ beforeEach(async () => {
 describe('the Python migration', () => {
   it('reads the Python tables and Core, and plans the move', async () => {
     const python = await readPythonData(source, 'ampay_');
-    const core = await readCoreSnapshot(db.sequelize, 'PAY_');
+    const core = await readCoreSnapshot(db.db, 'PAY_');
 
     expect(python).toMatchObject({
       operators: [{ name: 'CitrineOS', stripeAccountId: 'acct_citrineos' }],
@@ -159,12 +165,12 @@ describe('the Python migration', () => {
     const run = async () =>
       planMigration(
         await readPythonData(source, 'ampay_'),
-        await readCoreSnapshot(db.sequelize, 'PAY_'),
+        await readCoreSnapshot(db.db, 'PAY_'),
         OPTIONS,
       );
 
     const first = await run();
-    expect(await applyPlan(first, db.sequelize, accounts, { scanAndChargeEnabled: true })).toEqual({
+    expect(await applyPlan(first, db.db, accounts, { scanAndChargeEnabled: true })).toEqual({
       accountsCreated: 1,
       checkoutSequenceSetTo: 91,
     });
@@ -172,9 +178,9 @@ describe('the Python migration', () => {
       stripeAccountId: 'acct_citrineos',
       scanAndChargeEnabled: true,
     });
-    const [{ next }] = await db.sequelize.query<{ next: string }>(
+    const [{ next }] = await query<{ next: string }>(
+      db,
       `SELECT nextval('"Checkouts_id_seq"') AS next`,
-      { type: QueryTypes.SELECT },
     );
     expect(Number(next)).toBe(91);
 
@@ -187,27 +193,30 @@ describe('the Python migration', () => {
     await applyPlan(
       planMigration(
         await readPythonData(source, 'ampay_'),
-        await readCoreSnapshot(db.sequelize, 'PAY_'),
+        await readCoreSnapshot(db.db, 'PAY_'),
         OPTIONS,
       ),
-      db.sequelize,
+      db.db,
       accounts,
       { scanAndChargeEnabled: false },
     );
 
-    const [{ count }] = await db.sequelize.query<{ count: string }>(
+    const [{ count }] = await query<{ count: string }>(
+      db,
       'SELECT count(*) AS count FROM ampay_checkouts',
-      { type: QueryTypes.SELECT },
     );
     expect(Number(count)).toBe(2);
   });
 
   it('changes nothing while a session the Python service took payment for is charging', async () => {
-    await db.sequelize.query(`
+    await query(
+      db,
+      `
       INSERT INTO ampay_checkouts (id, payment_intent_id, authorization_amount, connector_id,
         remote_request_status, remote_request_transaction_id)
         VALUES (58, 'pi_open', 5000, 1, 'Accepted', 'tx-58');
-    `);
+    `,
+    );
     await insert('Transactions', {
       stationId,
       transactionId: 'tx-58',
@@ -225,16 +234,16 @@ describe('the Python migration', () => {
         ended: false,
       },
     ]);
-    const plan = planMigration(python, await readCoreSnapshot(db.sequelize, 'PAY_'), OPTIONS);
+    const plan = planMigration(python, await readCoreSnapshot(db.db, 'PAY_'), OPTIONS);
     expect(plan.pythonSessions.running).toMatchObject([{ checkoutId: 58 }]);
 
-    await expect(
-      applyPlan(plan, db.sequelize, accounts, { scanAndChargeEnabled: false }),
-    ).rejects.toThrow(OpenPythonCheckoutsError);
+    await expect(applyPlan(plan, db.db, accounts, { scanAndChargeEnabled: false })).rejects.toThrow(
+      OpenPythonCheckoutsError,
+    );
     expect(await accounts.findByTenantId(TENANT_A)).toBeUndefined();
 
     expect(
-      await applyPlan(plan, db.sequelize, accounts, {
+      await applyPlan(plan, db.db, accounts, {
         scanAndChargeEnabled: false,
         ignoreOpenPythonCheckouts: true,
       }),

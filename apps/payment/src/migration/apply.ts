@@ -2,7 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { Sequelize } from '@citrineos/dal';
+import { sql } from 'drizzle-orm';
+import type { PaymentDatabase } from '../db/database.js';
 import type { IPaymentAccountRepository } from '../repositories/index.js';
 import type { MigrationPlan } from './types.js';
 import { AccountAction } from './types.js';
@@ -36,7 +37,7 @@ export interface ApplyResult {
  */
 export async function applyPlan(
   plan: MigrationPlan,
-  sequelize: Sequelize,
+  db: PaymentDatabase,
   accounts: IPaymentAccountRepository,
   options: ApplyOptions,
 ): Promise<ApplyResult> {
@@ -56,11 +57,11 @@ export async function applyPlan(
   }
   if (plan.checkoutSequence) {
     // Only ever moved forward: GREATEST keeps a sequence that has moved on since the plan.
-    await sequelize.query(
-      `SELECT setval('"Checkouts_id_seq"',
-         GREATEST(:next, (SELECT CASE WHEN is_called THEN last_value + 1 ELSE last_value END
-                            FROM "Checkouts_id_seq")), false)`,
-      { replacements: { next: plan.checkoutSequence.next } },
+    const next = plan.checkoutSequence.next;
+    await db.execute(
+      sql`SELECT setval('"Checkouts_id_seq"',
+         GREATEST(${next}::bigint, (SELECT CASE WHEN is_called THEN last_value + 1 ELSE last_value END
+                                     FROM "Checkouts_id_seq")), false)`,
     );
   }
   return { accountsCreated, checkoutSequenceSetTo: plan.checkoutSequence?.next ?? null };
