@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { Sequelize } from '@citrineos/dal';
-import { QueryTypes } from 'sequelize';
+import { sql, type SQL } from 'drizzle-orm';
+import type { PaymentDatabase } from '../db/database.js';
 import type { CoreSnapshot } from './types.js';
 
 function num(value: unknown): number | null {
@@ -15,11 +15,11 @@ function num(value: unknown): number | null {
  * accounts, read in one go.
  */
 export async function readCoreSnapshot(
-  sequelize: Sequelize,
+  db: PaymentDatabase,
   idTokenPrefix: string,
 ): Promise<CoreSnapshot> {
-  const select = <T extends object>(sql: string, replacements: Record<string, unknown> = {}) =>
-    sequelize.query<T>(sql, { type: QueryTypes.SELECT, replacements });
+  const select = async <T extends Record<string, unknown>>(query: string | SQL) =>
+    (await db.execute<T>(typeof query === 'string' ? sql.raw(query) : query)).rows;
 
   const tenants = await select<{ id: number; name: string }>('SELECT id, name FROM "Tenants"');
   const stations = await select<CoreSnapshot['stations'][number]>(
@@ -49,11 +49,11 @@ export async function readCoreSnapshot(
   const accounts = await select<CoreSnapshot['paymentAccounts'][number]>(
     'SELECT "tenantId", "stripeAccountId" FROM "PaymentAccounts"',
   );
+  const prefix = sql`${idTokenPrefix}::text`;
   const [issued] = await select<{ max: string | null }>(
-    `SELECT max(substr("idToken", length(:prefix) + 1)::bigint) AS max FROM "Authorizations"
-      WHERE left("idToken", length(:prefix)) = :prefix
-        AND substr("idToken", length(:prefix) + 1) ~ '^[0-9]{1,12}$'`,
-    { prefix: idTokenPrefix },
+    sql`SELECT max(substr("idToken", length(${prefix}) + 1)::bigint) AS max FROM "Authorizations"
+      WHERE left("idToken", length(${prefix})) = ${prefix}
+        AND substr("idToken", length(${prefix}) + 1) ~ '^[0-9]{1,12}$'`,
   );
   const [sequence] = await select<{ next: string }>(
     `SELECT CASE WHEN is_called THEN last_value + 1 ELSE last_value END AS next

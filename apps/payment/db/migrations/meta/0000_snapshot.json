@@ -1,0 +1,324 @@
+{
+  "id": "ee9579bc-8d2a-4337-8412-38ff5edef4cc",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.Checkouts": {
+      "name": "Checkouts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "publicId": {
+          "name": "publicId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "tenantId": {
+          "name": "tenantId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "stripeAccountId": {
+          "name": "stripeAccountId",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "flow": {
+          "name": "flow",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "connectorId": {
+          "name": "connectorId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tariffId": {
+          "name": "tariffId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tariffSnapshot": {
+          "name": "tariffSnapshot",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "transactionDatabaseId": {
+          "name": "transactionDatabaseId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "currency": {
+          "name": "currency",
+          "type": "char(3)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "authorizedAmount": {
+          "name": "authorizedAmount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "capturedAmount": {
+          "name": "capturedAmount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "paymentIntentId": {
+          "name": "paymentIntentId",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "remoteStartStatus": {
+          "name": "remoteStartStatus",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "qrDisplayMessageId": {
+          "name": "qrDisplayMessageId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "checkouts_tenant_transaction": {
+          "name": "checkouts_tenant_transaction",
+          "columns": [
+            {
+              "expression": "tenantId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "transactionDatabaseId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "checkouts_status_updated": {
+          "name": "checkouts_status_updated",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "updatedAt",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "Checkouts_tenantId_fkey": {
+          "name": "Checkouts_tenantId_fkey",
+          "tableFrom": "Checkouts",
+          "tableTo": "Tenants",
+          "columnsFrom": [
+            "tenantId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "cascade"
+        },
+        "Checkouts_connectorId_fkey": {
+          "name": "Checkouts_connectorId_fkey",
+          "tableFrom": "Checkouts",
+          "tableTo": "Connectors",
+          "columnsFrom": [
+            "connectorId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "cascade"
+        },
+        "Checkouts_tariffId_fkey": {
+          "name": "Checkouts_tariffId_fkey",
+          "tableFrom": "Checkouts",
+          "tableTo": "Tariffs",
+          "columnsFrom": [
+            "tariffId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "Checkouts_publicId_key": {
+          "name": "Checkouts_publicId_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "publicId"
+          ]
+        },
+        "Checkouts_paymentIntentId_key": {
+          "name": "Checkouts_paymentIntentId_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "paymentIntentId"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.PaymentAccounts": {
+      "name": "PaymentAccounts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "tenantId": {
+          "name": "tenantId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "stripeAccountId": {
+          "name": "stripeAccountId",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "scanAndChargeEnabled": {
+          "name": "scanAndChargeEnabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "termsUrl": {
+          "name": "termsUrl",
+          "type": "varchar(2048)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "PaymentAccounts_tenantId_fkey": {
+          "name": "PaymentAccounts_tenantId_fkey",
+          "tableFrom": "PaymentAccounts",
+          "tableTo": "Tenants",
+          "columnsFrom": [
+            "tenantId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "PaymentAccounts_tenantId_key": {
+          "name": "PaymentAccounts_tenantId_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "tenantId"
+          ]
+        },
+        "PaymentAccounts_stripeAccountId_key": {
+          "name": "PaymentAccounts_stripeAccountId_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "stripeAccountId"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

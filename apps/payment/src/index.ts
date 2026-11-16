@@ -18,7 +18,7 @@ async function main(): Promise<void> {
     pretty: { style: process.env.DEPLOYMENT_TARGET !== 'cloud' },
   });
 
-  const { server, consumer, reconciliation, sequelize } = await createApp(config, logger);
+  const { server, consumer, reconciliation, database } = await createApp(config, logger);
   await consumer.start();
   if (config.reconciliation.intervalSeconds > 0) {
     reconciliation.start(config.reconciliation.intervalSeconds * 1000);
@@ -34,7 +34,7 @@ async function main(): Promise<void> {
     reconciliation.stop();
     await server.close();
     await consumer.stop();
-    await sequelize.close();
+    await database.close();
     process.exit(0);
   };
   for (const signal of ['SIGINT', 'SIGTERM', 'SIGQUIT'] as const) {

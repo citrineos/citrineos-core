@@ -2,14 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { Sequelize } from '@citrineos/dal';
 import {
-  SequelizeAuthorizationRepository,
-  SequelizeChargingStationSequenceRepository,
-  SequelizeLocationRepository,
-  SequelizeTariffRepository,
-  SequelizeTenantRepository,
-  SequelizeTransactionEventRepository,
+  DrizzleAuthorizationRepository,
+  DrizzleChargingStationRepository,
+  DrizzleChargingStationSequenceRepository,
+  DrizzleConnectorRepository,
+  DrizzleEvseRepository,
+  DrizzleLocationRepository,
+  DrizzleTariffRepository,
+  DrizzleTenantRepository,
+  DrizzleTransactionRepository,
 } from '@citrineos/dal';
 import type { FastifyInstance } from 'fastify';
 import { fileURLToPath } from 'node:url';
@@ -19,11 +21,12 @@ import { CoreAuthMode } from './config/types.js';
 import { CoreApiClient } from './core/core-api-client.js';
 import { LocalDevCoreAuth, StaticCoreAuth } from './core/core-auth.js';
 import { CoreData } from './core/core-data.js';
-import { initializeDatabase, toSystemConfig } from './db/database.js';
+import type { DatabaseConnection } from './db/database.js';
+import { connectDatabase, toSystemConfig } from './db/database.js';
 import { RabbitMqConsumer } from './messaging/rabbitmq-consumer.js';
 import {
-  SequelizeCheckoutRepository,
-  SequelizePaymentAccountRepository,
+  DrizzleCheckoutRepository,
+  DrizzlePaymentAccountRepository,
 } from './repositories/index.js';
 import { AdminAuthenticator } from './admin/admin-auth.js';
 import { CorePermissions } from './admin/core-permissions.js';
@@ -44,7 +47,7 @@ export interface PaymentApp {
   consumer: RabbitMqConsumer;
   /** Not sweeping until started. */
   reconciliation: ReconciliationService;
-  sequelize: Sequelize;
+  database: DatabaseConnection;
 }
 
 /**
@@ -59,30 +62,29 @@ export async function createApp(
     config.stripe.connectWebhookSecret,
   ),
 ): Promise<PaymentApp> {
-  const sequelize = await initializeDatabase(config, logger);
+  const database = await connectDatabase(config, logger);
+  // Core's repositories share this app's connection pool.
   const repositoryDependencies = {
     config: toSystemConfig(config),
     logger,
-    sequelizeInstance: sequelize,
+    drizzleInstance: database.db,
   };
-  // One repository serves EVSEs, connectors, stations and locations alike.
-  const locationRepository = new SequelizeLocationRepository(repositoryDependencies);
   const coreData = new CoreData({
-    evseRepository: locationRepository,
-    connectorRepository: locationRepository,
-    chargingStationRepository: locationRepository,
-    locationRepository,
-    tenantRepository: new SequelizeTenantRepository(repositoryDependencies),
-    tariffRepository: new SequelizeTariffRepository(repositoryDependencies),
-    authorizationRepository: new SequelizeAuthorizationRepository(repositoryDependencies),
-    chargingStationSequenceRepository: new SequelizeChargingStationSequenceRepository(
+    evseRepository: new DrizzleEvseRepository(repositoryDependencies),
+    connectorRepository: new DrizzleConnectorRepository(repositoryDependencies),
+    chargingStationRepository: new DrizzleChargingStationRepository(repositoryDependencies),
+    locationRepository: new DrizzleLocationRepository(repositoryDependencies),
+    tenantRepository: new DrizzleTenantRepository(repositoryDependencies),
+    tariffRepository: new DrizzleTariffRepository(repositoryDependencies),
+    authorizationRepository: new DrizzleAuthorizationRepository(repositoryDependencies),
+    chargingStationSequenceRepository: new DrizzleChargingStationSequenceRepository(
       repositoryDependencies,
     ),
-    transactionRepository: new SequelizeTransactionEventRepository(repositoryDependencies),
+    transactionRepository: new DrizzleTransactionRepository(repositoryDependencies),
   });
 
-  const checkoutRepository = new SequelizeCheckoutRepository();
-  const paymentAccountRepository = new SequelizePaymentAccountRepository();
+  const checkoutRepository = new DrizzleCheckoutRepository(database.db);
+  const paymentAccountRepository = new DrizzlePaymentAccountRepository(database.db);
   const idTokens = new IdTokens(config.idTokenPrefix);
 
   const checkoutService = new CheckoutService({
@@ -167,6 +169,6 @@ export async function createApp(
     }),
     consumer: new RabbitMqConsumer(config.amqp, settlementService, scanAndChargeService, logger),
     reconciliation: reconciliationService,
-    sequelize,
+    database,
   };
 }

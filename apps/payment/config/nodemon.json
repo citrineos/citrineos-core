@@ -1,6 +1,6 @@
 {
   "watch": ["src", "db", "../../packages/base", "../../packages/dal", "../../packages/types"],
-  "ext": "ts,js",
+  "ext": "ts,js,sql",
   "ignore": ["**/dist/**", "**/node_modules/**"],
   "exec": "pnpm --filter \"@citrineos/payment...\" run build && pnpm run db:migrate && node --env-file-if-exists=.env.local --inspect=0.0.0.0:9229 ./dist/index.js"
 }

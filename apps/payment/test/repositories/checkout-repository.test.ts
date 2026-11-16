@@ -2,10 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { sequelize as dal } from '@citrineos/dal';
 import type { TariffData } from '@citrineos/dal';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { SequelizeCheckoutRepository } from '../../src/repositories/index.js';
+import { DrizzleCheckoutRepository } from '../../src/repositories/index.js';
 import { CheckoutFlow, CheckoutStatus, RemoteStartStatus } from '../../src/types/index.js';
 import type { CheckoutCreate } from '../../src/types/index.js';
 import {
@@ -19,10 +18,11 @@ import {
 
 let db: TestDatabase;
 let tariff: TariffData;
-const repository = new SequelizeCheckoutRepository();
+let repository: DrizzleCheckoutRepository;
 
 beforeAll(async () => {
   db = await startTestDatabase();
+  repository = new DrizzleCheckoutRepository(db.db);
 }, 90_000);
 
 afterAll(async () => {
@@ -31,7 +31,7 @@ afterAll(async () => {
 
 beforeEach(async () => {
   await resetDatabase(db);
-  tariff = await aTariff(TENANT_A);
+  tariff = await aTariff(db, TENANT_A);
 });
 
 function aCheckout(overrides: Partial<CheckoutCreate> = {}): CheckoutCreate {
@@ -44,7 +44,7 @@ function aCheckout(overrides: Partial<CheckoutCreate> = {}): CheckoutCreate {
   };
 }
 
-describe('SequelizeCheckoutRepository', () => {
+describe('DrizzleCheckoutRepository', () => {
   it('creates a checkout priced from the tariff snapshot', async () => {
     const checkout = await repository.create(TENANT_A, aCheckout());
 
@@ -161,7 +161,7 @@ describe('SequelizeCheckoutRepository', () => {
   it('keeps the checkout and its tariff snapshot when the tariff is deleted', async () => {
     const checkout = await repository.create(TENANT_A, aCheckout());
 
-    await dal.Tariff.destroy({ where: { id: tariff.id } });
+    await db.pool.query('DELETE FROM "Tariffs" WHERE id = $1', [tariff.id]);
 
     const found = await repository.findById(TENANT_A, checkout.id);
     expect(found?.tariffId).toBeNull();
@@ -197,9 +197,9 @@ describe('SequelizeCheckoutRepository', () => {
     await repository.transition(TENANT_A, charging.id, [CheckoutStatus.Created], {
       status: CheckoutStatus.Charging,
     });
-    await db.sequelize.query(
-      `UPDATE "Checkouts" SET "updatedAt" = now() - interval '1 hour' WHERE id IN (:ids)`,
-      { replacements: { ids: [old.id, charging.id] } },
+    await db.pool.query(
+      `UPDATE "Checkouts" SET "updatedAt" = now() - interval '1 hour' WHERE id = ANY($1)`,
+      [[old.id, charging.id]],
     );
 
     const stale = await repository.findStale(

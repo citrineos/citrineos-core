@@ -35,13 +35,14 @@ export interface PythonData {
   paidCheckouts: PythonPaidCheckout[];
 }
 
-export interface Address {
+/** A type, not an interface, so a row read with raw SQL can be typed as one. */
+export type Address = {
   address: string | null;
   postalCode: string | null;
   city: string | null;
   state: string | null;
   country: string | null;
-}
+};
 
 export interface PythonPaidCheckout {
   id: number;

@@ -1,2 +1,4 @@
 **/dist/**
 **/node_modules/**
+# drizzle-kit writes and rewrites these itself.
+apps/payment/db/migrations/meta/

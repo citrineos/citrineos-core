@@ -11,7 +11,7 @@ export APP_ENV
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # Core's migrations have to have run: the payment tables reference Core's.
-(cd "$SCRIPT_DIR" && ./node_modules/.bin/sequelize-cli db:migrate --debug && echo migration completed successfully)
+node "$SCRIPT_DIR/dist/db/migrate-cli.js"
 
 echo "Starting application..."
 exec node "$SCRIPT_DIR/dist/index.js"

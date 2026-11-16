@@ -2,13 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { DefaultSequelizeInstance, sequelize as dal } from '@citrineos/dal';
-import type { Sequelize, TariffData } from '@citrineos/dal';
+import { DefaultSequelizeInstance } from '@citrineos/dal';
+import type { TariffData } from '@citrineos/dal';
+import type pg from 'pg';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
-import { toSystemConfig } from '../../src/db/database.js';
-import { PAYMENT_MODELS } from '../../src/models/index.js';
-import { PAYMENT_MIGRATIONS } from './migrations.js';
+import type { PaymentConfig } from '../../src/config/types.js';
 import { RuntimeEnv } from '../../src/config/types.js';
+import { connectDatabase, toSystemConfig, type PaymentDatabase } from '../../src/db/database.js';
+import { migratePaymentTables } from '../../src/db/migrate.js';
 
 export const TENANT_A = 1;
 export const TENANT_B = 2;
@@ -17,14 +18,17 @@ const ROLE = 'test';
 const DATABASE = 'citrineos_test';
 
 export interface TestDatabase {
-  sequelize: Sequelize;
+  db: PaymentDatabase;
+  /** The pool behind `db`, for raw SQL with $1-style parameters. */
+  pool: pg.Pool;
+  config: PaymentConfig['database'];
   stop(): Promise<void>;
 }
 
 /**
- * Core's tables come from its models; this app's tables come from its migrations, which is what
- * the tests exercise. DefaultSequelizeInstance is a process-wide singleton, so this runs once per
- * test file.
+ * Core's tables come from its Sequelize models, which are still what defines Core's schema; this
+ * app's tables come from its own migrations, which is what the tests exercise. Runs once per test
+ * file.
  */
 export async function startTestDatabase(): Promise<TestDatabase> {
   const container: StartedTestContainer = await new GenericContainer(
@@ -35,49 +39,47 @@ export async function startTestDatabase(): Promise<TestDatabase> {
     .withWaitStrategy(Wait.forLogMessage('database system is ready to accept connections', 2))
     .start();
 
-  const sequelize = DefaultSequelizeInstance.getInstance(
-    toSystemConfig({
-      env: RuntimeEnv.Development,
-      database: {
-        host: container.getHost(),
-        port: container.getMappedPort(5432),
-        database: DATABASE,
-        username: ROLE,
-        password: ROLE,
-      },
-    }),
+  const config: PaymentConfig['database'] = {
+    host: container.getHost(),
+    port: container.getMappedPort(5432),
+    database: DATABASE,
+    username: ROLE,
+    password: ROLE,
+  };
+  const core = DefaultSequelizeInstance.getInstance(
+    toSystemConfig({ env: RuntimeEnv.Development, database: config }),
   );
-  await sequelize.query('CREATE EXTENSION IF NOT EXISTS citext;');
-  await sequelize.sync({ force: true });
-  for (const migration of PAYMENT_MIGRATIONS) {
-    await migration.up(sequelize.getQueryInterface());
-  }
-  sequelize.addModels(PAYMENT_MODELS);
+  await core.query('CREATE EXTENSION IF NOT EXISTS citext;');
+  await core.sync({ force: true });
+  await core.close();
+
+  const connection = await connectDatabase({ database: config });
+  await migratePaymentTables(connection.db);
 
   return {
-    sequelize,
+    db: connection.db,
+    pool: connection.pool,
+    config,
     stop: async () => {
-      await sequelize.close().catch(() => undefined);
+      await connection.close().catch(() => undefined);
       await container.stop().catch(() => undefined);
     },
   };
 }
 
 export async function resetDatabase(db: TestDatabase): Promise<void> {
-  await db.sequelize.query(
+  await db.pool.query(
     'TRUNCATE TABLE "Checkouts", "PaymentAccounts", "Tariffs", "Tenants" RESTART IDENTITY CASCADE;',
   );
-  // Raw SQL because Core's TenantAttributes types the integer id column as a string.
-  await db.sequelize.query(
+  await db.pool.query(
     `INSERT INTO "Tenants" (id, name, "createdAt", "updatedAt")
-     VALUES (:a, 'Tenant A', now(), now()), (:b, 'Tenant B', now(), now())`,
-    { replacements: { a: TENANT_A, b: TENANT_B } },
+     VALUES ($1, 'Tenant A', now(), now()), ($2, 'Tenant B', now(), now())`,
+    [TENANT_A, TENANT_B],
   );
 }
 
-export async function aTariff(tenantId: number): Promise<TariffData> {
-  const tariff = await dal.Tariff.create({
-    tenantId,
+export async function aTariff(db: TestDatabase, tenantId: number): Promise<TariffData> {
+  const tariff = {
     currency: 'USD',
     pricePerKwh: 0.42,
     pricePerMin: 0.05,
@@ -85,6 +87,41 @@ export async function aTariff(tenantId: number): Promise<TariffData> {
     taxRate: 19,
     authorizationAmount: 50,
     paymentFee: 2,
+  };
+  const { rows } = await db.pool.query<{ id: number }>(
+    `INSERT INTO "Tariffs" ("tenantId", currency, "pricePerKwh", "pricePerMin", "pricePerSession",
+       "taxRate", "authorizationAmount", "paymentFee", "createdAt", "updatedAt")
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now(), now()) RETURNING id`,
+    [
+      tenantId,
+      tariff.currency,
+      tariff.pricePerKwh,
+      tariff.pricePerMin,
+      tariff.pricePerSession,
+      tariff.taxRate,
+      tariff.authorizationAmount,
+      tariff.paymentFee,
+    ],
+  );
+  return { id: rows[0].id, ...tariff };
+}
+
+/**
+ * Raw SQL with `:name` parameters, the rows it returns. For setting up and inspecting Core's
+ * tables, which no repository of this app writes.
+ */
+export async function query<T extends pg.QueryResultRow = pg.QueryResultRow>(
+  db: TestDatabase,
+  text: string,
+  params: Record<string, unknown> = {},
+): Promise<T[]> {
+  const values: unknown[] = [];
+  const positional = text.replace(/(?<!:):([A-Za-z_]\w*)/g, (match, name: string) => {
+    if (!(name in params)) {
+      return match;
+    }
+    values.push(params[name]);
+    return `$${values.length}`;
   });
-  return tariff.data;
+  return (await db.pool.query<T>(positional, values)).rows;
 }
