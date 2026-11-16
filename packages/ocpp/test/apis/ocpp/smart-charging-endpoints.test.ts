@@ -314,15 +314,15 @@ describe('smartCharging message endpoints', () => {
   describe('SetChargingProfileEndpoint', () => {
     let readAllByQuerystring: ReturnType<typeof vi.fn>;
     let createOrUpdateChargingProfile: ReturnType<typeof vi.fn>;
-    let readAllByQuery: ReturnType<typeof vi.fn>;
-    let existByQuery: ReturnType<typeof vi.fn>;
+    let readChargingProfiles: ReturnType<typeof vi.fn>;
+    let findChargingNeedsByEvseDBIdAndTransactionDBId: ReturnType<typeof vi.fn>;
     let readTransactionByStationIdAndTransactionId: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
       readAllByQuerystring = vi.fn().mockResolvedValue([]);
       createOrUpdateChargingProfile = vi.fn().mockResolvedValue({ id: 1 });
-      readAllByQuery = vi.fn().mockResolvedValue([]);
-      existByQuery = vi.fn().mockResolvedValue(0);
+      readChargingProfiles = vi.fn().mockResolvedValue([]);
+      findChargingNeedsByEvseDBIdAndTransactionDBId = vi.fn().mockResolvedValue(undefined);
       readTransactionByStationIdAndTransactionId = vi
         .fn()
         .mockResolvedValue({ id: 42, transactionId: 'tx-001', evseId: null });
@@ -337,7 +337,8 @@ describe('smartCharging message endpoints', () => {
             .fn()
             .mockResolvedValue(undefined),
         },
-        chargingProfileRepository: { createOrUpdateChargingProfile, readAllByQuery, existByQuery },
+        chargingProfileRepository: { createOrUpdateChargingProfile, readChargingProfiles },
+        chargingNeedsRepository: { findChargingNeedsByEvseDBIdAndTransactionDBId },
         transactionRepository: { readTransactionByStationIdAndTransactionId },
       });
 
@@ -464,7 +465,7 @@ describe('smartCharging message endpoints', () => {
 
     it('refuses a profile whose window overlaps one already active', async () => {
       // Both are valid from now, so they are valid at the same time however they end.
-      readAllByQuery.mockResolvedValue([
+      readChargingProfiles.mockResolvedValue([
         { validTo: new Date(Date.now() + 60 * 60_000).toISOString() },
       ]);
 
@@ -478,7 +479,7 @@ describe('smartCharging message endpoints', () => {
     });
 
     it('sends a profile whose window begins after the active one ends', async () => {
-      readAllByQuery.mockResolvedValue([
+      readChargingProfiles.mockResolvedValue([
         { validTo: new Date(Date.now() + 60 * 60_000).toISOString() },
       ]);
 
@@ -494,7 +495,9 @@ describe('smartCharging message endpoints', () => {
     });
 
     it('sends a profile when the one already stored has expired', async () => {
-      readAllByQuery.mockResolvedValue([{ validTo: new Date(Date.now() - 60_000).toISOString() }]);
+      readChargingProfiles.mockResolvedValue([
+        { validTo: new Date(Date.now() - 60_000).toISOString() },
+      ]);
 
       const confirmations = await handle(
         aProfile({ validTo: new Date(Date.now() + 60 * 60_000).toISOString() }),
@@ -505,7 +508,7 @@ describe('smartCharging message endpoints', () => {
     });
 
     it('sends a profile whose window only met the stored one before now', async () => {
-      readAllByQuery.mockResolvedValue([
+      readChargingProfiles.mockResolvedValue([
         { validTo: new Date(Date.now() - 60 * 60_000).toISOString() },
       ]);
 
@@ -523,7 +526,7 @@ describe('smartCharging message endpoints', () => {
     it('sends an update to the profile already stored under the same id', async () => {
       // Re-sending an id the station already holds replaces that profile, so its stored copy is
       // not a second profile to be valid at the same time as itself.
-      readAllByQuery.mockResolvedValue([
+      readChargingProfiles.mockResolvedValue([
         { id: 1, validTo: new Date(Date.now() + 60 * 60_000).toISOString() },
       ]);
 
@@ -546,8 +549,7 @@ describe('smartCharging message endpoints', () => {
       });
 
       const withStoredTxProfiles = (profiles: { id: number }[]) => {
-        existByQuery.mockResolvedValue(profiles.length);
-        readAllByQuery.mockResolvedValue(profiles);
+        readChargingProfiles.mockResolvedValue(profiles);
       };
 
       it('sends an update to the TxProfile already stored under the same id', async () => {

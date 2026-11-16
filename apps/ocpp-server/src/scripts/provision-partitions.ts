@@ -3,14 +3,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
- * Provisions upcoming partitions: "OCPPMessages" and "WebsocketEvents" weekly, the
- * "Transactions" cluster monthly. Runs on every container start, because the partitioning
- * migrations run once but partitions must keep being created.
+ * Provisions upcoming partitions: "OCPPMessages", "WebsocketEvents" and "AuthorizationAttempts"
+ * weekly, the "Transactions" cluster monthly. Runs on every container start, because the
+ * partitioning migrations run once but partitions must keep being created.
  */
 import { ConfigLoader } from '@citrineos/base';
 import { Sequelize } from 'sequelize';
 
-/** Weeks of "OCPPMessages" and "WebsocketEvents" partitions to keep ahead of the current one. */
+/** Weeks of each weekly-partitioned table to keep ahead of the current one. */
 const FUTURE_WEEKS = Number(process.env.OCPP_PARTITION_FUTURE_WEEKS ?? 4);
 
 /**
@@ -64,6 +64,7 @@ async function main(): Promise<void> {
 
     await rotate(sequelize, 'rotate_transactions_partitions', FUTURE_MONTHS);
     await rotate(sequelize, 'rotate_websocket_events_partitions', FUTURE_WEEKS);
+    await rotate(sequelize, 'rotate_authorization_attempts_partitions', FUTURE_WEEKS);
 
     if (!(await rotate(sequelize, 'rotate_ocpp_messages_partitions', FUTURE_WEEKS))) {
       return;

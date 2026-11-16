@@ -4,4 +4,5 @@
 
 export { AuthorizationMapper } from './authorization-mapper.js';
 export { ChargingProfileMapper } from './charging-profile-mapper.js';
+export { LocationMapper } from './location-mapper.js';
 export { TariffMapper } from './tariff-mapper.js';

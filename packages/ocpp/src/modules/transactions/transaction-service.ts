@@ -8,6 +8,7 @@ import {
   MeterValueUtils,
 } from '@citrineos/base';
 import {
+  AuthorizationAttemptReasonEnum,
   type AuthorizationDto,
   AuthorizationStatusEnum,
   type AuthorizationStatusEnumType,
@@ -33,6 +34,10 @@ import type {
 import { OCPP1_6_Mapper } from '@citrineos/dal';
 import { OCPP2_0_1_Mapper } from '@citrineos/dal';
 import type { ILogObj, Logger } from 'tslog';
+import {
+  type AuthorizationDecision,
+  newAuthorizationDecision,
+} from '@services/authorization-attempts/index.js';
 
 export class TransactionService {
   private _meterValueRepository: IMeterValueRepository;
@@ -112,12 +117,14 @@ export class TransactionService {
     tenantId: number,
     transactionEvent: OCPP2_request_types.TransactionEventRequest,
     messageContext: IMessageContext,
+    decision: AuthorizationDecision = newAuthorizationDecision(),
   ): Promise<OCPP2_response_types.TransactionEventResponse> {
     const idToken = transactionEvent.idToken!;
 
     // C02.FR.02: a transaction started with a button carries a NoAuthorization idToken with an
     // empty value, which is not backed by an Authorization and is accepted as it stands.
     if (idToken.type === OCPP2_0_1.IdTokenEnumType.NoAuthorization) {
+      decision.reason = AuthorizationAttemptReasonEnum.NoAuthorization;
       return { idTokenInfo: { status: OCPP2_0_1.AuthorizationStatusEnumType.Accepted } };
     }
 
@@ -134,9 +141,11 @@ export class TransactionService {
     };
 
     if (authorizations.length !== 1) {
+      decision.reason = this._lookupFailureReason(authorizations.length);
       return response;
     }
     const authorization = authorizations[0];
+    decision.authorization = authorization;
 
     // Extract DTO fields from sequelize Model<any, any> objects
     const idTokenInfo = OCPP2_0_1_Mapper.AuthorizationMapper.toIdTokenInfo(authorization);
@@ -144,11 +153,13 @@ export class TransactionService {
     if (idTokenInfo.status !== OCPP2_0_1.AuthorizationStatusEnumType.Accepted) {
       // IdTokenInfo.status is one of Blocked, Expired, Invalid, NoCredit
       // N.B. Other non-Accepted statuses should not be allowed to be stored.
+      decision.reason = AuthorizationAttemptReasonEnum.StoredStatus;
       response.idTokenInfo = idTokenInfo;
       return response;
     }
 
     if (idTokenInfo.cacheExpiryDateTime && new Date() > new Date(idTokenInfo.cacheExpiryDateTime)) {
+      decision.reason = AuthorizationAttemptReasonEnum.CacheExpired;
       response.idTokenInfo = {
         status: OCPP2_0_1.AuthorizationStatusEnumType.Invalid,
         groupIdToken: idTokenInfo.groupIdToken,
@@ -162,6 +173,7 @@ export class TransactionService {
       ) {
         const hasConcurrent = await this._hasConcurrentTransactions(tenantId, authorization.id!);
         if (hasConcurrent) {
+          decision.reason = AuthorizationAttemptReasonEnum.ConcurrentTx;
           response.idTokenInfo = {
             status: OCPP2_0_1.AuthorizationStatusEnumType.ConcurrentTx,
           };
@@ -189,6 +201,7 @@ export class TransactionService {
       }
 
       const result = await this._applyAuthorizers(authorization, messageContext, evse, connector);
+      decision.reason = this._authorizerResultReason(result);
       response.idTokenInfo = this._mapAuthorizationDtoToIdTokenInfo(authorization, result);
     }
     this._logger.debug('idToken Authorization final status:', response.idTokenInfo.status);
@@ -199,12 +212,14 @@ export class TransactionService {
     tenantId: number,
     transactionEvent: OCPP2_request_types.TransactionEventRequest,
     messageContext: IMessageContext,
+    decision: AuthorizationDecision = newAuthorizationDecision(),
   ): Promise<OCPP2_1.TransactionEventResponse> {
     const idToken = transactionEvent.idToken!;
 
     // C02.FR.02: a transaction started with a button carries a NoAuthorization idToken with an
     // empty value, which is not backed by an Authorization and is accepted as it stands.
     if (idToken.type === OCPP2_1.IdTokenEnumType.NoAuthorization) {
+      decision.reason = AuthorizationAttemptReasonEnum.NoAuthorization;
       return { idTokenInfo: { status: OCPP2_1.AuthorizationStatusEnumType.Accepted } };
     }
 
@@ -220,18 +235,22 @@ export class TransactionService {
     };
 
     if (authorizations.length !== 1) {
+      decision.reason = this._lookupFailureReason(authorizations.length);
       return response;
     }
     const authorization = authorizations[0];
+    decision.authorization = authorization;
 
     const idTokenInfo = OCPP2_0_1_Mapper.AuthorizationMapper.toIdTokenInfo(authorization);
 
     if (idTokenInfo.status !== OCPP2_0_1.AuthorizationStatusEnumType.Accepted) {
+      decision.reason = AuthorizationAttemptReasonEnum.StoredStatus;
       response.idTokenInfo = idTokenInfo;
       return response;
     }
 
     if (idTokenInfo.cacheExpiryDateTime && new Date() > new Date(idTokenInfo.cacheExpiryDateTime)) {
+      decision.reason = AuthorizationAttemptReasonEnum.CacheExpired;
       response.idTokenInfo = {
         status: OCPP2_1.AuthorizationStatusEnumType.Invalid,
         groupIdToken: idTokenInfo.groupIdToken,
@@ -244,6 +263,7 @@ export class TransactionService {
       ) {
         const hasConcurrent = await this._hasConcurrentTransactions(tenantId, authorization.id!);
         if (hasConcurrent) {
+          decision.reason = AuthorizationAttemptReasonEnum.ConcurrentTx;
           response.idTokenInfo = {
             status: OCPP2_1.AuthorizationStatusEnumType.ConcurrentTx,
           };
@@ -271,6 +291,7 @@ export class TransactionService {
       }
 
       const result = await this._applyAuthorizers(authorization, messageContext, evse, connector);
+      decision.reason = this._authorizerResultReason(result);
       response.idTokenInfo = this._mapAuthorizationDtoToIdTokenInfo(authorization, result);
     }
 
@@ -288,6 +309,7 @@ export class TransactionService {
         );
       } else if (response.idTokenInfo.status === OCPP2_1.AuthorizationStatusEnumType.Accepted) {
         // C17.FR.02: Prepaid token with zero or negative balance
+        decision.reason = AuthorizationAttemptReasonEnum.NoCredit;
         response.idTokenInfo.status = OCPP2_1.AuthorizationStatusEnumType.NoCredit;
         response.idTokenInfo.cacheExpiryDateTime = new Date().toISOString();
         this._logger.debug(
@@ -328,6 +350,7 @@ export class TransactionService {
     context: IMessageContext,
     idToken: string,
     connectorId: number,
+    decision: AuthorizationDecision = newAuthorizationDecision(),
   ): Promise<OCPP1_6.StartTransactionResponse> {
     const response: OCPP1_6.StartTransactionResponse = {
       idTagInfo: {
@@ -346,15 +369,18 @@ export class TransactionService {
         this._logger.error(
           `Found invalid authorizations ${JSON.stringify(authorizations)} for idToken: ${idToken}`,
         );
+        decision.reason = this._lookupFailureReason(authorizations.length);
         return response;
       }
       const authorization = authorizations[0];
+      decision.authorization = authorization;
 
       // Check expiration and status
       if (!authorization.status) {
         this._logger.error(
           `Authorization ${authorization.id} for idToken ${idToken} has no status; rejecting.`,
         );
+        decision.reason = AuthorizationAttemptReasonEnum.StoredStatus;
         return response;
       }
 
@@ -362,6 +388,7 @@ export class TransactionService {
         authorization.status,
       );
       if (idTokenInfoStatus !== OCPP1_6.StartTransactionResponseStatus.Accepted) {
+        decision.reason = AuthorizationAttemptReasonEnum.StoredStatus;
         response.idTagInfo.status = idTokenInfoStatus;
         return response;
       }
@@ -370,6 +397,7 @@ export class TransactionService {
         authorization.cacheExpiryDateTime &&
         new Date() > new Date(authorization.cacheExpiryDateTime)
       ) {
+        decision.reason = AuthorizationAttemptReasonEnum.CacheExpired;
         response.idTagInfo.status = OCPP1_6.StartTransactionResponseStatus.Expired;
         return response;
       }
@@ -378,6 +406,7 @@ export class TransactionService {
       if (authorization.concurrentTransaction !== true) {
         const hasConcurrent = await this._hasConcurrentTransactions(tenantId, authorization.id!);
         if (hasConcurrent) {
+          decision.reason = AuthorizationAttemptReasonEnum.ConcurrentTx;
           response.idTagInfo.status = OCPP1_6.StartTransactionResponseStatus.ConcurrentTx;
           return response;
         }
@@ -390,10 +419,15 @@ export class TransactionService {
           context.ocppConnectionName,
           connectorId,
         );
+      const result = await this._applyAuthorizers(
+        authorization,
+        context,
+        connector?.evse,
+        connector,
+      );
+      decision.reason = this._authorizerResultReason(result);
       response.idTagInfo.status =
-        OCPP1_6_Mapper.AuthorizationMapper.toStartTransactionResponseStatus(
-          await this._applyAuthorizers(authorization, context, connector?.evse, connector),
-        );
+        OCPP1_6_Mapper.AuthorizationMapper.toStartTransactionResponseStatus(result);
       if (response.idTagInfo.status !== OCPP1_6.StartTransactionResponseStatus.Accepted) {
         return response;
       }
@@ -413,6 +447,7 @@ export class TransactionService {
       return response;
     } catch (e) {
       this._logger.error(`Authorization for idToken ${idToken} failed.`, e);
+      decision.reason = AuthorizationAttemptReasonEnum.Error;
       response.idTagInfo.status = OCPP1_6.StartTransactionResponseStatus.Invalid;
       return response;
     }
@@ -529,6 +564,20 @@ export class TransactionService {
       result = await authorizer.authorize(authorization, messageContext, evse, connector);
     }
     return result;
+  }
+
+  private _lookupFailureReason(matches: number): AuthorizationDecision['reason'] {
+    return matches === 0
+      ? AuthorizationAttemptReasonEnum.NotFound
+      : AuthorizationAttemptReasonEnum.MultipleFound;
+  }
+
+  private _authorizerResultReason(
+    result: AuthorizationStatusEnumType,
+  ): AuthorizationDecision['reason'] {
+    return result === AuthorizationStatusEnum.Accepted
+      ? AuthorizationAttemptReasonEnum.Accepted
+      : AuthorizationAttemptReasonEnum.AuthorizerRejected;
   }
 
   private async _hasConcurrentTransactions(

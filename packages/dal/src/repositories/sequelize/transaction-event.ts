@@ -426,6 +426,17 @@ export class SequelizeTransactionEventRepository
     });
   }
 
+  async readTransactionWithStartTransactionByStationIdAndTransactionId(
+    tenantId: number,
+    ocppConnectionName: string,
+    transactionId: string,
+  ): Promise<TransactionDto | undefined> {
+    return await this.transaction.readOnlyOneByQuery(tenantId, {
+      where: { stationId: await stationIdFilter(tenantId, ocppConnectionName), transactionId },
+      include: [StartTransaction],
+    });
+  }
+
   async readAllActiveTransactionsByAuthorizationId(
     tenantId: number,
     authorizationId: number,

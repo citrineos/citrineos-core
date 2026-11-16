@@ -118,6 +118,21 @@ describe('ConfigLoader', () => {
       expect(config.host).toBe('1.2.3.4');
     });
 
+    it('logs the variable name but never the value of a non-JSON variable', async () => {
+      const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => undefined);
+      process.env.CITRINEOS_DATABASE_PASSWORD = 'super-secret-password';
+      process.env.CITRINEOS_MESSAGEBROKER_AMQP_URL = 'amqp://user:amqp-secret@rabbitmq:5672';
+
+      const config = await ConfigLoader.loadConfig();
+
+      expect(config.database.password).toBe('super-secret-password');
+      const logged = debugSpy.mock.calls.map((call) => call.map(String).join(' ')).join('\n');
+      expect(logged).toContain('CITRINEOS_DATABASE_PASSWORD');
+      expect(logged).toContain('CITRINEOS_MESSAGEBROKER_AMQP_URL');
+      expect(logged).not.toContain('super-secret-password');
+      expect(logged).not.toContain('amqp-secret');
+    });
+
     it('matches leaf keys case-insensitively against their camelCase schema key', async () => {
       process.env.CITRINEOS_LOGLEVEL = '5';
 

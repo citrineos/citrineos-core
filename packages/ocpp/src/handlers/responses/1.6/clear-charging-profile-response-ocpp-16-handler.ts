@@ -46,20 +46,10 @@ export class ClearChargingProfileResponseOcpp16Handler extends AbstractHandler {
         return;
       }
       // Set existed profiles to isActive false
-      await this._chargingProfileRepository.updateAllByQuery(
+      await this._chargingProfileRepository.deactivateChargingProfiles(
         tenantId,
-        {
-          isActive: false,
-        },
-        {
-          where: {
-            tenantId: tenantId,
-            ocppConnectionName: ocppConnectionName,
-            isActive: true,
-            ...this._clearedProfileCriteria(originalRequest),
-          },
-          returning: false,
-        },
+        ocppConnectionName,
+        this._clearedProfileCriteria(originalRequest),
       );
     } else {
       this._logger.error(

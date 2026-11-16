@@ -7,6 +7,7 @@ import {
   getStationIdFromIdentifier,
   getTenantIdFromIdentifier,
   type ICache,
+  redactUrl,
 } from '@citrineos/base';
 import {
   FrameDirection,
@@ -269,6 +270,16 @@ export class WebhookDispatcher {
     },
     url: string,
   ): Promise<boolean> {
+    const loggableUrl = redactUrl(url);
+    // Avoid print url in the error log when fetch failed due to an unparsable URL
+    if (!URL.canParse(url)) {
+      this._logger.error(
+        `Route to subscription ${loggableUrl} on charging station ${requestBody.ocppConnectionName} failed.
+           Event: ${requestBody.event}, not a valid URL`,
+      );
+      return false;
+    }
+
     try {
       const response = await fetch(url, {
         method: 'POST',
@@ -281,14 +292,14 @@ export class WebhookDispatcher {
       if (!response.ok) {
         const errorText = await response.text();
         this._logger.error(
-          `Route to subscription ${url} on charging station ${requestBody.ocppConnectionName} failed.
+          `Route to subscription ${loggableUrl} on charging station ${requestBody.ocppConnectionName} failed.
             Event: ${requestBody.event}, ${response.status} ${response.statusText} - ${errorText}`,
         );
       }
       return response.ok;
     } catch (error) {
       this._logger.error(
-        `Route to subscription ${url} on charging station ${requestBody.ocppConnectionName} failed.
+        `Route to subscription ${loggableUrl} on charging station ${requestBody.ocppConnectionName} failed.
            Event: ${requestBody.event}, ${error}`,
       );
       return false;

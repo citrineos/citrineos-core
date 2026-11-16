@@ -8,6 +8,8 @@ import {
   type AwilixContainer,
   type Constructor,
 } from 'awilix';
+import { type IMessage, type OcppError } from '@citrineos/base';
+import { MessageOrigin, MessageState, type OcppRequest, type OcppResponse } from '@citrineos/types';
 import { type ILogObj, type Logger } from 'tslog';
 import { vi, type Mock } from 'vitest';
 
@@ -75,6 +77,30 @@ export function makeMockOcppSender(): MockOcppSender {
 }
 
 /**
+ * {@link makeMockOcppSender}, except that a response rewrites the message it answers the way the
+ * real sender does: the message leaves carrying the response's payload and state, a CSMS origin,
+ * and a context with a new timestamp. A handler that reads the request back off the message after
+ * responding fails against this, as it does in production.
+ */
+export function makeRewritingOcppSender(): MockOcppSender {
+  const respond = async (
+    message: IMessage<OcppRequest | OcppResponse | OcppError>,
+    payload: OcppResponse | OcppError,
+  ) => {
+    message.origin = MessageOrigin.ChargingStationManagementSystem;
+    message.context = { ...message.context, timestamp: new Date(0).toISOString() };
+    message.payload = payload;
+    message.state = MessageState.Response;
+    return { success: true };
+  };
+  return {
+    sendCall: vi.fn().mockResolvedValue({ success: true }),
+    sendCallResultWithMessage: vi.fn(respond),
+    sendCallErrorWithMessage: vi.fn(respond),
+  };
+}
+
+/**
  * Types a deps object for a class the test constructs itself with `new`, the
  * same way Deps<T> types the ones getTestInstance resolves: each dep may be
  * partial, and the members that are present stay checked.
@@ -125,4 +151,20 @@ export function getTestInstance<T extends AnyClass>(
     [TARGET_KEY]: asClass(instance),
   });
   return container.resolve<InstanceType<T>>(TARGET_KEY);
+}
+
+export type MockAuthorizationAttemptService = {
+  record: Mock;
+  recordRemoteStart: Mock;
+};
+
+/**
+ * Every handler that evaluates or sends an idToken records the attempt; this stands in for the
+ * service so a test can assert on what was recorded.
+ */
+export function makeMockAuthorizationAttemptService(): MockAuthorizationAttemptService {
+  return {
+    record: vi.fn().mockResolvedValue(undefined),
+    recordRemoteStart: vi.fn().mockResolvedValue(undefined),
+  };
 }

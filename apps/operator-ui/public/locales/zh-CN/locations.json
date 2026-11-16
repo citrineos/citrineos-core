@@ -1,0 +1,79 @@
+{
+  "Locations": {
+    "Locations": "位置",
+    "location": "位置",
+    "noDataFound": "未找到ID为 {id} 的位置。",
+    "unnamedLocation": "未命名位置",
+    "noAddress": "无地址",
+    "chargingStations": "充电站",
+    "openingHours": "营业时间",
+    "viewStations": "查看充电站",
+    "columns": {
+      "name": "名称",
+      "address": "地址",
+      "latitude": "纬度",
+      "longitude": "经度",
+      "timeZone": "时区",
+      "parkingType": "停车类型",
+      "facilities": "设施",
+      "totalStations": "充电站总数",
+      "createdAt": "创建时间",
+      "updatedAt": "更新时间"
+    },
+    "detail": {
+      "totalChargers": "充电桩总数",
+      "imageAlt": "{name} 图片"
+    },
+    "form": {
+      "name": "名称",
+      "streetAddress": "街道地址",
+      "streetAddressRequired": "街道地址为必填项",
+      "addressAutocompletePlaceholder": "输入以搜索，或在下方手动填写",
+      "city": "城市",
+      "cityPlaceholder": "例如：Berlin",
+      "stateProvinceRegion": "州 / 省 / 地区",
+      "stateProvinceRegionPlaceholder": "例如：California, Ontario, Bayern",
+      "postalCode": "邮政编码",
+      "postalCodePlaceholder": "例如：94105, SW1A 1AA, 10115",
+      "country": "国家",
+      "selectCountry": "选择国家",
+      "searchCountries": "搜索国家...",
+      "latitude": "纬度",
+      "longitude": "经度",
+      "autoFilledFromAddress": "根据地址自动填充",
+      "timeZone": "时区",
+      "parkingType": "停车类型",
+      "selectParkingType": "选择停车类型",
+      "searchParkingTypes": "搜索停车类型",
+      "facilities": "设施",
+      "selectFacilities": "选择设施",
+      "searchFacilities": "搜索设施",
+      "image": "图片",
+      "upload": "上传",
+      "uploadFailedToast": "更新该位置的充电站失败，错误：{error}"
+    },
+    "stations": {
+      "searchChargingStation": "搜索充电站",
+      "noChargingStationsFound": "未找到充电站",
+      "noChargingStationsSelected": "未选择充电站",
+      "stationId": "充电站ID",
+      "configuration": "配置",
+      "needsConfiguration": "需要配置",
+      "modelVendor": "型号 / 厂商",
+      "needsModel": "缺少型号",
+      "needsVendor": "缺少厂商"
+    },
+    "map": {
+      "viewDetails": "查看详情",
+      "networkOverview": "网络概览",
+      "all": "全部",
+      "locations": "位置",
+      "stations": "充电站",
+      "viewTypeDetails": "查看{type}详情",
+      "online": "在线",
+      "partial": "部分在线",
+      "offline": "离线",
+      "noChargers": "无充电桩。"
+    }
+  }
+}

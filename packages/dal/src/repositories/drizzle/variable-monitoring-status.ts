@@ -2,13 +2,18 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { VariableMonitoringStatusDto } from '@citrineos/types';
+import type {
+  CallAction,
+  SetMonitoringStatusEnumType,
+  VariableMonitoringStatusDto,
+} from '@citrineos/types';
 import {
   type VariableMonitoringStatusEntity,
+  type VariableMonitoringStatusEntityInsert,
   variableMonitoringStatusTable,
   tenantVariableMonitoringStatusTable,
 } from '../../db/drizzle/schema/variable-monitoring-status.js';
-import { DrizzleRepository } from './base.js';
+import { DrizzleRepository, type DrizzleWriteContext } from './base.js';
 
 // ─── Mapper ──────────────────────────────────────────────────────────────────
 // Maps a Drizzle entity (DB row) to the external VariableMonitoringStatusDto contract.
@@ -45,5 +50,25 @@ export class DrizzleVariableMonitoringStatusRepository extends DrizzleRepository
     return toVariableMonitoringStatusDto(row);
   }
 
-  // Domain query/write methods intentionally omitted — stub outline only.
+  async createStatus(
+    tenantId: number,
+    values: Omit<VariableMonitoringStatusEntityInsert, 'tenantId'>,
+    ctx?: DrizzleWriteContext,
+  ): Promise<VariableMonitoringStatusDto> {
+    return await this.insert(tenantId, values, ctx);
+  }
+
+  async createVariableMonitoringStatus(
+    tenantId: number,
+    status: SetMonitoringStatusEnumType,
+    action: CallAction,
+    variableMonitoringId: number,
+    ctx?: DrizzleWriteContext,
+  ): Promise<void> {
+    await this.createStatus(
+      tenantId,
+      { status, statusInfo: { reasonCode: action }, variableMonitoringId },
+      ctx,
+    );
+  }
 }

@@ -10,6 +10,7 @@ import {
   type ITenantRepository,
 } from '@citrineos/dal';
 import type { SystemConfig } from '@citrineos/types';
+import { ConnectorStatusService } from '@modules/monitoring/connector-status-service.js';
 import { StatusNotificationService } from '@modules/transactions/status-notification-service.js';
 import { QueryTypes } from 'sequelize';
 import type { Sequelize } from 'sequelize-typescript';
@@ -171,7 +172,13 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
       evseRepository: locationRepository,
       statusNotificationRepository: locationRepository,
       cache,
-      networkAlertService: { recordConnectorStatus: vi.fn() },
+      connectorStatusService: new ConnectorStatusService({
+        chargingStationRepository: locationRepository,
+        evseRepository: locationRepository,
+        connectorRepository: locationRepository,
+        cache,
+        networkAlertService: { recordConnectorStatus: vi.fn() },
+      }),
     });
 
     await expect(
@@ -236,7 +243,13 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
       evseRepository: locationRepository,
       statusNotificationRepository: locationRepository,
       cache,
-      networkAlertService: { recordConnectorStatus: vi.fn() },
+      connectorStatusService: new ConnectorStatusService({
+        chargingStationRepository: locationRepository,
+        evseRepository: locationRepository,
+        connectorRepository: locationRepository,
+        cache,
+        networkAlertService: { recordConnectorStatus: vi.fn() },
+      }),
     });
 
     for (const status of ['Available', 'Charging']) {
@@ -313,7 +326,13 @@ describe('StatusNotificationService.processOcpp16StatusNotification end-to-end (
       evseRepository: locationRepository,
       statusNotificationRepository: locationRepository,
       cache,
-      networkAlertService: { recordConnectorStatus: vi.fn() },
+      connectorStatusService: new ConnectorStatusService({
+        chargingStationRepository: locationRepository,
+        evseRepository: locationRepository,
+        connectorRepository: locationRepository,
+        cache,
+        networkAlertService: { recordConnectorStatus: vi.fn() },
+      }),
     });
 
     await expect(
@@ -359,7 +378,13 @@ describe('StatusNotificationService.processStatusNotification end-to-end (2.0.1 
       evseRepository: locationRepository,
       statusNotificationRepository: locationRepository,
       cache,
-      networkAlertService: { recordConnectorStatus: vi.fn() },
+      connectorStatusService: new ConnectorStatusService({
+        chargingStationRepository: locationRepository,
+        evseRepository: locationRepository,
+        connectorRepository: locationRepository,
+        cache,
+        networkAlertService: { recordConnectorStatus: vi.fn() },
+      }),
     });
   };
 

@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+export * from './authorization-attempts/index.js';
 export * from './authorizer/index.js';
 export * from './vat-provider/index.js';
 export * from './certificate/index.js';

@@ -2,5 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+export { ConnectorStatusService } from './connector-status-service.js';
 export { MonitoringModule } from './module.js';
 export { registerMonitoringServices } from './register.js';

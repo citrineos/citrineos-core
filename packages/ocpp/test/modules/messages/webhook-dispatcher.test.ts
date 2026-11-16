@@ -18,7 +18,7 @@ import { afterEach, beforeEach, describe, expect, it, type Mocked, vi } from 'vi
 import { aSubscription } from '../ocpp-router/providers/subscription-provider.js';
 
 describe('WebhookDispatcher', () => {
-  const { container } = createTestContainer();
+  const { container, logger } = createTestContainer();
   const A_BOOT_NOTIFICATION_CALL = [2, '123', 'BootNotification', {}];
   const A_CALL_RESULT = [3, '123', { status: 'Accepted' }];
   const TIMESTAMP = 'Any timestamp';
@@ -491,6 +491,62 @@ describe('WebhookDispatcher', () => {
       await vi.runOnlyPendingTimersAsync();
 
       expect(subscriptionRepository.readAllByStationId).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('credentials in the subscription url', () => {
+    const SECRET_URL = 'https://user:pw-secret@receiver:8000/ocpp/webhook?token=q-secret';
+
+    function expectNoCredentialLogged(): void {
+      const logged = logger.error.mock.calls.map((call) => call.map(String).join(' ')).join('\n');
+      expect(logged).not.toContain('pw-secret');
+      expect(logged).not.toContain('q-secret');
+    }
+
+    beforeEach(() => {
+      logger.error.mockClear();
+    });
+
+    it('should log a non-2xx response without the credentials', async () => {
+      const subscription = aSubscription({ onConnect: true, url: SECRET_URL });
+      givenSubscriptions(subscription);
+      fetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error',
+        text: () => Promise.resolve('receiver down'),
+      } as Response);
+
+      await webhookDispatcher.register(subscription.tenantId!, subscription.ocppConnectionName);
+
+      expect(fetch).toHaveBeenCalledWith(SECRET_URL, expect.anything());
+      expect(String(logger.error.mock.calls[0][0])).toContain('https://receiver:8000/ocpp/webhook');
+      expectNoCredentialLogged();
+    });
+
+    it('should log an unreachable receiver without the credentials', async () => {
+      const subscription = aSubscription({ onConnect: true, url: SECRET_URL });
+      givenSubscriptions(subscription);
+      fetch.mockRejectedValueOnce(new Error('ECONNREFUSED'));
+
+      await webhookDispatcher.register(subscription.tenantId!, subscription.ocppConnectionName);
+
+      expect(logger.error).toHaveBeenCalled();
+      expectNoCredentialLogged();
+    });
+
+    it('should not send to, or log, an unparsable url', async () => {
+      const subscription = aSubscription({
+        onConnect: true,
+        url: 'receiver/ocpp/webhook?token=q-secret',
+      });
+      givenSubscriptions(subscription);
+
+      await webhookDispatcher.register(subscription.tenantId!, subscription.ocppConnectionName);
+
+      expect(fetch).not.toHaveBeenCalled();
+      expect(logger.error).toHaveBeenCalled();
+      expectNoCredentialLogged();
     });
   });
 

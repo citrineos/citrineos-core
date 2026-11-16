@@ -93,16 +93,31 @@ export class ChargingProfileMapper {
     return kind as unknown as keyof typeof ChargingProfileKindEnum;
   }
 
+  /**
+   * OCPP 2.1 has more values which are not in 2.0.1
+   * Make sure only values in 2.0.1 are sent to station
+   */
   static toChargingProfilePurposeEnumType(
     purpose: keyof typeof ChargingProfilePurposeEnum,
   ): OCPP2_0_1.ChargingProfilePurposeEnumType {
-    return purpose as unknown as OCPP2_0_1.ChargingProfilePurposeEnumType;
+    switch (purpose) {
+      case 'ChargingStationExternalConstraints':
+        return OCPP2_0_1.ChargingProfilePurposeEnumType.ChargingStationExternalConstraints;
+      case 'ChargingStationMaxProfile':
+        return OCPP2_0_1.ChargingProfilePurposeEnumType.ChargingStationMaxProfile;
+      case 'TxDefaultProfile':
+        return OCPP2_0_1.ChargingProfilePurposeEnumType.TxDefaultProfile;
+      case 'TxProfile':
+        return OCPP2_0_1.ChargingProfilePurposeEnumType.TxProfile;
+      default:
+        throw new Error(`Charging profile purpose ${purpose} has no OCPP 2.0.1 equivalent.`);
+    }
   }
 
   static fromChargingProfilePurposeEnumType(
     purpose: OCPP2_1.ChargingProfilePurposeEnumType,
   ): keyof typeof ChargingProfilePurposeEnum {
-    return purpose as unknown as keyof typeof ChargingProfilePurposeEnum;
+    return purpose;
   }
 
   static toRecurrencyKindEnumType(

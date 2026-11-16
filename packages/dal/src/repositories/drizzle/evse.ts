@@ -6,18 +6,15 @@ import type { IEvseRepository } from '@dal/repositories/repositories.js';
 import type { EvseDto } from '@citrineos/types';
 import { and, eq } from 'drizzle-orm';
 import {
-  chargingStationTable,
-  tenantChargingStationTable,
-} from '../../db/drizzle/schema/charging-station.js';
-import {
   type ConnectorEntity,
   connectorTable,
   tenantConnectorTable,
 } from '../../db/drizzle/schema/connector.js';
 import { type EvseEntity, evseTable, tenantEvseTable } from '../../db/drizzle/schema/evse.js';
 import { type Explicit } from '../../db/drizzle/types.js';
-import { DrizzleRepository, type DrizzleWriteContext } from './base.js';
+import { DrizzleRepository } from './base.js';
 import { toConnectorDto } from './connector.js';
+import { resolveStationId } from './resolve-station-id.js';
 
 // ─── Mapper ──────────────────────────────────────────────────────────────────
 // Maps a Drizzle entity (DB row) to the external EvseDto contract.
@@ -64,35 +61,6 @@ export class DrizzleEvseRepository
     return this.useTenantSchema ? tenantConnectorTable(tenantId) : connectorTable;
   }
 
-  private getChargingStationTable(tenantId: number): typeof chargingStationTable {
-    return this.useTenantSchema ? tenantChargingStationTable(tenantId) : chargingStationTable;
-  }
-
-  private async resolveStationId(
-    tenantId: number,
-    ocppConnectionName: string | undefined,
-    stationId: number | undefined,
-    ctx?: DrizzleWriteContext,
-  ): Promise<number | undefined> {
-    if (stationId != null || !ocppConnectionName) {
-      return stationId;
-    }
-
-    const stations = this.getChargingStationTable(tenantId);
-    const rows = await (ctx?.db ?? this.db)
-      .select({ id: stations.id })
-      .from(stations)
-      .where(
-        and(
-          eq(stations.ocppConnectionName, ocppConnectionName),
-          this.tenantFilter(stations, tenantId),
-        ),
-      )
-      .limit(1);
-
-    return rows[0]?.id;
-  }
-
   // ─── IEvseRepository methods ─────────────────────────────────────────────
 
   async readEvseByStationIdAndOcpp201EvseId(
@@ -100,7 +68,12 @@ export class DrizzleEvseRepository
     ocppConnectionName: string,
     ocpp201EvseId: number,
   ): Promise<EvseDto | undefined> {
-    const stationId = await this.resolveStationId(tenantId, ocppConnectionName, undefined);
+    const stationId = await resolveStationId(
+      this.db,
+      tenantId,
+      ocppConnectionName,
+      this.useTenantSchema,
+    );
     if (stationId === undefined) {
       return undefined;
     }
@@ -173,7 +146,12 @@ export class DrizzleEvseRepository
   ): Promise<{ evseId: number }> {
     // OCPP 1.6 has no native EVSE concept. Conservative default: each connector maps
     // to its own Evse.
-    const stationId = await this.resolveStationId(tenantId, ocppConnectionName, undefined);
+    const stationId = await resolveStationId(
+      this.db,
+      tenantId,
+      ocppConnectionName,
+      this.useTenantSchema,
+    );
     if (stationId === undefined) {
       throw new Error(
         `Cannot auto-commission an EVSE: no charging station named ` +

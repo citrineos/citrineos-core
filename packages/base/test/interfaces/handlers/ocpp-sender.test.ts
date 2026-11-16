@@ -231,6 +231,21 @@ describe('OcppSender', () => {
       });
     });
 
+    it('logs the callback URL without its credentials', async () => {
+      const { ocppSender, subLogger } = anOcppSender();
+
+      await ocppSender.sendCall(
+        aSendCallArgs({ callbackUrl: 'https://user:pw-secret@cb.example/hook?token=q-secret' }),
+      );
+
+      const logged = subLogger.debug.mock.calls
+        .map((call) => call.map(String).join(' '))
+        .join('\n');
+      expect(logged).toContain('https://cb.example/hook');
+      expect(logged).not.toContain('pw-secret');
+      expect(logged).not.toContain('q-secret');
+    });
+
     it('skips the callback cache when no callbackUrl is given', async () => {
       const { ocppSender, cache } = anOcppSender();
       await ocppSender.sendCall(aSendCallArgs());

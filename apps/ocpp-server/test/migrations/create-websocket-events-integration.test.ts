@@ -6,8 +6,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import type { Sequelize } from 'sequelize-typescript';
 import { QueryTypes, type QueryInterface } from 'sequelize';
-import { type BootstrapConfig, DEFAULT_TENANT_ID } from '@citrineos/base';
-import type { SystemConfig } from '@citrineos/types';
+import { DEFAULT_TENANT_ID } from '@citrineos/base';
+import { configSchema, type SystemConfig } from '@citrineos/types';
 import {
   DefaultDrizzleInstance,
   DefaultSequelizeInstance,
@@ -35,26 +35,18 @@ beforeAll(async () => {
     .withWaitStrategy(Wait.forLogMessage('database system is ready to accept connections', 2))
     .start();
 
-  const database = {
-    host: pgContainer.getHost(),
-    port: pgContainer.getMappedPort(5432),
-    database: 'citrineos_test',
-    username: 'test',
-    password: 'test',
-  };
-  const bootstrapConfig = {
+  config = configSchema.parse({
     database: {
-      ...database,
-      dialect: 'postgres',
-      sync: false,
-      alter: false,
-      force: false,
+      host: pgContainer.getHost(),
+      port: pgContainer.getMappedPort(5432),
+      database: 'citrineos_test',
+      username: 'test',
+      password: 'test',
       maxRetries: 1,
       retryDelay: 100,
     },
-  } as BootstrapConfig;
-  config = bootstrapConfig as SystemConfig;
-  sequelizeInstance = DefaultSequelizeInstance.getInstance(bootstrapConfig);
+  });
+  sequelizeInstance = DefaultSequelizeInstance.getInstance(config);
   await sequelizeInstance.query('CREATE EXTENSION IF NOT EXISTS citext;');
   await sequelizeInstance.sync({ force: true });
   queryInterface = sequelizeInstance.getQueryInterface();

@@ -5,6 +5,7 @@ import { serializeError } from '@base-util/errors.js';
 import { createIdentifier } from '@base-util/identifiers.js';
 import { childLogger, loggerDefaults } from '@base-util/logging.js';
 import { RequestBuilder } from '@base-util/request.js';
+import { redactUrl } from '@base-util/url.js';
 import {
   ErrorCode,
   OCPPVersion,
@@ -96,7 +97,7 @@ export class OcppSender implements IOcppSender {
     if (callbackUrl) {
       // TODO: Handle callErrors, failure to send to charger, timeout from charger, with different responses to callback
       this._logger.debug(
-        `Setting callback URL: ${callbackUrl} for correlationId: ${_correlationId}`,
+        `Setting callback URL: ${redactUrl(callbackUrl)} for correlationId: ${_correlationId}`,
       );
       this._cache
         .set(

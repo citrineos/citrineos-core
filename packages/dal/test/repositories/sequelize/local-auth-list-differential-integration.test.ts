@@ -6,13 +6,10 @@ import {
   AuthorizationStatusEnum,
   IdTokenEnum,
   OCPP2_0_1,
+  type LocalListVersionDto,
   type SystemConfig,
 } from '@citrineos/types';
-import {
-  DefaultSequelizeInstance,
-  type LocalListVersion,
-  SequelizeLocalAuthListRepository,
-} from '../../../index.js';
+import { DefaultSequelizeInstance, SequelizeLocalAuthListRepository } from '../../../index.js';
 import { Authorization, Tenant } from '@dal/db/sequelize/index.js';
 import type { Sequelize } from 'sequelize-typescript';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
@@ -100,7 +97,7 @@ async function sendAndAccept(
   updateType: OCPP2_0_1.UpdateEnumType,
   versionNumber: number,
   entries: OCPP2_0_1.AuthorizationData[],
-): Promise<LocalListVersion> {
+): Promise<LocalListVersionDto> {
   const sendLocalList = await repo.createSendLocalListFromRequestData(
     TENANT,
     STATION,
@@ -116,7 +113,7 @@ async function sendAndAccept(
   );
 }
 
-function idTokensOn(version: LocalListVersion): string[] {
+function idTokensOn(version: LocalListVersionDto): string[] {
   return (version.localAuthorizationList ?? []).map((auth) => auth.idToken).sort();
 }
 

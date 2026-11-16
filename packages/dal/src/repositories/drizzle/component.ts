@@ -7,10 +7,6 @@ import { OCPP2_0_1, type OCPP2_common_types } from '@citrineos/types';
 import { and, eq, isNull, sql, type SQL } from 'drizzle-orm';
 import type { PgColumn } from 'drizzle-orm/pg-core';
 import {
-  chargingStationTable,
-  tenantChargingStationTable,
-} from '../../db/drizzle/schema/charging-station.js';
-import {
   type ComponentEntity,
   componentTable,
   tenantComponentTable,
@@ -45,6 +41,7 @@ import { DrizzleRepository, type DrizzleWriteContext } from './base.js';
 import { toEvseTypeDto } from './evse-type.js';
 import { toVariableDto } from './variable.js';
 import { toVariableCharacteristicsDto } from './variable-characteristics.js';
+import { resolveStationIdOrThrow } from './resolve-station-id.js';
 
 // Seeded against every newly created component that arrives at a live connection.
 const DEFAULT_COMPONENT_VARIABLE_NAMES = ['Present', 'Available', 'Enabled'];
@@ -104,37 +101,6 @@ export class DrizzleComponentRepository
     return this.useTenantSchema
       ? tenantVariableCharacteristicsTable(tenantId)
       : variableCharacteristicsTable;
-  }
-
-  private getChargingStationTable(tenantId: number): typeof chargingStationTable {
-    return this.useTenantSchema ? tenantChargingStationTable(tenantId) : chargingStationTable;
-  }
-
-  private async resolveStationIdOrThrow(
-    tenantId: number,
-    ocppConnectionName: string,
-    ctx: DrizzleWriteContext,
-  ): Promise<number> {
-    const stations = this.getChargingStationTable(tenantId);
-    const rows = await ctx.db
-      .select({ id: stations.id })
-      .from(stations)
-      .where(
-        and(
-          eq(stations.ocppConnectionName, ocppConnectionName),
-          this.tenantFilter(stations, tenantId),
-        ),
-      )
-      .limit(1);
-
-    const stationId = rows[0]?.id;
-    if (stationId === undefined) {
-      throw new Error(
-        `Cannot create variable attribute: no charging station named ` +
-          `'${ocppConnectionName}' exists in tenant ${tenantId}.`,
-      );
-    }
-    return stationId;
   }
 
   private async findOrCreateEvseType(
@@ -230,7 +196,13 @@ export class DrizzleComponentRepository
     ocppConnectionName: string,
     ctx: DrizzleWriteContext,
   ): Promise<void> {
-    const stationId = await this.resolveStationIdOrThrow(tenantId, ocppConnectionName, ctx);
+    const stationId = await resolveStationIdOrThrow(
+      ctx.db,
+      tenantId,
+      ocppConnectionName,
+      'create variable attribute',
+      this.useTenantSchema,
+    );
     const attributes = this.getVariableAttributeTable(tenantId);
 
     for (const name of DEFAULT_COMPONENT_VARIABLE_NAMES) {

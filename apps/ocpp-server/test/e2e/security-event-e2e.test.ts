@@ -25,7 +25,7 @@
  */
 
 import { type ChildProcess, execSync, spawn } from 'child_process';
-import { mkdtempSync, writeFileSync } from 'fs';
+import { copyFileSync, mkdtempSync, writeFileSync } from 'fs';
 import { type AddressInfo, createServer } from 'net';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -40,6 +40,7 @@ import { aSecurityEventNotificationRequest } from '../providers/security-event.j
 
 const SERVER_ROOT = fileURLToPath(new URL('../../', import.meta.url));
 const SERVER_DIST = fileURLToPath(new URL('../../dist/index.js', import.meta.url));
+const ROLES_SEED = fileURLToPath(new URL('../../dist/assets/roles-seed.json', import.meta.url));
 
 // ─── Shared state across all scenarios ────────────────────────────────────────
 
@@ -193,12 +194,13 @@ beforeAll(async () => {
   [httpPort, wsPort] = await Promise.all([reserveFreePort(), reserveFreePort()]);
 
   // Everything else about the system config comes from the schema defaults via
-  // buildTestEnv(). The websocket servers are the one part that is not an environment
-  // variable: they are read from a JSON file through file storage, whose root
-  // buildTestEnv() points at tempDir. Only the securityProfile 0 server is listed, so
+  // buildTestEnv(). The websocket servers and the role seed are not environment
+  // variables: they are read from JSON files through file storage, whose root
+  // buildTestEnv() points at tempDir. The server refuses to start without the role seed. Only the securityProfile 0 server is listed, so
   // there is nothing on a second port to collide with a port the previous scenario is still
   // releasing.
   tempDir = mkdtempSync(join(tmpdir(), 'citrineos-e2e-'));
+  copyFileSync(ROLES_SEED, join(tempDir, 'roles-seed.json'));
   writeFileSync(
     join(tempDir, 'websocket-servers.json'),
     JSON.stringify(

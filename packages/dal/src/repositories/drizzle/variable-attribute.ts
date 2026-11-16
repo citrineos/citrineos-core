@@ -15,7 +15,6 @@ import {
   type VariableAttributeEntity,
   variableAttributeTable,
 } from '../../db/drizzle/schema/variable-attribute.js';
-import { chargingStationTable } from '../../db/drizzle/schema/charging-station.js';
 import {
   type ComponentEntity,
   componentTable,
@@ -52,6 +51,7 @@ import {
   type DrizzleRepositoryDependencies,
   type DrizzleWriteContext,
 } from './base.js';
+import { resolveStationId } from './resolve-station-id.js';
 import type { VariableAttributeQuerystring } from '@dal/interfaces/queries/variable-attribute.js';
 import { and, desc, eq, exists, inArray, isNotNull, isNull, sql, type SQL } from 'drizzle-orm';
 
@@ -142,26 +142,13 @@ export class DrizzleVariableAttributeRepository
     tenantId: number,
     ocppConnectionName: string,
   ): Promise<SQL> {
-    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    const stationId = await resolveStationId(
+      this.db,
+      tenantId,
+      ocppConnectionName,
+      this.useTenantSchema,
+    );
     return stationId === undefined ? sql`false` : eq(table.stationId, stationId);
-  }
-
-  private async resolveStationId(
-    tenantId: number,
-    ocppConnectionName: string,
-  ): Promise<number | undefined> {
-    const rows = await this.db
-      .select({ id: chargingStationTable.id })
-      .from(chargingStationTable)
-      .where(
-        and(
-          eq(chargingStationTable.ocppConnectionName, ocppConnectionName),
-          eq(chargingStationTable.tenantId, tenantId),
-        ),
-      )
-      .limit(1);
-
-    return rows[0]?.id;
   }
 
   private graphTables(tenantId: number) {
@@ -528,7 +515,12 @@ export class DrizzleVariableAttributeRepository
     tenantId: number,
     ocppConnectionName: string,
   ): Promise<OCPP2_common_types.SetVariableDataType[]> {
-    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    const stationId = await resolveStationId(
+      this.db,
+      tenantId,
+      ocppConnectionName,
+      this.useTenantSchema,
+    );
     if (stationId === undefined) {
       return [];
     }
@@ -567,7 +559,12 @@ export class DrizzleVariableAttributeRepository
     componentType: OCPP2_common_types.ComponentType,
     variableType: OCPP2_common_types.VariableType,
   ): Promise<VariableAttributeDto | undefined> {
-    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    const stationId = await resolveStationId(
+      this.db,
+      tenantId,
+      ocppConnectionName,
+      this.useTenantSchema,
+    );
     if (stationId === undefined) {
       return undefined;
     }
@@ -636,7 +633,12 @@ export class DrizzleVariableAttributeRepository
     isoTimestamp: string,
     acceptedValue?: string,
   ): Promise<VariableAttributeDto | undefined> {
-    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    const stationId = await resolveStationId(
+      this.db,
+      tenantId,
+      ocppConnectionName,
+      this.useTenantSchema,
+    );
     const t = this.graphTables(tenantId);
 
     const found =
@@ -724,7 +726,12 @@ export class DrizzleVariableAttributeRepository
       throw new Error('All variable attributes in ReportData must have different types.');
     }
 
-    const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+    const stationId = await resolveStationId(
+      this.db,
+      tenantId,
+      ocppConnectionName,
+      this.useTenantSchema,
+    );
     if (stationId === undefined) {
       throw new Error(
         `Cannot record device model data: no charging station named ` +
@@ -815,7 +822,12 @@ export class DrizzleVariableAttributeRepository
         continue;
       }
 
-      const stationId = await this.resolveStationId(tenantId, ocppConnectionName);
+      const stationId = await resolveStationId(
+        this.db,
+        tenantId,
+        ocppConnectionName,
+        this.useTenantSchema,
+      );
       if (stationId === undefined) {
         throw new Error(
           `Cannot record variable result: no charging station named ` +

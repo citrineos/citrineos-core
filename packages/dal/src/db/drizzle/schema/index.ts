@@ -6,6 +6,7 @@ export * from './column-types.js';
 
 export * from './async-job-status.js';
 export * from './authorization.js';
+export * from './authorization-attempt.js';
 export * from './boot.js';
 export * from './certificate.js';
 export * from './change-configuration.js';
