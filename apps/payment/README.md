@@ -303,6 +303,9 @@ reported as `paymentCosts` and never charged.
 
 ## Moving from citrineos-payment (Python)
 
+**Before you run anything below, please go over the migration scripts in `src/migration` and update as needed based on your
+own configurations. The scripts presently assume you're using the citrineos-payment module "as is" without further changes.**
+
 This app replaces [citrineos-payment](https://github.com/citrineos/citrineos-payment); the two do not share pages,
 QR codes or checkouts, so an installation moves over once. The Python service kept its tables (`payment_operators`,
 `payment_evses` and so on, after its `DB_TABLE_PREFIX`) in Core's database, which this app uses too. It predates
@@ -360,12 +363,27 @@ app can only take payments on them with a key of that platform.
    Core (`<prefix><checkout id>`, and random ids for scan and charge, type `Central`) stay `Accepted`; set them to
    `Invalid` if you do not want them to authorize anything again.
 
-## Migrations
+## Database and migrations
 
-Migrations live in `db/migrations` and run against Core's database with `pnpm db:migrate`, through `.sequelizerc` and
-`src/config/sequelize-bridge.config.ts`. Core's migrations (`apps/ocpp-server`) must run first, since the payment
-tables reference Core tables. Core's `require-migration` workflow only watches the DAL, so
-`test/migrations.test.ts` checks that every model column exists in the migrated schema with the same nullability.
+The payment tables live in Core's database and are defined with [Drizzle](https://orm.drizzle.team/) in
+`src/db/schema.ts`. This app reads Core's data through Core's Drizzle repositories, on the same connection pool.
+
+Migrations are plain SQL files in `db/migrations`, so any runner that applies SQL files in order can apply them.
+`pnpm db:migrate` (and the server's start, locally and in the image) applies the pending ones with Drizzle's migrator,
+which records them in a `PaymentMigrations` table of their own. Core's migrations (`apps/ocpp-server`) must run first,
+since the payment tables reference Core tables.
+
+To change the schema, edit `src/db/schema.ts` and run `pnpm db:generate`, which builds the app and has
+[drizzle-kit](https://orm.drizzle.team/docs/drizzle-kit-generate) write the next migration. Review the SQL it writes:
+it is applied as written.
+
+The first migration creates the tables only if they do not exist yet, because databases set up before this app used
+Drizzle already have them, created by an equivalent Sequelize migration with the same constraint and index names. Such
+a database keeps a row for `20261023160459-create-payment-tables.js` in Core's `SequelizeMeta` table, which nothing
+reads any more and can be deleted.
+
+Core's `require-migration` workflow only watches the DAL, so `test/migrations.test.ts` checks the schema against what
+the migrations create: every column with its type and nullability, and the constraint and index names.
 
 ## Tests
 
