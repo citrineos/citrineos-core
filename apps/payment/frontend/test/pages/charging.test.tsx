@@ -61,13 +61,16 @@ describe('Charging', () => {
         },
       }),
     );
+    const finishedIcon = () => container.querySelector('[data-icon="circle-check"]');
     expect(text(container)).toContain('Waiting for the charger to start');
 
     await wait(POLL_INTERVAL_MS);
     expect(text(container)).toContain('Cost so far');
+    expect(finishedIcon()).toBeNull();
 
     await wait(POLL_INTERVAL_MS);
     expect(text(container)).toContain('Session finished');
+    expect(finishedIcon()).not.toBeNull();
     expect(text(container)).toContain('Charged to your card$8.56');
     expect(text(container)).toContain('0:30:00');
     expect(link(container, 'View receipt').getAttribute('href')).toBe(`/receipt/${PUBLIC_ID}`);
@@ -90,6 +93,21 @@ describe('Charging', () => {
     expect(text(container)).toContain('The charger did not start the session.');
     expect(text(container)).toContain('Nothing was charged.');
     expect(link(container, 'Try again').getAttribute('href')).toBe('/checkout/7');
+    expect(container.querySelector('[data-icon="circle-x"]')?.getAttribute('class')).toContain(
+      'text-muted-foreground',
+    );
+  });
+
+  it('marks a failed session in red', async () => {
+    const { container } = await show(
+      aState({ status: CheckoutStatus.Failed, transaction: null, pricing: null }),
+    );
+
+    expect(text(container)).toContain('We could not settle this session.');
+    expect(container.querySelector('[data-icon="circle-x"]')?.getAttribute('class')).toContain(
+      'text-red-600',
+    );
+    expect(container.querySelector('[data-icon="circle-check"]')).toBeNull();
   });
 
   it('sends a scan-and-charge driver who has not paid back to pay', async () => {

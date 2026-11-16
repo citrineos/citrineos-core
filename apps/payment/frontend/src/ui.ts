@@ -15,8 +15,11 @@ export const ui = {
   heading: 'text-[1.05rem] font-semibold',
   muted: 'text-muted-foreground',
   small: 'text-sm',
-  /** A grid of <dt>/<dd> pairs, the term muted beside its value. */
-  details: 'grid grid-cols-[max-content_1fr] gap-x-3 gap-y-1.5 [&>dt]:text-muted-foreground',
+  /** A <dl> of rows with a line between them. */
+  rows: 'divide-y divide-border text-sm',
+  /** One row of a `rows` list: a <dt> label on the left, its <dd> value on the right. */
+  row: 'flex items-center justify-between gap-3 py-1.5 [&>dt]:shrink-0 [&>dd]:text-right',
+  rowLabel: 'font-semibold text-primary-foreground',
   mono: 'font-mono text-[0.8rem] break-words',
   primaryButton: `${buttonBase} border-primary bg-primary text-primary-foreground hover:bg-primary/90`,
   button: `${buttonBase} border-input bg-background text-foreground hover:bg-accent`,
