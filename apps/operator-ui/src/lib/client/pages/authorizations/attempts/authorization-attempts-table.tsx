@@ -56,64 +56,66 @@ export const AuthorizationAttemptsTable = ({ authorizationId }: { authorizationI
       action={ActionType.LIST}
       fallback={<AccessDeniedFallback />}
     >
-      <div className={tableHeaderWrapperFlex}>
-        {forAuthorization ? (
-          <span />
-        ) : (
-          <h2 className={heading2Style}>
-            {translate('AuthorizationAttempts.AuthorizationAttempts')}
-          </h2>
-        )}
-        <div className={tableSearchFlex}>
-          {!forAuthorization && (
-            <div className="flex items-center gap-2">
-              <Switch
-                id="authorization-attempts-unmatched-only"
-                checked={unmatchedOnly}
-                onCheckedChange={setUnmatchedOnly}
-              />
-              <Label htmlFor="authorization-attempts-unmatched-only" className="font-medium">
-                {translate('AuthorizationAttempts.unmatchedOnly')}
-              </Label>
-            </div>
+      <div className="flex flex-col gap-4">
+        <div className={tableHeaderWrapperFlex}>
+          {forAuthorization ? (
+            <span />
+          ) : (
+            <h2 className={heading2Style}>
+              {translate('AuthorizationAttempts.AuthorizationAttempts')}
+            </h2>
           )}
-          {columnSelector}
-          {filterButton}
-          <DebounceSearch
-            onSearch={onSearch}
-            placeholder={`${translate('placeholders.search')} ${translate('AuthorizationAttempts.AuthorizationAttempts')}`}
-          />
+          <div className={tableSearchFlex}>
+            {!forAuthorization && (
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="authorization-attempts-unmatched-only"
+                  checked={unmatchedOnly}
+                  onCheckedChange={setUnmatchedOnly}
+                />
+                <Label htmlFor="authorization-attempts-unmatched-only" className="font-medium">
+                  {translate('AuthorizationAttempts.unmatchedOnly')}
+                </Label>
+              </div>
+            )}
+            {columnSelector}
+            {filterButton}
+            <DebounceSearch
+              onSearch={onSearch}
+              placeholder={`${translate('placeholders.search')} ${translate('AuthorizationAttempts.AuthorizationAttempts')}`}
+            />
+          </div>
         </div>
+        {filterChips}
+        <Table<AuthorizationAttemptClass>
+          refineCoreProps={{
+            resource: ResourceType.AUTHORIZATION_ATTEMPTS,
+            sorters: {
+              initial: [{ field: AuthorizationAttemptProps.timestamp, order: 'desc' }],
+            },
+            filters: {
+              permanent: [
+                ...activeCrudFilters,
+                ...searchFilters,
+                ...(unmatchedOnly ? unmatchedAttemptsFilter : []),
+              ],
+            },
+            meta: forAuthorization
+              ? {
+                  gqlQuery: GET_AUTHORIZATION_ATTEMPTS_FOR_AUTHORIZATION,
+                  gqlVariables: { id: authorizationId },
+                }
+              : { gqlQuery: AUTHORIZATION_ATTEMPTS_LIST_QUERY },
+            queryOptions: getPlainToInstanceOptions(AuthorizationAttemptClass),
+          }}
+          enableSorting
+          enableFilters
+          showHeader
+          tableStateKey={ResourceType.AUTHORIZATION_ATTEMPTS}
+        >
+          {renderedVisibleColumns}
+        </Table>
       </div>
-      {filterChips}
-      <Table<AuthorizationAttemptClass>
-        refineCoreProps={{
-          resource: ResourceType.AUTHORIZATION_ATTEMPTS,
-          sorters: {
-            initial: [{ field: AuthorizationAttemptProps.timestamp, order: 'desc' }],
-          },
-          filters: {
-            permanent: [
-              ...activeCrudFilters,
-              ...searchFilters,
-              ...(unmatchedOnly ? unmatchedAttemptsFilter : []),
-            ],
-          },
-          meta: forAuthorization
-            ? {
-                gqlQuery: GET_AUTHORIZATION_ATTEMPTS_FOR_AUTHORIZATION,
-                gqlVariables: { id: authorizationId },
-              }
-            : { gqlQuery: AUTHORIZATION_ATTEMPTS_LIST_QUERY },
-          queryOptions: getPlainToInstanceOptions(AuthorizationAttemptClass),
-        }}
-        enableSorting
-        enableFilters
-        showHeader
-        tableStateKey={ResourceType.AUTHORIZATION_ATTEMPTS}
-      >
-        {renderedVisibleColumns}
-      </Table>
     </CanAccess>
   );
 };
