@@ -9,8 +9,8 @@ import { Button } from '@lib/client/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@lib/client/components/ui/tabs';
 import { AuthorizationAttemptsTable } from '@lib/client/pages/authorizations/attempts/authorization-attempts-table';
 import {
-  getAuthorizationsColumns,
   getAuthorizationFilters,
+  getAuthorizationsColumns,
 } from '@lib/client/pages/authorizations/columns';
 import { AuthorizationClass } from '@lib/cls/authorization-dto';
 import { AUTHORIZATIONS_LIST_QUERY } from '@lib/queries/authorizations';
@@ -85,7 +85,7 @@ const AuthorizationsTable = () => {
   };
 
   return (
-    <>
+    <div className="flex flex-col gap-4">
       <div className={tableHeaderWrapperFlex}>
         <h2 className={heading2Style}>{translate('Authorizations.Authorizations')}</h2>
         <div className={tableSearchFlex}>
@@ -132,6 +132,6 @@ const AuthorizationsTable = () => {
           {renderedVisibleColumns}
         </Table>
       </CanAccess>
-    </>
+    </div>
   );
 };
