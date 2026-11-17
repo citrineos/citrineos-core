@@ -191,6 +191,7 @@ export const TariffUpsert = ({ params }: TariffUpsertProps) => {
                 control={form.control}
                 label={translate('Tariffs.fields.pricePerSession')}
                 name={TariffProps.pricePerSession}
+                info={translate('Tariffs.info.pricePerSession')}
               >
                 <Input type="number" min="0" step="0.01" />
               </FormField>
@@ -199,14 +200,7 @@ export const TariffUpsert = ({ params }: TariffUpsertProps) => {
                 control={form.control}
                 label={translate('Tariffs.fields.authorizationAmount')}
                 name={TariffProps.authorizationAmount}
-              >
-                <Input type="number" min="0" step="0.01" />
-              </FormField>
-
-              <FormField
-                control={form.control}
-                label={translate('Tariffs.fields.paymentFee')}
-                name={TariffProps.paymentFee}
+                info={translate('Tariffs.info.authorizationAmount')}
               >
                 <Input type="number" min="0" step="0.01" />
               </FormField>
@@ -223,6 +217,7 @@ export const TariffUpsert = ({ params }: TariffUpsertProps) => {
                 control={form.control}
                 label={translate('Tariffs.fields.tariffAltText')}
                 name={TariffProps.tariffAltText}
+                info={translate('Tariffs.info.tariffAltText')}
               >
                 <Textarea placeholder={translate('Tariffs.placeholders.tariffAltText')} />
               </FormField>
