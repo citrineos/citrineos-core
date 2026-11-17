@@ -207,3 +207,12 @@ apps/ocpi-server/config/tsconfig.eslint.json
 apps/ocpi-server/config/tsconfig.src.json
 apps/ocpi-server/config/tsconfig.json
 apps/ocpi-server/config/tsconfig.migrations.json
+
+# Payment files
+apps/payment/config/nodemon.json
+apps/payment/config/tsconfig.eslint.json
+apps/payment/config/tsconfig.src.json
+apps/payment/db/migrations/meta/0000_snapshot.json
+apps/payment/db/migrations/meta/_journal.json
+apps/payment/frontend/tsconfig.json
+apps/payment/tsconfig.json
