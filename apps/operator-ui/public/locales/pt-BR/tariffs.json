@@ -36,6 +36,11 @@
     },
     "validation": {
       "currencyCode": "Informe um código de moeda de 3 letras, ex.: BRL"
+    },
+    "info": {
+      "pricePerSession": "Taxa cobrada independentemente da energia consumida ou do tempo gasto em uma sessão, por exemplo, uma taxa fixa ou obrigatória.",
+      "authorizationAmount": "Valor que será pré-autorizado no cartão de crédito. Obrigatório se o módulo de pagamento estiver em uso.",
+      "tariffAltText": "Texto legível que descreve a tarifa."
     }
   }
 }

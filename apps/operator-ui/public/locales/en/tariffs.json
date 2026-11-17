@@ -36,6 +36,11 @@
     },
     "validation": {
       "currencyCode": "Enter a 3-letter currency code, e.g. CAD"
+    },
+    "info": {
+      "pricePerSession": "The fee paid regardless of how much energy or time is spent in a session, e.g. a flat fee or required fee.",
+      "authorizationAmount": "The amount that will be authorized to the credit card. Required if the payment module is in use.",
+      "tariffAltText": "Human-readable text describing the tariff."
     }
   }
 }
