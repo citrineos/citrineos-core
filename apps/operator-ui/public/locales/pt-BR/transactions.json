@@ -17,7 +17,8 @@
       "startTime": "Início",
       "endTime": "Término",
       "createdAt": "Criada em",
-      "updatedAt": "Atualizada em"
+      "updatedAt": "Atualizada em",
+      "previewStation": "Pré-visualizar Estação"
     },
     "detail": {
       "stationId": "ID da Estação",

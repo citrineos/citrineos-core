@@ -68,7 +68,8 @@
       "capabilities": "Capabilities",
       "firmwareVersion": "Firmware Version",
       "createdAt": "Created At",
-      "updatedAt": "Updated At"
+      "updatedAt": "Updated At",
+      "use16StatusNotification0": "OCPP 1.6 StatusNotification Handling"
     },
     "aggregatedData": {
       "timeRange": "Time Range:",

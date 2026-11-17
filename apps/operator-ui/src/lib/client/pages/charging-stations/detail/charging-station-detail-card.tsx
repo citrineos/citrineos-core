@@ -26,9 +26,9 @@ import { openModal } from '@lib/utils/store/modal-slice';
 import { getPlainToInstanceOptions } from '@lib/utils/tables';
 import { CanAccess, Link, useDelete, useOne, useTranslate } from '@refinedev/core';
 import { instanceToPlain } from 'class-transformer';
-import { ChevronLeft, Edit, Info, RefreshCw, Trash2 } from 'lucide-react';
+import { ChevronLeft, Edit, RefreshCw, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 import { useDispatch } from 'react-redux';
 import { Card, CardContent, CardHeader } from '@lib/client/components/ui/card';
 import { cardGridStyle, cardHeaderFlex } from '@lib/client/styles/card';
@@ -63,7 +63,6 @@ export const ChargingStationDetailCard = ({
   const { back, push } = useRouter();
   const dispatch = useDispatch();
   const translate = useTranslate();
-  const [showInfoText, setShowInfoText] = useState(false);
 
   const {
     query: { data, isLoading },
@@ -342,31 +341,13 @@ export const ChargingStationDetailCard = ({
               />
 
               <KeyValueDisplay
-                keyLabel={
-                  <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-1">
-                      <span>OCPP 1.6 StatusNotification Handling</span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-4 w-4 p-0 text-muted-foreground hover:text-foreground"
-                        onClick={() => setShowInfoText(!showInfoText)}
-                      >
-                        <Info className="h-3 w-3" />
-                      </Button>
-                    </div>
-                    {showInfoText && (
-                      <div className="text-xs text-muted-foreground">
-                        {translate('ChargingStations.use16StatusNotification0')}
-                      </div>
-                    )}
-                  </div>
-                }
+                keyLabel={translate('ChargingStations.columns.use16StatusNotification0')}
                 value={
                   station.use16StatusNotification0
                     ? translate('Common.enabled')
                     : translate('Common.disabled')
                 }
+                info={translate('ChargingStations.use16StatusNotification0')}
               />
 
               <KeyValueDisplay
