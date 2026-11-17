@@ -371,7 +371,8 @@ export const ChargingStationUpsert = ({
               <CheckboxFormField
                 control={form.control}
                 name={ChargingStationProps.use16StatusNotification0}
-                label={translate('ChargingStations.use16StatusNotification0')}
+                label={translate('ChargingStations.columns.use16StatusNotification0')}
+                info={translate('ChargingStations.use16StatusNotification0')}
               />
 
               {/* Coordinates Section */}

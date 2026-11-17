@@ -59,7 +59,8 @@
       "createdAt": "Criado em",
       "updatedAt": "Atualizado em",
       "securityProfile": "Perfil de Segurança",
-      "serverId": "ID do Servidor"
+      "serverId": "ID do Servidor",
+      "use16StatusNotification0": "Tratamento de StatusNotification do OCPP 1.6"
     },
     "aggregatedData": {
       "timeRange": "Intervalo de Tempo:",

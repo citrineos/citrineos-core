@@ -24,6 +24,7 @@ import { Checkbox } from '@lib/client/components/ui/checkbox';
 import { Combobox, type ComboboxProps } from '@lib/client/components/combobox';
 import { MultiSelect, type MultiSelectProps } from '@lib/client/components/multi-select';
 import { useTranslate } from '@refinedev/core';
+import { InfoTooltip } from '@lib/client/components/info-tooltip';
 
 type Props<
   TFieldValues extends FieldValues = FieldValues,
@@ -33,6 +34,7 @@ type Props<
   name: ControllerProps<TFieldValues, TName>['name'];
   label: string | React.ReactElement;
   description?: string;
+  info?: string;
   className?: string;
   required?: boolean;
 };
@@ -59,12 +61,23 @@ const FieldWrapper = <
     fieldState: ControllerFieldState;
   },
 ) => {
+  const label = (
+    <FieldLabel htmlFor={props.field.name} className={formLabelWrapperStyle}>
+      <span className={formLabelStyle}>{props.label}</span>
+      {props.required && formRequiredAsterisk}
+    </FieldLabel>
+  );
+
   return (
     <Field data-invalid={props.fieldState.invalid}>
-      <FieldLabel htmlFor={props.field.name} className={formLabelWrapperStyle}>
-        <span className={formLabelStyle}>{props.label}</span>
-        {props.required && formRequiredAsterisk}
-      </FieldLabel>
+      {props.info ? (
+        <div className={formLabelWrapperStyle}>
+          {label}
+          <InfoTooltip info={props.info} />
+        </div>
+      ) : (
+        label
+      )}
       {props.children}
       {props.description && <FieldDescription>{props.description}</FieldDescription>}
       {props.fieldState.invalid && <FieldError errors={[props.fieldState.error]} />}

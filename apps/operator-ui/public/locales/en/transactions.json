@@ -17,7 +17,8 @@
       "startTime": "Start Time",
       "endTime": "End Time",
       "createdAt": "Created At",
-      "updatedAt": "Updated At"
+      "updatedAt": "Updated At",
+      "previewStation": "Preview Station"
     },
     "detail": {
       "stationId": "Station ID",
