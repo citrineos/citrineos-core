@@ -955,6 +955,43 @@ describe('DrizzleTransactionRepository cluster reads', () => {
     expect(rows.map((row) => row.transactionId)).toEqual(['T-ACTIVE']);
   });
 
+  it('readTransactionById reads a transaction within its tenant', async () => {
+    const station = await aStation(TENANT);
+    const row = await aTransaction(TENANT, station.id, 'T-BY-ID');
+
+    expect((await transactionRepo().readTransactionById(TENANT, row.id))?.transactionId).toBe(
+      'T-BY-ID',
+    );
+    expect(await transactionRepo().readTransactionById(OTHER_TENANT, row.id)).toBeUndefined();
+  });
+
+  it('readLatestTransactionByAuthorizationId takes the newest since a moment, ended or not', async () => {
+    const station = await aStation(TENANT);
+    const authorizationId = await anAuthorization(TENANT, null);
+    await aTransaction(TENANT, station.id, 'T-OLD', { authorizationId, isActive: false });
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    const since = new Date();
+
+    expect(
+      await transactionRepo().readLatestTransactionByAuthorizationId(
+        TENANT,
+        authorizationId,
+        since,
+      ),
+    ).toBeUndefined();
+
+    await aTransaction(TENANT, station.id, 'T-NEW', { authorizationId, isActive: false });
+    expect(
+      (
+        await transactionRepo().readLatestTransactionByAuthorizationId(
+          TENANT,
+          authorizationId,
+          since,
+        )
+      )?.transactionId,
+    ).toBe('T-NEW');
+  });
+
   it('getActiveTransactionByStationIdAndEvseId matches the OCPP evse id, not the Evses primary key', async () => {
     const station = await aStation(TENANT);
     // Two EVSEs whose primary keys and OCPP numbers deliberately disagree.

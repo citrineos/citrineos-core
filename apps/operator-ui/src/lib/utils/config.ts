@@ -40,6 +40,9 @@ const getConfig: () => {
   gcpCloudStorageCoreBucketName?: string;
   helpVideoUrl?: string;
   allowImageUpload: boolean;
+  paymentUrl?: string; // Where this server reaches the payment app's API, e.g. http://citrineos-payment:9010 in the docker stack.
+  paymentPublicUrl?: string; // Where browsers reach the payment app's driver pages; defaults to paymentUrl.
+  paymentIdTokenPrefix: string; // The payment app's PAYMENT_ID_TOKEN_PREFIX: how its idTokens start.
 } = () => {
   const authProviderResult = AuthProviderTypeEnum.safeParse(process.env.NEXT_PUBLIC_AUTH_PROVIDER);
   const authProvider = authProviderResult.success ? authProviderResult.data : 'generic';
@@ -87,6 +90,9 @@ const getConfig: () => {
     awsS3CoreBucketName: process.env.AWS_S3_CORE_BUCKET_NAME || 'YOUR_AWS_S3_CORE_BUCKET_NAME',
     helpVideoUrl: process.env.NEXT_PUBLIC_HELP_VIDEO_URL || '/videos/help-video.mp4', // Default local path; override with env var for external URLs
     allowImageUpload: process.env.ALLOW_IMAGE_UPLOAD === 'true',
+    paymentUrl: process.env.PAYMENT_URL || undefined,
+    paymentPublicUrl: process.env.PAYMENT_PUBLIC_URL || undefined,
+    paymentIdTokenPrefix: process.env.NEXT_PUBLIC_PAYMENT_ID_TOKEN_PREFIX || 'PAY_',
   };
 };
 

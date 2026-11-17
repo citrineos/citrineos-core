@@ -496,6 +496,7 @@ Role definitions are read through `fileAccess`, so the file can sit on a mounted
 | `CITRINEOS_ROLES_SEEDFILE`               | `roles-seed.json`      | Key resolved against the `fileAccess` root |
 | `CITRINEOS_ROLES_REFRESHINTERVALSECONDS` | `60`                   | How often the file is re-read              |
 | `CITRINEOS_ROLES_COMMON`                 | `permissions.user.get` | Granted to every authenticated caller      |
+| `CITRINEOS_ROLES_EXTERNALPERMISSIONS`    | the payment app's      | Permissions other services check (below)   |
 
 The file is re-read on the interval, so adding a role or changing its grants takes effect without a restart. A
 failed re-read keeps the last good policy. A failed _first_ load is fatal under `jwt` and `localDev` — the server
@@ -514,6 +515,11 @@ Each role lists the actions it holds per resource and the API permissions it may
 
 Permission names are derived from the endpoints themselves; `GET /permissions` returns every name this build
 exposes. A granted name that is not in that list is logged as having no effect.
+
+Other services can check their own permissions against these roles: `GET /permissions/user` returns, for the caller's
+credentials, its tenant, roles and effective permissions. Such permissions are listed in `roles.externalPermissions`
+so the catalog includes them and a seed can grant them; by default these are the payment app's `payment.*`
+permissions (see the [payment README](../payment/README.md#admin-api)).
 
 ### Certificate authorities
 

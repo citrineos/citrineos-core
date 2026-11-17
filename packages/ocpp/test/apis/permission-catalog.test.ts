@@ -15,6 +15,9 @@ const commandPermissions = COMMAND_SURFACES.flatMap(([prefix, endpoints]) =>
 );
 
 const catalog = buildPermissionCatalog();
+/** What a role can be granted: the routes above plus the permissions other services check. */
+const externalPermissions = configSchema.shape.roles.parse(undefined).externalPermissions;
+const grantable = buildPermissionCatalog(externalPermissions);
 
 const repoFile = (relative: string) =>
   path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../../', relative);
@@ -73,8 +76,8 @@ describe('operator UI permission constants', () => {
     expect(declared.length).toBeGreaterThan(20);
   });
 
-  it('names only permissions this build exposes', () => {
-    expect(declared.filter((name) => !catalog.has(name))).toEqual([]);
+  it('names only permissions a role can be granted', () => {
+    expect(declared.filter((name) => !grantable.has(name))).toEqual([]);
   });
 });
 
@@ -90,10 +93,30 @@ describe('permission catalog export', () => {
   });
 });
 
+describe('external permissions', () => {
+  it("names none of this server's own routes, so a grant means the same thing everywhere", () => {
+    expect(externalPermissions.filter((name: string) => catalog.has(name))).toEqual([]);
+  });
+
+  it('are in the catalog a role seed is checked against', () => {
+    expect([...grantable].filter((name) => !catalog.has(name)).sort()).toEqual(
+      [...externalPermissions].sort(),
+    );
+  });
+
+  it("are granted to the seed's admin role", () => {
+    expect(
+      externalPermissions.filter((name: string) => !seed.admin.permissions.includes(name)),
+    ).toEqual([]);
+  });
+});
+
 describe('role seed', () => {
-  it('grants only permissions this build exposes', () => {
+  it('grants only permissions a role can be granted', () => {
     const unknown = Object.entries(seed).flatMap(([role, definition]) =>
-      definition.permissions.filter((name) => !catalog.has(name)).map((name) => `${role}: ${name}`),
+      definition.permissions
+        .filter((name) => !grantable.has(name))
+        .map((name) => `${role}: ${name}`),
     );
 
     expect(unknown).toEqual([]);

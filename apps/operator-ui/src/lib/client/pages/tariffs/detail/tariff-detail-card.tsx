@@ -101,6 +101,7 @@ export const TariffDetailCard = ({ tariff }: TariffDetailCardProps) => {
             value={
               tariff.pricePerSession != null ? tariff.pricePerSession.toFixed(2) : NOT_APPLICABLE
             }
+            info={translate('Tariffs.info.pricePerSession')}
           />
           <KeyValueDisplay
             keyLabel={translate('Tariffs.detail.authorizationAmount')}
@@ -109,10 +110,7 @@ export const TariffDetailCard = ({ tariff }: TariffDetailCardProps) => {
                 ? tariff.authorizationAmount.toFixed(2)
                 : NOT_APPLICABLE
             }
-          />
-          <KeyValueDisplay
-            keyLabel={translate('Tariffs.detail.paymentFee')}
-            value={tariff.paymentFee != null ? tariff.paymentFee.toFixed(2) : NOT_APPLICABLE}
+            info={translate('Tariffs.info.authorizationAmount')}
           />
           <KeyValueDisplay
             keyLabel={translate('Tariffs.detail.taxRate')}
@@ -125,6 +123,7 @@ export const TariffDetailCard = ({ tariff }: TariffDetailCardProps) => {
             value={
               tariff.tariffAltText != null ? JSON.stringify(tariff.tariffAltText) : NOT_APPLICABLE
             }
+            info={translate('Tariffs.info.tariffAltText')}
           />
         </div>
       </CardContent>

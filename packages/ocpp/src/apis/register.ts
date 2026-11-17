@@ -134,12 +134,14 @@ export const COMMAND_SURFACES = [
   [EventGroup.EVDriver, WEB_PAYMENT_ENDPOINTS],
 ] as const satisfies ReadonlyArray<readonly [string, ReadonlyArray<EndpointClass>]>;
 
-export function buildPermissionCatalog(): Set<string> {
+/** Every permission a role can be granted: this server's routes, and `external` ones others check. */
+export function buildPermissionCatalog(external: readonly string[] = []): Set<string> {
   return new Set([
     ...COMMAND_SURFACES.flatMap(([prefix, endpoints]) =>
       endpoints.map((endpointClass) => commandPermissionName(prefix, endpointClass.route)),
     ),
     ...MESSAGE_ENDPOINTS.map((endpointClass) => messagePermissionName(endpointClass.route)),
+    ...external,
   ]);
 }
 

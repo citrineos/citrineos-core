@@ -1,0 +1,66 @@
+{
+  "name": "@citrineos/payment",
+  "version": "1.0.0",
+  "description": "CitrineOS payment server",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "private": true,
+  "files": [
+    "dist",
+    "db/migrations"
+  ],
+  "scripts": {
+    "build": "tsc -b config/tsconfig.src.json",
+    "lint": "eslint . --config config/eslint.config.js",
+    "lint:fix": "eslint . --config config/eslint.config.js --fix",
+    "db:migrate": "node --env-file-if-exists=.env.local dist/db/migrate-cli.js",
+    "db:generate": "pnpm run build && drizzle-kit generate --config config/drizzle.config.ts",
+    "migrate:python": "node dist/migration/cli.js",
+    "start": "cross-env APP_ENV=local nodemon --config config/nodemon.json",
+    "dev": "pnpm run \"/^dev:/\"",
+    "dev:server": "cross-env PAYMENT_PUBLIC_URL=http://localhost:3010 pnpm start",
+    "dev:frontend": "pnpm --filter @citrineos/payment-frontend run dev",
+    "start:docker": "cross-env APP_ENV=docker pnpm run db:migrate && node --inspect=0.0.0.0:9229 dist/index.js"
+  },
+  "keywords": [
+    "ocpp",
+    "payment",
+    "stripe"
+  ],
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@citrineos/payment-frontend": "workspace:*",
+    "@eslint/js": "catalog:",
+    "@types/amqplib": "catalog:",
+    "@types/node": "catalog:",
+    "@types/qrcode": "1.5.6",
+    "drizzle-kit": "catalog:",
+    "eslint": "catalog:",
+    "eslint-config-prettier": "catalog:",
+    "eslint-plugin-prettier": "catalog:",
+    "nodemon": "catalog:",
+    "testcontainers": "catalog:",
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:"
+  },
+  "dependencies": {
+    "@citrineos/base": "workspace:*",
+    "@citrineos/dal": "workspace:*",
+    "@citrineos/types": "workspace:*",
+    "@fastify/rate-limit": "11.2.1",
+    "@fastify/static": "10.1.5",
+    "amqplib": "catalog:",
+    "cross-env": "catalog:",
+    "drizzle-orm": "catalog:",
+    "fastify": "catalog:",
+    "pg": "catalog:",
+    "qrcode": "1.5.4",
+    "stripe": "22.6.2",
+    "tslog": "catalog:",
+    "zod": "catalog:"
+  },
+  "engines": {
+    "node": ">=24.16.0"
+  }
+}

@@ -6,11 +6,11 @@
 import React from 'react';
 import {
   AuthorizationProps,
+  ChargingStationProps,
   LocationProps,
   OCPP2_0_1,
   type TransactionDto,
   TransactionProps,
-  ChargingStationProps,
 } from '@citrineos/types';
 import { MenuSection } from '@lib/client/components/main-menu/main-menu';
 import { chargingStationPath } from '@lib/utils/resource-paths';
@@ -88,7 +88,7 @@ export const getTransactionsColumns = (
             {onPreview && chargingStation && (
               <button
                 type="button"
-                title={t('Transactions.columns.previewStation', 'Preview station')}
+                title={t('Transactions.columns.previewStation', 'Preview Station')}
                 className="text-muted-foreground hover:text-foreground"
                 onClick={(e) => {
                   e.stopPropagation();

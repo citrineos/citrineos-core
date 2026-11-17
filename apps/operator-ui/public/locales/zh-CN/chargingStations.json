@@ -68,7 +68,8 @@
       "capabilities": "功能",
       "firmwareVersion": "固件版本",
       "createdAt": "创建时间",
-      "updatedAt": "更新时间"
+      "updatedAt": "更新时间",
+      "use16StatusNotification0": "OCPP 1.6 StatusNotification 处理"
     },
     "aggregatedData": {
       "timeRange": "时间范围：",

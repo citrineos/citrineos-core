@@ -38,6 +38,9 @@ export const PERMISSION_DELETE_STATION_NETWORK_PROFILE = 'commands.stationNetwor
 export const PERMISSION_SET_STATION_PASSWORD = 'commands.setStationPassword.post';
 export const PERMISSION_FORCE_DISCONNECT = 'ocpprouter.connection.delete';
 
+// Checked by the payment app's admin API against Core's roles (Core's roles.externalPermissions).
+export const PERMISSION_GET_PAYMENT_CHECKOUTS = 'payment.checkouts.get';
+
 export const START_TRANSACTION_PERMISSIONS = [
   PERMISSION_REMOTE_START_TRANSACTION,
   PERMISSION_REQUEST_START_TRANSACTION,
@@ -77,4 +80,5 @@ export const UI_PERMISSIONS = [
   PERMISSION_DELETE_STATION_NETWORK_PROFILE,
   PERMISSION_SET_STATION_PASSWORD,
   PERMISSION_FORCE_DISCONNECT,
+  PERMISSION_GET_PAYMENT_CHECKOUTS,
 ] as const;
