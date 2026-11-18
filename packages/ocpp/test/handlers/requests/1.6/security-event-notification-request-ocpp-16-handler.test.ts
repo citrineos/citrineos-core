@@ -74,6 +74,19 @@ describe('SecurityEventNotificationRequestOcpp16Handler', () => {
     expect(logger.warn).not.toHaveBeenCalled();
   });
 
+  it.each([
+    'InvalidCentralSystemCertificate',
+    'InvalidChargePointCertificate',
+    'FailedToAuthenticateAtCentralSystem',
+    'CentralSystemFailedToAuthenticate',
+    'DiscardedRenewedClientCertificate',
+  ])('accepts the 1.6 whitepaper security event %s without warning', async (type) => {
+    await handler.handle(aSecurityEventMessage({ type, timestamp: new Date().toISOString() }));
+
+    expect(logger.warn).not.toHaveBeenCalled();
+    expect(securityEventRepository.createByStationId).toHaveBeenCalledTimes(1);
+  });
+
   it('warns but still persists and acknowledges an unlisted security event type', async () => {
     const payload = { type: 'VendorSpecificEvent', timestamp: new Date().toISOString() };
 
