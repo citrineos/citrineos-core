@@ -61,6 +61,7 @@ function makeHandler(
     config?: SystemConfig;
     deviceModelVariables?: Record<string, { value: string | null }[]>;
     totalCost?: number;
+    txProfiles?: Record<string, unknown>[];
   } = {},
 ) {
   const { logger } = createTestContainer();
@@ -95,7 +96,10 @@ function makeHandler(
     ...overrides.transactionService,
   };
 
-  const chargingProfileRepository = { readAllByQuery: vi.fn().mockResolvedValue([]) };
+  const chargingProfileRepository = {
+    readAllByQuery: vi.fn().mockResolvedValue([]),
+    readTxProfilesWithSchedules: vi.fn().mockResolvedValue(overrides.txProfiles ?? []),
+  };
   const deviceModelVariables = overrides.deviceModelVariables ?? {};
   const variableAttributeRepository = {
     readAllByQuerystring: vi.fn().mockImplementation(async (_tenantId, query) => {
@@ -141,6 +145,7 @@ function makeHandler(
     signedMeterValuesUtil,
     variableAttributeRepository,
     authorizationAttemptService,
+    chargingProfileRepository,
   };
 }
 
@@ -188,6 +193,85 @@ describe('TransactionEventRequestOcpp2Handler', () => {
       const response = await handleWithTariffEnabled('true');
 
       expect(response.totalCost).toBeUndefined();
+    });
+  });
+
+  // E17.FR.15 / B13.FR.31: on TxResumed the CSMS re-sends the transaction's TxProfiles unless
+  // SmartChargingCtrlr.ChargingProfilePersistence[TxProfile] is true.
+  describe('B13 / E17 - TxProfile re-sent on TxResumed', () => {
+    const txProfile = {
+      id: 7,
+      evseId: 1,
+      stackLevel: 0,
+      chargingProfilePurpose: 'TxProfile',
+      chargingProfileKind: 'Absolute',
+      chargingSchedule: [],
+    };
+
+    function aResumedTransactionEvent(): OCPP2_1.TransactionEventRequest {
+      return {
+        eventType: OCPP2_1.TransactionEventEnumType.Updated,
+        triggerReason: OCPP2_1.TriggerReasonEnumType.TxResumed,
+        timestamp: new Date().toISOString(),
+        seqNo: 5,
+        transactionInfo: {
+          transactionId: 'txn-001',
+          chargingState: OCPP2_1.ChargingStateEnumType.SuspendedEVSE,
+        },
+      } as OCPP2_1.TransactionEventRequest;
+    }
+
+    async function handleResumedWithPersistence(value: string | undefined) {
+      const harness = makeHandler({
+        txProfiles: [txProfile],
+        deviceModelVariables:
+          value === undefined
+            ? {}
+            : { 'SmartChargingCtrlr.ChargingProfilePersistence.TxProfile': [{ value }] },
+      });
+
+      await harness.handler.handle(makeMessage(aResumedTransactionEvent(), OCPPVersion.OCPP2_1));
+
+      return harness;
+    }
+
+    function setChargingProfileCalls(ocppSender: ReturnType<typeof makeRewritingOcppSender>) {
+      return ocppSender.sendCall.mock.calls.filter(
+        ([call]) => call.action === OCPP_CallAction.SetChargingProfile,
+      );
+    }
+
+    it('re-sends the TxProfile when the station reports persistence off', async () => {
+      const { ocppSender } = await handleResumedWithPersistence('false');
+
+      const calls = setChargingProfileCalls(ocppSender);
+      expect(calls).toHaveLength(1);
+      expect(calls[0][0]).toMatchObject({
+        protocol: OCPPVersion.OCPP2_1,
+        payload: {
+          evseId: 1,
+          chargingProfile: { id: 7, chargingProfilePurpose: 'TxProfile', transactionId: 'txn-001' },
+        },
+      });
+    });
+
+    it('re-sends the TxProfile when the station has never reported the variable', async () => {
+      const { ocppSender } = await handleResumedWithPersistence(undefined);
+
+      expect(setChargingProfileCalls(ocppSender)).toHaveLength(1);
+    });
+
+    it('does not re-send when the station keeps TxProfiles across a reboot', async () => {
+      const { ocppSender, chargingProfileRepository } = await handleResumedWithPersistence('true');
+
+      expect(setChargingProfileCalls(ocppSender)).toHaveLength(0);
+      expect(chargingProfileRepository.readTxProfilesWithSchedules).not.toHaveBeenCalled();
+    });
+
+    it('still answers the TransactionEvent when it skips the re-send', async () => {
+      const { ocppSender } = await handleResumedWithPersistence('true');
+
+      expect(ocppSender.sendCallResultWithMessage).toHaveBeenCalledOnce();
     });
   });
 
