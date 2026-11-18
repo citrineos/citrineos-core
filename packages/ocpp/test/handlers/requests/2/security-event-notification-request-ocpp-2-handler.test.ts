@@ -69,13 +69,13 @@ describe('SecurityEventNotificationRequestOcpp2Handler', () => {
   });
 
   it('warns but still persists and acknowledges an unlisted security event type', async () => {
-    const payload = aSecurityEventNotificationRequest({ type: 'InvalidCentralSystemCertificate' });
+    const payload = aSecurityEventNotificationRequest({ type: 'VendorSpecificEvent' });
 
     await handler.handle(aSecurityEventMessage(payload));
 
     expect(logger.warn).toHaveBeenCalledWith(
       expect.stringContaining('unknown security event type'),
-      'InvalidCentralSystemCertificate',
+      'VendorSpecificEvent',
     );
     expect(securityEventRepository.createByStationId).toHaveBeenCalledWith(
       DEFAULT_TENANT_ID,
