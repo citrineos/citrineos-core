@@ -79,8 +79,8 @@ catalogs:
       specifier: 3.0.10
       version: 3.0.10
     awilix:
-      specifier: 13.0.6
-      version: 13.0.6
+      specifier: 13.0.7
+      version: 13.0.7
     bufferutil:
       specifier: 4.1.0
       version: 4.1.0
@@ -375,7 +375,7 @@ importers:
         version: 4.0.1
       awilix:
         specifier: 'catalog:'
-        version: 13.0.6
+        version: 13.0.7
       cross-env:
         specifier: 'catalog:'
         version: 7.0.3
@@ -961,7 +961,7 @@ importers:
         version: 10.6.0
       awilix:
         specifier: 'catalog:'
-        version: 13.0.6
+        version: 13.0.7
       drizzle-kit:
         specifier: 'catalog:'
         version: 0.31.11
@@ -1009,7 +1009,7 @@ importers:
         version: 0.10.9
       awilix:
         specifier: 'catalog:'
-        version: 13.0.6
+        version: 13.0.7
       class-transformer:
         specifier: 'catalog:'
         version: 0.5.1
@@ -1190,7 +1190,7 @@ importers:
         version: 3.0.10
       awilix:
         specifier: 'catalog:'
-        version: 13.0.6
+        version: 13.0.7
       class-transformer:
         specifier: 'catalog:'
         version: 0.5.1
@@ -5404,8 +5404,8 @@ packages:
   avvio@9.3.1:
     resolution: {integrity: sha512-QyTKW61/qlba+cUQBm/sT9X8lri4UdomqSDwCnrnj1IvLVDRRiXRkz4CgBRWB+/cmfC7SK5WQc8T1vSdGvaUcQ==}
 
-  awilix@13.0.6:
-    resolution: {integrity: sha512-1ECxdwGDosaeNetnXHbRe49mtEtGDrLf6q+VmBnq7sXIp8zcyj/34by80d5C4AS6Cd1SGVC3PpGWQbMQTZk3Mw==}
+  awilix@13.0.7:
+    resolution: {integrity: sha512-M7B1oVIyWrkY7RmQgczsdqpCI+j0+t0UjL5h1G/qqr4fRFo+zxI5E/0QUuOc5zdPg740BpUv4V+QSXNNBQlonQ==}
     engines: {node: '>=20.0.0'}
 
   axe-core@4.14.0:
@@ -14963,7 +14963,7 @@ snapshots:
       '@fastify/error': 4.2.1
       fastq: 1.20.3
 
-  awilix@13.0.6:
+  awilix@13.0.7:
     dependencies:
       fast-glob: 3.3.3
 
