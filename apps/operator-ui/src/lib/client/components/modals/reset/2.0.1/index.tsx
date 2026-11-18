@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 'use client';
 
-import { type ChargingStationDto, OCPP2_0_1 } from '@citrineos/types';
+import { type ChargingStationDto, OCPP2_0_1, OCPP2_1, OCPPVersion } from '@citrineos/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form } from '@lib/client/components/form';
 import { SelectFormField } from '@lib/client/components/form/field';
@@ -25,11 +25,9 @@ export interface OCPP2_0_1_ResetProps {
 }
 
 type ResetFormData = {
-  type: OCPP2_0_1.ResetEnumType;
+  type: OCPP2_0_1.ResetEnumType | OCPP2_1.ResetEnumType;
   evse?: string;
 };
-
-const resetTypes = Object.keys(OCPP2_0_1.ResetEnumType);
 
 export const OCPP2_0_1_Reset = ({ station }: OCPP2_0_1_ResetProps) => {
   const dispatch = useDispatch();
@@ -38,15 +36,19 @@ export const OCPP2_0_1_Reset = ({ station }: OCPP2_0_1_ResetProps) => {
 
   const tenantId = useTenantId();
 
+  const resetEnum =
+    station.protocol === OCPPVersion.OCPP2_1 ? OCPP2_1.ResetEnumType : OCPP2_0_1.ResetEnumType;
+  const resetTypes = Object.values(resetEnum);
+
   const ResetSchema = useMemo(
     () =>
       z.object({
-        type: z.enum(OCPP2_0_1.ResetEnumType, {
+        type: z.enum(resetEnum, {
           message: translate('ChargingStations.resetModal.selectResetTypeError'),
         }),
         evse: z.string().optional(), // { id, evseTypeId }
       }),
-    [translate],
+    [resetEnum, translate],
   );
 
   const form = useForm({

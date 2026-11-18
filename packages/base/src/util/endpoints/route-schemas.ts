@@ -67,23 +67,27 @@ export function registerRouteSchema(
     ) {
       delete schemaCopy.required;
     }
+    // Prefix definitions with the OCPP version: 2.0.1 and 2.1 both define e.g. ResetEnumType
+    // with different values, and without a prefix the first one registered is used for both.
+    const definitionRefPrefix = schemaIdPrefix ?? '';
     if (schema.definitions) {
       Object.keys(schema.definitions).forEach((key) => {
         const definition = schema.definitions[key];
-        if (!definition['$id']) {
-          definition['$id'] = key;
-        }
-        registerRouteSchema(targets, definition);
+        registerRouteSchema(
+          targets,
+          { ...definition, $id: definition['$id'] ?? key },
+          schemaIdPrefix,
+        );
       });
     }
     if (schemaCopy.properties) {
       Object.keys(schemaCopy.properties).forEach((key) => {
         const property = schemaCopy.properties[key];
         if (property.$ref) {
-          property.$ref = property.$ref.replace('#/definitions/', '');
+          property.$ref = property.$ref.replace('#/definitions/', definitionRefPrefix);
         }
         if (property.items && property.items.$ref) {
-          property.items.$ref = property.items.$ref.replace('#/definitions/', '');
+          property.items.$ref = property.items.$ref.replace('#/definitions/', definitionRefPrefix);
         }
       });
     }
