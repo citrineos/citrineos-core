@@ -112,7 +112,8 @@ export class LocationMapper {
         location.chargingPool &&
         location.chargingPool
           .map((station) =>
-            station.evses!.map((evse) => this.evseMapper.fromGraphql(station, evse)),
+            // a patch can carry the pool before its EVSE rows exist, like fromGraphql tolerates
+            station.evses?.map((evse) => this.evseMapper.fromGraphql(station, evse)),
           )
           .flat()
           .filter((evse) => evse !== undefined),

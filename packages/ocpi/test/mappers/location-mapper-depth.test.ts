@@ -674,4 +674,16 @@ describe('LocationMapper', () => {
     expect(dto.evses).toHaveLength(1);
     expect(dto.evses![0].uid).toBe('cs-001::2');
   });
+
+  it('maps a partial location station without EVSEs to an empty EVSE list', () => {
+    const { locationMapper } = mappers();
+
+    // A patch can carry the pool before its EVSE rows exist, like the
+    // non-partial mapper already tolerates.
+    const dto = locationMapper.fromPartialGraphql({
+      chargingPool: [aStation({ evses: undefined })],
+    } as unknown as Partial<LocationDto>);
+
+    expect(dto.evses).toEqual([]);
+  });
 });
