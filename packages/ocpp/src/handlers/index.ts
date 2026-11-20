@@ -92,6 +92,7 @@ export { SendLocalListResponseOcpp2Handler } from './responses/2/send-local-list
 export { SetChargingProfileResponseOcpp16Handler } from './responses/1.6/set-charging-profile-response-ocpp-16-handler.js';
 export { SetChargingProfileResponseOcpp2Handler } from './responses/2/set-charging-profile-response-ocpp-2-handler.js';
 export { SetDefaultTariffResponseOcpp21Handler } from './responses/2/set-default-tariff-response-ocpp-21-handler.js';
+export { ClearTariffsResponseOcpp21Handler } from './responses/2/clear-tariffs-response-ocpp-21-handler.js';
 export { SetDisplayMessageResponseOcpp2Handler } from './responses/2/set-display-message-response-ocpp-2-handler.js';
 export { SetMonitoringBaseResponseOcpp2Handler } from './responses/2/set-monitoring-base-response-ocpp-2-handler.js';
 export { SetMonitoringLevelResponseOcpp2Handler } from './responses/2/set-monitoring-level-response-ocpp-2-handler.js';

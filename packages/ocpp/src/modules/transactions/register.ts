@@ -17,6 +17,7 @@ import { StatusNotificationService } from './status-notification-service.js';
 import { TransactionService } from './transaction-service.js';
 import type { TransactionsModule } from './module.js';
 import {
+  ClearTariffsResponseOcpp21Handler,
   CostUpdatedResponseOcpp2Handler,
   GetTariffsRequestOcpp21Handler,
   GetTransactionStatusResponseOcpp2Handler,
@@ -32,6 +33,7 @@ import {
 } from '@handlers/index.js';
 
 const TRANSACTIONS_HANDLERS = [
+  ClearTariffsResponseOcpp21Handler,
   CostUpdatedResponseOcpp2Handler,
   GetTariffsRequestOcpp21Handler,
   GetTransactionStatusResponseOcpp2Handler,
