@@ -229,7 +229,7 @@ describe('expect[] grammar', () => {
       { on: 'tokens.authorize', assert: 'response.body.data.allowed == ALLOWED' },
       { on: 'tokens.authorize', assert: 'response.body.data.token.uid == "RFID-1"' },
       { on: 'tokens.authorize', assert: 'response.body.status_code == 1000' },
-      { on: 'tokens.authorize', assert: 'request.ocpi.from.party == S44' },
+      { on: 'tokens.authorize', assert: 'request.ocpi.from.party == COS' },
       { on: 'tokens.authorize', assert: 'response.body.data.missing == undefined' },
       { on: 'versions.list', assert: 'response.body.data.0.version == 2.2.1' },
       { on: 'sessions.put', assert: 'registration.status == registered' },

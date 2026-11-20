@@ -29,7 +29,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): MockConfig {
     countryCode: env.MOCK_MSP_COUNTRY_CODE ?? 'US',
     partyId: env.MOCK_MSP_PARTY_ID ?? 'TST',
     cpoCountryCode: env.MOCK_MSP_CPO_COUNTRY_CODE ?? 'US',
-    cpoPartyId: env.MOCK_MSP_CPO_PARTY_ID ?? 'S44',
+    cpoPartyId: env.MOCK_MSP_CPO_PARTY_ID ?? 'COS',
     bootstrapTokenWeAccept:
       env.MOCK_MSP_CLIENT_TOKEN ?? 'abc123def456ghi789jkl012mno345pqr678stu901vwx234yz567',
     bootstrapTokenWePresent: env.MOCK_MSP_SERVER_TOKEN ?? seedServerToken,

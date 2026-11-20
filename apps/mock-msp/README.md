@@ -248,7 +248,7 @@ status, never build the envelope, never check auth.
 | business name                     | `TestMobilitySolutions`                 |
 | OCPI version                      | `2.2.1`                                 |
 | advertised base (`publicBaseUrl`) | `http://host.docker.internal:8083/ocpi` |
-| Citrine CPO identity              | `CPO` / `US` / `S44`                    |
+| Citrine CPO identity              | `CPO` / `US` / `COS`                    |
 
 Two bootstrap tokens (both **base64-encoded on the wire**, format
 `Authorization: Token <base64(raw)>`):
@@ -821,7 +821,7 @@ workflow.
 | `CITRINE_VERSIONS_URL`                                | `${CITRINE_OCPI_BASE_URL}/versions/${CITRINE_TENANT_ID}` | registration entry point (also the OCPI reachability probe)                                 |
 | `CITRINE_HASURA_URL`                                  | `http://localhost:8090/v1/graphql`                       | Citrine's Hasura GraphQL (used by `/_mock/provoke/*`, `/_mock/status`, and the spec probes) |
 | `MOCK_MSP_COUNTRY_CODE` / `MOCK_MSP_PARTY_ID`         | `US` / `TST`                                             | our eMSP identity                                                                           |
-| `MOCK_MSP_CPO_COUNTRY_CODE` / `MOCK_MSP_CPO_PARTY_ID` | `US` / `S44`                                             | Citrine CPO identity                                                                        |
+| `MOCK_MSP_CPO_COUNTRY_CODE` / `MOCK_MSP_CPO_PARTY_ID` | `US` / `COS`                                             | Citrine CPO identity                                                                        |
 | `MOCK_MSP_CLIENT_TOKEN`                               | seed `credentials.token`                                 | token we accept inbound                                                                     |
 | `MOCK_MSP_SERVER_TOKEN`                               | seed `serverCredentials.token`                           | token we present outbound                                                                   |
 | `MOCK_MSP_SCENARIO`                                   | _(unset)_                                                | scenario file to load at boot                                                               |

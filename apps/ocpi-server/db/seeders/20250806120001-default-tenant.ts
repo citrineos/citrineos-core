@@ -109,7 +109,7 @@ export default {
     const tenant = {
       id: 1,
       name: 'Default Tenant',
-      partyId: 'S44',
+      partyId: 'COS',
       countryCode: 'US',
       serverProfileOCPI: JSON.stringify(serverProfileOCPI),
       isUserTenant: false,

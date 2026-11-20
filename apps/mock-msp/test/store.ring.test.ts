@@ -98,7 +98,7 @@ describe('Store.query filters', () => {
       httpStatus: 200,
       ocpiStatusCode: 1000,
       validationOk: true,
-      from: { cc: 'US', party: 'S44' },
+      from: { cc: 'US', party: 'COS' },
       to: { cc: 'US', party: 'TST' },
       requestBody: { id: 'S1', cdr_token: { uid: 'T1', type: 'RFID' }, kwh: 1 },
       responseBody: { status_code: 1000 },
@@ -127,7 +127,7 @@ describe('Store.query filters', () => {
       httpStatus: 200,
       ocpiStatusCode: 1000,
       from: { cc: 'US', party: 'TST' },
-      to: { cc: 'US', party: 'S44' },
+      to: { cc: 'US', party: 'COS' },
       requestBody: { response_url: 'http://x', token: { uid: 'T1' } },
       responseBody: { data: { result: 'ACCEPTED' } },
     });
@@ -196,10 +196,10 @@ describe('Store.query filters', () => {
 
   it('from / to routing parties (each sub-field optional)', () => {
     const { store, a, b, c } = seed();
-    expect(ids(store.query({ from: { party: 'S44' } }))).toEqual([a.id]);
+    expect(ids(store.query({ from: { party: 'COS' } }))).toEqual([a.id]);
     expect(ids(store.query({ from: { cc: 'DE' } }))).toEqual([b.id]);
     expect(ids(store.query({ to: { cc: 'US', party: 'TST' } }))).toEqual([a.id, b.id]);
-    expect(ids(store.query({ to: { party: 'S44' } }))).toEqual([c.id]);
+    expect(ids(store.query({ to: { party: 'COS' } }))).toEqual([c.id]);
     expect(store.query({ from: { cc: 'US', party: 'CPO' } })).toEqual([]);
     // An exchange without routing info never matches a from/to constraint.
     expect(ids(store.query({ direction: 'outbound', from: { cc: 'US' } }))).toEqual([c.id]);
@@ -237,7 +237,7 @@ describe('Store.query filters', () => {
       module: ModuleId.Sessions,
       method: 'put',
       httpStatus: 200,
-      from: { party: 'S44' },
+      from: { party: 'COS' },
       bodyMatch: { id: 'S1' },
     };
     expect(ids(store.query(f))).toEqual([a.id]);

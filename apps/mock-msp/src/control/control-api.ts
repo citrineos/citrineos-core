@@ -513,7 +513,7 @@ async function provoke(ctx: MockContext, what: string, reply: FastifyReply): Pro
       provoked: true,
       what,
       hasuraStatus: r.status,
-      mutationSummary: `update_Locations id=2 -> affected_rows=${affected}; expect inbound PATCH /ocpi/2.2.1/emsp/locations/US/S44/2`,
+      mutationSummary: `update_Locations id=2 -> affected_rows=${affected}; expect inbound PATCH /ocpi/2.2.1/emsp/locations/US/COS/2`,
     };
   }
 
@@ -563,7 +563,7 @@ async function provoke(ctx: MockContext, what: string, reply: FastifyReply): Pro
       provoked: true,
       what,
       hasuraStatus: r.status,
-      mutationSummary: `insert_Locations_one id=${id} (4-decimal coords) -> expect inbound PUT /ocpi/2.2.1/emsp/locations/US/S44/${id} with coordinates finding`,
+      mutationSummary: `insert_Locations_one id=${id} (4-decimal coords) -> expect inbound PUT /ocpi/2.2.1/emsp/locations/US/COS/${id} with coordinates finding`,
     };
   }
 
