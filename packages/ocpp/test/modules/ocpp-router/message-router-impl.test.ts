@@ -694,6 +694,38 @@ describe('MessageRouterImpl', () => {
       // but the call itself will trigger sendCallError
       expect(sender.send).toHaveBeenCalled();
     });
+
+    it('awaits cache.setIfNotExist before routing the call so fast replies and sendCallError find the correlation entry', async () => {
+      cache.exists.mockResolvedValue(false);
+      vi.spyOn(router as any, '_validateCall').mockReturnValue({ isValid: true });
+
+      let cachedValue: string | null = null;
+      cache.setIfNotExist.mockImplementation(async (_key, value) => {
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        cachedValue = value;
+        return true;
+      });
+      cache.get.mockImplementation(async () => cachedValue);
+      sender.send.mockImplementation(async () => {
+        expect(cachedValue).toBe(`${OCPP_CallAction.Heartbeat}@${timestamp.toISOString()}`);
+        return { success: false, payload: 'routing failed' };
+      });
+
+      const callMessage = JSON.stringify([
+        MessageTypeId.Call,
+        CORRELATION_ID,
+        OCPP_CallAction.Heartbeat,
+        {},
+      ]);
+
+      await router.onMessage(IDENTIFIER, callMessage, timestamp, PROTOCOL);
+
+      expect(sender.send).toHaveBeenCalledOnce();
+      expect(networkHook).toHaveBeenCalledOnce();
+      const sentMessage = JSON.parse(networkHook.mock.calls[0][1]);
+      expect(sentMessage[0]).toBe(MessageTypeId.CallError);
+      expect(sentMessage[1]).toBe(CORRELATION_ID);
+    });
   });
 
   // ─── action attribution ────────────────────────────────────────────────────
