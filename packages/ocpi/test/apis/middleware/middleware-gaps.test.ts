@@ -218,6 +218,18 @@ describe('AuthMiddleware', () => {
     expectOcpiUnauthorized(ctx);
     expect(next).not.toHaveBeenCalled();
   });
+
+  it('answers 401 without querying graphql when the base64 token is malformed', async () => {
+    const client = { request: vi.fn() };
+    const next = vi.fn();
+    const ctx = ocpiCtx({ authorization: 'Token !!!', ...MATCHING_ROUTING_HEADERS });
+
+    await authMiddlewareWith(client).use(ctx, next);
+
+    expectOcpiUnauthorized(ctx);
+    expect(client.request).not.toHaveBeenCalled();
+    expect(next).not.toHaveBeenCalled();
+  });
 });
 
 describe('RegistrationAuthMiddleware', () => {

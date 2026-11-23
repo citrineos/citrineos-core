@@ -7,21 +7,21 @@ import { HttpHeader } from '@citrineos/base';
 import { base64Decode } from '../../util/util.js';
 
 const tokenPrefix = 'Token ';
+const CANONICAL_BASE64_PATTERN = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
 
 export function extractToken(authorization: string): string {
-  let token = authorization;
-  if (token.startsWith(tokenPrefix)) {
-    token = authorization.slice(tokenPrefix.length).trim();
-
-    try {
-      // Decode the base64 token
-      return base64Decode(token);
-    } catch (_error) {
-      throw new BadRequestError('Invalid base64 token');
-    }
-  } else {
+  if (!authorization.startsWith(tokenPrefix)) {
     throw new BadRequestError('Invalid Authorization header format');
   }
+  const token = authorization.slice(tokenPrefix.length).trim();
+  if (
+    !token ||
+    !CANONICAL_BASE64_PATTERN.test(token) ||
+    Buffer.from(token, 'base64').toString('base64') !== token
+  ) {
+    throw new BadRequestError('Invalid base64 token');
+  }
+  return base64Decode(token);
 }
 
 /**
