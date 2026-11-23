@@ -1,7 +1,10 @@
 // SPDX-FileCopyrightText: 2025 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { extractBasicCredentials } from '@/transport/network-connection/util.js';
+import {
+  extractBasicCredentials,
+  truncateCloseReason,
+} from '@/transport/network-connection/util.js';
 import { faker } from '@faker-js/faker';
 import { aRequestWithAuthorization } from '../../providers/incoming-message-provider.js';
 import { describe, expect, it } from 'vitest';
@@ -115,5 +118,20 @@ describe('extractBasicCredentials', () => {
       username: '',
       password: undefined,
     });
+  });
+});
+
+describe('truncateCloseReason', () => {
+  it('returns reasons within 123 UTF-8 bytes unchanged', () => {
+    const reason = 'a'.repeat(123);
+    expect(truncateCloseReason(reason)).toBe(reason);
+  });
+
+  it('truncates multi-byte UTF-8 reasons cleanly without exceeding 123 bytes or splitting code points', () => {
+    const reason = '€'.repeat(50); // 150 UTF-8 bytes (3 bytes each)
+    const truncated = truncateCloseReason(reason);
+
+    expect(Buffer.byteLength(truncated, 'utf8')).toBeLessThanOrEqual(123);
+    expect(truncated).toBe('€'.repeat(41)); // 41 * 3 = 123 bytes
   });
 });

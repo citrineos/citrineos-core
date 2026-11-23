@@ -58,7 +58,14 @@ import {
   type SocketInfo,
   WsEventSource,
 } from './types.js';
-import { errorCodeOf, errorMessageOf, getClientIdFromUrl, remoteAddressOf, uriOf } from './util.js';
+import {
+  errorCodeOf,
+  errorMessageOf,
+  getClientIdFromUrl,
+  remoteAddressOf,
+  truncateCloseReason,
+  uriOf,
+} from './util.js';
 
 export class WebsocketNetworkConnection implements INetworkConnection {
   protected _cache: ICache;
@@ -612,6 +619,12 @@ export class WebsocketNetworkConnection implements INetworkConnection {
     pingInterval: number,
     req: http.IncomingMessage,
   ): Promise<void> {
+    // Guard against unhandled 'error' events crashing the process before _registerWebsocketEvents attaches ws.onerror.
+    const earlyErrorHandler = (error: Error) => {
+      this._logger.warn('Websocket error before event handler registration', error);
+    };
+    ws.on('error', earlyErrorHandler);
+
     // Measures the full "all the way" establishment: station check -> tenant
     // limit -> cache slot claim -> router register -> broker subscribe.
     const setupStart = performance.now();
@@ -792,6 +805,7 @@ export class WebsocketNetworkConnection implements INetworkConnection {
 
         // Register all websocket events
         this._registerWebsocketEvents(identifier, ws, pingInterval, connLogger);
+        ws.off('error', earlyErrorHandler);
 
         // Connection is now fully established "all the way".
         recordWsConnectionEstablished(ws.protocol);
@@ -890,7 +904,9 @@ export class WebsocketNetworkConnection implements INetworkConnection {
         sentCode: closeContext?.sentCode,
         error: { message: event.message, code: errorCodeOf(event.error) },
       });
-      ws.close(1011, event.message);
+      if (ws.readyState === undefined || ws.readyState === WebSocket.OPEN) {
+        ws.close(1011, truncateCloseReason(event.message ?? ''));
+      }
     };
     ws.onmessage = (event: MessageEvent) => {
       this._onMessage(identifier, event.data.toString(), ws.protocol as OCPPVersionType);
@@ -1179,6 +1195,10 @@ export class WebsocketNetworkConnection implements INetworkConnection {
     const sendTimer = setTimeout(
       () => {
         this._pingTimers.delete(identifier);
+
+        if (ws.readyState !== undefined && ws.readyState !== WebSocket.OPEN) {
+          return;
+        }
 
         const pongTimeout = setTimeout(() => {
           connLogger.debug('Pong timeout for', identifier, '— terminating');
