@@ -67,7 +67,7 @@ const getConfig: () => {
     wsUrl: process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8090/v1/graphql',
     citrineCoreUrl: process.env.NEXT_PUBLIC_CITRINE_CORE_URL,
     fileServer: process.env.NEXT_PUBLIC_FILE_SERVER_URL,
-    logoUrl: process.env.NEXT_PUBLIC_LOGO_URL,
+    logoUrl: process.env.NEXT_PUBLIC_LOGO_URL || '/logo-collapsed.svg', // Default local asset; override with env var for an external URL
     adminEmail: process.env.NEXT_PUBLIC_ADMIN_EMAIL,
     adminPassword: process.env.ADMIN_PASSWORD,
     authProvider,
