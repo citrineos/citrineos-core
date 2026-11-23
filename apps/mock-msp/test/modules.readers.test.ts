@@ -49,7 +49,7 @@ function validEvse(overrides: Record<string, unknown> = {}): Record<string, unkn
 function validLocation(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {
     country_code: 'US',
-    party_id: 'S44',
+    party_id: 'COS',
     id: 'LOC1',
     publish: true,
     address: '1 Main St',
@@ -67,7 +67,7 @@ function validTariff(overrides: Record<string, unknown> = {}): Record<string, un
   return {
     id: 'TAR1',
     country_code: 'US',
-    party_id: 'S44',
+    party_id: 'COS',
     currency: 'USD',
     elements: [{ price_components: [{ type: 'ENERGY', price: 0.25, step_size: 1 }] }],
     last_updated: TS,
@@ -78,7 +78,7 @@ function validTariff(overrides: Record<string, unknown> = {}): Record<string, un
 function validCdr(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {
     country_code: 'US',
-    party_id: 'S44',
+    party_id: 'COS',
     id: 'CDR-1',
     start_date_time: TS,
     end_date_time: '2026-01-01T11:00:00.000Z',
@@ -98,7 +98,7 @@ function validCdr(overrides: Record<string, unknown> = {}): Record<string, unkno
       country: 'USA',
       coordinates: { latitude: '37.77490', longitude: '-122.41940' },
       evse_uid: 'EVSE1',
-      evse_id: 'US*S44*E1',
+      evse_id: 'US*COS*E1',
       connector_id: '1',
       connector_standard: 'IEC_62196_T2',
       connector_format: 'SOCKET',
@@ -251,7 +251,7 @@ describe('inbound readers + writers', () => {
   // ---- locations ----------------------------------------------------------
 
   describe('locations', () => {
-    const base = '/ocpi/2.2.1/emsp/locations/US/S44';
+    const base = '/ocpi/2.2.1/emsp/locations/US/COS';
 
     it('PUT at all three depths stores under distinct keys and GET reads each back', async () => {
       const loc = validLocation();
@@ -275,9 +275,9 @@ describe('inbound readers + writers', () => {
         expect(lastInbound(op).validation.ok).toBe(true);
       }
       expect([...ctx.store.domain.locations.keys()].sort()).toEqual([
-        'US/S44/LOC1',
-        'US/S44/LOC1/EVSE2',
-        'US/S44/LOC1/EVSE2/2',
+        'US/COS/LOC1',
+        'US/COS/LOC1/EVSE2',
+        'US/COS/LOC1/EVSE2/2',
       ]);
 
       expect((await inject('GET', `${base}/LOC1`)).json().data).toEqual(loc);
@@ -310,13 +310,13 @@ describe('inbound readers + writers', () => {
       await inject('PATCH', `${base}/LOC1/EVSE1`, { status: 'CHARGING', last_updated: TS });
       await inject('PATCH', `${base}/LOC1/EVSE1/1`, { max_amperage: 16, last_updated: TS });
 
-      const loc = ctx.store.domain.locations.get('US/S44/LOC1') as Record<string, unknown>;
+      const loc = ctx.store.domain.locations.get('US/COS/LOC1') as Record<string, unknown>;
       expect(loc.name).toBe('After');
       expect(loc.address).toBe('1 Main St');
-      const evse = ctx.store.domain.locations.get('US/S44/LOC1/EVSE1') as Record<string, unknown>;
+      const evse = ctx.store.domain.locations.get('US/COS/LOC1/EVSE1') as Record<string, unknown>;
       expect(evse.status).toBe('CHARGING');
       expect(evse.uid).toBe('EVSE1');
-      const conn = ctx.store.domain.locations.get('US/S44/LOC1/EVSE1/1') as Record<string, unknown>;
+      const conn = ctx.store.domain.locations.get('US/COS/LOC1/EVSE1/1') as Record<string, unknown>;
       expect(conn.max_amperage).toBe(16);
       expect(conn.standard).toBe('IEC_62196_T2');
       for (const op of [
@@ -332,7 +332,7 @@ describe('inbound readers + writers', () => {
 
     it('PATCH of an object never PUT stores the partial as-is', async () => {
       await inject('PATCH', `${base}/LOC9`, { name: 'Only a name' });
-      expect(ctx.store.domain.locations.get('US/S44/LOC9')).toEqual({ name: 'Only a name' });
+      expect(ctx.store.domain.locations.get('US/COS/LOC9')).toEqual({ name: 'Only a name' });
     });
 
     it('invalid PUT bodies at each depth are still 1000 but detected and stored', async () => {
@@ -372,7 +372,7 @@ describe('inbound readers + writers', () => {
   // ---- tariffs ------------------------------------------------------------
 
   describe('tariffs', () => {
-    const url = '/ocpi/2.2.1/emsp/tariffs/US/S44/TAR1';
+    const url = '/ocpi/2.2.1/emsp/tariffs/US/COS/TAR1';
 
     it('PUT stores the tariff, GET reads it back, DELETE removes it', async () => {
       const tariff = validTariff();
@@ -380,7 +380,7 @@ describe('inbound readers + writers', () => {
       expect(put.json().status_code).toBe(1000);
       expect(put.json().data).toBeUndefined();
       expect(lastInbound('tariffs.put').validation.ok).toBe(true);
-      expect(ctx.store.domain.tariffs.get('US:S44:TAR1')).toEqual(tariff);
+      expect(ctx.store.domain.tariffs.get('US:COS:TAR1')).toEqual(tariff);
 
       const get = await inject('GET', url);
       expect(get.json().status_code).toBe(1000);
@@ -389,18 +389,18 @@ describe('inbound readers + writers', () => {
       const del = await inject('DELETE', url);
       expect(del.json().status_code).toBe(1000);
       expect(del.json().data).toBeUndefined();
-      expect(ctx.store.domain.tariffs.has('US:S44:TAR1')).toBe(false);
+      expect(ctx.store.domain.tariffs.has('US:COS:TAR1')).toBe(false);
     });
 
     it('DELETE is idempotent: an unknown tariff still answers the empty 1000 envelope', async () => {
-      const del = await inject('DELETE', '/ocpi/2.2.1/emsp/tariffs/US/S44/NEVER-PUT');
+      const del = await inject('DELETE', '/ocpi/2.2.1/emsp/tariffs/US/COS/NEVER-PUT');
       expect(del.statusCode).toBe(200);
       expect(del.json().status_code).toBe(1000);
       expect(lastInbound('tariffs.delete').findings).toHaveLength(0);
     });
 
     it('GET of an unknown tariff answers 2000 with HTTP 200', async () => {
-      const get = await inject('GET', '/ocpi/2.2.1/emsp/tariffs/US/S44/NEVER-PUT');
+      const get = await inject('GET', '/ocpi/2.2.1/emsp/tariffs/US/COS/NEVER-PUT');
       expect(get.statusCode).toBe(200);
       expect(get.json().status_code).toBe(2000);
     });
@@ -410,7 +410,7 @@ describe('inbound readers + writers', () => {
       const put = await inject('PUT', url, bad);
       expect(put.json().status_code).toBe(1000);
       expectDetected('tariffs.put');
-      expect(ctx.store.domain.tariffs.get('US:S44:TAR1')).toEqual(bad);
+      expect(ctx.store.domain.tariffs.get('US:COS:TAR1')).toEqual(bad);
     });
   });
 

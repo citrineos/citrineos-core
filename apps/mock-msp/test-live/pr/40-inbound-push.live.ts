@@ -20,7 +20,7 @@ describe('inbound push', () => {
       30_000,
     );
     expect(ex.operation).toBe('locations.put.location');
-    expect(ex.request.ocpi.from).toEqual({ cc: 'US', party: 'S44' });
+    expect(ex.request.ocpi.from).toEqual({ cc: 'US', party: 'COS' });
     expect(ex.request.ocpi.to).toEqual({ cc: 'US', party: 'TST' });
     expect(ex.request.ocpi.tokenValid).not.toBe(false);
     expect(ex.response.httpStatus).toBe(200);
@@ -44,7 +44,7 @@ describe('inbound push', () => {
       30_000,
     );
     expect(ex.operation).toBe('locations.patch.location');
-    expect(ex.request.path).toBe('/ocpi/2.2.1/emsp/locations/US/S44/2');
+    expect(ex.request.path).toBe('/ocpi/2.2.1/emsp/locations/US/COS/2');
     expect(ex.response.httpStatus).toBe(200);
   });
 });

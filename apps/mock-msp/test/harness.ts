@@ -48,7 +48,7 @@ export function makeConfig(overrides: Partial<MockConfig> = {}): MockConfig {
     countryCode: 'US',
     partyId: 'TST',
     cpoCountryCode: 'US',
-    cpoPartyId: 'S44',
+    cpoPartyId: 'COS',
     bootstrapTokenWeAccept: SEED_TOKEN_WE_ACCEPT,
     bootstrapTokenWePresent: SEED_TOKEN_WE_PRESENT,
     autoRegister: false,
@@ -266,7 +266,7 @@ export function cpoCredentials(versionsUrl: string, token: string): Record<strin
     roles: [
       {
         role: 'CPO',
-        party_id: 'S44',
+        party_id: 'COS',
         country_code: 'US',
         business_details: { name: 'CitrineOS CPO' },
       },

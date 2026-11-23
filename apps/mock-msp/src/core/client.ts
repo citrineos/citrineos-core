@@ -6,7 +6,7 @@
 // OcpiClient (the Actor): a fetch wrapper that mirrors Citrine's BaseClientApi
 // wire rules so Citrine accepts our calls — `Authorization: Token base64(token)`,
 // fresh X-Request-ID / X-Correlation-ID on every call, OCPI-* routing headers
-// only on functional calls (from=us US/TST, to=CPO US/S44). Every call opens an
+// only on functional calls (from=us US/TST, to=CPO US/COS). Every call opens an
 // outbound Exchange, consults the FaultEngine (so we can corrupt OUR requests),
 // validates Citrine's response with the reused ocpi schema (drift =>
 // Finding), records + logs, and returns the Exchange. Also drives the

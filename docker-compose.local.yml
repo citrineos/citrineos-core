@@ -69,7 +69,7 @@ services:
       MOCK_MSP_PARTY_ID: 'TST'
       # Citrine's CPO identity (used in OCPI-to-* routing headers on our calls).
       MOCK_MSP_CPO_COUNTRY_CODE: 'US'
-      MOCK_MSP_CPO_PARTY_ID: 'S44'
+      MOCK_MSP_CPO_PARTY_ID: 'COS'
       # Citrine's CPO OCPI base — same compose network, reached by service DNS.
       CITRINE_OCPI_BASE_URL: 'http://citrineos-ocpi:8085/ocpi'
       # Bootstrap tokens from the partner seed (rotated during a live handshake):
