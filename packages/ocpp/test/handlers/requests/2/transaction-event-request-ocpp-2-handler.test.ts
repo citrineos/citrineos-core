@@ -1333,5 +1333,105 @@ describe('TransactionEventRequestOcpp2Handler', () => {
         }),
       );
     });
+
+    it('calculates and persists cost when totalKwh is 0 (e.g. session or time fee)', async () => {
+      const { handler, costCalculator, transactionEventRepository, ocppSender } = makeHandler({
+        totalCost: 1.5,
+        transactionEventRepository: {
+          createOrUpdateTransactionByTransactionEventAndStationId: vi.fn().mockResolvedValue({
+            id: 56,
+            transactionId: 'txn-zero-kwh',
+            isActive: false,
+            connectorId: 1,
+            totalKwh: 0,
+          }),
+        },
+      });
+
+      const payload: OCPP2_0_1.TransactionEventRequest = {
+        eventType: OCPP2_0_1.TransactionEventEnumType.Ended,
+        timestamp: new Date().toISOString(),
+        triggerReason: OCPP2_0_1.TriggerReasonEnumType.RemoteStop,
+        seqNo: 2,
+        transactionInfo: { transactionId: 'txn-zero-kwh' },
+      };
+
+      await handler.handle(makeMessage(payload));
+
+      expect(costCalculator.calculateTotalCost).toHaveBeenCalledOnce();
+      expect(transactionEventRepository.updateTransactionTotalCostById).toHaveBeenCalledWith(
+        DEFAULT_TENANT_ID,
+        1.5,
+        56,
+      );
+      expect(ocppSender.sendCallResultWithMessage).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ totalCost: 1.5 }),
+      );
+    });
+
+    it('persists totalCost of 0 in the database when totalCost resolves to 0', async () => {
+      const { handler, transactionEventRepository } = makeHandler({
+        totalCost: 0,
+        transactionEventRepository: {
+          createOrUpdateTransactionByTransactionEventAndStationId: vi.fn().mockResolvedValue({
+            id: 57,
+            transactionId: 'txn-free',
+            isActive: false,
+            connectorId: 1,
+            totalKwh: 5,
+          }),
+        },
+      });
+
+      await handler.handle(makeMessage(ENDED_WITHOUT_IDTOKEN));
+
+      expect(transactionEventRepository.updateTransactionTotalCostById).toHaveBeenCalledWith(
+        DEFAULT_TENANT_ID,
+        0,
+        57,
+      );
+    });
+
+    it('calculates running totalCost on Updated when totalKwh is 0 and sendCostUpdatedOnMeterValue is enabled', async () => {
+      const { handler, costCalculator, transactionEventRepository, ocppSender } = makeHandler({
+        totalCost: 1.0,
+        config: {
+          transactions: {
+            sendCostUpdatedOnMeterValue: true,
+          },
+        } as unknown as SystemConfig,
+        transactionEventRepository: {
+          createOrUpdateTransactionByTransactionEventAndStationId: vi.fn().mockResolvedValue({
+            id: 58,
+            transactionId: 'txn-running-zero',
+            isActive: true,
+            connectorId: 1,
+            totalKwh: 0,
+          }),
+        },
+      });
+
+      const payload: OCPP2_0_1.TransactionEventRequest = {
+        eventType: OCPP2_0_1.TransactionEventEnumType.Updated,
+        timestamp: new Date().toISOString(),
+        triggerReason: OCPP2_0_1.TriggerReasonEnumType.MeterValuePeriodic,
+        seqNo: 1,
+        transactionInfo: { transactionId: 'txn-running-zero' },
+      };
+
+      await handler.handle(makeMessage(payload));
+
+      expect(costCalculator.calculateTotalCost).toHaveBeenCalledOnce();
+      expect(transactionEventRepository.updateTransactionTotalCostById).toHaveBeenCalledWith(
+        DEFAULT_TENANT_ID,
+        1.0,
+        58,
+      );
+      expect(ocppSender.sendCallResultWithMessage).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ totalCost: 1.0 }),
+      );
+    });
   });
 });
