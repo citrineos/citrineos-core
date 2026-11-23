@@ -499,4 +499,80 @@ describe('GetTariffsRequestOcpp21Handler', () => {
       expect(response.statusInfo?.reasonCode).toBe('InternalError');
     });
   });
+
+  describe('Regression fixes', () => {
+    it('keeps DefaultTariff and DriverTariff separate when they share a tariffId', async () => {
+      mockReadConnectorsWithTariffs.mockResolvedValue([
+        {
+          id: 1,
+          tariffId: 10,
+          evse: { evseTypeId: 1 },
+          tariff: { id: 10, tariffId: 'SHARED01', validFrom: null },
+        },
+      ]);
+      mockAuthorizationFindAll.mockResolvedValue([
+        {
+          id: 1,
+          idToken: 'DRIVER01',
+          tariffId: 10,
+          tariff: { id: 10, tariffId: 'SHARED01', validFrom: null },
+        },
+      ]);
+      mockReadActiveTransactions.mockResolvedValue([
+        {
+          id: 100,
+          evse: { evseTypeId: 2 },
+          authorization: { tariff: { id: 10, tariffId: 'SHARED01' } },
+        },
+      ]);
+
+      const response = await handleAndGetResponse({ evseId: 0 });
+
+      expect(response.status).toBe(OCPP2_1.TariffGetStatusEnumType.Accepted);
+      expect(response.tariffAssignments).toHaveLength(2);
+      expect(response.tariffAssignments).toContainEqual({
+        tariffId: 'SHARED01',
+        tariffKind: OCPP2_1.TariffKindEnumType.DefaultTariff,
+        evseIds: [1],
+      });
+      expect(response.tariffAssignments).toContainEqual({
+        tariffId: 'SHARED01',
+        tariffKind: OCPP2_1.TariffKindEnumType.DriverTariff,
+        idTokens: ['DRIVER01'],
+        evseIds: [2],
+      });
+    });
+
+    it('sorts evseIds numerically instead of lexicographically', async () => {
+      mockReadConnectorsWithTariffs.mockResolvedValue([
+        { id: 1, tariffId: 1, evse: { evseTypeId: 10 }, tariff: { id: 1, tariffId: 'T1' } },
+        { id: 2, tariffId: 1, evse: { evseTypeId: 2 }, tariff: { id: 1, tariffId: 'T1' } },
+        { id: 3, tariffId: 1, evse: { evseTypeId: 1 }, tariff: { id: 1, tariffId: 'T1' } },
+      ]);
+      mockAuthorizationFindAll.mockResolvedValue([]);
+      mockReadActiveTransactions.mockResolvedValue([]);
+
+      const response = await handleAndGetResponse({ evseId: 0 });
+
+      expect(response.tariffAssignments![0].evseIds).toEqual([1, 2, 10]);
+    });
+
+    it('excludes DriverTariffs without an active transaction on requestedEvseId when evseId > 0', async () => {
+      mockReadConnectorsWithTariffs.mockResolvedValue([]);
+      mockAuthorizationFindAll.mockResolvedValue([
+        {
+          id: 1,
+          idToken: 'DRIVER01',
+          tariffId: 2,
+          tariff: { id: 2, tariffId: 'MSP01', validFrom: null },
+        },
+      ]);
+      mockReadActiveTransactions.mockResolvedValue([]);
+
+      const response = await handleAndGetResponse({ evseId: 1 });
+
+      expect(response.status).toBe(OCPP2_1.TariffGetStatusEnumType.NoTariff);
+      expect(response.tariffAssignments).toBeUndefined();
+    });
+  });
 });

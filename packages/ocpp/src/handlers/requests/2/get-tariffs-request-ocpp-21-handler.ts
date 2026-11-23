@@ -98,6 +98,27 @@ export class GetTariffsRequestOcpp21Handler extends AbstractHandler {
         idTokens: Set<string>;
       };
       const tariffAssignmentsMap = new Map<string, TariffAssignmentBuilder>();
+      const getAssignmentKey = (tariffId: string, tariffKind: OCPP2_1.TariffKindEnumType): string =>
+        `${tariffId}:${tariffKind}`;
+      const getOrCreateAssignment = (
+        tariffId: string,
+        tariffKind: OCPP2_1.TariffKindEnumType,
+        validFrom?: string | null,
+      ): TariffAssignmentBuilder => {
+        const key = getAssignmentKey(tariffId, tariffKind);
+        let assignment = tariffAssignmentsMap.get(key);
+        if (!assignment) {
+          assignment = {
+            tariffId,
+            tariffKind,
+            validFrom,
+            evseIds: new Set(),
+            idTokens: new Set(),
+          };
+          tariffAssignmentsMap.set(key, assignment);
+        }
+        return assignment;
+      };
 
       // Query default tariffs from Connectors
       // I09.FR.01 & I09.FR.02: Filter by evseId if requested
@@ -113,16 +134,12 @@ export class GetTariffsRequestOcpp21Handler extends AbstractHandler {
         if (tariff && tariff.tariffId) {
           const evseTypeId = connector.evse?.evseTypeId;
           if (evseTypeId !== undefined && evseTypeId !== null) {
-            if (!tariffAssignmentsMap.has(tariff.tariffId)) {
-              tariffAssignmentsMap.set(tariff.tariffId, {
-                tariffId: tariff.tariffId,
-                tariffKind: OCPP2_1.TariffKindEnumType.DefaultTariff,
-                validFrom: tariff.validFrom,
-                evseIds: new Set(),
-                idTokens: new Set(),
-              });
-            }
-            tariffAssignmentsMap.get(tariff.tariffId)!.evseIds.add(evseTypeId);
+            const assignment = getOrCreateAssignment(
+              tariff.tariffId,
+              OCPP2_1.TariffKindEnumType.DefaultTariff,
+              tariff.validFrom,
+            );
+            assignment.evseIds.add(evseTypeId);
           }
         }
       }
@@ -135,16 +152,11 @@ export class GetTariffsRequestOcpp21Handler extends AbstractHandler {
       for (const authorization of authorizations) {
         const tariff = authorization.tariff;
         if (tariff && tariff.tariffId) {
-          if (!tariffAssignmentsMap.has(tariff.tariffId)) {
-            tariffAssignmentsMap.set(tariff.tariffId, {
-              tariffId: tariff.tariffId,
-              tariffKind: OCPP2_1.TariffKindEnumType.DriverTariff,
-              validFrom: tariff.validFrom,
-              evseIds: new Set(),
-              idTokens: new Set(),
-            });
-          }
-          const assignment = tariffAssignmentsMap.get(tariff.tariffId)!;
+          const assignment = getOrCreateAssignment(
+            tariff.tariffId,
+            OCPP2_1.TariffKindEnumType.DriverTariff,
+            tariff.validFrom,
+          );
           assignment.idTokens.add(authorization.idToken);
         }
       }
@@ -162,40 +174,47 @@ export class GetTariffsRequestOcpp21Handler extends AbstractHandler {
         const tariff = transaction.authorization?.tariff;
         const evseTypeId = transaction.evse?.evseTypeId;
         if (tariff && tariff.tariffId && evseTypeId !== undefined && evseTypeId !== null) {
-          const assignment = tariffAssignmentsMap.get(tariff.tariffId);
+          const assignment = tariffAssignmentsMap.get(
+            getAssignmentKey(tariff.tariffId, OCPP2_1.TariffKindEnumType.DriverTariff),
+          );
           if (assignment) {
             assignment.evseIds.add(evseTypeId);
           }
         }
       }
 
-      // Convert map to array
+      // Convert map to array, filtering driver tariffs to the requested EVSE when evseId > 0
       const tariffAssignments: OCPP2_1.TariffAssignmentType[] = Array.from(
         tariffAssignmentsMap.values(),
-      ).map((assignment) => {
-        const result: OCPP2_1.TariffAssignmentType = {
-          tariffId: assignment.tariffId,
-          tariffKind: assignment.tariffKind,
-        };
+      )
+        .filter((assignment) => requestedEvseId <= 0 || assignment.evseIds.has(requestedEvseId))
+        .map((assignment) => {
+          const result: OCPP2_1.TariffAssignmentType = {
+            tariffId: assignment.tariffId,
+            tariffKind: assignment.tariffKind,
+          };
 
-        // I09.FR.07: Include validFrom when present
-        if (assignment.validFrom) {
-          result.validFrom = assignment.validFrom;
-        }
+          // I09.FR.07: Include validFrom when present
+          if (assignment.validFrom) {
+            result.validFrom = assignment.validFrom;
+          }
 
-        // I09.FR.04: DefaultTariff includes evseIds
-        // I09.FR.06: DriverTariff with active transaction includes evseIds
-        if (assignment.evseIds.size > 0) {
-          result.evseIds = Array.from(assignment.evseIds).sort() as [number, ...number[]];
-        }
+          // I09.FR.04: DefaultTariff includes evseIds
+          // I09.FR.06: DriverTariff with active transaction includes evseIds
+          if (assignment.evseIds.size > 0) {
+            result.evseIds = Array.from(assignment.evseIds).sort((a, b) => a - b) as [
+              number,
+              ...number[],
+            ];
+          }
 
-        // I09.FR.05: DriverTariff includes idTokens
-        if (assignment.idTokens.size > 0) {
-          result.idTokens = Array.from(assignment.idTokens).sort() as [string, ...string[]];
-        }
+          // I09.FR.05: DriverTariff includes idTokens
+          if (assignment.idTokens.size > 0) {
+            result.idTokens = Array.from(assignment.idTokens).sort() as [string, ...string[]];
+          }
 
-        return result;
-      });
+          return result;
+        });
 
       // I09.FR.03: No tariffs returns NoTariff status
       if (tariffAssignments.length === 0) {
