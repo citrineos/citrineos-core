@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import { Big } from 'big.js';
 import { Money } from '../money/money.js';
 import type { Price } from '../money/price.js';
 
@@ -29,7 +30,7 @@ export function buildPrice(
   const price: Price = { excl_vat: money.roundToCurrencyScale().toNumber() };
   if (taxRate != null) {
     price.incl_vat = money
-      .multiply(1 + taxRate / 100)
+      .multiply(new Big(1).plus(new Big(taxRate).div(100)))
       .roundToCurrencyScale()
       .toNumber();
   }
