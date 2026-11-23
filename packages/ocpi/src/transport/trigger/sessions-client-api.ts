@@ -26,12 +26,22 @@ export class SessionsClientApi extends BaseClientApi {
     return url;
   }
 
+  private buildSessionUrl(
+    fromCountryCode: string,
+    fromPartyId: string,
+    partnerProfile: PartnerProfile,
+    sessionId: string,
+  ): string {
+    return `${this.getUrl(partnerProfile)}/${fromCountryCode}/${fromPartyId}/${sessionId}`;
+  }
+
   async getSession(
     fromCountryCode: string,
     fromPartyId: string,
     toCountryCode: string,
     toPartyId: string,
     partnerProfile: PartnerProfile,
+    sessionId: string,
   ): Promise<SessionResponse> {
     return this.request(
       fromCountryCode,
@@ -41,6 +51,8 @@ export class SessionsClientApi extends BaseClientApi {
       HttpMethod.Get,
       SessionResponseSchema,
       partnerProfile,
+      true,
+      this.buildSessionUrl(fromCountryCode, fromPartyId, partnerProfile, sessionId),
     );
   }
 
@@ -50,6 +62,7 @@ export class SessionsClientApi extends BaseClientApi {
     toCountryCode: string,
     toPartyId: string,
     partnerProfile: PartnerProfile,
+    sessionId: string,
     body: Partial<Session>,
   ): Promise<OcpiEmptyResponse> {
     return this.request(
@@ -61,7 +74,7 @@ export class SessionsClientApi extends BaseClientApi {
       OcpiEmptyResponseSchema,
       partnerProfile,
       true,
-      undefined,
+      this.buildSessionUrl(fromCountryCode, fromPartyId, partnerProfile, sessionId),
       body,
     );
   }
@@ -72,6 +85,7 @@ export class SessionsClientApi extends BaseClientApi {
     toCountryCode: string,
     toPartyId: string,
     partnerProfile: PartnerProfile,
+    sessionId: string,
     body: Session,
   ): Promise<OcpiEmptyResponse> {
     return this.request(
@@ -83,7 +97,7 @@ export class SessionsClientApi extends BaseClientApi {
       OcpiEmptyResponseSchema,
       partnerProfile,
       true,
-      undefined,
+      this.buildSessionUrl(fromCountryCode, fromPartyId, partnerProfile, sessionId),
       body,
     );
   }

@@ -330,11 +330,11 @@ describe('TariffsClientApi', () => {
 describe('SessionsClientApi', () => {
   const profile = aProfile();
 
-  it('getSession relies on the profile endpoint url and default routing headers', async () => {
+  it('getSession builds the OCPI session resource path and default routing headers', async () => {
     const api = new SessionsClientApi(deps().dependencies);
     const request = spyRequest(api);
 
-    const res = await api.getSession('DE', 'CPO', 'NL', 'MSP', profile);
+    const res = await api.getSession('DE', 'CPO', 'NL', 'MSP', profile, 'S1');
 
     expect(res).toBe(RESULT);
     expect(request).toHaveBeenCalledTimes(1);
@@ -346,16 +346,20 @@ describe('SessionsClientApi', () => {
       HttpMethod.Get,
       SessionResponseSchema,
       profile,
+      true,
+      `${SESSIONS_URL}/DE/CPO/S1`,
     );
   });
 
-  it('putSession and patchSession forward the body with no explicit url', async () => {
+  it('putSession and patchSession target the session resource url with the body', async () => {
     const api = new SessionsClientApi(deps().dependencies);
     const request = spyRequest(api);
     const session = { id: 'S1' } as never;
 
-    await api.putSession('DE', 'CPO', 'NL', 'MSP', profile, session);
-    await api.patchSession('DE', 'CPO', 'NL', 'MSP', profile, { status: 'COMPLETED' } as never);
+    await api.putSession('DE', 'CPO', 'NL', 'MSP', profile, 'S1', session);
+    await api.patchSession('DE', 'CPO', 'NL', 'MSP', profile, 'S1', {
+      status: 'COMPLETED',
+    } as never);
 
     expect(request).toHaveBeenCalledTimes(2);
     expect(request).toHaveBeenNthCalledWith(
@@ -368,10 +372,11 @@ describe('SessionsClientApi', () => {
       OcpiEmptyResponseSchema,
       profile,
       true,
-      undefined,
+      `${SESSIONS_URL}/DE/CPO/S1`,
       session,
     );
     expect(request.mock.calls[1][4]).toBe(HttpMethod.Patch);
+    expect(request.mock.calls[1][8]).toBe(`${SESSIONS_URL}/DE/CPO/S1`);
     expect(request.mock.calls[1][9]).toEqual({ status: 'COMPLETED' });
   });
 });
@@ -700,10 +705,10 @@ describe('BaseClientApi.request wire behavior', () => {
       .mockResolvedValue(restResponse(200, EMPTY_OK));
     const session = { id: 'S1' } as never;
 
-    await api.putSession('DE', 'CPO', 'NL', 'MSP', profile, session);
+    await api.putSession('DE', 'CPO', 'NL', 'MSP', profile, 'S1', session);
 
     expect(replaceRaw).toHaveBeenCalledTimes(1);
-    expect(replaceRaw.mock.calls[0][0]).toBe(SESSIONS_URL);
+    expect(replaceRaw.mock.calls[0][0]).toBe(`${SESSIONS_URL}/DE/CPO/S1`);
     expect(replaceRaw.mock.calls[0][1]).toBe(session);
   });
 
@@ -771,10 +776,10 @@ describe('BaseClientApi.request wire behavior', () => {
       restResponse(404, { message: 'not found' }),
     );
 
-    const call = api.getSession('DE', 'CPO', 'NL', 'MSP', aProfile());
+    const call = api.getSession('DE', 'CPO', 'NL', 'MSP', aProfile(), 'S1');
 
     await expect(call).rejects.toThrow(UnsuccessfulRequestException);
-    await expect(api.getSession('DE', 'CPO', 'NL', 'MSP', aProfile())).rejects.toMatchObject({
+    await expect(api.getSession('DE', 'CPO', 'NL', 'MSP', aProfile(), 'S1')).rejects.toMatchObject({
       message: 'Request did not return a successful status code',
       iRestResponse: { statusCode: 404 },
     });
@@ -785,7 +790,7 @@ describe('BaseClientApi.request wire behavior', () => {
     const getRaw = vi.spyOn(api as unknown as RawSpyable, 'getRaw');
     const noToken = aProfile({ credentials: {} });
 
-    await expect(api.getSession('DE', 'CPO', 'NL', 'MSP', noToken)).rejects.toThrow(
+    await expect(api.getSession('DE', 'CPO', 'NL', 'MSP', noToken, 'S1')).rejects.toThrow(
       /TenantPartner missing server token/,
     );
     expect(getRaw).not.toHaveBeenCalled();
