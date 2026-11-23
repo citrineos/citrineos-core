@@ -71,6 +71,7 @@ citrineos-core/
 │   ├── types/           # Shared types: OCPP model types, DTOs, Zod schemas, enums (no runtime)
 │   ├── base/            # Shared interfaces, config, utilities
 │   ├── dal/             # Persistence — models, repositories, mappers
+│   ├── observability/   # Opt-in OpenTelemetry metrics export (Prometheus)
 │   ├── ocpp/            # OCPP modules, handlers, endpoints, transport
 │   └── ocpi/            # OCPI modules, handlers, endpoints, mappers, transport
 ├── scripts/stack.mjs    # Docker stack launcher
