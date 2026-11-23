@@ -278,6 +278,15 @@ export class CitrineOSServer {
     this._logger.info('Closing WebSocket servers...');
     await this._networkConnection?.shutdown();
 
+    this._logger.info('Shutting down modules...');
+    for (const module of this.modules) {
+      await module.shutdown();
+    }
+    await this._messagesModule?.shutdown();
+
+    this._logger.info('Shutting down OCPP router...');
+    await this._router?.shutdown();
+
     this._logger.info('Closing RabbitMQ connections...');
     await this._channelManager?.closeAll();
     await this._connectionManager?.close();
@@ -285,7 +294,7 @@ export class CitrineOSServer {
     this._policyStore?.shutdown();
 
     this._logger.info('Closing PostgreSQL connections...');
-    await this._sequelizeInstance.connectionManager.close();
+    await this._sequelizeInstance?.connectionManager.close();
 
     await this.onShutdown();
 
