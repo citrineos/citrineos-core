@@ -53,13 +53,13 @@ function aNotifyCustomerInformationRequest(): OCPP2_request_types.NotifyCustomer
 describe('NotifyCustomerInformationRequestOcpp2Handler', () => {
   const { logger } = createTestContainer();
   let handler: NotifyCustomerInformationRequestOcpp2Handler;
-  let ocppMessageRepository: { readAllByQuery: ReturnType<typeof vi.fn> };
+  let ocppMessageRepository: { hasMessageWithPayloadRequestId: ReturnType<typeof vi.fn> };
   let ocppSender: ReturnType<typeof makeMockOcppSender>;
 
   beforeEach(() => {
     vi.clearAllMocks();
 
-    ocppMessageRepository = { readAllByQuery: vi.fn() };
+    ocppMessageRepository = { hasMessageWithPayloadRequestId: vi.fn() };
     ocppSender = makeMockOcppSender();
 
     handler = new NotifyCustomerInformationRequestOcpp2Handler(
@@ -72,25 +72,22 @@ describe('NotifyCustomerInformationRequestOcpp2Handler', () => {
   });
 
   it('correlates the requestId against the stored payload and acknowledges', async () => {
-    ocppMessageRepository.readAllByQuery.mockResolvedValue([{ id: 1 }]);
+    ocppMessageRepository.hasMessageWithPayloadRequestId.mockResolvedValue(true);
 
     await handler.handle(aNotifyCustomerInformationMessage(aNotifyCustomerInformationRequest()));
 
-    expect(ocppMessageRepository.readAllByQuery).toHaveBeenCalledWith(DEFAULT_TENANT_ID, {
-      where: {
-        tenantId: DEFAULT_TENANT_ID,
-        stationId: STATION_DB_ID,
-        action: OCPP_CallAction.CustomerInformation,
-        payload: { requestId: REQUEST_ID },
-      },
-      limit: 1,
-    });
+    expect(ocppMessageRepository.hasMessageWithPayloadRequestId).toHaveBeenCalledWith(
+      DEFAULT_TENANT_ID,
+      STATION_ID,
+      OCPP_CallAction.CustomerInformation,
+      REQUEST_ID,
+    );
     expect(ocppSender.sendCallResultWithMessage).toHaveBeenCalled();
     expect(ocppSender.sendCallErrorWithMessage).not.toHaveBeenCalled();
   });
 
   it('rejects with a CallError when no CustomerInformationRequest matches the requestId', async () => {
-    ocppMessageRepository.readAllByQuery.mockResolvedValue([]);
+    ocppMessageRepository.hasMessageWithPayloadRequestId.mockResolvedValue(false);
 
     await handler.handle(aNotifyCustomerInformationMessage(aNotifyCustomerInformationRequest()));
 

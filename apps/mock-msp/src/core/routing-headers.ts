@@ -7,7 +7,7 @@
 //   Inbound header keys arrive already lowercased by Fastify.
 //   - registration endpoints (versions/credentials): NO routing-header check.
 //   - functional endpoints AND the command-result callback: STRICT check —
-//     OCPI-from = CPO (US/S44), OCPI-to = us (US/TST). Mismatch is a Finding + 401
+//     OCPI-from = CPO (US/COS), OCPI-to = us (US/TST). Mismatch is a Finding + 401
 //     (mirrors Citrine's AuthMiddleware which 401s on routing-header mismatch).
 //     A CommandResult is a CPO->eMSP message, so it carries the same direction as
 //     a functional push; strict-validating it guards against the from/to reversal

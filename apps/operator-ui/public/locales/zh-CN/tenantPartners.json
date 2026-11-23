@@ -1,0 +1,67 @@
+{
+  "TenantPartners": {
+    "TenantPartners": "合作伙伴",
+    "tenantPartner": "合作伙伴",
+    "noDataFound": "未找到ID为 {id} 的合作伙伴。",
+    "unnamedBusiness": "未命名企业",
+    "loadingPartnerData": "正在加载合作伙伴数据...",
+    "columns": {
+      "name": "名称",
+      "countryCode": "国家代码",
+      "partyId": "参与方ID"
+    },
+    "fields": {
+      "countryCode": "国家代码",
+      "partyId": "参与方ID",
+      "versionsUrl": "版本URL",
+      "clientToken": "客户端令牌",
+      "ocpiVersion": "OCPI版本",
+      "versionDetailsUrl": "版本详情URL",
+      "serverCredentialsVersionsUrl": "（服务器凭证）版本URL",
+      "serverCredentialsToken": "（服务器凭证）令牌",
+      "roles": "角色",
+      "role": "角色",
+      "businessName": "企业名称",
+      "website": "网站"
+    },
+    "placeholders": {
+      "selectVersion": "选择版本",
+      "selectRole": "选择角色",
+      "businessName": "企业名称",
+      "website": "网站"
+    },
+    "validation": {
+      "countryCodeLength": "国家代码必须为2个字符。",
+      "partyIdLength": "参与方ID 必须为3个字符。"
+    },
+    "notifications": {
+      "createSuccess": "合作伙伴创建成功",
+      "updateSuccess": "合作伙伴更新成功",
+      "createError": "创建合作伙伴出错：{message}",
+      "updateError": "更新合作伙伴出错：{message}"
+    },
+    "detail": {
+      "countryCode": "国家代码",
+      "partyId": "参与方ID",
+      "website": "网站",
+      "roles": "角色",
+      "ocpiVersion": "OCPI版本",
+      "versionsUrl": "版本URL",
+      "logoAlt": "{name} 标志"
+    },
+    "tabs": {
+      "endpoints": "端点"
+    },
+    "endpoints": {
+      "endpoint": "端点",
+      "identifier": "标识符",
+      "url": "URL",
+      "noEndpointsFound": "未找到端点",
+      "deleteConfirm": "确定要删除此端点吗？此操作无法撤销。",
+      "errorIdentifierRequired": "请输入标识符",
+      "errorUrlRequired": "请输入URL",
+      "placeholderIdentifier": "输入标识符",
+      "placeholderUrl": "输入URL"
+    }
+  }
+}

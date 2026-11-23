@@ -96,6 +96,7 @@ const ocpp2_1_schemas: Record<string, AnySchemaObject> = {
   CostUpdatedRequestSchema: OCPP2_1.CostUpdatedRequestSchema,
   GetTransactionStatusRequestSchema: OCPP2_1.GetTransactionStatusRequestSchema,
   SetDefaultTariffRequestSchema: OCPP2_1.SetDefaultTariffRequestSchema,
+  ClearTariffsRequestSchema: OCPP2_1.ClearTariffsRequestSchema,
 };
 
 const OCPP2_SCHEMA_RECORD: SchemaRecord = {

@@ -15,19 +15,19 @@ import {
   OCPPVersion,
   OCPP2_common_types,
 } from '@citrineos/types';
-import type { IChargingProfileRepository } from '@citrineos/dal';
+import type { ICompositeScheduleRepository } from '@citrineos/dal';
 import type { CompositeScheduleInput } from '@citrineos/dal';
 
 @AsResponseHandler([OCPPVersion.OCPP1_6], OCPP_CallAction.GetCompositeSchedule)
 export class GetCompositeScheduleResponseOcpp16Handler extends AbstractHandler {
-  protected _chargingProfileRepository: IChargingProfileRepository;
+  protected _compositeScheduleRepository: ICompositeScheduleRepository;
 
   constructor({
     logger,
-    chargingProfileRepository,
-  }: AbstractHandlerDependencies & { chargingProfileRepository: IChargingProfileRepository }) {
+    compositeScheduleRepository,
+  }: AbstractHandlerDependencies & { compositeScheduleRepository: ICompositeScheduleRepository }) {
     super(logger);
-    this._chargingProfileRepository = chargingProfileRepository;
+    this._compositeScheduleRepository = compositeScheduleRepository;
   }
 
   async handle(
@@ -65,7 +65,7 @@ export class GetCompositeScheduleResponseOcpp16Handler extends AbstractHandler {
           ...OCPP2_common_types.ChargingSchedulePeriodType[],
         ],
       } as OCPP2_common_types.CompositeScheduleType;
-      const saved = await this._chargingProfileRepository.createCompositeSchedule(
+      const saved = await this._compositeScheduleRepository.createCompositeSchedule(
         tenantId,
         compositeSchedule as CompositeScheduleInput,
         ocppConnectionName,

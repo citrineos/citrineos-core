@@ -5,7 +5,8 @@
 import type {
   IChangeConfigurationRepository,
   IVariableAttributeRepository,
-  ILocalAuthListRepository,
+  ILocalListVersionRepository,
+  ISendLocalListRepository,
 } from '@citrineos/dal';
 import { LocalListVersion, SendLocalList } from '@citrineos/dal';
 import type { ChangeConfigurationDto } from '@citrineos/types';
@@ -27,7 +28,8 @@ describe('LocalAuthListService OCPP 1.6 limits', () => {
   const ocppConnectionName = 'station-1';
   const correlationId = 'test-correlation-id';
 
-  let localAuthListRepository: Mocked<ILocalAuthListRepository>;
+  let sendLocalListRepository: Mocked<ISendLocalListRepository>;
+  let localListVersionRepository: Mocked<ILocalListVersionRepository>;
   let variableAttributeRepository: Mocked<IVariableAttributeRepository>;
   let changeConfigurationRepository: Mocked<IChangeConfigurationRepository>;
   let service: LocalAuthListService;
@@ -36,10 +38,13 @@ describe('LocalAuthListService OCPP 1.6 limits', () => {
   beforeEach(() => {
     configuration = {};
 
-    localAuthListRepository = {
-      readOnlyOneByQuery: vi.fn().mockResolvedValue(undefined),
+    sendLocalListRepository = {
       createSendLocalListFromRequestData16: vi.fn().mockResolvedValue({} as SendLocalList),
-    } as unknown as Mocked<ILocalAuthListRepository>;
+    } as unknown as Mocked<ISendLocalListRepository>;
+
+    localListVersionRepository = {
+      readLocalListVersionByStationId: vi.fn().mockResolvedValue(undefined),
+    } as unknown as Mocked<ILocalListVersionRepository>;
 
     variableAttributeRepository = {
       readAllByQuerystring: vi.fn().mockResolvedValue([]),
@@ -55,7 +60,8 @@ describe('LocalAuthListService OCPP 1.6 limits', () => {
     } as unknown as Mocked<IChangeConfigurationRepository>;
 
     service = getTestInstance(container, LocalAuthListService, {
-      localAuthListRepository,
+      sendLocalListRepository,
+      localListVersionRepository,
       variableAttributeRepository,
       changeConfigurationRepository,
     });
@@ -90,7 +96,7 @@ describe('LocalAuthListService OCPP 1.6 limits', () => {
       configuration.SendLocalListMaxLength = '2';
 
       await expect(send(aRequest(['A', 'B', 'C']))).rejects.toThrow(/SendLocalListMaxLength/);
-      expect(localAuthListRepository.createSendLocalListFromRequestData16).not.toHaveBeenCalled();
+      expect(sendLocalListRepository.createSendLocalListFromRequestData16).not.toHaveBeenCalled();
     });
 
     it('accepts a list exactly at the limit', async () => {
@@ -109,12 +115,12 @@ describe('LocalAuthListService OCPP 1.6 limits', () => {
       configuration.LocalAuthListMaxLength = '2';
 
       await expect(send(aRequest(['A', 'B', 'C']))).rejects.toThrow(/LocalAuthListMaxLength/);
-      expect(localAuthListRepository.createSendLocalListFromRequestData16).not.toHaveBeenCalled();
+      expect(sendLocalListRepository.createSendLocalListFromRequestData16).not.toHaveBeenCalled();
     });
 
     it('counts a differential update against what the station already holds', async () => {
       configuration.LocalAuthListMaxLength = '3';
-      localAuthListRepository.readOnlyOneByQuery.mockResolvedValue({
+      localListVersionRepository.readLocalListVersionByStationId.mockResolvedValue({
         versionNumber: 2,
         localAuthorizationList: [{ idToken: 'A' }, { idToken: 'B' }],
       } as unknown as LocalListVersion);
@@ -126,7 +132,7 @@ describe('LocalAuthListService OCPP 1.6 limits', () => {
 
     it('does not count a differential entry that replaces one already held', async () => {
       configuration.LocalAuthListMaxLength = '2';
-      localAuthListRepository.readOnlyOneByQuery.mockResolvedValue({
+      localListVersionRepository.readLocalListVersionByStationId.mockResolvedValue({
         versionNumber: 2,
         localAuthorizationList: [{ idToken: 'A' }, { idToken: 'B' }],
       } as unknown as LocalListVersion);
@@ -139,7 +145,7 @@ describe('LocalAuthListService OCPP 1.6 limits', () => {
     it('counts a differential delete as freeing a slot', async () => {
       // A differential entry with no idTagInfo removes that idTag, per the 1.6 spec.
       configuration.LocalAuthListMaxLength = '2';
-      localAuthListRepository.readOnlyOneByQuery.mockResolvedValue({
+      localListVersionRepository.readLocalListVersionByStationId.mockResolvedValue({
         versionNumber: 2,
         localAuthorizationList: [{ idToken: 'A' }, { idToken: 'B' }],
       } as unknown as LocalListVersion);

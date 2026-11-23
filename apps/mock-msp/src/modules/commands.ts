@@ -20,7 +20,7 @@
 //      PendingCommand, and reply with an empty OCPI envelope.
 //
 // Routing headers: a CommandResult is a CPO->eMSP message, so it must carry
-// from=CPO (US/S44), to=eMSP (US/TST) — the same direction as any functional push.
+// from=CPO (US/COS), to=eMSP (US/TST) — the same direction as any functional push.
 // This route uses auth:'callback' with requireRoutingHeaders:true so the dispatcher
 // strict-validates that direction (callback shares functional's token semantics, so
 // tokenWeAccept still applies). Citrine historically REVERSED these headers on the

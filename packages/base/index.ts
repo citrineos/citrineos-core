@@ -116,6 +116,7 @@ export {
   getTenantIdFromIdentifier,
   childLogger,
   redactionMiddleware,
+  redactUrl,
   loggerDefaults,
   MASKED_LOG_KEYS,
   MeterValueUtils,

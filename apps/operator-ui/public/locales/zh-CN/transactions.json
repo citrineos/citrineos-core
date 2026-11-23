@@ -1,0 +1,77 @@
+{
+  "Transactions": {
+    "Transactions": "交易",
+    "transaction": "交易",
+    "toggleActiveStatus": "切换进行中状态",
+    "toggleActiveWarning": "您即将把此交易标记为",
+    "toggleActiveCaution": "警告：此操作可能导致界面显示与实际交易状态不一致。请仅在确定时继续。",
+    "noDataFound": "未找到ID为 {id} 的交易。",
+    "columns": {
+      "transactionId": "交易ID",
+      "active": "进行中",
+      "stationId": "充电站ID",
+      "location": "位置",
+      "idToken": "ID令牌",
+      "totalKwh": "总电量 (千瓦时)",
+      "status": "状态",
+      "startTime": "开始时间",
+      "endTime": "结束时间",
+      "createdAt": "创建时间",
+      "updatedAt": "更新时间"
+    },
+    "detail": {
+      "stationId": "充电站ID",
+      "location": "位置",
+      "totalKwh": "总电量 (千瓦时)",
+      "chargingState": "充电状态",
+      "startTime": "开始时间",
+      "endTime": "结束时间",
+      "tariff": "费率",
+      "timeSpentCharging": "充电时长"
+    },
+    "tabs": {
+      "meterValueData": "电表数据",
+      "events": "事件",
+      "ocppMessages": "OCPP消息",
+      "contexts": "上下文：",
+      "selectReadingContexts": "选择读数上下文",
+      "searchReadingContexts": "搜索读数上下文"
+    },
+    "charts": {
+      "timeElapsed": "已用时间",
+      "stateOfChargeLabel": "荷电状态 (%)",
+      "stateOfChargeTitle": "荷电状态随时间变化",
+      "noStateOfChargeData": "暂无荷电状态数据",
+      "energyLabel": "电量 (千瓦时)",
+      "energyTitle": "电量随时间变化",
+      "noEnergyData": "暂无电量数据",
+      "voltageLabel": "电压 (伏)",
+      "voltageTitle": "电压随时间变化",
+      "noVoltageData": "暂无电压数据",
+      "powerLabel": "功率 (千瓦)",
+      "powerTitle": "功率随时间变化",
+      "noPowerData": "暂无功率数据",
+      "currentLabel": "电流 (安培)",
+      "currentTitle": "电流随时间变化",
+      "noCurrentData": "暂无电流数据"
+    },
+    "events": {
+      "eventType": "事件类型",
+      "timestamp": "时间戳",
+      "seqNo": "序号",
+      "triggerReason": "触发原因",
+      "viewMeterValues": "查看电表值"
+    },
+    "meterValues": {
+      "id": "ID",
+      "timestamp": "时间戳",
+      "sampleValues": "采样值",
+      "value": "值",
+      "context": "上下文",
+      "measurand": "测量量",
+      "phase": "相位",
+      "location": "测量位置",
+      "sampledValue": "采样值 {index}"
+    }
+  }
+}

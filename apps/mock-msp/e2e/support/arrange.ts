@@ -34,7 +34,7 @@ export const CLIENT_TOKEN = process.env.MOCK_MSP_CLIENT_TOKEN ?? SEED_CLIENT_TOK
 // and partner.
 export const CPO = {
   countryCode: process.env.MOCK_MSP_CPO_COUNTRY_CODE ?? 'US',
-  partyId: process.env.MOCK_MSP_CPO_PARTY_ID ?? 'S44',
+  partyId: process.env.MOCK_MSP_CPO_PARTY_ID ?? 'COS',
 };
 export const MSP = {
   countryCode: process.env.MOCK_MSP_COUNTRY_CODE ?? 'US',

@@ -9,16 +9,16 @@ import {
   MessageFormatEnum,
   OCPP2_1,
   type IdTokenEnumType,
+  type ChargingNeedsDto,
   type OCPP2_common_types,
   type VariableAttributeDto,
   type TransactionDto,
 } from '@citrineos/types';
 import type {
-  IChargingProfileRepository,
+  IChargingNeedsRepository,
   IVariableAttributeRepository,
   ITransactionRepository,
 } from '@citrineos/dal';
-import type { ChargingNeeds } from '@citrineos/dal';
 import { requireTransactionDatabaseId } from './transaction.js';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
@@ -44,7 +44,7 @@ export function validateLanguageTag(languageTag: string): boolean {
 
 export interface ChargingProfileTransactionContext {
   transaction: TransactionDto;
-  chargingNeeds: ChargingNeeds | undefined;
+  chargingNeeds: ChargingNeedsDto | undefined;
 }
 
 export interface ChargingProfileValidation {
@@ -58,7 +58,7 @@ export interface ChargingProfileValidation {
  * @param tenantId tenant id the profile belongs to
  * @param ocppConnectionName - The connection name of the charging station
  * @param variableAttributeRepository variableAttributeRepository
- * @param chargingProfileRepository chargingProfileRepository
+ * @param chargingNeedsRepository chargingNeedsRepository
  * @param transactionRepository transactionRepository
  * @param logger logger
  * @param evseId evse id
@@ -68,7 +68,7 @@ export async function validateChargingProfileType(
   tenantId: number,
   ocppConnectionName: string,
   variableAttributeRepository: IVariableAttributeRepository,
-  chargingProfileRepository: IChargingProfileRepository,
+  chargingNeedsRepository: IChargingNeedsRepository,
   transactionRepository: ITransactionRepository,
   logger: Logger<ILogObj>,
   evseId?: number | null,
@@ -95,7 +95,7 @@ export async function validateChargingProfileType(
   }
 
   let transactionContext: ChargingProfileTransactionContext | undefined;
-  let receivedChargingNeeds: ChargingNeeds | undefined;
+  let receivedChargingNeeds: ChargingNeedsDto | undefined;
   if (chargingProfileType.transactionId && evseId) {
     const transaction = await transactionRepository.readTransactionByStationIdAndTransactionId(
       tenantId,
@@ -109,7 +109,7 @@ export async function validateChargingProfileType(
     }
     if (transaction.evseId != null) {
       receivedChargingNeeds =
-        await chargingProfileRepository.findChargingNeedsByEvseDBIdAndTransactionDBId(
+        await chargingNeedsRepository.findChargingNeedsByEvseDBIdAndTransactionDBId(
           tenantId,
           transaction.evseId,
           requireTransactionDatabaseId(transaction),

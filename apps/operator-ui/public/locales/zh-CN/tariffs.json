@@ -1,0 +1,41 @@
+{
+  "Tariffs": {
+    "Tariffs": "费率",
+    "tariff": "费率",
+    "noDataFound": "未找到ID为 {id} 的费率。",
+    "columns": {
+      "id": "ID",
+      "currency": "币种",
+      "pricePerKwh": "价格 / 千瓦时",
+      "pricePerMin": "价格 / 分钟",
+      "pricePerSession": "价格 / 次"
+    },
+    "fields": {
+      "currency": "币种（3位字母代码）",
+      "pricePerKwh": "每千瓦时价格",
+      "pricePerMin": "每分钟价格",
+      "pricePerSession": "每次充电价格",
+      "authorizationAmount": "预授权金额",
+      "paymentFee": "支付手续费",
+      "taxRate": "税率 (%)",
+      "tariffAltText": "费率替代文本 (JSON)"
+    },
+    "placeholders": {
+      "currency": "例如：CNY",
+      "tariffAltText": "'{ \"en\": \"Standard tariff\", \"zh-CN\": \"标准费率\" '}"
+    },
+    "detail": {
+      "currency": "币种",
+      "pricePerKwh": "价格 / 千瓦时",
+      "pricePerMin": "价格 / 分钟",
+      "pricePerSession": "价格 / 次",
+      "authorizationAmount": "预授权金额",
+      "paymentFee": "支付手续费",
+      "taxRate": "税率 (%)",
+      "tariffAltText": "费率替代文本"
+    },
+    "validation": {
+      "currencyCode": "请输入3位字母的币种代码，例如：CNY"
+    }
+  }
+}

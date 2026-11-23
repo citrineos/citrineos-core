@@ -115,7 +115,7 @@ describe('functional module validation (record + detect drift)', () => {
 
   it('rejects a functional call with wrong routing headers (401)', async () => {
     const headers = functionalHeaders(ctx.config);
-    headers['ocpi-from-party-id'] = 'BAD'; // CPO party must be S44
+    headers['ocpi-from-party-id'] = 'BAD'; // CPO party must be COS
     const res = await app.inject({
       method: 'PUT',
       url: '/ocpi/2.2.1/emsp/sessions/US/TST/SESSION-8',

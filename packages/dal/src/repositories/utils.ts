@@ -24,6 +24,13 @@ export function elapsedSecondsSinceStart(
   return Math.max(0, Math.floor((latestMeterValueTimestamp - startTimestamp) / 1000));
 }
 
+export function requireAuthorizationId(id: number | undefined, what: string): number {
+  if (id === undefined) {
+    throw new Error(`${what} was persisted without an id`);
+  }
+  return id;
+}
+
 /**
  * Avoid to overwrite timeSpentCharging to null
  */

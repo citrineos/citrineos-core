@@ -5,14 +5,16 @@ import { type AbstractHandler, type OcppModuleDependencies, AbstractModule } fro
 import { EventGroup } from '@citrineos/types';
 import type {
   IChargingProfileRepository,
-  ILocalAuthListRepository,
+  ILocalListVersionRepository,
   IReservationRepository,
+  ISendLocalListRepository,
 } from '@citrineos/dal';
 
 import type { LocalAuthListService } from './local-auth-list-service.js';
 
 export interface EVDriverModuleDependencies extends OcppModuleDependencies {
-  localAuthListRepository: ILocalAuthListRepository;
+  sendLocalListRepository: ISendLocalListRepository;
+  localListVersionRepository: ILocalListVersionRepository;
   chargingProfileRepository: IChargingProfileRepository;
   reservationRepository: IReservationRepository;
   localAuthListService: LocalAuthListService;
@@ -27,7 +29,8 @@ export class EVDriverModule extends AbstractModule {
    * Fields
    */
 
-  protected _localAuthListRepository: ILocalAuthListRepository;
+  protected _sendLocalListRepository: ISendLocalListRepository;
+  protected _localListVersionRepository: ILocalListVersionRepository;
   protected _chargingProfileRepository: IChargingProfileRepository;
   protected _reservationRepository: IReservationRepository;
   protected _localAuthListService: LocalAuthListService;
@@ -40,7 +43,8 @@ export class EVDriverModule extends AbstractModule {
     logger,
     ocppValidator,
     ocppSender,
-    localAuthListRepository,
+    sendLocalListRepository,
+    localListVersionRepository,
     chargingProfileRepository,
     reservationRepository,
     localAuthListService,
@@ -58,14 +62,19 @@ export class EVDriverModule extends AbstractModule {
       evDriverHandlers,
     );
 
-    this._localAuthListRepository = localAuthListRepository;
+    this._sendLocalListRepository = sendLocalListRepository;
+    this._localListVersionRepository = localListVersionRepository;
     this._chargingProfileRepository = chargingProfileRepository;
     this._reservationRepository = reservationRepository;
     this._localAuthListService = localAuthListService;
   }
 
-  get localAuthListRepository(): ILocalAuthListRepository {
-    return this._localAuthListRepository;
+  get sendLocalListRepository(): ISendLocalListRepository {
+    return this._sendLocalListRepository;
+  }
+
+  get localListVersionRepository(): ILocalListVersionRepository {
+    return this._localListVersionRepository;
   }
 
   get chargingProfileRepository(): IChargingProfileRepository {

@@ -69,6 +69,9 @@ export const ChargingProfilePurposeEnumSchema = z.enum([
   'ChargingStationMaxProfile',
   'TxDefaultProfile',
   'TxProfile',
+  // OCPP 2.1 additions.
+  'PriorityCharging',
+  'LocalGeneration',
 ]);
 
 export const ChargingRateUnitEnumSchema = z.enum(['W', 'A']);

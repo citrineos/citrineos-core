@@ -1,0 +1,49 @@
+{
+  "NetworkAlerts": {
+    "NetworkAlerts": "网络警报",
+    "networkAlert": "网络警报",
+    "noDataFound": "未找到ID为 {id} 的网络警报。",
+    "columns": {
+      "id": "ID",
+      "severity": "严重程度",
+      "status": "状态",
+      "type": "类型",
+      "stationId": "充电站ID",
+      "evse": "EVSE",
+      "connector": "连接器",
+      "details": "详情",
+      "occurrenceCount": "发生次数",
+      "firstSeenAt": "首次出现",
+      "lastSeenAt": "最近出现",
+      "resolvedAt": "解决时间",
+      "resolvedBy": "解决人",
+      "statusNote": "状态备注",
+      "updatedAt": "更新时间"
+    },
+    "detail": {
+      "type": "类型",
+      "stationId": "充电站ID",
+      "evse": "EVSE",
+      "connector": "连接器",
+      "firstSeenAt": "首次出现",
+      "lastSeenAt": "最近出现",
+      "occurrenceCount": "发生次数",
+      "resolvedAt": "解决时间",
+      "resolvedBy": "解决人",
+      "statusNote": "状态备注",
+      "offlineSince": "离线起始时间",
+      "connectorStatus": "连接器状态",
+      "errorCode": "错误代码",
+      "reasons": "失败原因",
+      "actions": "操作"
+    },
+    "tabs": {
+      "occurrences": "发生记录"
+    },
+    "occurrences": {
+      "occurredAt": "发生时间",
+      "severity": "严重程度",
+      "details": "详情"
+    }
+  }
+}

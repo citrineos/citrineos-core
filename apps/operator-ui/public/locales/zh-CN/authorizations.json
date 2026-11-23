@@ -1,0 +1,82 @@
+{
+  "Authorizations": {
+    "Authorizations": "授权",
+    "authorization": "授权",
+    "noDataFound": "未找到ID为 {id} 的授权。",
+    "noId": "无ID",
+    "allowed": "允许",
+    "notAllowed": "不允许",
+    "columns": {
+      "authorizationId": "授权ID",
+      "type": "类型",
+      "status": "状态",
+      "concurrentTransactions": "并发交易",
+      "allowedTypes": "允许的类型",
+      "disallowedPrefixes": "禁止的前缀",
+      "createdAt": "创建时间",
+      "updatedAt": "更新时间"
+    },
+    "fields": {
+      "idToken": "ID令牌",
+      "idTokenType": "ID令牌类型",
+      "status": "状态",
+      "cacheExpiryDateTime": "缓存过期时间",
+      "chargingPriority": "充电优先级",
+      "language1": "语言1",
+      "language2": "语言2",
+      "personalMessage": "个人消息",
+      "groupAuthorizationId": "组授权ID",
+      "allowedConnectorTypes": "允许的连接器类型（以逗号分隔）",
+      "disallowedEvseIdPrefixes": "禁止的EVSEID前缀（以逗号分隔）",
+      "realTimeAuth": "实时认证",
+      "realTimeAuthUrl": "实时认证URL",
+      "realTimeAuthTimeout": "实时认证超时（秒）",
+      "concurrentTransaction": "允许并发交易",
+      "additionalInfo": "附加信息",
+      "additionalIdToken": "附加ID令牌 #{index}",
+      "type": "类型",
+      "typeNumbered": "类型 #{index}"
+    },
+    "placeholders": {
+      "selectType": "选择类型",
+      "searchTypes": "搜索类型",
+      "selectStatus": "选择状态",
+      "searchStatuses": "搜索状态",
+      "allowedConnectorTypes": "例如：Type2, CCS",
+      "disallowedEvseIdPrefixes": "例如：EVSE1, EVSE2",
+      "selectOption": "选择选项",
+      "searchOption": "搜索选项",
+      "additionalInfo": "附加信息",
+      "type": "类型"
+    },
+    "detail": {
+      "partner": "合作伙伴",
+      "realTimeAuthTimeoutSeconds": "{timeout} 秒"
+    },
+    "validation": {
+      "idTokenRequired": "ID令牌为必填项"
+    }
+  },
+  "AuthorizationAttempts": {
+    "AuthorizationAttempts": "授权尝试",
+    "unmatchedOnly": "仅显示未匹配的令牌",
+    "columns": {
+      "timestamp": "时间戳",
+      "action": "操作",
+      "idToken": "ID令牌",
+      "idTokenType": "ID令牌类型",
+      "authorization": "授权",
+      "station": "充电站",
+      "evse": "EVSE",
+      "connector": "连接器",
+      "responseStatus": "响应状态",
+      "reason": "原因",
+      "storedStatus": "存储状态",
+      "transaction": "交易",
+      "remoteStartId": "远程启动ID",
+      "details": "详情",
+      "ocppVersion": "OCPP版本",
+      "correlationId": "关联ID"
+    }
+  }
+}

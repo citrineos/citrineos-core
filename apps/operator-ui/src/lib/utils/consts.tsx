@@ -11,6 +11,7 @@ export const DEFAULT_LOCALE = 'en';
 export const LOCALES = [
   { value: 'en', label: 'English' },
   { value: 'pt-BR', label: 'Português (Brasil)' },
+  { value: 'zh-CN', label: '简体中文' },
 ];
 
 export const NEW_IDENTIFIER = 'new';

@@ -243,8 +243,8 @@ describe('NotifyEVChargingNeedsRequestOcpp2Handler', () => {
   let transactionRepository: {
     getActiveTransactionByStationIdAndEvseId: ReturnType<typeof vi.fn>;
   };
+  let chargingNeedsRepository: { createChargingNeeds: ReturnType<typeof vi.fn> };
   let chargingProfileRepository: {
-    createChargingNeeds: ReturnType<typeof vi.fn>;
     createOrUpdateChargingProfile: ReturnType<typeof vi.fn>;
   };
   let smartChargingService: { calculateChargingProfile: ReturnType<typeof vi.fn> };
@@ -298,8 +298,8 @@ describe('NotifyEVChargingNeedsRequestOcpp2Handler', () => {
     transactionRepository = {
       getActiveTransactionByStationIdAndEvseId: vi.fn().mockResolvedValue(activeTransaction),
     };
+    chargingNeedsRepository = { createChargingNeeds: vi.fn().mockResolvedValue({ id: 3 }) };
     chargingProfileRepository = {
-      createChargingNeeds: vi.fn().mockResolvedValue({ id: 3 }),
       createOrUpdateChargingProfile: vi.fn().mockResolvedValue({ databaseId: 9 }),
     };
     smartChargingService = { calculateChargingProfile: vi.fn().mockResolvedValue(chargingProfile) };
@@ -310,6 +310,7 @@ describe('NotifyEVChargingNeedsRequestOcpp2Handler', () => {
         logger,
         ocppSender,
         transactionRepository,
+        chargingNeedsRepository,
         chargingProfileRepository,
         smartChargingService,
       }),
@@ -332,7 +333,7 @@ describe('NotifyEVChargingNeedsRequestOcpp2Handler', () => {
       status: NotifyEVChargingNeedsStatusEnum.Rejected,
     });
     expect(smartChargingService.calculateChargingProfile).not.toHaveBeenCalled();
-    expect(chargingProfileRepository.createChargingNeeds).not.toHaveBeenCalled();
+    expect(chargingNeedsRepository.createChargingNeeds).not.toHaveBeenCalled();
     expect(ocppSender.sendCall).not.toHaveBeenCalled();
   });
 
@@ -363,7 +364,7 @@ describe('NotifyEVChargingNeedsRequestOcpp2Handler', () => {
       status: NotifyEVChargingNeedsStatusEnum.Rejected,
     });
     expect(smartChargingService.calculateChargingProfile).not.toHaveBeenCalled();
-    expect(chargingProfileRepository.createChargingNeeds).not.toHaveBeenCalled();
+    expect(chargingNeedsRepository.createChargingNeeds).not.toHaveBeenCalled();
   });
 
   it('rejects and stores nothing when the smart charging calculation fails', async () => {
@@ -378,7 +379,7 @@ describe('NotifyEVChargingNeedsRequestOcpp2Handler', () => {
     expect(ocppSender.sendCallResultWithMessage.mock.calls[0][1]).toEqual({
       status: NotifyEVChargingNeedsStatusEnum.Rejected,
     });
-    expect(chargingProfileRepository.createChargingNeeds).not.toHaveBeenCalled();
+    expect(chargingNeedsRepository.createChargingNeeds).not.toHaveBeenCalled();
     expect(chargingProfileRepository.createOrUpdateChargingProfile).not.toHaveBeenCalled();
     expect(ocppSender.sendCall).not.toHaveBeenCalled();
   });
@@ -395,8 +396,8 @@ describe('NotifyEVChargingNeedsRequestOcpp2Handler', () => {
       DEFAULT_TENANT_ID,
       STATION_ID,
     );
-    expect(chargingProfileRepository.createChargingNeeds).toHaveBeenCalledOnce();
-    expect(chargingProfileRepository.createChargingNeeds).toHaveBeenCalledWith(
+    expect(chargingNeedsRepository.createChargingNeeds).toHaveBeenCalledOnce();
+    expect(chargingNeedsRepository.createChargingNeeds).toHaveBeenCalledWith(
       DEFAULT_TENANT_ID,
       message.payload,
       STATION_ID,

@@ -93,7 +93,7 @@ describe('dispatcher pipeline', () => {
 
     const ex = lastSessionsPut();
     expect(ex.request.ocpi.requestId).toBe(headers['x-request-id']);
-    expect(ex.request.ocpi.from).toEqual({ cc: 'US', party: 'S44' });
+    expect(ex.request.ocpi.from).toEqual({ cc: 'US', party: 'COS' });
     expect(ex.request.ocpi.to).toEqual({ cc: 'US', party: 'TST' });
     expect(ex.response.headers['X-Request-ID']).toBe(headers['x-request-id']);
     expect(ex.findings).toHaveLength(0);

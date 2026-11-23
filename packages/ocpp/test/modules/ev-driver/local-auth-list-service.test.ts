@@ -8,7 +8,8 @@ import {
   type IChangeConfigurationRepository,
   type IVariableAttributeRepository,
   type IVariableCharacteristicsRepository,
-  type ILocalAuthListRepository,
+  type ILocalListVersionRepository,
+  type ISendLocalListRepository,
   LocalListVersion,
   SendLocalList,
 } from '@citrineos/dal';
@@ -19,7 +20,8 @@ import { createTestContainer, getTestInstance } from '@test/test-container.js';
 
 describe('LocalAuthListService', () => {
   const { container } = createTestContainer();
-  let mockLocalAuthListRepository: Mocked<ILocalAuthListRepository>;
+  let mockSendLocalListRepository: Mocked<ISendLocalListRepository>;
+  let mockLocalListVersionRepository: Mocked<ILocalListVersionRepository>;
   let mockVariableAttributeRepository: Mocked<
     IVariableAttributeRepository & IVariableCharacteristicsRepository
   >;
@@ -39,10 +41,13 @@ describe('LocalAuthListService', () => {
   } as unknown as VariableCharacteristicsDto);
 
   beforeEach(() => {
-    mockLocalAuthListRepository = {
-      readOnlyOneByQuery: vi.fn(),
+    mockSendLocalListRepository = {
       createSendLocalListFromRequestData: vi.fn(),
-    } as unknown as Mocked<ILocalAuthListRepository>;
+    } as unknown as Mocked<ISendLocalListRepository>;
+
+    mockLocalListVersionRepository = {
+      readLocalListVersionByStationId: vi.fn(),
+    } as unknown as Mocked<ILocalListVersionRepository>;
 
     mockVariableAttributeRepository = {
       findVariableCharacteristicsByVariableNameAndVariableInstance: vi.fn(),
@@ -55,7 +60,8 @@ describe('LocalAuthListService', () => {
     } as unknown as Mocked<IChangeConfigurationRepository>;
 
     localAuthListService = getTestInstance(container, LocalAuthListService, {
-      localAuthListRepository: mockLocalAuthListRepository,
+      sendLocalListRepository: mockSendLocalListRepository,
+      localListVersionRepository: mockLocalListVersionRepository,
       variableAttributeRepository: mockVariableAttributeRepository,
       changeConfigurationRepository: mockChangeConfigurationRepository,
     });
@@ -89,8 +95,10 @@ describe('LocalAuthListService', () => {
       maxLimit: 10,
     });
 
-    mockLocalAuthListRepository.readOnlyOneByQuery.mockResolvedValue(baseMockLocalListVersion);
-    mockLocalAuthListRepository.createSendLocalListFromRequestData.mockResolvedValue(
+    mockLocalListVersionRepository.readLocalListVersionByStationId.mockResolvedValue(
+      baseMockLocalListVersion,
+    );
+    mockSendLocalListRepository.createSendLocalListFromRequestData.mockResolvedValue(
       mockSendLocalList,
     );
     mockVariableAttributeRepository.findVariableCharacteristicsByVariableNameAndVariableInstance.mockResolvedValue(
@@ -107,7 +115,7 @@ describe('LocalAuthListService', () => {
       );
 
     expect(result).toEqual(mockSendLocalList);
-    expect(mockLocalAuthListRepository.createSendLocalListFromRequestData).toHaveBeenCalledWith(
+    expect(mockSendLocalListRepository.createSendLocalListFromRequestData).toHaveBeenCalledWith(
       DEFAULT_TENANT_ID,
       ocppConnectionName,
       expectedCorrelationId,
@@ -153,7 +161,9 @@ describe('LocalAuthListService', () => {
       updateType: OCPP2_0_1.UpdateEnumType.Full,
     };
 
-    mockLocalAuthListRepository.readOnlyOneByQuery.mockResolvedValue(baseMockLocalListVersion);
+    mockLocalListVersionRepository.readLocalListVersionByStationId.mockResolvedValue(
+      baseMockLocalListVersion,
+    );
 
     await expect(
       localAuthListService.persistSendLocalListForStationIdAndCorrelationIdAndSendLocalListRequest(
@@ -194,7 +204,7 @@ describe('LocalAuthListService', () => {
       localAuthorizationList: [],
     } as unknown as SendLocalList);
 
-    mockLocalAuthListRepository.createSendLocalListFromRequestData.mockResolvedValue(
+    mockSendLocalListRepository.createSendLocalListFromRequestData.mockResolvedValue(
       mockSendLocalList,
     );
 
@@ -248,8 +258,8 @@ describe('LocalAuthListService', () => {
       variable: { variableCharacteristics: { maxLimit: 1 } },
     } as unknown as VariableAttributeDto);
 
-    mockLocalAuthListRepository.readOnlyOneByQuery.mockResolvedValue(undefined); // No previous list version
-    mockLocalAuthListRepository.createSendLocalListFromRequestData.mockResolvedValue(
+    mockLocalListVersionRepository.readLocalListVersionByStationId.mockResolvedValue(undefined); // No previous list version
+    mockSendLocalListRepository.createSendLocalListFromRequestData.mockResolvedValue(
       mockSendLocalList,
     );
     mockVariableAttributeRepository.readAllByQuerystring.mockResolvedValue([mockEntriesAttribute]);
@@ -282,7 +292,7 @@ describe('LocalAuthListService', () => {
       versionNumber: newVersionNumber,
     } as unknown as SendLocalList);
 
-    mockLocalAuthListRepository.createSendLocalListFromRequestData.mockResolvedValue(
+    mockSendLocalListRepository.createSendLocalListFromRequestData.mockResolvedValue(
       mockSendLocalList,
     );
     mockVariableAttributeRepository.readAllByQuerystring.mockResolvedValue([]); // No Entries variable reported
@@ -318,7 +328,7 @@ describe('LocalAuthListService', () => {
       variable: { variableCharacteristics: {} },
     } as unknown as VariableAttributeDto);
 
-    mockLocalAuthListRepository.createSendLocalListFromRequestData.mockResolvedValue(
+    mockSendLocalListRepository.createSendLocalListFromRequestData.mockResolvedValue(
       mockSendLocalList,
     );
     mockVariableAttributeRepository.readAllByQuerystring.mockResolvedValue([mockEntriesAttribute]);
@@ -379,7 +389,7 @@ describe('LocalAuthListService', () => {
       value: '1', // Max 1 item per message
     } as unknown as VariableAttributeDto);
 
-    mockLocalAuthListRepository.createSendLocalListFromRequestData.mockResolvedValue(
+    mockSendLocalListRepository.createSendLocalListFromRequestData.mockResolvedValue(
       mockSendLocalList,
     );
     mockVariableAttributeRepository.findVariableCharacteristicsByVariableNameAndVariableInstance.mockResolvedValue(
@@ -444,7 +454,7 @@ describe('LocalAuthListService', () => {
       value: '3', // Max 1 item per message
     } as unknown as VariableAttributeDto);
 
-    mockLocalAuthListRepository.createSendLocalListFromRequestData.mockResolvedValue(
+    mockSendLocalListRepository.createSendLocalListFromRequestData.mockResolvedValue(
       mockSendLocalList,
     );
     mockVariableAttributeRepository.findVariableCharacteristicsByVariableNameAndVariableInstance.mockResolvedValue(
@@ -498,8 +508,10 @@ describe('LocalAuthListService', () => {
       variable: { variableCharacteristics: { maxLimit: 3 } },
     } as unknown as VariableAttributeDto);
 
-    mockLocalAuthListRepository.readOnlyOneByQuery.mockResolvedValue(currentVersion);
-    mockLocalAuthListRepository.createSendLocalListFromRequestData.mockResolvedValue(
+    mockLocalListVersionRepository.readLocalListVersionByStationId.mockResolvedValue(
+      currentVersion,
+    );
+    mockSendLocalListRepository.createSendLocalListFromRequestData.mockResolvedValue(
       mockSendLocalList,
     );
     mockVariableAttributeRepository.readAllByQuerystring.mockResolvedValue([mockEntriesAttribute]);

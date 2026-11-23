@@ -25,7 +25,6 @@ import type {
 } from '@citrineos/dal';
 import type { ComponentDto } from '@citrineos/types';
 import { validateMessageContentType } from '@util/index.js';
-import { stationIdFilter } from '@citrineos/dal';
 
 @AsRequestHandler(OCPP_2_VER_LIST, OCPP_CallAction.NotifyDisplayMessages)
 export class NotifyDisplayMessagesRequestOcpp2Handler extends AbstractHandler {
@@ -59,25 +58,14 @@ export class NotifyDisplayMessagesRequestOcpp2Handler extends AbstractHandler {
   ): Promise<void> {
     // Validate requestId was provided in a previous GetDisplayMessagesRequest
     const requestId = message.payload.requestId;
-    const previousRequest = await this._ocppMessageRepository.readAllByQuery(
+    const hasPreviousRequest = await this._ocppMessageRepository.hasMessageWithPayloadRequestId(
       message.context.tenantId,
-      {
-        where: {
-          tenantId: message.context.tenantId,
-          stationId: await stationIdFilter(
-            message.context.tenantId,
-            message.context.ocppConnectionName,
-          ),
-          action: OCPP_CallAction.GetDisplayMessages,
-          payload: {
-            requestId: requestId,
-          },
-        },
-        limit: 1,
-      },
+      message.context.ocppConnectionName,
+      OCPP_CallAction.GetDisplayMessages,
+      requestId,
     );
 
-    if (!previousRequest || previousRequest.length === 0) {
+    if (!hasPreviousRequest) {
       await this._ocppSender.sendCallErrorWithMessage(
         message,
         new OcppError(

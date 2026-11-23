@@ -25,26 +25,35 @@ import {
   DefaultDrizzleInstance,
   DefaultSequelizeInstance,
   DrizzleAsyncJobStatusRepository,
+  DrizzleAuthorizationAttemptRepository,
   DrizzleAuthorizationRepository,
   DrizzleBootRepository,
   DrizzleCertificateRepository,
   DrizzleChangeConfigurationRepository,
   DrizzleChargingStationNetworkProfileRepository,
+  DrizzleChargingNeedsRepository,
+  DrizzleChargingProfileRepository,
+  DrizzleChargingScheduleRepository,
   DrizzleChargingStationRepository,
   DrizzleChargingStationSecurityInfoRepository,
   DrizzleChargingStationSequenceRepository,
   DrizzleComponentRepository,
+  DrizzleCompositeScheduleRepository,
   DrizzleConnectorRepository,
   DrizzleLocationRepository,
   DrizzleMeterValueRepository,
   DrizzleStatusNotificationRepository,
+  DrizzleEventDataRepository,
   DrizzleEvseRepository,
   DrizzleDeleteCertificateAttemptRepository,
   DrizzleInstallCertificateAttemptRepository,
   DrizzleInstalledCertificateRepository,
+  DrizzleLocalListVersionRepository,
+  DrizzleOCPPMessageRepository,
   DrizzleMessageInfoRepository,
   DrizzleReservationRepository,
   DrizzleSecurityEventRepository,
+  DrizzleSendLocalListRepository,
   DrizzleWebsocketEventRepository,
   DrizzleNetworkAlertConfigRepository,
   DrizzleNetworkAlertRepository,
@@ -57,7 +66,9 @@ import {
   DrizzleTransactionRepository,
   DrizzleVariableAttributeRepository,
   DrizzleVariableCharacteristicsRepository,
+  DrizzleVariableMonitoringRepository,
   SequelizeAsyncJobStatusRepository,
+  SequelizeAuthorizationAttemptRepository,
   SequelizeAuthorizationRepository,
   SequelizeBootRepository,
   SequelizeCertificateRepository,
@@ -104,7 +115,11 @@ import {
   registerConfigurationServices,
 } from '@modules/configuration/index.js';
 import { EVDriverModule, registerEVDriverServices } from '@modules/ev-driver/index.js';
-import { MonitoringModule, registerMonitoringServices } from '@modules/monitoring/index.js';
+import {
+  ConnectorStatusService,
+  MonitoringModule,
+  registerMonitoringServices,
+} from '@modules/monitoring/index.js';
 import { MessageRouterImpl, registerOcppRouterServices } from '@modules/ocpp-router/index.js';
 import { registerReportingServices, ReportingModule } from '@modules/reporting/index.js';
 import {
@@ -119,6 +134,7 @@ import { PolicyStore } from '@/apis/authorization/policy/policy-store.js';
 import { SeedFileRoleProvider } from '@/apis/authorization/policy/seed-file-role-provider.js';
 import { DevKeyPair, DEV_ISSUER } from '@/apis/authorization/dev/dev-key-pair.js';
 import {
+  AuthorizationAttemptService,
   CertificateAuthorityService,
   DeviceModelService,
   InstallCertificateHelperService,
@@ -334,6 +350,7 @@ function registerRepositories(container: AwilixContainer): void {
   container.register({
     asyncJobStatusRepository: asClass(SequelizeAsyncJobStatusRepository).singleton(),
     authorizationRepository: asClass(SequelizeAuthorizationRepository).singleton(),
+    authorizationAttemptRepository: asClass(SequelizeAuthorizationAttemptRepository).singleton(),
     bootRepository: asClass(SequelizeBootRepository).singleton(),
     certificateRepository: asClass(SequelizeCertificateRepository).singleton(),
     changeConfigurationRepository: asClass(SequelizeChangeConfigurationRepository).singleton(),
@@ -351,7 +368,7 @@ function registerRepositories(container: AwilixContainer): void {
       SequelizeInstallCertificateAttemptRepository,
     ).singleton(),
     installedCertificateRepository: asClass(SequelizeInstalledCertificateRepository).singleton(),
-    localAuthListRepository: asClass(SequelizeLocalAuthListRepository).singleton(),
+    sendLocalListRepository: asClass(SequelizeLocalAuthListRepository).singleton(),
     locationRepository: asClass(SequelizeLocationRepository).singleton(),
     messageInfoRepository: asClass(SequelizeMessageInfoRepository).singleton(),
     ocppMessageRepository: asClass(SequelizeOCPPMessageRepository).singleton(),
@@ -372,9 +389,24 @@ function registerRepositories(container: AwilixContainer): void {
     // The device model aggregate is the instance behind all three narrow tokens.
     variableAttributeRepository: asClass(SequelizeDeviceModelRepository).singleton(),
     variableMonitoringRepository: asClass(SequelizeVariableMonitoringRepository).singleton(),
+    eventDataRepository: asFunction(
+      ({ variableMonitoringRepository }) => variableMonitoringRepository,
+    ).singleton(),
     // use asFunction to return an already existing instance
     chargingStationRepository: asFunction(
       ({ locationRepository }) => locationRepository,
+    ).singleton(),
+    chargingNeedsRepository: asFunction(
+      ({ chargingProfileRepository }) => chargingProfileRepository,
+    ).singleton(),
+    chargingScheduleRepository: asFunction(
+      ({ chargingProfileRepository }) => chargingProfileRepository,
+    ).singleton(),
+    localListVersionRepository: asFunction(
+      ({ sendLocalListRepository }) => sendLocalListRepository,
+    ).singleton(),
+    compositeScheduleRepository: asFunction(
+      ({ chargingProfileRepository }) => chargingProfileRepository,
     ).singleton(),
     componentRepository: asFunction(
       ({ variableAttributeRepository }) => variableAttributeRepository,
@@ -405,6 +437,7 @@ function registerRepositories(container: AwilixContainer): void {
 
       asyncJobStatusRepository: asClass(DrizzleAsyncJobStatusRepository).singleton(),
       authorizationRepository: asClass(DrizzleAuthorizationRepository).singleton(),
+      authorizationAttemptRepository: asClass(DrizzleAuthorizationAttemptRepository).singleton(),
       bootRepository: asClass(DrizzleBootRepository).singleton(),
       certificateRepository: asClass(DrizzleCertificateRepository).singleton(),
       changeConfigurationRepository: asClass(DrizzleChangeConfigurationRepository).singleton(),
@@ -448,6 +481,15 @@ function registerRepositories(container: AwilixContainer): void {
       variableCharacteristicsRepository: asClass(
         DrizzleVariableCharacteristicsRepository,
       ).singleton(),
+      variableMonitoringRepository: asClass(DrizzleVariableMonitoringRepository).singleton(),
+      chargingProfileRepository: asClass(DrizzleChargingProfileRepository).singleton(),
+      chargingNeedsRepository: asClass(DrizzleChargingNeedsRepository).singleton(),
+      chargingScheduleRepository: asClass(DrizzleChargingScheduleRepository).singleton(),
+      compositeScheduleRepository: asClass(DrizzleCompositeScheduleRepository).singleton(),
+      eventDataRepository: asClass(DrizzleEventDataRepository).singleton(),
+      sendLocalListRepository: asClass(DrizzleSendLocalListRepository).singleton(),
+      localListVersionRepository: asClass(DrizzleLocalListVersionRepository).singleton(),
+      ocppMessageRepository: asClass(DrizzleOCPPMessageRepository).singleton(),
     });
   }
 }
@@ -467,8 +509,10 @@ function registerServices(container: AwilixContainer): void {
     networkAlertConfigResolver: asClass(NetworkAlertConfigResolver).singleton(),
     networkAlertService: asClass(NetworkAlertService).singleton(),
     networkAlertSweeper: asClass(NetworkAlertSweeper).singleton(),
+    connectorStatusService: asClass(ConnectorStatusService).singleton(),
     smartChargingService: asClass(InternalSmartCharging).singleton(),
     realTimeAuthorizer: asClass(RealTimeAuthorizer).singleton(),
+    authorizationAttemptService: asClass(AuthorizationAttemptService).singleton(),
     authorizers: asValue([]),
     permissionCatalog: asValue(buildPermissionCatalog()),
     roleProvider: asClass(SeedFileRoleProvider).singleton(),

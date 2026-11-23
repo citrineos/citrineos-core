@@ -23,6 +23,7 @@ import {
 } from '@citrineos/types';
 import type {
   IChargingProfileRepository,
+  IChargingScheduleRepository,
   IVariableAttributeRepository,
   ITransactionRepository,
 } from '@citrineos/dal';
@@ -34,6 +35,7 @@ export class NotifyEVChargingScheduleRequestOcpp2Handler extends AbstractHandler
   protected _ocppSender: IOcppSender;
   protected _transactionRepository: ITransactionRepository;
   protected _chargingProfileRepository: IChargingProfileRepository;
+  protected _chargingScheduleRepository: IChargingScheduleRepository;
   protected _variableAttributeRepository: IVariableAttributeRepository;
   protected _smartChargingService: ISmartCharging;
 
@@ -42,12 +44,14 @@ export class NotifyEVChargingScheduleRequestOcpp2Handler extends AbstractHandler
     ocppSender,
     transactionRepository,
     chargingProfileRepository,
+    chargingScheduleRepository,
     variableAttributeRepository,
     smartChargingService,
   }: AbstractHandlerDependencies & {
     ocppSender: IOcppSender;
     transactionRepository: ITransactionRepository;
     chargingProfileRepository: IChargingProfileRepository;
+    chargingScheduleRepository: IChargingScheduleRepository;
     variableAttributeRepository: IVariableAttributeRepository;
     smartChargingService: ISmartCharging;
   }) {
@@ -55,6 +59,7 @@ export class NotifyEVChargingScheduleRequestOcpp2Handler extends AbstractHandler
     this._ocppSender = ocppSender;
     this._transactionRepository = transactionRepository;
     this._chargingProfileRepository = chargingProfileRepository;
+    this._chargingScheduleRepository = chargingScheduleRepository;
     this._variableAttributeRepository = variableAttributeRepository;
     this._smartChargingService = smartChargingService;
   }
@@ -147,7 +152,7 @@ export class NotifyEVChargingScheduleRequestOcpp2Handler extends AbstractHandler
     const { chargingSchedule, evseId } = request;
 
     const purpose = ChargingProfilePurposeEnum.TxProfile;
-    chargingSchedule.id = await this._chargingProfileRepository.getNextChargingScheduleId(
+    chargingSchedule.id = await this._chargingScheduleRepository.getNextChargingScheduleId(
       tenantId,
       ocppConnectionName,
     );

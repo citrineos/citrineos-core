@@ -56,5 +56,27 @@
     "validation": {
       "idTokenRequired": "ID Token is required"
     }
+  },
+  "AuthorizationAttempts": {
+    "AuthorizationAttempts": "Authorization Attempts",
+    "unmatchedOnly": "Unmatched tokens only",
+    "columns": {
+      "timestamp": "Timestamp",
+      "action": "Action",
+      "idToken": "ID Token",
+      "idTokenType": "ID Token Type",
+      "authorization": "Authorization",
+      "station": "Station",
+      "evse": "EVSE",
+      "connector": "Connector",
+      "responseStatus": "Response Status",
+      "reason": "Reason",
+      "storedStatus": "Stored Status",
+      "transaction": "Transaction",
+      "remoteStartId": "Remote Start ID",
+      "details": "Details",
+      "ocppVersion": "OCPP Version",
+      "correlationId": "Correlation ID"
+    }
   }
 }

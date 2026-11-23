@@ -17,6 +17,28 @@ import {
   CHARGING_STATION_DETAIL_FIELDS,
 } from '@lib/queries/fields/charging-station-fields';
 import { SERVER_NETWORK_PROFILE_BASIC_FIELDS } from '@lib/queries/fields/server-network-profile-fields';
+import { ConnectorStatusEnum, OCPPVersion } from '@citrineos/types';
+
+// Where a connector's status is read from depends on the station's protocol:
+//   - 2.1: the connector's own status.
+//   - 1.6 & 2.0.1: the connector's latest status notification.
+//   - Stations with no protocol behave like 1.6 and 2.0.1
+const FAULTED_CHARGING_STATION_FILTER = `
+  {
+    _or: [
+      {
+        _or: [{ protocol: { _is_null: true } }, { protocol: { _neq: "${OCPPVersion.OCPP2_1}" } }]
+        Connectors: {
+          LatestStatusNotification: { connectorStatus: { _eq: "${ConnectorStatusEnum.Faulted}" } }
+        }
+      }
+      {
+        protocol: { _eq: "${OCPPVersion.OCPP2_1}" }
+        Connectors: { status: { _eq: "${ConnectorStatusEnum.Faulted}" } }
+      }
+    ]
+  }
+`;
 
 export const CHARGING_STATIONS_LIST_QUERY = gql`
   query ChargingStationsList(
@@ -36,6 +58,7 @@ export const CHARGING_STATIONS_LIST_QUERY = gql`
         ${EVSE_DETAIL_FIELDS.pick('physicalReference')}
         connectors: Connectors {
           id
+          status
           latestStatusNotification: LatestStatusNotification {
             ${STATUS_NOTIFICATION_FIELDS}
           }
@@ -73,11 +96,7 @@ export const FAULTED_CHARGING_STATIONS_LIST_QUERY = gql`
       order_by: $order_by
       where: {
         _and: [
-          {
-            Connectors: {
-              LatestStatusNotification: { connectorStatus: { _eq: "Faulted" } }
-            }
-          }
+          ${FAULTED_CHARGING_STATION_FILTER}
           $where
         ]
       }
@@ -90,11 +109,7 @@ export const FAULTED_CHARGING_STATIONS_LIST_QUERY = gql`
     ChargingStations_aggregate(
       where: {
         _and: [
-          {
-            Connectors: {
-              LatestStatusNotification: { connectorStatus: { _eq: "Faulted" } }
-            }
-          }
+          ${FAULTED_CHARGING_STATION_FILTER}
           $where
         ]
       }
@@ -151,6 +166,7 @@ export const CHARGING_STATIONS_GET_QUERY = gql`
         ${EVSE_DETAIL_FIELDS}
         connectors: Connectors {
           ${CONNECTOR_FULL_FIELDS}
+          status
           latestStatusNotification: LatestStatusNotification {
             ${STATUS_NOTIFICATION_FIELDS}
           }
@@ -188,6 +204,7 @@ export const GET_CHARGING_STATIONS_WITH_LOCATION_AND_LATEST_STATUS_NOTIFICATIONS
         ${EVSE_CORE_FIELDS.omit('evseId')}
         connectors: Connectors {
           id
+          status
           latestStatusNotification: LatestStatusNotification {
             ${STATUS_NOTIFICATION_FIELDS}
           }

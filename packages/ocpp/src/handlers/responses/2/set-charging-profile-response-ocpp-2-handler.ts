@@ -62,20 +62,10 @@ export class SetChargingProfileResponseOcpp2Handler extends AbstractHandler {
       this._logger.error(`Failed to set charging profile: ${JSON.stringify(response)}`);
     } else {
       // Set existed profiles to isActive false
-      await this._chargingProfileRepository.updateAllByQuery(
+      await this._chargingProfileRepository.deactivateChargingProfiles(
         tenantId,
-        {
-          isActive: false,
-        },
-        {
-          where: {
-            tenantId: tenantId,
-            ocppConnectionName: ocppConnectionName,
-            isActive: true,
-            chargingLimitSource: ChargingLimitSourceEnum.CSO,
-          },
-          returning: false,
-        },
+        ocppConnectionName,
+        { chargingLimitSource: ChargingLimitSourceEnum.CSO },
       );
     }
     // Request charging profiles to get the latest data

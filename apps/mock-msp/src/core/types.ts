@@ -44,7 +44,7 @@ export interface MockConfig {
   countryCode: string; // 'US'
   partyId: string; // 'TST'
   cpoCountryCode: string; // 'US'
-  cpoPartyId: string; // 'S44'
+  cpoPartyId: string; // 'COS'
   bootstrapTokenWeAccept: string; // seed credentials.token
   bootstrapTokenWePresent: string; // seed serverCredentials.token
   scenarioPath?: string;
