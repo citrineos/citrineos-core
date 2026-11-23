@@ -171,9 +171,8 @@ const apiAuthPlugin: FastifyPluginAsync<{
     }
   });
 
-  // Add global authentication hook for all routes
+  // Authenticate in onRequest before body parsing/validation
   fastify.addHook('onRequest', async (request, reply) => {
-    // Skip authentication for excluded routes
     if (isExcludedRoute(request.url)) {
       if (options.debug) {
         _logger.trace(`Skipping authentication for excluded route: ${request.url}`);
@@ -181,8 +180,16 @@ const apiAuthPlugin: FastifyPluginAsync<{
       return;
     }
 
-    // Authenticate and authorize the request
     await fastify.authenticate(request, reply);
+  });
+
+  // Authorize in preHandler so parsed request.body and Ajv-defaulted/coerced params & query
+  // (e.g. tenantId) are populated before authorization checks run
+  fastify.addHook('preHandler', async (request, reply) => {
+    if (isExcludedRoute(request.url) || reply.sent) {
+      return;
+    }
+
     await fastify.authorize(request, reply);
   });
 

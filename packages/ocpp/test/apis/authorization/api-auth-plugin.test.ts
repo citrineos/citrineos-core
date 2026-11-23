@@ -4,7 +4,7 @@
 
 import Fastify, { type FastifyInstance } from 'fastify';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { IApiAuthProvider } from '@citrineos/base';
+import { ApiAuthorizationResult, type IApiAuthProvider, OCPPValidator } from '@citrineos/base';
 import { apiAuthPluginFp } from '@/apis/authorization/api-auth-plugin.js';
 
 /**
@@ -96,5 +96,76 @@ describe('apiAuthPlugin', () => {
     expect(response.statusCode).toBe(401);
     expect(provider.authorizeUser).not.toHaveBeenCalled();
     expect(JSON.parse(response.body).message).toBe('Missing or invalid authorization header');
+  });
+
+  it('runs authorize after body parsing and Ajv defaults so body.tenantId and defaulted query.tenantId cannot bypass tenant checks', async () => {
+    const provider = {
+      extractToken: vi.fn().mockResolvedValue('valid-token'),
+      authenticateToken: vi.fn().mockResolvedValue({
+        isAuthenticated: true,
+        user: { id: 'u-1', name: 'User', roles: ['user'], tenantId: '2' },
+      }),
+      authorizeUser: vi.fn().mockImplementation(async (user, request) => {
+        const queryTenant = (request.query as { tenantId?: number } | undefined)?.tenantId;
+        const bodyTenant = (request.body as { tenantId?: number } | undefined)?.tenantId;
+        const requestedTenant = queryTenant ?? bodyTenant;
+        if (requestedTenant !== undefined && String(requestedTenant) !== user.tenantId) {
+          return ApiAuthorizationResult.failure(
+            `Tenant mismatch: ${user.tenantId} vs ${requestedTenant}`,
+          );
+        }
+        return ApiAuthorizationResult.success();
+      }),
+    } as unknown as IApiAuthProvider;
+
+    const ajv = OCPPValidator.createServerAjvInstance();
+    app = Fastify();
+    app.setValidatorCompiler(({ schema }) => ajv.compile(schema));
+    await app.register(apiAuthPluginFp, {
+      provider,
+      options: { excludedRoutes: ['/health'] },
+    });
+    app.post('/data/tenant-body', async () => ({ ok: true }));
+    app.get(
+      '/data/tenant-default',
+      {
+        schema: {
+          querystring: {
+            type: 'object',
+            properties: {
+              tenantId: { type: 'number', default: 1 },
+            },
+          },
+        },
+      },
+      async () => ({ ok: true }),
+    );
+    await app.ready();
+
+    const bodyMismatch = await app.inject({
+      method: 'POST',
+      url: '/data/tenant-body',
+      payload: { tenantId: 99 },
+    });
+    expect(bodyMismatch.statusCode).toBe(403);
+
+    const defaultedQueryMismatch = await app.inject({
+      method: 'GET',
+      url: '/data/tenant-default',
+    });
+    expect(defaultedQueryMismatch.statusCode).toBe(403);
+
+    const allowedBody = await app.inject({
+      method: 'POST',
+      url: '/data/tenant-body',
+      payload: { tenantId: 2 },
+    });
+    expect(allowedBody.statusCode).toBe(200);
+
+    const allowedQuery = await app.inject({
+      method: 'GET',
+      url: '/data/tenant-default?tenantId=2',
+    });
+    expect(allowedQuery.statusCode).toBe(200);
   });
 });
