@@ -231,8 +231,8 @@ describe('NotifyEventRequestOcpp2Handler', () => {
     expect(variableAttributeRepository.createOrUpdateDeviceModelByStationId).toHaveBeenCalledWith(
       DEFAULT_TENANT_ID,
       {
-        component: { id: 3 },
-        variable: { id: 9 },
+        component: event.component,
+        variable: event.variable,
         variableAttribute: [{ value: 'Faulted' }],
       },
       STATION_ID,
@@ -240,6 +240,27 @@ describe('NotifyEventRequestOcpp2Handler', () => {
     );
     expect(ocppSender.sendCallResultWithMessage).toHaveBeenCalledOnce();
     expect(ocppSender.sendCallResultWithMessage).toHaveBeenCalledWith(message, {});
+  });
+
+  it('preserves evse scoping from event.component when the resolved component DTO omits evse', async () => {
+    const event: OCPP2_0_1.EventDataType = {
+      ...anEvent(2, 'Occupied'),
+      component: { name: 'Connector', evse: { id: 2, connectorId: 1 } },
+      variable: { name: 'AvailabilityState' },
+    };
+
+    await handler.handle(aMessage(event));
+
+    expect(variableAttributeRepository.createOrUpdateDeviceModelByStationId).toHaveBeenCalledWith(
+      DEFAULT_TENANT_ID,
+      {
+        component: { name: 'Connector', evse: { id: 2, connectorId: 1 } },
+        variable: { name: 'AvailabilityState' },
+        variableAttribute: [{ value: 'Occupied' }],
+      },
+      STATION_ID,
+      GENERATED_AT,
+    );
   });
 
   it('persists each event of a multi-event report', async () => {

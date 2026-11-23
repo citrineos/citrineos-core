@@ -72,8 +72,8 @@ export class NotifyEventRequestOcpp2Handler extends AbstractHandler {
         variable?.id,
       );
       const reportDataType: OCPP2_common_types.ReportDataType = {
-        component,
-        variable,
+        component: event.component,
+        variable: event.variable,
         variableAttribute: [
           {
             value: event.actualValue,
