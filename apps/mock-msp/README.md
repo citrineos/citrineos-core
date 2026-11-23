@@ -214,22 +214,22 @@ status, never build the envelope, never check auth.
 | `src/identity.ts`                           | `US/TST` EMSP identity + `buildEndpointCatalog()` (the 8 split `{identifier,role,url}` endpoints)                                     |
 | `src/context.ts`                            | `buildContext(cfg)` — assembles the singletons (WireLogger → Store → FaultEngine → OcpiClient)                                        |
 | `src/server.ts`                             | `buildServer(ctx)` — Fastify factory, raw-JSON parser, mounts modules + control API                                                   |
-| `src/ocpi/barrel.ts`                        | **The ONLY** import site for `@citrineos/ocpi` (barrel exports + `dist` deep-imports)                                            |
+| `src/ocpi/barrel.ts`                        | **The ONLY** import site for `@citrineos/ocpi` (barrel exports + `dist` deep-imports)                                                 |
 | `src/ocpi/dispatcher.ts`                    | `dispatch(route, ctx, freq, freply)` — the uniform per-request pipeline                                                               |
 | `src/core/registry.ts`                      | `registerAllModules` — binds each `OcpiRoute` through the dispatcher                                                                  |
 | `src/core/types.ts`                         | All shared types/interfaces (`MockContext`, `Exchange`, `Store`, `FaultEngine`, `Scenario`, …)                                        |
-| `src/core/envelope.ts`                      | `ok()/empty()/error()` → `OcpiReply`; `buildBody()` wraps the ocpi envelope builders                                             |
+| `src/core/envelope.ts`                      | `ok()/empty()/error()` → `OcpiReply`; `buildBody()` wraps the ocpi envelope builders                                                  |
 | `src/core/store.ts`                         | Exchange ring buffer (cap 10k) + `DomainState` + `waitForReceived` + findings + `reset`                                               |
 | `src/core/auth.ts`                          | base64 `Token` encode/decode; inbound verify; outbound `Authorization` builder                                                        |
-| `src/core/routing-headers.ts`                | Parse / strict-require / echo `OCPI-*` + `X-Request-ID`/`X-Correlation-ID`                                                            |
+| `src/core/routing-headers.ts`               | Parse / strict-require / echo `OCPI-*` + `X-Request-ID`/`X-Correlation-ID`                                                            |
 | `src/core/conformance.ts`                   | `check(ctx, schema) → Finding[]` — header + `safeParse` body checks, never throws                                                     |
 | `src/core/faults.ts`                        | `FaultEngine` (matcher) + injectors (`mutateJson`, `dropHeaderCI`, `oversizeTokenBody`)                                               |
 | `src/core/client.ts`                        | `OcpiClient` (Actor): fetch wrapper + handshake + `sendCommand` + `pull`                                                              |
-| `src/core/wire-log.ts`                       | `WireLogger` — NDJSON + pretty console, token redaction                                                                               |
+| `src/core/wire-log.ts`                      | `WireLogger` — NDJSON + pretty console, token redaction                                                                               |
 | `src/modules/*.ts`                          | One `ModuleDef` each: `versions`, `credentials`, `locations`, `tariffs`, `sessions`, `cdrs`, `chargingprofiles`, `tokens`, `commands` |
-| `src/control/control-api.ts`                 | `registerControlApi(app, ctx)` — all `/_mock/*` routes                                                                                |
+| `src/control/control-api.ts`                | `registerControlApi(app, ctx)` — all `/_mock/*` routes                                                                                |
 | `src/control/scenario.ts`                   | `Scenario` zod schema + `loadScenario` / `applyScenario` / `evaluateExpectations` + authorize-policy runtime                          |
-| `src/control/status-cache.ts`                | TTL probe cache behind `/_mock/status` (serve-stale-trigger-refresh; no timers)                                                       |
+| `src/control/status-cache.ts`               | TTL probe cache behind `/_mock/status` (serve-stale-trigger-refresh; no timers)                                                       |
 | `src/control/dashboard.ts`                  | serves `public/dashboard.html` at `/` + `/_mock/ui` (and `dashboard.next.html` at `/_mock/ui2` while the redesign is in progress)     |
 | `scripts/register.ts`                       | One-command handshake helper (drives `/_mock/register`)                                                                               |
 | `scripts/demo-up.sh` / `demo-down.sh`       | bring the native mock up (alias repair, build, free port, health-gate) / stop it — both idempotent                                    |
@@ -841,6 +841,99 @@ Script knobs (not read by the server): `MSP_PID_FILE`, `MSP_LOG_FILE`,
 
 ---
 
+## Troubleshooting
+
+### Every OCPI call returns `401 Not Authorized` (OCPI status `2002`)
+
+A 401 doesn't always mean the token is wrong. Citrine checks **two** things,
+and the mock copies both checks for the calls it receives, so you need to know
+how the tenant model fits together first.
+
+**How tenants work.** The OCPI seeders create two rows that the mock relies on:
+
+| Row                    | Seeder (`apps/ocpi-server/db/seeders/`)    | Who it is                      | Identity     |
+| ---------------------- | ------------------------------------------ | ------------------------------ | ------------ |
+| `Tenants` id 1         | `20250806120001-default-tenant.ts`         | Citrine itself, the **CPO**    | `US` / `COS` |
+| `TenantPartners` (TST) | `20250806120002-default-tenant-partner.ts` | the mock, the **eMSP** partner | `US` / `TST` |
+
+The partner row stores both bootstrap tokens in `partnerProfileOCPI`
+(`credentials.token` and `serverCredentials.token`; see
+[Identity & tokens](#identity--tokens-mirrors-the-partner-seed)).
+
+**What Citrine checks on a call from the mock** (`packages/ocpi/src/apis/middleware/auth-middleware.ts`):
+
+1. **Token:** it decodes `Authorization: Token <base64>` and looks for the
+   `TenantPartner` whose `serverCredentials.token` matches. If none matches, it returns 401.
+2. **Routing headers (functional endpoints only):** `OCPI-from-*` must equal
+   the **partner** (`US`/`TST`) and `OCPI-to-*` must equal the **partner's
+   tenant** (`US`/`COS`). Any mismatch returns 401, _even though the token matched_.
+   Registration endpoints (`versions`, `credentials`) skip this check.
+
+**What the mock checks on a call from Citrine** (`src/core/auth.ts`,
+`src/core/routing-headers.ts`): the token must be `tokenWeAccept`
+(registration endpoints also accept the transient TOKEN_A). On functional
+endpoints and command callbacks, `OCPI-from-*` must equal
+`MOCK_MSP_CPO_COUNTRY_CODE`/`MOCK_MSP_CPO_PARTY_ID` and `OCPI-to-*` must equal
+`MOCK_MSP_COUNTRY_CODE`/`MOCK_MSP_PARTY_ID`.
+
+The rule that has to hold: **`MOCK_MSP_CPO_PARTY_ID` must equal
+`Tenants.partyId` in Citrine's database** (and `MOCK_MSP_PARTY_ID` must equal
+the partner row's `partyId`). If they differ, every functional call fails in
+**both** directions.
+
+#### Narrow it down
+
+| Symptom                                                        | Likely cause                                                                                                                                                               |
+| -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Registration endpoints work, **only functional endpoints 401** | Party-ID / routing-header mismatch, so the token is fine                                                                                                                   |
+| Registration endpoints **also** 401                            | Token problem: seeders never ran, or a handshake/`reregister` rotated the token in Citrine and the mock was restarted (restarting resets the mock to the bootstrap tokens) |
+| Only Citrine → mock pushes 401                                 | The mock's `MOCK_MSP_CPO_*` doesn't match what Citrine sends as `OCPI-from-*`, or Citrine presents a token the mock no longer accepts                                      |
+
+1. **Ask the mock why it rejected a call.** `GET /_mock/findings` returns
+   `kind: "auth"` for a bad or missing token and `kind: "header"` for a
+   routing-header mismatch. `GET /_mock/exchanges?httpStatus=401` returns the full
+   exchanges, including the decoded token and `tokenValid`.
+2. **Ask Citrine.** With the OCPI server at debug log level, a header mismatch
+   logs
+   `String token matched tenantPartner with incorrect routing headers - <db>:<header>, …`,
+   which shows each database value next to the header value it was compared with. `tenant partner not found for token`
+   means the token itself didn't match.
+3. **Check what the database actually holds** (Hasura on `:8090`):
+
+   ```bash
+   curl -s http://localhost:8090/v1/graphql -H 'content-type: application/json' -d '{
+     "query": "{ TenantPartners(where:{partyId:{_eq:\"TST\"}}) { countryCode partyId partnerProfileOCPI Tenant { id countryCode partyId } } }"
+   }'
+   ```
+
+4. **Check what the mock is configured with.** For the containerized mock:
+   `docker compose -f docker-compose.yml -f docker-compose.local.yml --profile ocpi exec mock-msp env | grep MOCK_MSP_`.
+   The native mock uses your shell env, falling back to the defaults in `src/config.ts`.
+
+#### Fixes
+
+- **Party IDs disagree.** Make the mock match the tenant. The CPO party ID is set
+  in three places that must agree with each other and with the tenant seeder:
+  the `src/config.ts` default, `MOCK_MSP_CPO_PARTY_ID` in
+  `docker-compose.local.yml`, and the `CPO_PARTY` default in
+  `scripts/demo-seed.sh`. After editing compose, rebuild the container
+  (`pnpm citrine --ocpi --local`).
+- **Database still has an old tenant party ID** (for example, it was seeded
+  before the tenant seeder changed). The containers only migrate on boot, and
+  the seeders run from `dist/seeders` _inside the `citrineos-ocpi` image_, so
+  rebuild that image and then re-run `bash apps/mock-msp/scripts/ci/seed-citrine.sh`.
+  The seeders upsert and aren't tracked in `SequelizeData`, so re-running them
+  overwrites the stale `Tenants`/`TenantPartners` rows in place.
+- **Tokens drifted after a handshake.** Either re-run the seeders (which resets the
+  partner row to the bootstrap tokens the restarted mock uses again), or keep
+  the mock running and redo the handshake against a fresh partner
+  (`npx tsx apps/mock-msp/scripts/register.ts`).
+- **`MOCK_MSP_CLIENT_TOKEN` / `MOCK_MSP_SERVER_TOKEN` overridden.** Overrides must
+  match the partner row's `credentials.token` / `serverCredentials.token`
+  exactly (raw values, not base64).
+
+---
+
 ## What's verified
 
 **In-repo (hermetic — no docker, no live Citrine):**
@@ -892,14 +985,14 @@ Script knobs (not read by the server): `MSP_PID_FILE`, `MSP_LOG_FILE`,
 `.github/workflows/mock-msp.yml` (workflow name **Mock eMSP**) runs on pull
 requests, on every push to `next`, nightly and on `workflow_dispatch`. Lanes:
 
-| job | what | when (PR) |
-|---|---|---|
-| `unit` | build closure, `typecheck:all`, lint, shellcheck, the hermetic vitest suite (`test/`), a curl-driven process smoke (`scripts/demo-seed.sh` against a natively started mock) and the entrypoint failure paths | `apps/mock-msp/**`, `packages/{types,base,ocpp,ocpi}/**`, shared config |
-| `docker-image` | builds the compose `mock-msp` service from `deploy.Dockerfile`, boots it alone, checks `/_mock/health` + the dashboard | same + compose files |
-| `dashboard` | Playwright against the dashboard (`e2e/*.e2e.ts`, project `dashboard`); the mock is started by Playwright's `webServer`, no Citrine behind it | `apps/mock-msp/**`, shared config |
-| `live` | the real stack (`docker compose … --profile ocpi`: citrine, citrineos-ocpi, hasura), the OCPI seeders, then the mock natively on `:8083` and `test-live/pr/*.live.ts` | `apps/mock-msp/**`, `packages/ocpi/**`, `apps/ocpi-server/**`, compose files |
-| `everest` | `live` plus EVerest as `cp001`: `test-live/everest/*.live.ts` (plug → START_SESSION → Session → STOP_SESSION → CDR) and the `@live`/`@everest` dashboard specs | push to `next`, nightly, dispatch, or the PR label `ci:mock-msp-everest` |
-| `mock-msp-ci` | aggregate status — the one check to require on `next` | always |
+| job            | what                                                                                                                                                                                                         | when (PR)                                                                    |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
+| `unit`         | build closure, `typecheck:all`, lint, shellcheck, the hermetic vitest suite (`test/`), a curl-driven process smoke (`scripts/demo-seed.sh` against a natively started mock) and the entrypoint failure paths | `apps/mock-msp/**`, `packages/{types,base,ocpp,ocpi}/**`, shared config      |
+| `docker-image` | builds the compose `mock-msp` service from `deploy.Dockerfile`, boots it alone, checks `/_mock/health` + the dashboard                                                                                       | same + compose files                                                         |
+| `dashboard`    | Playwright against the dashboard (`e2e/*.e2e.ts`, project `dashboard`); the mock is started by Playwright's `webServer`, no Citrine behind it                                                                | `apps/mock-msp/**`, shared config                                            |
+| `live`         | the real stack (`docker compose … --profile ocpi`: citrine, citrineos-ocpi, hasura), the OCPI seeders, then the mock natively on `:8083` and `test-live/pr/*.live.ts`                                        | `apps/mock-msp/**`, `packages/ocpi/**`, `apps/ocpi-server/**`, compose files |
+| `everest`      | `live` plus EVerest as `cp001`: `test-live/everest/*.live.ts` (plug → START_SESSION → Session → STOP_SESSION → CDR) and the `@live`/`@everest` dashboard specs                                               | push to `next`, nightly, dispatch, or the PR label `ci:mock-msp-everest`     |
+| `mock-msp-ci`  | aggregate status — the one check to require on `next`                                                                                                                                                        | always                                                                       |
 
 `schedule` and `workflow_dispatch` only fire once the workflow file exists on the
 repository's default branch (`main`); until then the label is the way to run the

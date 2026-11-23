@@ -15,7 +15,7 @@ import {
 } from '../../index.js';
 import { SessionsModule } from '../../src/modules/sessions/index.js';
 
-const tenant = { id: 1, countryCode: 'US', partyId: 'S44' } as TenantDto;
+const tenant = { id: 1, countryCode: 'US', partyId: 'COS' } as TenantDto;
 
 /** What the TransactionNotification trigger sends: the Transactions row, with no relations. */
 const aNotifiedRow = (overrides: Partial<TransactionDto> = {}) =>
