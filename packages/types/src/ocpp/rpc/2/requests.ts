@@ -118,7 +118,7 @@ export type SetNetworkProfileRequest =
 
 export type ClearDisplayMessageRequest =
   | OCPP2_1.ClearDisplayMessageRequest
-  | OCPP2_0_1.SetNetworkProfileRequest;
+  | OCPP2_0_1.ClearDisplayMessageRequest;
 
 export type GetDisplayMessagesRequest =
   | OCPP2_1.GetDisplayMessagesRequest
