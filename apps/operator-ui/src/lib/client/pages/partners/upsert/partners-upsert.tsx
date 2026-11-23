@@ -146,7 +146,7 @@ export const PartnersUpsert = ({ params }: PartnersUpsertProps) => {
       if (result && !id) {
         const newId = (result as any).data?.id;
         if (newId) {
-          replace(`/${MenuSection.AUTHORIZATIONS}/${newId}`);
+          replace(`/${MenuSection.PARTNERS}/${newId}`);
         }
       } else if (id) {
         back();
