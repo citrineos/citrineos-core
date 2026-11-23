@@ -66,7 +66,7 @@ export class RedisCache implements ICache {
     key = `${namespace}:${key}`;
     this._expiryCallbacks.delete(key);
     return this._client.getDel(key).then((result) => {
-      if (result) {
+      if (result !== null) {
         if (classConstructor) {
           return plainToInstance(classConstructor(), JSON.parse(result));
         }
@@ -153,7 +153,7 @@ export class RedisCache implements ICache {
     namespace = namespace || 'default';
     key = `${namespace}:${key}`;
     return this._client.get(key).then((result) => {
-      if (result) {
+      if (result !== null) {
         if (classConstructor) {
           return plainToInstance(classConstructor(), JSON.parse(result));
         }
