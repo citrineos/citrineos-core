@@ -141,6 +141,9 @@ export const LocationsUpsert = ({ params, allowImageUpload = false }: LocationsU
   const { open } = useNotification();
 
   const originalStationIdsRef = useRef<number[]>([]);
+  // The ref above starts as an empty array, which is truthy, so a falsy check on it can never
+  // tell whether the original pool was captured. Track that with an explicit flag.
+  const originalStationIdsInitializedRef = useRef(false);
   const [geoPoint, setGeoPoint] = useState<GeoPoint | undefined>(
     new GeoPoint(defaultLatitude, defaultLongitude),
   );
@@ -174,7 +177,8 @@ export const LocationsUpsert = ({ params, allowImageUpload = false }: LocationsU
   const chosenCountryName = chosenCountry?.name ?? '';
 
   useEffect(() => {
-    if (!originalStationIdsRef.current && currentChargingPool !== undefined) {
+    if (!originalStationIdsInitializedRef.current && currentChargingPool !== undefined) {
+      originalStationIdsInitializedRef.current = true;
       originalStationIdsRef.current = currentChargingPool
         ? currentChargingPool.map((charger) => charger.id!)
         : [];
@@ -238,9 +242,11 @@ export const LocationsUpsert = ({ params, allowImageUpload = false }: LocationsU
       );
     }
 
-    Promise.all(updateOperations).catch((err: any) =>
-      toast.error(translate('Locations.form.uploadFailedToast', { error: JSON.stringify(err) })),
-    );
+    return Promise.all(updateOperations)
+      .then(() => undefined)
+      .catch((err: any) =>
+        toast.error(translate('Locations.form.uploadFailedToast', { error: JSON.stringify(err) })),
+      );
   };
 
   const handleSubmit = (values: LocationCreateDto) => {
@@ -308,34 +314,35 @@ export const LocationsUpsert = ({ params, allowImageUpload = false }: LocationsU
 
     const { chargingPool, ...finalLocation } = newItem;
 
-    form.refineCore.onFinish(finalLocation).then((result) => {
+    form.refineCore.onFinish(finalLocation).then(async (result) => {
       if (result) {
         const finalLocationId = locationId || (result as any).data?.id;
 
+        if (finalLocationId) {
+          // Only after the location itself was saved, and for both create and edit.
+          await processChargingPoolChanges(finalLocationId);
+        }
+
         if (uploadedFile && finalLocationId) {
           const renamedFileName = `${S3_BUCKET_FOLDER_IMAGES_LOCATIONS}/${finalLocationId}`;
-          uploadFileViaPresignedUrl(uploadedFile, renamedFileName)
-            .then((result) => {
-              if (!result.success) {
-                open?.({
-                  type: 'error',
-                  message: translate('imageUploadFailed'),
-                });
-              }
-            })
-            .catch((err: any) => {
-              console.error(err);
+          try {
+            const uploadResult = await uploadFileViaPresignedUrl(uploadedFile, renamedFileName);
+            if (!uploadResult.success) {
               open?.({
                 type: 'error',
                 message: translate('imageUploadFailed'),
               });
+            }
+          } catch (err: any) {
+            console.error(err);
+            open?.({
+              type: 'error',
+              message: translate('imageUploadFailed'),
             });
+          }
         }
 
         replace(`/${MenuSection.LOCATIONS}/${finalLocationId}`);
-      } else if (locationId) {
-        processChargingPoolChanges(locationId);
-        back();
       }
     });
   };
