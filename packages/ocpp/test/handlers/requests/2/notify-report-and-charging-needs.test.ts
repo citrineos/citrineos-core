@@ -235,6 +235,44 @@ describe('NotifyReportRequestOcpp2Handler', () => {
     expect(ocppSender.sendCallErrorWithMessage).not.toHaveBeenCalled();
     expect(cache.set).not.toHaveBeenCalled();
   });
+
+  it('defaults omitted variableAttribute mutability to ReadWrite before persistence', async () => {
+    const reportData: OCPP2_0_1.ReportDataType = {
+      component: { name: 'ChargingStation' },
+      variable: { name: 'AvailabilityState' },
+      variableAttribute: [
+        {
+          type: OCPP2_0_1.AttributeEnumType.Actual,
+          value: 'Available',
+        },
+      ],
+    };
+    variableAttributeRepository.createOrUpdateDeviceModelByStationId.mockResolvedValue([
+      anAttributeRow(),
+    ]);
+
+    await handler.handle(
+      aNotifyReportMessage({
+        requestId: REQUEST_ID,
+        generatedAt: GENERATED_AT,
+        seqNo: 0,
+        reportData: [reportData],
+      }),
+    );
+
+    expect(variableAttributeRepository.createOrUpdateDeviceModelByStationId).toHaveBeenCalledWith(
+      DEFAULT_TENANT_ID,
+      expect.objectContaining({
+        variableAttribute: [
+          expect.objectContaining({
+            mutability: OCPP2_0_1.MutabilityEnumType.ReadWrite,
+          }),
+        ],
+      }),
+      STATION_ID,
+      GENERATED_AT,
+    );
+  });
 });
 
 describe('NotifyEVChargingNeedsRequestOcpp2Handler', () => {
