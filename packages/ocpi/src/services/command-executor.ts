@@ -436,8 +436,8 @@ export class CommandExecutor {
       commandId,
       COMMAND_RESPONSE_URL_CACHE_NAMESPACE,
     );
-    if (!responseUrl) {
-      this.logger.error('Response URL not found in cache', {
+    if (!responseUrl || responseUrl === COMMAND_RESPONSE_URL_CACHE_RESOLVED) {
+      this.logger.error('Response URL not found or already resolved in cache', {
         commandId,
       });
       return;

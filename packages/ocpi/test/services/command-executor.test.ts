@@ -326,4 +326,21 @@ describe('CommandExecutor.handleAsyncCommandResponse', () => {
       ),
     ).rejects.toThrow('hasura down');
   });
+
+  it('ignores the resolved sentinel value instead of posting a command result to it', async () => {
+    const { executor, cache, request, handler16, postCommandResult } = anExecutor();
+    cache.get.mockResolvedValue(COMMAND_RESPONSE_URL_CACHE_RESOLVED);
+
+    await executor.handleAsyncCommandResponse(
+      11,
+      OCPPVersion.OCPP1_6,
+      CommandType.START_SESSION,
+      'cmd-resolved',
+      ocppResponse,
+    );
+
+    expect(request).not.toHaveBeenCalled();
+    expect(handler16.handleAsyncCommandResponse).not.toHaveBeenCalled();
+    expect(postCommandResult).not.toHaveBeenCalled();
+  });
 });
