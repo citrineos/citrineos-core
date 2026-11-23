@@ -81,4 +81,19 @@ describe('PaginatedMiddleware', () => {
     expect(errorBody).toEqual({ status_code: 2001, status_message: 'Invalid parameters' });
     expect(set).not.toHaveProperty('X-Total-Count');
   });
+
+  it('strips internal pagination fields including link from the response body', async () => {
+    const body = {
+      data: [1, 2],
+      total: 30,
+      limit: 10,
+      offset: 0,
+      link: 'https://internal.example/next',
+    };
+    const { ctx } = aContext(body);
+
+    await new PaginatedMiddleware().use(ctx, next);
+
+    expect(body).toEqual({ data: [1, 2] });
+  });
 });

@@ -30,6 +30,7 @@ export class PaginatedMiddleware extends BaseMiddleware implements KoaMiddleware
     delete (paginatedResponse as any).limit;
     delete (paginatedResponse as any).offset;
     delete (paginatedResponse as any).total;
+    delete (paginatedResponse as any).link;
   }
 
   private createLink(context: Context, paginatedResponse: PaginatedResponse<any>) {
