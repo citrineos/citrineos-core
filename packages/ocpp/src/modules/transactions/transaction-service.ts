@@ -30,8 +30,7 @@ import type {
   IMeterValueRepository,
   ITransactionRepository,
 } from '@citrineos/dal';
-import { OCPP1_6_Mapper } from '@citrineos/dal';
-import { OCPP2_0_1_Mapper } from '@citrineos/dal';
+import { OCPP1_6_Mapper, OCPP2_0_1_Mapper, OCPP2_1_Mapper } from '@citrineos/dal';
 import type { ILogObj, Logger } from 'tslog';
 
 export class TransactionService {
@@ -224,9 +223,13 @@ export class TransactionService {
     }
     const authorization = authorizations[0];
 
-    const idTokenInfo = OCPP2_0_1_Mapper.AuthorizationMapper.toIdTokenInfo(authorization);
+    const idTokenInfo = this._mapAuthorizationDtoToIdTokenInfo(
+      authorization,
+      authorization.status,
+      true,
+    );
 
-    if (idTokenInfo.status !== OCPP2_0_1.AuthorizationStatusEnumType.Accepted) {
+    if (idTokenInfo.status !== OCPP2_1.AuthorizationStatusEnumType.Accepted) {
       response.idTokenInfo = idTokenInfo;
       return response;
     }
@@ -271,11 +274,14 @@ export class TransactionService {
       }
 
       const result = await this._applyAuthorizers(authorization, messageContext, evse, connector);
-      response.idTokenInfo = this._mapAuthorizationDtoToIdTokenInfo(authorization, result);
+      response.idTokenInfo = this._mapAuthorizationDtoToIdTokenInfo(authorization, result, true);
     }
 
     // C17 - Prepaid card authorization during transaction events
-    if (authorization.isPrepaid && response.idTokenInfo) {
+    if (
+      authorization.isPrepaid &&
+      response.idTokenInfo?.status === OCPP2_1.AuthorizationStatusEnumType.Accepted
+    ) {
       if (authorization.prepaidBalance != null && authorization.prepaidBalance > 0) {
         // C17.FR.01: Prepaid token with positive balance
         response.idTokenInfo.cacheExpiryDateTime = new Date().toISOString();
@@ -286,7 +292,7 @@ export class TransactionService {
         this._logger.debug(
           `C17: Set transactionLimit.maxCost=${authorization.prepaidBalance} for prepaid idToken ${authorization.idToken}`,
         );
-      } else if (response.idTokenInfo.status === OCPP2_1.AuthorizationStatusEnumType.Accepted) {
+      } else {
         // C17.FR.02: Prepaid token with zero or negative balance
         response.idTokenInfo.status = OCPP2_1.AuthorizationStatusEnumType.NoCredit;
         response.idTokenInfo.cacheExpiryDateTime = new Date().toISOString();
@@ -547,27 +553,64 @@ export class TransactionService {
   private _mapAuthorizationDtoToIdTokenInfo(
     dto: AuthorizationDto,
     status: AuthorizationStatusEnumType,
-  ): OCPP2_0_1.IdTokenInfoType {
-    return {
-      status: OCPP2_0_1_Mapper.AuthorizationMapper.fromAuthorizationStatusEnumType(status),
+    isOcpp21: true,
+  ): OCPP2_1.IdTokenInfoType;
+  private _mapAuthorizationDtoToIdTokenInfo(
+    dto: AuthorizationDto,
+    status: AuthorizationStatusEnumType,
+    isOcpp21?: false,
+  ): OCPP2_0_1.IdTokenInfoType;
+  private _mapAuthorizationDtoToIdTokenInfo(
+    dto: AuthorizationDto,
+    status: AuthorizationStatusEnumType,
+    isOcpp21 = false,
+  ): OCPP2_0_1.IdTokenInfoType | OCPP2_1.IdTokenInfoType {
+    const baseFields = {
       cacheExpiryDateTime: dto.cacheExpiryDateTime ?? null,
       chargingPriority: dto.chargingPriority ?? null,
       language1: dto.language1 ?? null,
       language2: dto.language2 ?? null,
-      groupIdToken: dto.groupAuthorization
+    };
+
+    if (isOcpp21) {
+      return {
+        ...baseFields,
+        status: OCPP2_1_Mapper.AuthorizationMapper.fromAuthorizationStatusEnumType(status),
+        groupIdToken: dto.groupAuthorization?.idTokenType
+          ? ({
+              idToken: dto.groupAuthorization.idToken ?? '',
+              type: OCPP2_1_Mapper.AuthorizationMapper.toIdTokenEnumType(
+                dto.groupAuthorization.idTokenType,
+              ),
+            } as OCPP2_1.IdTokenType)
+          : null,
+        personalMessage: dto.personalMessage
+          ? ({
+              content: dto.personalMessage.content ?? '',
+              language: dto.personalMessage.language ?? undefined,
+              format: dto.personalMessage.format
+                ? OCPP2_1_Mapper.AuthorizationMapper.toMessageFormatEnum(dto.personalMessage.format)
+                : OCPP2_1.MessageFormatEnumType.ASCII,
+            } as OCPP2_1.MessageContentType)
+          : null,
+      };
+    }
+
+    return {
+      ...baseFields,
+      status: OCPP2_0_1_Mapper.AuthorizationMapper.fromAuthorizationStatusEnumType(status),
+      groupIdToken: dto.groupAuthorization?.idTokenType
         ? ({
-            idToken: dto.groupAuthorization?.idToken ?? '',
-            type: dto.groupAuthorization?.idTokenType
-              ? OCPP2_0_1_Mapper.AuthorizationMapper.toIdTokenEnumType(
-                  dto.groupAuthorization?.idTokenType,
-                )
-              : '',
+            idToken: dto.groupAuthorization.idToken ?? '',
+            type: OCPP2_0_1_Mapper.AuthorizationMapper.toIdTokenEnumType(
+              dto.groupAuthorization.idTokenType,
+            ),
           } as OCPP2_0_1.IdTokenType)
         : null,
       personalMessage: dto.personalMessage
         ? ({
             content: dto.personalMessage.content ?? '',
-            language: dto.personalMessage.language ?? '',
+            language: dto.personalMessage.language ?? undefined,
             format: dto.personalMessage.format ?? OCPP2_0_1.MessageFormatEnumType.ASCII,
           } as OCPP2_0_1.MessageContentType)
         : null,
