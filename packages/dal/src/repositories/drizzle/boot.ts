@@ -65,11 +65,12 @@ export class DrizzleBootRepository
     config,
     logger,
     drizzleInstance,
+    useTenantSchema,
     variableAttributeRepository,
   }: DrizzleRepositoryDependencies & {
     variableAttributeRepository: DrizzleVariableAttributeRepository;
   }) {
-    super({ config, logger, drizzleInstance });
+    super({ config, logger, drizzleInstance, useTenantSchema });
 
     this._variableAttributeRepository = variableAttributeRepository;
   }
