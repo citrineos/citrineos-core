@@ -213,4 +213,32 @@ describe('AuthorizeRequestOcpp201Handler EVSE restrictions', () => {
     expect(response.idTokenInfo.status).toBe(AuthorizationStatusEnum.Accepted);
     expect(response.idTokenInfo.evseId).toBeUndefined();
   });
+
+  it('ignores null EvseId values and entries missing component.evse.id', async () => {
+    const { handler, ocppSender } = makeHandler({
+      authorization: {
+        ...acceptedAuthorization,
+        allowedConnectorTypes: ['cCCS2'],
+        disallowedEvseIdPrefixes: ['UK*DEP*'],
+      },
+      connectorTypes: [
+        { value: 'cCCS2', component: {} } as unknown as ReturnType<typeof anAttribute>,
+        anAttribute(2, 'cCCS2'),
+        anAttribute(3, 'cCCS2'),
+      ],
+      evseIds: [
+        anAttribute(2, 'UK*DEP*E002'),
+        { value: null, component: { evse: { id: 3 } } } as unknown as ReturnType<
+          typeof anAttribute
+        >,
+        { value: 'UK*VLT*E004', component: {} } as unknown as ReturnType<typeof anAttribute>,
+      ],
+    });
+
+    await handler.handle(makeMessage(request));
+
+    const response = sentResponse(ocppSender);
+    expect(response.idTokenInfo.status).toBe(AuthorizationStatusEnum.Accepted);
+    expect(response.idTokenInfo.evseId).toEqual([3]);
+  });
 });

@@ -203,4 +203,54 @@ describe('AuthorizeRequestOcpp21Handler', () => {
       expect(response.idTokenInfo.status).toBe(AuthorizationStatusEnum.Blocked);
     });
   });
+
+  describe('EVSE restrictions with null attributes or missing EVSE IDs', () => {
+    it('ignores null EvseId values and entries missing component.evse.id', async () => {
+      const { logger } = createTestContainer();
+      const ocppSender = makeMockOcppSender();
+
+      const handler = new AuthorizeRequestOcpp21Handler({
+        logger,
+        ocppSender,
+        certificateAuthorityService: {} as unknown as CertificateAuthorityService,
+        authorizers: [],
+        authorizationRepository: {
+          readOnlyOneByQuerystring: vi.fn().mockResolvedValue({
+            idToken: 'TOKEN01',
+            idTokenType: OCPP2_1.IdTokenEnumType.Central,
+            status: AuthorizationStatusEnum.Accepted,
+            allowedConnectorTypes: ['cCCS2'],
+            disallowedEvseIdPrefixes: ['UK*DEP*'],
+          }),
+        } as unknown as IAuthorizationRepository,
+        variableAttributeRepository: {
+          readAllByQuerystring: vi.fn().mockImplementation(async (_tenantId, query) => {
+            if (query.variable_name === 'ConnectorType') {
+              return [
+                { value: 'cCCS2', component: {} },
+                { value: 'cCCS2', component: { evse: { id: 2 } } },
+                { value: 'cCCS2', component: { evse: { id: 3 } } },
+              ];
+            }
+            if (query.variable_name === 'EvseId') {
+              return [
+                { value: 'UK*DEP*E002', component: { evse: { id: 2 } } },
+                { value: null, component: { evse: { id: 3 } } },
+                { value: 'UK*VLT*E004', component: {} },
+              ];
+            }
+            return [];
+          }),
+        } as unknown as IVariableAttributeRepository,
+        tariffRepository: {} as unknown as ITariffRepository,
+      } as never);
+
+      await handler.handle(makeMessage(anAuthorizeRequest()));
+
+      const response = ocppSender.sendCallResultWithMessage.mock
+        .calls[0][1] as OCPP2_1.AuthorizeResponse;
+      expect(response.idTokenInfo.status).toBe(AuthorizationStatusEnum.Accepted);
+      expect(response.idTokenInfo.evseId).toEqual([3]);
+    });
+  });
 });
