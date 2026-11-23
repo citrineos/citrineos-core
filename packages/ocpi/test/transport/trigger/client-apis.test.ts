@@ -581,6 +581,18 @@ describe('VersionsClientApi', () => {
       DETAILS_URL,
     );
   });
+
+  it('wraps request rejections in UnsuccessfulRequestException', async () => {
+    const api = new VersionsClientApi(deps().dependencies);
+    spyRequest(api).mockRejectedValue(new Error('network error'));
+
+    await expect(api.getVersions('DE', 'CPO', 'NL', 'MSP', profile, VERSIONS_URL)).rejects.toThrow(
+      UnsuccessfulRequestException,
+    );
+    await expect(api.getVersionDetails('DE', 'CPO', 'NL', 'MSP', profile)).rejects.toThrow(
+      UnsuccessfulRequestException,
+    );
+  });
 });
 
 describe('CommandsClientApi.postCommandResult', () => {

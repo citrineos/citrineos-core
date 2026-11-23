@@ -32,7 +32,7 @@ export class VersionsClientApi extends BaseClientApi {
     url?: string,
   ): Promise<VersionListResponseDTO> {
     try {
-      return this.request(
+      return await this.request(
         fromCountryCode,
         fromPartyId,
         toCountryCode,
@@ -58,7 +58,7 @@ export class VersionsClientApi extends BaseClientApi {
   ): Promise<VersionDetailsResponseDTO> {
     try {
       url = url || this.getUrl(partnerProfile, VersionsInterface.DETAILS);
-      return this.request(
+      return await this.request(
         fromCountryCode,
         fromPartyId,
         toCountryCode,
