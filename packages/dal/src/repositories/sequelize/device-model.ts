@@ -424,14 +424,10 @@ export class SequelizeDeviceModelRepository
     isoTimestamp: string,
     acceptedValue?: string,
   ): Promise<VariableAttributeDto | undefined> {
-    const evse = result.component.evse
-      ? await this.evse.readOnlyOneByQuery(tenantId, {
-          where: {
-            id: result.component.evse.id,
-            connectorId: result.component.evse.connectorId ?? null,
-          },
-        })
-      : undefined;
+    const evseFilter = await this.resolveComponentEvseFilter(tenantId, result.component.evse);
+    if (!evseFilter) {
+      return undefined;
+    }
 
     const existingVariableAttribute = await super.readOnlyOneByQuery(tenantId, {
       where: {
@@ -444,7 +440,7 @@ export class SequelizeDeviceModelRepository
           where: {
             name: result.component.name,
             instance: result.component.instance ? result.component.instance : null,
-            ...(evse ? { evseDatabaseId: evse.databaseId } : {}),
+            ...evseFilter,
           },
         },
         {
@@ -530,6 +526,22 @@ export class SequelizeDeviceModelRepository
     return await super.deleteAllByQuery(tenantId, await this.constructQuery(tenantId, query));
   }
 
+  private async resolveComponentEvseFilter(
+    tenantId: number,
+    evseType: OCPP2_common_types.EVSEType | null | undefined,
+  ): Promise<{ evseDatabaseId: number | null } | null> {
+    if (!evseType) {
+      return { evseDatabaseId: null };
+    }
+    const evse = await this.evse.readOnlyOneByQuery(tenantId, {
+      where: {
+        id: evseType.id,
+        connectorId: evseType.connectorId ?? null,
+      },
+    });
+    return evse ? { evseDatabaseId: evse.databaseId } : null;
+  }
+
   async findVariableAttributeByComponentAndVariable(
     tenantId: number,
     ocppConnectionName: string,
@@ -537,6 +549,11 @@ export class SequelizeDeviceModelRepository
     componentType: OCPP2_common_types.ComponentType,
     variableType: OCPP2_common_types.VariableType,
   ): Promise<VariableAttributeDto | undefined> {
+    const evseFilter = await this.resolveComponentEvseFilter(tenantId, componentType.evse);
+    if (!evseFilter) {
+      return undefined;
+    }
+
     const variableAttribute = await super.readOnlyOneByQuery(tenantId, {
       where: {
         stationId: await stationIdFilter(tenantId, ocppConnectionName),
@@ -548,6 +565,7 @@ export class SequelizeDeviceModelRepository
           where: {
             name: componentType.name,
             instance: componentType.instance ?? null,
+            ...evseFilter,
           },
         },
         {
@@ -582,22 +600,17 @@ export class SequelizeDeviceModelRepository
     componentType: OCPP2_0_1.ComponentType,
     variableType: OCPP2_0_1.VariableType,
   ): Promise<[Component | undefined, Variable | undefined]> {
-    const evse = componentType.evse
-      ? await this.evse.readOnlyOneByQuery(tenantId, {
+    const evseFilter = await this.resolveComponentEvseFilter(tenantId, componentType.evse);
+
+    const component = evseFilter
+      ? await this.component.readOnlyOneByQuery(tenantId, {
           where: {
-            id: componentType.evse.id,
-            connectorId: componentType.evse.connectorId ?? null,
+            name: componentType.name,
+            instance: componentType.instance ? componentType.instance : null,
+            ...evseFilter,
           },
         })
       : undefined;
-
-    const component = await this.component.readOnlyOneByQuery(tenantId, {
-      where: {
-        name: componentType.name,
-        instance: componentType.instance ? componentType.instance : null,
-        ...(evse ? { evseDatabaseId: evse.databaseId } : {}),
-      },
-    });
     const variable = await this.variable.readOnlyOneByQuery(tenantId, {
       where: {
         name: variableType.name,
