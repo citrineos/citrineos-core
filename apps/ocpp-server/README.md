@@ -35,6 +35,7 @@ server class it describes.
   - [Without Docker](#without-docker)
 - [Attaching a Debugger](#attaching-a-debugger)
 - [Server Ports](#server-ports)
+- [Metrics](#metrics)
 - [Database Migrations](#database-migrations)
   - [Table Partitioning](#table-partitioning)
 - [Configuration](#configuration)
@@ -127,6 +128,52 @@ When running, the server container exposes the following ports (see the root `do
 
 The websocket ports come from [`src/assets/websocket-servers.json`](./src/assets/websocket-servers.json); change that
 file and the published ports in `docker-compose.yml` together.
+
+## Metrics
+
+The server can expose OpenTelemetry metrics on a Prometheus endpoint. It is **off by default**; nothing listens and
+the instruments record into a no-op provider until you enable it. The export is provided by
+[`@citrineos/observability`](../../packages/observability/README.md).
+
+Configuration uses the standard OpenTelemetry environment variables. They are read before the configuration loader
+runs, so they have no `CITRINEOS_` equivalent:
+
+| Variable                        | Default                 | Meaning                                                                    |
+| ------------------------------- | ----------------------- | -------------------------------------------------------------------------- |
+| `OTEL_METRICS_EXPORTER`         | _unset_ (off)           | Set to `prometheus` to enable. `prometheus` is the only exporter supported |
+| `OTEL_EXPORTER_PROMETHEUS_HOST` | `localhost`             | Interface the endpoint binds. Use `0.0.0.0` in a container                 |
+| `OTEL_EXPORTER_PROMETHEUS_PORT` | `9464`                  | Port of the endpoint, served at `/metrics`                                 |
+| `OTEL_SERVICE_NAME`             | `citrineos-ocpp-server` | `service_name` on the `target_info` series                                 |
+| `OTEL_SDK_DISABLED`             | `false`                 | `true` turns metrics off whatever else is set                              |
+
+Unset, `OTEL_METRICS_EXPORTER` departs from the OpenTelemetry default (`otlp`) on purpose: the server opens no port
+you did not ask for. An invalid port fails startup rather than quietly turning metrics off.
+
+To try it natively:
+
+```shell
+OTEL_METRICS_EXPORTER=prometheus pnpm start
+curl -s localhost:9464/metrics | grep ocpp_
+```
+
+In Docker, set `OTEL_METRICS_EXPORTER=prometheus` and `OTEL_EXPORTER_PROMETHEUS_HOST=0.0.0.0` on the server
+container and publish port `9464`.
+
+What is exported:
+
+- **OCPP transport and message flow** (`ocpp_ws_*`, `ocpp_message_*`, `ocpp_call_*`, `ocpp_dead_letter_*`) —
+  connections, upgrades, rejections, routing, CSMS-initiated call round trips and dead letters. The instruments, their
+  labels and what each one counts are documented in
+  [`packages/ocpp/src/transport/metrics.ts`](../../packages/ocpp/src/transport/metrics.ts).
+- **Messages plane** (`messages_*`) — consumption of the `messages` exchange; see
+  [`messages-metrics.ts`](../../packages/ocpp/src/transport/queue/rabbit-mq/messages/messages-metrics.ts).
+- **Authorization** (`ocpp_authorize_result_total`) — every authorization decision, by status, OCPP version and the
+  action that carried it; see [`authorization-metrics.ts`](../../packages/base/src/util/authorization-metrics.ts).
+- **Event loop** (`process_runtime_nodejs_event_loop_delay_{mean,p50,p95,p99,max}` in milliseconds, and
+  `process_runtime_nodejs_event_loop_utilization` from 0 to 1) — each covers the interval since the previous scrape,
+  so scrape from a single Prometheus per instance.
+
+Counters with a closed set of label values are seeded with zero at startup, so they appear on the first scrape.
 
 ## Database Migrations
 

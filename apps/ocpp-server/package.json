@@ -43,6 +43,7 @@
     "@citrineos/base": "workspace:*",
     "@citrineos/ocpp": "workspace:*",
     "@citrineos/dal": "workspace:*",
+    "@citrineos/observability": "workspace:*",
     "@citrineos/types": "workspace:*",
     "cross-env": "catalog:",
     "sequelize": "catalog:",

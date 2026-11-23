@@ -72,6 +72,7 @@ export default defineConfig({
       nodeProject('ocpp', './packages/ocpp'),
       nodeProject('dal', './packages/dal'),
       nodeProject('base', './packages/base'),
+      nodeProject('observability', './packages/observability'),
       nodeProject('ocpi', './packages/ocpi'),
       nodeProject('mock-msp', './apps/mock-msp'),
       // operator-ui owns its own Playwright e2e specs; vitest can't run them
@@ -105,6 +106,7 @@ export default defineConfig({
       include: [
         'packages/base/src/**',
         'packages/dal/src/**',
+        'packages/observability/src/**',
         'packages/ocpp/src/**',
         'packages/ocpi/src/**',
         'apps/mock-msp/src/**',

@@ -453,6 +453,9 @@ importers:
       '@citrineos/dal':
         specifier: workspace:*
         version: link:../../packages/dal
+      '@citrineos/observability':
+        specifier: workspace:*
+        version: link:../../packages/observability
       '@citrineos/ocpp':
         specifier: workspace:*
         version: link:../../packages/ocpp
@@ -977,6 +980,58 @@ importers:
       testcontainers:
         specifier: 'catalog:'
         version: 11.14.0
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      typescript-eslint:
+        specifier: 'catalog:'
+        version: 8.17.0(eslint@9.16.0(jiti@2.7.0))(typescript@6.0.3)
+      vitest:
+        specifier: 'catalog:'
+        version: 3.2.7(@types/debug@4.1.13)(@types/node@25.9.9)(jiti@2.7.0)(lightningcss@1.33.0)(msw@2.15.0(@types/node@25.9.9)(typescript@6.0.3))(sass@1.93.2)(tsx@4.23.15)(yaml@2.9.1)
+
+  packages/observability:
+    dependencies:
+      '@opentelemetry/api':
+        specifier: 'catalog:'
+        version: 1.9.1
+      '@opentelemetry/exporter-prometheus':
+        specifier: 0.223.0
+        version: 0.223.0(@opentelemetry/api@1.9.1)
+      '@opentelemetry/resources':
+        specifier: 2.12.0
+        version: 2.12.0(@opentelemetry/api@1.9.1)
+      '@opentelemetry/sdk-metrics':
+        specifier: 2.12.0
+        version: 2.12.0(@opentelemetry/api@1.9.1)
+      '@opentelemetry/semantic-conventions':
+        specifier: 1.43.0
+        version: 1.43.0
+      tslog:
+        specifier: 'catalog:'
+        version: 5.1.0
+    devDependencies:
+      '@eslint/js':
+        specifier: 'catalog:'
+        version: 9.16.0
+      '@types/node':
+        specifier: 'catalog:'
+        version: 25.9.9
+      '@vitest/coverage-v8':
+        specifier: 'catalog:'
+        version: 3.2.7(vitest@3.2.7(@types/debug@4.1.13)(@types/node@25.9.9)(jiti@2.7.0)(lightningcss@1.33.0)(msw@2.15.0(@types/node@25.9.9)(typescript@6.0.3))(sass@1.93.2)(tsx@4.23.15)(yaml@2.9.1))
+      eslint:
+        specifier: 'catalog:'
+        version: 9.16.0(jiti@2.7.0)
+      eslint-config-prettier:
+        specifier: 'catalog:'
+        version: 9.1.2(eslint@9.16.0(jiti@2.7.0))
+      eslint-plugin-prettier:
+        specifier: 'catalog:'
+        version: 5.2.3(eslint-config-prettier@9.1.2(eslint@9.16.0(jiti@2.7.0)))(eslint@9.16.0(jiti@2.7.0))(prettier@3.6.2)
+      prettier:
+        specifier: 'catalog:'
+        version: 3.6.2
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
@@ -2799,6 +2854,34 @@ packages:
   '@opentelemetry/api@1.9.1':
     resolution: {integrity: sha512-gLyJlPHPZYdAk1JENA9LeHejZe1Ti77/pTeFm/nMXmQH/HFZlcS/O2XJB+L8fkbrNSqhdtlvjBVjxwUYanNH5Q==}
     engines: {node: '>=8.0.0'}
+
+  '@opentelemetry/core@2.12.0':
+    resolution: {integrity: sha512-1HsSAuvT4/my0QrXWsyXFdWjKaPeCHsismKZgEEIb8NK13LP6DrMRlsUbvD/0F9mDWK3xDom9AMv3IscxgOnOQ==}
+    engines: {node: ^18.19.0 || >=20.6.0}
+    peerDependencies:
+      '@opentelemetry/api': '>=1.0.0 <1.10.0'
+
+  '@opentelemetry/exporter-prometheus@0.223.0':
+    resolution: {integrity: sha512-HhbN3/B8vG+JNKH2oLMynFFrz2O/o+WFklfwiVq3ffdRWOEZx1zHeYe6r86fn9BUSpQ2U5cXfQja+otTdzi5qQ==}
+    engines: {node: ^18.19.0 || >=20.6.0}
+    peerDependencies:
+      '@opentelemetry/api': ^1.3.0
+
+  '@opentelemetry/resources@2.12.0':
+    resolution: {integrity: sha512-+rSRoOdln6NhXTVcBdHSlZxJDNzwxadeweK2ltZO3tVtfp6aklABc06xclDk6ovRR+EiGgIcSbh/6NgjFhnb3A==}
+    engines: {node: ^18.19.0 || >=20.6.0}
+    peerDependencies:
+      '@opentelemetry/api': '>=1.3.0 <1.10.0'
+
+  '@opentelemetry/sdk-metrics@2.12.0':
+    resolution: {integrity: sha512-mVMaEHwCUJuY3S4Esn+nT0yQA3qCEGh+SOPJsXygU0Gl453WcsDNjtEa8EfdewMwoLyr1tlofB4fXytVpiXuow==}
+    engines: {node: ^18.19.0 || >=20.6.0}
+    peerDependencies:
+      '@opentelemetry/api': '>=1.9.0 <1.10.0'
+
+  '@opentelemetry/semantic-conventions@1.43.0':
+    resolution: {integrity: sha512-eSYWTm620tTk45EKSedaUL8MFYI8hW164hIXsgIHyxu3VobUB3fFCu5t0hQby6OoWRPsG1KkKUG2M5UadiLiVg==}
+    engines: {node: '>=14'}
 
   '@panva/hkdf@1.2.1':
     resolution: {integrity: sha512-6oclG6Y3PiDFcoyk8srjLfVKyMfVCKJ27JwNPViuXziFpmdz+MZnZN/aKY0JGXgYuO/VghU0jcOAZgWXZ1Dmrw==}
@@ -12201,6 +12284,33 @@ snapshots:
 
   '@opentelemetry/api@1.9.1': {}
 
+  '@opentelemetry/core@2.12.0(@opentelemetry/api@1.9.1)':
+    dependencies:
+      '@opentelemetry/api': 1.9.1
+      '@opentelemetry/semantic-conventions': 1.43.0
+
+  '@opentelemetry/exporter-prometheus@0.223.0(@opentelemetry/api@1.9.1)':
+    dependencies:
+      '@opentelemetry/api': 1.9.1
+      '@opentelemetry/core': 2.12.0(@opentelemetry/api@1.9.1)
+      '@opentelemetry/resources': 2.12.0(@opentelemetry/api@1.9.1)
+      '@opentelemetry/sdk-metrics': 2.12.0(@opentelemetry/api@1.9.1)
+      '@opentelemetry/semantic-conventions': 1.43.0
+
+  '@opentelemetry/resources@2.12.0(@opentelemetry/api@1.9.1)':
+    dependencies:
+      '@opentelemetry/api': 1.9.1
+      '@opentelemetry/core': 2.12.0(@opentelemetry/api@1.9.1)
+      '@opentelemetry/semantic-conventions': 1.43.0
+
+  '@opentelemetry/sdk-metrics@2.12.0(@opentelemetry/api@1.9.1)':
+    dependencies:
+      '@opentelemetry/api': 1.9.1
+      '@opentelemetry/core': 2.12.0(@opentelemetry/api@1.9.1)
+      '@opentelemetry/resources': 2.12.0(@opentelemetry/api@1.9.1)
+
+  '@opentelemetry/semantic-conventions@1.43.0': {}
+
   '@panva/hkdf@1.2.1': {}
 
   '@paralleldrive/cuid2@2.3.1':
@@ -14079,7 +14189,7 @@ snapshots:
 
   '@types/http-proxy@1.17.17':
     dependencies:
-      '@types/node': 25.9.9
+      '@types/node': 26.6.5
 
   '@types/js-cookie@3.0.6': {}
 
@@ -14190,7 +14300,7 @@ snapshots:
   '@types/request@2.48.13':
     dependencies:
       '@types/caseless': 0.12.5
-      '@types/node': 25.9.9
+      '@types/node': 26.6.5
       '@types/tough-cookie': 4.0.5
       form-data: 2.5.6
 
@@ -14205,7 +14315,7 @@ snapshots:
 
   '@types/set-cookie-parser@2.4.10':
     dependencies:
-      '@types/node': 25.9.9
+      '@types/node': 26.6.5
 
   '@types/ssh2-streams@0.1.13':
     dependencies:
