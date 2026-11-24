@@ -37,8 +37,8 @@ describe('PaginatedMiddleware', () => {
 
     await new PaginatedMiddleware().use(ctx, next);
 
-    expect(set['X-Total-Count']).toBe(30);
-    expect(set['X-Limit']).toBe(10);
+    expect(set['X-Total-Count']).toBe('30');
+    expect(set['X-Limit']).toBe('10');
     expect(String(set['Link'])).toContain('offset=10');
     expect(body).not.toHaveProperty('total');
     expect(body).not.toHaveProperty('limit');
@@ -59,8 +59,8 @@ describe('PaginatedMiddleware', () => {
     await new PaginatedMiddleware().use(ctx, next);
 
     expect(set).not.toHaveProperty('Link');
-    expect(set['X-Total-Count']).toBe(30);
-    expect(set['X-Limit']).toBe(10);
+    expect(set['X-Total-Count']).toBe('30');
+    expect(set['X-Limit']).toBe('10');
   });
 
   it('leaves a response that carries no paging alone', async () => {

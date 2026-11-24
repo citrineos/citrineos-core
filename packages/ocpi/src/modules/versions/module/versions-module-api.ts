@@ -7,6 +7,8 @@ import {
   BaseController,
   ModuleId,
   ResponseSchema,
+  VersionDetailsResponseDTOSchema,
+  VersionDetailsResponseDTOSchemaName,
   versionIdParam,
   VersionListResponseDTOSchema,
   VersionListResponseDTOSchemaName,
@@ -50,7 +52,7 @@ export class VersionsModuleApi extends BaseController implements IVersionsModule
 
   @Get(`/:tenant_id/:${versionIdParam}`)
   @AsOcpiRegistrationEndpoint()
-  @ResponseSchema(VersionListResponseDTOSchema, VersionListResponseDTOSchemaName, {
+  @ResponseSchema(VersionDetailsResponseDTOSchema, VersionDetailsResponseDTOSchemaName, {
     statusCode: HttpStatus.OK,
     description: 'Successful response',
     // examples: {}, // todo real example

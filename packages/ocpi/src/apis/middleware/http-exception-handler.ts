@@ -4,7 +4,7 @@
 
 import type { KoaMiddlewareInterface } from 'routing-controllers';
 import { NotFoundError, UnauthorizedError } from 'routing-controllers';
-import type { Context } from 'vm';
+import type { Context } from 'koa';
 import { HttpStatus, UnauthorizedException } from '@citrineos/base';
 import { MissingParamException } from '../exception/missing-param-exception.js';
 import { AlreadyRegisteredException } from '../exception/already-registered-exception.js';

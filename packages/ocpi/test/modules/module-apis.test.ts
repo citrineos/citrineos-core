@@ -10,9 +10,11 @@ import {
   CommandType,
   OcpiHeaders,
   PaginatedParams,
+  VersionDetailsResponseDTOSchemaName,
   VersionNumber,
   WrongClientAccessException,
 } from '../../index.js';
+import { applyOpenAPIDecorator } from '@ocpi/apis/openapi-spec-helper/decorators.js';
 import { CommandsModuleApi } from '@ocpi/modules/commands/module/commands-module-api.js';
 import { LocationsModuleApi } from '@ocpi/modules/locations/module/locations-module-api.js';
 import { SessionsModuleApi } from '@ocpi/modules/sessions/module/sessions-module-api.js';
@@ -456,5 +458,27 @@ describe('VersionsModuleApi', () => {
     const matchingCtx = { state: { tenantPartner: { tenantId: 42 } } };
     await expect(api.getVersions(42, matchingCtx)).resolves.toBe(LIST);
     await expect(api.getVersionDetails(42, VERSION, matchingCtx)).resolves.toBe(DETAILS);
+  });
+
+  it('registers VersionDetailsResponseDTOSchema on getVersionDetails for OpenAPI generation', () => {
+    const operation = applyOpenAPIDecorator(
+      { responses: {} } as never,
+      {
+        action: {
+          target: VersionsModuleApi,
+          method: 'getVersionDetails',
+          route: '/:tenant_id/:versionId',
+          type: 'get',
+        },
+        controller: { target: VersionsModuleApi, route: '/versions', type: 'json' },
+        options: {},
+        params: [],
+        responseHandlers: [],
+      } as never,
+    );
+
+    expect(operation.responses?.['200']?.content?.['application/json']?.schema).toEqual({
+      $ref: `#/components/schemas/${VersionDetailsResponseDTOSchemaName}`,
+    });
   });
 });

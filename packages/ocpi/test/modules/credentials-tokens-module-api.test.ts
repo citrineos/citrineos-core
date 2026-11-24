@@ -5,9 +5,11 @@ import 'reflect-metadata';
 import { Logger } from 'tslog';
 import { describe, expect, it, vi } from 'vitest';
 
+import { BODY_PARAM } from '@ocpi/apis/decorators/body-with-schema.js';
 import { InvalidParamException } from '@ocpi/apis/exception/invalid-param-exception.js';
 import { UnknownTokenException } from '@ocpi/apis/exception/unknown-token-exception.js';
 import { WrongClientAccessException } from '@ocpi/apis/exception/wrong-client-access-exception.js';
+import { TokenDTOSchema, TokenDTOSchemaName } from '@ocpi/types/dto/token-dto.js';
 import { OcpiHeaders } from '@ocpi/types/ocpi-headers.js';
 import { OcpiResponseStatusCode } from '@ocpi/types/ocpi-response.js';
 import { TokenType } from '@ocpi/types/token-type.js';
@@ -394,6 +396,12 @@ describe('TokensModuleApi', () => {
       expect(service.upsertToken).toHaveBeenCalledWith(dto, 3, 7);
       expect(result.status_code).toBe(OcpiResponseStatusCode.GenericSuccessCode);
       expect(result.data).toBeUndefined();
+    });
+
+    it('registers TokenDTOSchemaName in request body metadata rather than TokenTypeSchemaName', () => {
+      const meta = Reflect.getMetadata(BODY_PARAM, TokensModuleApi.prototype, 'putToken.5');
+      expect(meta?.schema).toBe(TokenDTOSchema);
+      expect(meta?.name).toBe(TokenDTOSchemaName);
     });
   });
 
