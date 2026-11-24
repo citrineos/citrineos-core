@@ -552,6 +552,12 @@ export const SecurityEventNotificationTypeEnumSchema = z.enum([
   'InvalidTLSCipherSuite',
   'MaintenanceLoginAccepted',
   'MaintenanceLoginFailed',
+  // OCPP 1.6 Security Whitepaper
+  'FailedToAuthenticateAtCentralSystem',
+  'CentralSystemFailedToAuthenticate',
+  'InvalidCentralSystemCertificate',
+  'InvalidChargePointCertificate',
+  'DiscardedRenewedClientCertificate',
 ]);
 
 export const SendLocalListStatusEnumSchema = z.enum(['Accepted', 'Failed', 'VersionMismatch']);
