@@ -375,12 +375,34 @@ describe('NotifyEVChargingNeedsRequestOcpp2Handler', () => {
   });
 
   it('rejects when the charging needs carry neither AC nor DC parameters', async () => {
+    const infoSpy = vi.spyOn(logger, 'info');
+
     await handler.handle(
       aChargingNeedsMessage({
         requestedEnergyTransfer: EnergyTransferModeEnum.DC,
       } as OCPP2_common_types.ChargingNeedsType),
     );
 
+    expect(infoSpy).toHaveBeenCalledWith('Has AC or DC charging parameters: false');
+    expect(ocppSender.sendCallResultWithMessage).toHaveBeenCalledOnce();
+    expect(ocppSender.sendCallResultWithMessage.mock.calls[0][1]).toEqual({
+      status: NotifyEVChargingNeedsStatusEnum.Rejected,
+    });
+    expect(smartChargingService.calculateChargingProfile).not.toHaveBeenCalled();
+  });
+
+  it('rejects when AC and DC charging parameters are explicitly null', async () => {
+    const infoSpy = vi.spyOn(logger, 'info');
+
+    await handler.handle(
+      aChargingNeedsMessage({
+        requestedEnergyTransfer: EnergyTransferModeEnum.AC_three_phase,
+        dcChargingParameters: null as never,
+        acChargingParameters: null as never,
+      } as OCPP2_common_types.ChargingNeedsType),
+    );
+
+    expect(infoSpy).toHaveBeenCalledWith('Has AC or DC charging parameters: false');
     expect(ocppSender.sendCallResultWithMessage).toHaveBeenCalledOnce();
     expect(ocppSender.sendCallResultWithMessage.mock.calls[0][1]).toEqual({
       status: NotifyEVChargingNeedsStatusEnum.Rejected,
