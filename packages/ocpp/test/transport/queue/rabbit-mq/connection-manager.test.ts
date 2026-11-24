@@ -49,6 +49,24 @@ describe('RabbitMQConnectionManager', () => {
     expect(manager.isConnected()).toBe(true);
   });
 
+  it('should not reconnect after an intentional close', async () => {
+    // amqplib emits 'close' on the connection when close() completes, the same
+    // event it emits when the broker drops the socket.
+    const connection = aFakeConnection();
+    vi.mocked(connection.close).mockImplementation(async () => {
+      connection.emit('close');
+    });
+    vi.mocked(amqp.connect).mockResolvedValueOnce(connection);
+    await manager.connect();
+
+    await manager.close();
+
+    expect(manager.state).toBe('closed');
+    expect(vi.getTimerCount()).toBe(0);
+    await vi.runAllTimersAsync();
+    expect(amqp.connect).toHaveBeenCalledTimes(1);
+  });
+
   it('should still forward connection errors to registered listeners', async () => {
     const connection = aFakeConnection();
     vi.mocked(amqp.connect).mockResolvedValueOnce(connection);

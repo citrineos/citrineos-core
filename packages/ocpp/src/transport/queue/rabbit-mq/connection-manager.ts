@@ -62,7 +62,9 @@ export class RabbitMQConnectionManager extends AbstractConnectionManager<amqp.Ch
       this.connection.on('close', () => {
         this._logger.warn('RabbitMQ connection closed');
         this.connection = null;
-        this.state = 'disconnected';
+        if (this.state !== 'closed') {
+          this.state = 'disconnected';
+        }
         this.emit('disconnected');
         this.handleReconnect().catch((err) => {
           this._logger.error('Error during RabbitMQ reconnection:', err);
