@@ -1,7 +1,14 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
-import { EventGroup, OCPP_CallAction, OCPPVersion, type SystemConfig } from '@citrineos/types';
+import {
+  EventGroup,
+  OCPP2_0_1,
+  OCPP2_1,
+  OCPP_CallAction,
+  OCPPVersion,
+  type SystemConfig,
+} from '@citrineos/types';
 import {
   AbstractMessageEndpoint,
   type IMessageEndpointMetadata,
@@ -10,6 +17,7 @@ import {
 import { AbstractMessageEndpointApi } from '@interfaces/api/endpoints/abstract-message-endpoint-api.js';
 import type { BuiltMessageEndpoint } from '@interfaces/api/endpoints/build-message-endpoints.js';
 import type { IMessageConfirmation } from '@interfaces/messages/index.js';
+import { OCPPValidator } from '@interfaces/modules/ocpp-validator.js';
 import { aSystemConfig } from '../../../providers/system-config.js';
 import fastify, { type FastifyInstance } from 'fastify';
 import { Logger, type ILogObj } from 'tslog';
@@ -66,8 +74,13 @@ function aRoute(overrides: Partial<IMessageEndpointMetadata> = {}): IMessageEndp
 async function buildHarness(
   route: IMessageEndpointMetadata,
   config: SystemConfig,
+  options: { serverValidator?: boolean } = {},
 ): Promise<Harness> {
   const server = fastify();
+  if (options.serverValidator) {
+    const ajv = OCPPValidator.createServerAjvInstance();
+    server.setValidatorCompiler(({ schema }) => ajv.compile(schema));
+  }
   const routes: Array<{ method: string; url: string }> = [];
   server.addHook('onRoute', (options) => {
     const methods = Array.isArray(options.method) ? options.method : [options.method];
@@ -261,6 +274,52 @@ describe('AbstractMessageEndpointApi', () => {
       });
 
       expect(response.json()).toEqual([{ success: true, payload: 'ok' }]);
+    });
+  });
+
+  // The generated 2.0.1 and 2.1 schemas share definition names, e.g. ResetEnumType, with
+  // different contents. Each version's route has to validate against its own definitions.
+  describe('versions whose schemas share definition names', () => {
+    let harness: Harness;
+
+    beforeEach(async () => {
+      harness = await buildHarness(
+        aRoute({
+          action: OCPP_CallAction.Reset,
+          eventGroup: EventGroup.Configuration,
+          bodySchema: (version) =>
+            version === OCPPVersion.OCPP2_1
+              ? OCPP2_1.ResetRequestSchema
+              : OCPP2_0_1.ResetRequestSchema,
+        }),
+        aSystemConfig({ swagger: { exposeMessage: true } }),
+        { serverValidator: true },
+      );
+    });
+
+    function reset(version: string, type: string) {
+      return harness.server.inject({
+        method: 'POST',
+        url: `/ocpp/${version}/configuration/reset?identifier=cs001&tenantId=1`,
+        payload: { type },
+      });
+    }
+
+    it('accepts a value only the 2.1 definition allows on the 2.1 route', async () => {
+      const response = await reset('2.1', 'ImmediateAndResume');
+
+      expect(response.statusCode).toBe(200);
+    });
+
+    it('rejects that value on the 2.0.1 route', async () => {
+      const response = await reset('2.0.1', 'ImmediateAndResume');
+
+      expect(response.statusCode).toBe(400);
+    });
+
+    it('accepts a value both definitions allow on both routes', async () => {
+      expect((await reset('2.0.1', 'Immediate')).statusCode).toBe(200);
+      expect((await reset('2.1', 'Immediate')).statusCode).toBe(200);
     });
   });
 

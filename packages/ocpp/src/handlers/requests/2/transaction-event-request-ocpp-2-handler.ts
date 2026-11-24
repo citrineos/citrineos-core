@@ -31,6 +31,7 @@ import {
   OCPP_2_VER_LIST,
   OCPP_CallAction,
   OCPPVersion,
+  type OCPPVersionType,
   type SystemConfig,
   TransactionEventEnum,
   OCPP2_request_types,
@@ -473,75 +474,19 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
         // TODO: checks if there is updated tariff information available and set it in the PersonalMessage field.
       }
 
-      // E17 - Transaction resumption after power loss
-      // When CS sends TransactionEventRequest(Updated) with triggerReason=TxResumed,
-      // it indicates the transaction has resumed after a power loss or reboot.
-      // CSMS should re-send any applicable TxProfile charging profiles for this transaction.
+      // E17.FR.15 / B13.FR.31: a transaction resumed after power loss or an ImmediateAndResume
+      // reset lost its TxProfiles unless the station keeps them across a reboot, i.e. unless
+      // SmartChargingCtrlr.ChargingProfilePersistence[TxProfile] is true.
       if (isOcpp21 && transaction && transaction.isActive) {
         const ocpp21Payload = message.payload as unknown as OCPP2_1.TransactionEventRequest;
         if (ocpp21Payload.triggerReason === OCPP2_1.TriggerReasonEnumType.TxResumed) {
-          this._logger.info(
-            `Transaction ${transactionId} resumed after power loss on station ${ocppConnectionName}. ` +
-              `Checking for TxProfile charging profiles to re-send.`,
+          await this.resendTxProfilesOnResume(
+            tenantId,
+            ocppConnectionName,
+            transaction,
+            transactionId,
+            message.protocol,
           );
-
-          try {
-            // Query active TxProfile charging profiles associated with this transaction
-            const txProfiles = await this._chargingProfileRepository.readTxProfilesWithSchedules(
-              tenantId,
-              ocppConnectionName,
-              transaction.id,
-            );
-
-            if (txProfiles.length > 0) {
-              this._logger.info(
-                `Found ${txProfiles.length} active TxProfile(s) to re-send for ` +
-                  `transaction ${transactionId} on station ${ocppConnectionName}.`,
-              );
-
-              for (const profile of txProfiles) {
-                try {
-                  const chargingProfileType =
-                    OCPP2_0_1_Mapper.ChargingProfileMapper.toChargingProfileType(
-                      profile,
-                      transactionId,
-                    );
-                  await this._ocppSender.sendCall({
-                    ocppConnectionName,
-                    tenantId,
-                    protocol: message.protocol,
-                    action: OCPP_CallAction.SetChargingProfile,
-                    eventGroup: EventGroup.Transactions,
-                    payload: {
-                      evseId: profile.evseId ?? transaction.evseId,
-                      chargingProfile: chargingProfileType,
-                    } as OCPP2_request_types.SetChargingProfileRequest,
-                  });
-                  this._logger.info(
-                    `Re-sent TxProfile id=${profile.id} for transaction ${transactionId} ` +
-                      `on station ${ocppConnectionName}.`,
-                  );
-                } catch (sendError) {
-                  this._logger.error(
-                    `Failed to re-send TxProfile id=${profile.id} for ` +
-                      `transaction ${transactionId} on station ${ocppConnectionName}`,
-                    sendError,
-                  );
-                }
-              }
-            } else {
-              this._logger.debug(
-                `No active TxProfile charging profiles found for ` +
-                  `transaction ${transactionId} on station ${ocppConnectionName}.`,
-              );
-            }
-          } catch (error) {
-            this._logger.error(
-              `Failed to query TxProfile charging profiles for ` +
-                `transaction ${transactionId} on station ${ocppConnectionName}`,
-              error,
-            );
-          }
         }
       }
     }
@@ -675,6 +620,91 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
         message.context.tenantId,
         this._costUpdatedInterval,
         message.protocol,
+      );
+    }
+  }
+
+  private async resendTxProfilesOnResume(
+    tenantId: number,
+    ocppConnectionName: string,
+    transaction: TransactionDto,
+    transactionId: string,
+    protocol: OCPPVersionType,
+  ): Promise<void> {
+    this._logger.info(
+      `Transaction ${transactionId} resumed on station ${ocppConnectionName}. ` +
+        `Checking for TxProfile charging profiles to re-send.`,
+    );
+
+    try {
+      const txProfilePersistence: VariableAttributeDto[] =
+        await this._variableAttributeRepository.readAllByQuerystring(tenantId, {
+          tenantId,
+          ocppConnectionName,
+          component_name: 'SmartChargingCtrlr',
+          variable_name: 'ChargingProfilePersistence',
+          variable_instance: 'TxProfile',
+          type: AttributeEnum.Actual,
+        });
+      if (txProfilePersistence[0]?.value?.toLowerCase() === 'true') {
+        this._logger.debug(
+          `Station ${ocppConnectionName} persists TxProfiles across reboot; ` +
+            `not re-sending for transaction ${transactionId}.`,
+        );
+        return;
+      }
+
+      // Query active TxProfile charging profiles associated with this transaction
+      const txProfiles = await this._chargingProfileRepository.readTxProfilesWithSchedules(
+        tenantId,
+        ocppConnectionName,
+        transaction.id,
+      );
+
+      if (txProfiles.length > 0) {
+        this._logger.info(
+          `Found ${txProfiles.length} active TxProfile(s) to re-send for ` +
+            `transaction ${transactionId} on station ${ocppConnectionName}.`,
+        );
+
+        for (const profile of txProfiles) {
+          try {
+            const chargingProfileType =
+              OCPP2_0_1_Mapper.ChargingProfileMapper.toChargingProfileType(profile, transactionId);
+            await this._ocppSender.sendCall({
+              ocppConnectionName,
+              tenantId,
+              protocol,
+              action: OCPP_CallAction.SetChargingProfile,
+              eventGroup: EventGroup.Transactions,
+              payload: {
+                evseId: profile.evseId ?? transaction.evseId,
+                chargingProfile: chargingProfileType,
+              } as OCPP2_request_types.SetChargingProfileRequest,
+            });
+            this._logger.info(
+              `Re-sent TxProfile id=${profile.id} for transaction ${transactionId} ` +
+                `on station ${ocppConnectionName}.`,
+            );
+          } catch (sendError) {
+            this._logger.error(
+              `Failed to re-send TxProfile id=${profile.id} for ` +
+                `transaction ${transactionId} on station ${ocppConnectionName}`,
+              sendError,
+            );
+          }
+        }
+      } else {
+        this._logger.debug(
+          `No active TxProfile charging profiles found for ` +
+            `transaction ${transactionId} on station ${ocppConnectionName}.`,
+        );
+      }
+    } catch (error) {
+      this._logger.error(
+        `Failed to query TxProfile charging profiles for ` +
+          `transaction ${transactionId} on station ${ocppConnectionName}`,
+        error,
       );
     }
   }
