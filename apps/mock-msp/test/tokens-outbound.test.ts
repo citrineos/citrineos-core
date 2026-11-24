@@ -88,7 +88,7 @@ describe('outbound tokens: push -> patch -> verify', () => {
     expect(typeof sent.last_updated).toBe('string'); // ISO stamp, on the wire as a string
     // Functional routing headers present (from=us, to=CPO).
     expect(patch!.headers['ocpi-from-party-id']).toBe('TST');
-    expect(patch!.headers['ocpi-to-party-id']).toBe('S44');
+    expect(patch!.headers['ocpi-to-party-id']).toBe('COS');
 
     const exchanges = ctx.store.query({ direction: 'outbound', operation: 'tokens.patch' });
     expect(exchanges.length).toBe(1);

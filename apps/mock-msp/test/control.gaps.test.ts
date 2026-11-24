@@ -36,7 +36,7 @@ function callbackHeaders(): Record<string, string> {
     'x-request-id': 'cb-req',
     'x-correlation-id': 'cb-cor',
     'ocpi-from-country-code': 'US',
-    'ocpi-from-party-id': 'S44',
+    'ocpi-from-party-id': 'COS',
     'ocpi-to-country-code': 'US',
     'ocpi-to-party-id': 'TST',
   };
@@ -107,7 +107,7 @@ describe('inspection routes: filters, slices, wait', () => {
 
     const ok = await app.inject({
       method: 'GET',
-      url: '/_mock/exchanges?method=put&validationOk=true&from.cc=US&from.party=S44&to.party=TST&minSeq=1',
+      url: '/_mock/exchanges?method=put&validationOk=true&from.cc=US&from.party=COS&to.party=TST&minSeq=1',
     });
     expect(ok.json()).toHaveLength(1);
     expect(ok.json()[0].request.path).toContain('Q-OK');

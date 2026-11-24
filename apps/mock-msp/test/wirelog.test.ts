@@ -29,7 +29,7 @@ function sampleExchange(store: Store, overrides: Partial<Exchange> = {}): Exchan
     headers: { Authorization: 'Token abc', 'x-request-id': 'r1', 'Content-Type': 'json' },
     rawBody: '{"id":"S1"}',
     body: { id: 'S1' },
-    ocpi: { requestId: 'r1', token: 'secret-token-value', from: { cc: 'US', party: 'S44' } },
+    ocpi: { requestId: 'r1', token: 'secret-token-value', from: { cc: 'US', party: 'COS' } },
   };
   ex.response = {
     httpStatus: 200,
@@ -90,7 +90,7 @@ describe('WireLogger', () => {
         query: { x: '1' },
         headers: { Authorization: 'Token ***', 'x-request-id': 'r1', 'Content-Type': 'json' },
         body: { id: 'S1' },
-        ocpi: { requestId: 'r1', token: 'sec***', from: { cc: 'US', party: 'S44' } },
+        ocpi: { requestId: 'r1', token: 'sec***', from: { cc: 'US', party: 'COS' } },
       },
       response: { httpStatus: 200, ocpiStatusCode: 1000, body: { status_code: 1000 } },
       validation: { ok: true },

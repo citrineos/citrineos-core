@@ -56,10 +56,10 @@ SCENARIO_FILE="$SCRIPT_DIR/../scenarios/preregistered.json"
 
 # Identities. These mirror src/config.ts defaults, which mirror the seeded EMSP
 # partner in apps/ocpi-server/db/seeders/20250806120002-default-tenant-partner.ts.
-#   US/S44 = the CPO (Citrine)  -- whose role this script plays
+#   US/COS = the CPO (Citrine)  -- whose role this script plays
 #   US/TST = the eMSP (the mock) -- "TestMobilitySolutions"
 CPO_CC="${MOCK_MSP_CPO_COUNTRY_CODE:-US}"
-CPO_PARTY="${MOCK_MSP_CPO_PARTY_ID:-S44}"
+CPO_PARTY="${MOCK_MSP_CPO_PARTY_ID:-COS}"
 MSP_CC="${MOCK_MSP_COUNTRY_CODE:-US}"
 MSP_PARTY="${MOCK_MSP_PARTY_ID:-TST}"
 
@@ -156,7 +156,7 @@ ocpi_registration() {
 
 # ocpi_functional METHOD PATH [BODY] [AUTH]
 # Functional endpoints demand the full four-header routing block, strictly
-# checked: OCPI-from must be the CPO (US/S44), OCPI-to must be us (US/TST).
+# checked: OCPI-from must be the CPO (US/COS), OCPI-to must be us (US/TST).
 # Anything else is a 401 + a header Finding.
 ocpi_functional() {
   local method="$1" path="$2" body="${3:-}" authv="${4:-$AUTH}"
@@ -178,7 +178,7 @@ ocpi_functional() {
 # PRE-FLIGHT
 # ============================================================================
 printf '=== mock-msp demo seed -> %s ===\n' "$BASE"
-say "playing CitrineOS's role (US/S44) against the mock eMSP (US/TST)"
+say "playing CitrineOS's role (US/COS) against the mock eMSP (US/TST)"
 say "this is curl in Citrine's clothing -- see the header of this file"
 
 # Retry briefly rather than failing on the first miss, so `demo-up.sh &&
@@ -274,7 +274,7 @@ pause
 step 'happy path -- PUT a fully schema-valid Session'
 ocpi_functional PUT "/ocpi/2.2.1/emsp/sessions/$CPO_CC/$CPO_PARTY/SESSION-DEMO-1" '{
   "country_code": "US",
-  "party_id": "S44",
+  "party_id": "COS",
   "id": "SESSION-DEMO-1",
   "start_date_time": "2026-07-17T09:00:00.000Z",
   "kwh": 18.5,
@@ -327,7 +327,7 @@ pause
 step 'schema drift -- PUT a Location whose coordinates fail the GeoLocation regex'
 ocpi_functional PUT "/ocpi/2.2.1/emsp/locations/$CPO_CC/$CPO_PARTY/LOC-DEMO-1" '{
   "country_code": "US",
-  "party_id": "S44",
+  "party_id": "COS",
   "id": "LOC-DEMO-1",
   "publish": true,
   "name": "Demo Depot",
@@ -391,7 +391,7 @@ pause
 # proving the status came from the adversary, not from the data.
 ocpi_functional POST '/ocpi/2.2.1/emsp/cdrs' '{
   "country_code": "US",
-  "party_id": "S44",
+  "party_id": "COS",
   "id": "CDR-DEMO-1",
   "start_date_time": "2026-07-17T09:00:00.000Z",
   "end_date_time": "2026-07-17T10:00:00.000Z",
@@ -415,7 +415,7 @@ ocpi_functional POST '/ocpi/2.2.1/emsp/cdrs' '{
     "country": "USA",
     "coordinates": { "latitude": "37.774929", "longitude": "-122.419418" },
     "evse_uid": "EVSE-DEMO-1",
-    "evse_id": "US*S44*E00001",
+    "evse_id": "US*COS*E00001",
     "connector_id": "1",
     "connector_standard": "IEC_62196_T2",
     "connector_format": "SOCKET",

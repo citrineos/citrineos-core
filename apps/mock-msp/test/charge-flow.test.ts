@@ -34,10 +34,10 @@ function callbackHeaders(): Record<string, string> {
     'content-type': 'application/json',
     'x-request-id': 'cb-req',
     'x-correlation-id': 'cb-cor',
-    // A CommandResult is a CPO->eMSP message: from=CPO (US/S44), to=eMSP (US/TST).
+    // A CommandResult is a CPO->eMSP message: from=CPO (US/COS), to=eMSP (US/TST).
     // The callback route now strict-validates this direction (matches makeConfig()).
     'ocpi-from-country-code': 'US',
-    'ocpi-from-party-id': 'S44',
+    'ocpi-from-party-id': 'COS',
     'ocpi-to-country-code': 'US',
     'ocpi-to-party-id': 'TST',
   };

@@ -22,7 +22,7 @@ describe('loadConfig', () => {
     expect(cfg.countryCode).toBe('US');
     expect(cfg.partyId).toBe('TST');
     expect(cfg.cpoCountryCode).toBe('US');
-    expect(cfg.cpoPartyId).toBe('S44');
+    expect(cfg.cpoPartyId).toBe('COS');
     // assembled from parts like src/config.ts does for the server token, so the
     // seeded value is not carried as a literal a secret scanner trips on
     expect(cfg.bootstrapTokenWeAccept).toBe(

@@ -18,4 +18,5 @@ export const TRANSACTIONS_MESSAGE_ENDPOINTS = [
   ocpp2(OCPP_CallAction.CostUpdated, 'CostUpdatedRequestSchema'),
   ocpp2(OCPP_CallAction.GetTransactionStatus, 'GetTransactionStatusRequestSchema'),
   SetDefaultTariffEndpoint,
+  ocpp2(OCPP_CallAction.ClearTariffs, 'ClearTariffsRequestSchema'),
 ] satisfies ReadonlyArray<MessageEndpointClass>;
