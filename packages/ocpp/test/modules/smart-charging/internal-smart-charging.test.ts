@@ -167,4 +167,58 @@ describe('InternalSmartCharging.calculateChargingProfile', () => {
   it('uses the next stored profile id when the station does not report MaxExternalConstraintsId', async () => {
     expect(await profileId()).toBe(1);
   });
+
+  it('clamps charging schedule duration to 0 when departureTime is in the past', async () => {
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date('2026-06-01T12:00:00.000Z'));
+      const request = aRequest({ evMaxCurrent: EV_MAX_CURRENT_A, evMaxVoltage: EV_MAX_VOLTAGE_V });
+      request.chargingNeeds.departureTime = '2026-06-01T11:45:00.000Z';
+
+      const profile = await smartCharging.calculateChargingProfile(
+        request,
+        aTransaction(),
+        DEFAULT_TENANT_ID,
+        STATION,
+      );
+
+      expect(profile.chargingSchedule[0].duration).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('computes non-negative charging schedule duration for a future departureTime', async () => {
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date('2026-06-01T12:00:00.000Z'));
+      const request = aRequest({ evMaxCurrent: EV_MAX_CURRENT_A, evMaxVoltage: EV_MAX_VOLTAGE_V });
+      request.chargingNeeds.departureTime = '2026-06-01T13:00:00.000Z';
+
+      const profile = await smartCharging.calculateChargingProfile(
+        request,
+        aTransaction(),
+        DEFAULT_TENANT_ID,
+        STATION,
+      );
+
+      expect(profile.chargingSchedule[0].duration).toBe(3600);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('omits charging schedule duration when departureTime is not a valid date', async () => {
+    const request = aRequest({ evMaxCurrent: EV_MAX_CURRENT_A, evMaxVoltage: EV_MAX_VOLTAGE_V });
+    request.chargingNeeds.departureTime = 'not-a-date';
+
+    const profile = await smartCharging.calculateChargingProfile(
+      request,
+      aTransaction(),
+      DEFAULT_TENANT_ID,
+      STATION,
+    );
+
+    expect(profile.chargingSchedule[0].duration).toBeUndefined();
+  });
 });
