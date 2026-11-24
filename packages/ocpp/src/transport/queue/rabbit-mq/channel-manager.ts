@@ -2,14 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { childLogger } from '@citrineos/base';
+import { EventEmitter } from 'node:events';
 import amqp from 'amqplib';
+import { childLogger } from '@citrineos/base';
 import type { ILogObj, Logger } from 'tslog';
 import type { RabbitMQConnectionManager } from './connection-manager.js';
 
-export class RabbitMQChannelManager {
+export class RabbitMQChannelManager extends EventEmitter {
   private channelMap = new Map<string, amqp.Channel | null>();
   private pendingChannels = new Map<string, Promise<amqp.Channel>>();
+  private intentionallyClosing = new Set<amqp.Channel>();
 
   protected _logger: Logger<ILogObj>;
 
@@ -22,6 +24,7 @@ export class RabbitMQChannelManager {
     connectionManager: RabbitMQConnectionManager;
     logger?: Logger<ILogObj>;
   }) {
+    super();
     this._logger = childLogger(logger, this.constructor.name);
 
     this.connectionManager = connectionManager;
@@ -42,30 +45,38 @@ export class RabbitMQChannelManager {
   }
 
   async getChannel(channelId: string): Promise<amqp.Channel> {
-    const channel = this.channelMap.get(channelId);
-    if (channel) {
-      return channel;
-    }
+    let channel = this.channelMap.get(channelId);
 
-    const inFlight = this.pendingChannels.get(channelId);
-    if (inFlight) {
-      return inFlight;
-    }
-
-    const pending: Promise<amqp.Channel> = this.createChannel(channelId).finally(() => {
-      if (this.pendingChannels.get(channelId) === pending) {
-        this.pendingChannels.delete(channelId);
+    if (!channel) {
+      let pending = this.pendingChannels.get(channelId);
+      if (!pending) {
+        pending = this.createChannel(channelId);
+        this.pendingChannels.set(channelId, pending);
       }
-    });
-    this.pendingChannels.set(channelId, pending);
-    return pending;
+      try {
+        channel = await pending;
+      } finally {
+        if (this.pendingChannels.get(channelId) === pending) {
+          this.pendingChannels.delete(channelId);
+        }
+      }
+    }
+
+    return channel;
   }
 
   async closeChannel(channelId: string): Promise<void> {
     const channel = this.channelMap.get(channelId);
     if (channel) {
-      await channel.close();
-      this.channelMap.delete(channelId);
+      this.intentionallyClosing.add(channel);
+      try {
+        await channel.close();
+      } finally {
+        this.intentionallyClosing.delete(channel);
+        if (this.channelMap.get(channelId) === channel) {
+          this.channelMap.delete(channelId);
+        }
+      }
     }
   }
 
@@ -76,38 +87,17 @@ export class RabbitMQChannelManager {
   async closeAll(): Promise<void> {
     for (const [id, channel] of this.channelMap) {
       if (channel) {
+        this.intentionallyClosing.add(channel);
         try {
           await channel.close();
         } catch (error) {
           this._logger.error(`Error closing channel ${id}:`, error);
+        } finally {
+          this.intentionallyClosing.delete(channel);
         }
       }
     }
     this.channelMap.clear();
-  }
-
-  private async createChannel(channelId: string): Promise<amqp.Channel> {
-    const connection = await this.connectionManager.connect();
-    const channel = await connection.createChannel();
-
-    const forget = () => {
-      if (this.channelMap.get(channelId) === channel) {
-        this.channelMap.set(channelId, null);
-      }
-    };
-
-    channel.on('error', (err) => {
-      this._logger.error(`Channel ${channelId} error:`, err);
-      forget();
-    });
-
-    channel.on('close', () => {
-      this._logger.info(`Channel ${channelId} closed`);
-      forget();
-    });
-
-    this.channelMap.set(channelId, channel);
-    return channel;
   }
 
   private async recreateChannels(): Promise<void> {
@@ -118,5 +108,27 @@ export class RabbitMQChannelManager {
         });
       }
     }
+  }
+
+  private async createChannel(channelId: string): Promise<amqp.Channel> {
+    const connection = await this.connectionManager.connect();
+    const channel = await connection.createChannel();
+    const invalidate = (reason: 'error' | 'close', error?: Error) => {
+      if (reason === 'error') {
+        this._logger.error(`Channel ${channelId} error:`, error);
+      } else {
+        this._logger.info(`Channel ${channelId} closed`);
+      }
+      if (this.channelMap.get(channelId) !== channel) return;
+      this.channelMap.set(channelId, null);
+      if (!this.intentionallyClosing.has(channel)) {
+        this.emit('channelInvalidated', channelId);
+      }
+    };
+
+    channel.on('error', (error) => invalidate('error', error));
+    channel.on('close', () => invalidate('close'));
+    this.channelMap.set(channelId, channel);
+    return channel;
   }
 }
