@@ -437,6 +437,23 @@ export class SequelizeTransactionEventRepository
     });
   }
 
+  async readTransactionById(tenantId: number, id: number): Promise<TransactionDto | undefined> {
+    return await this.transaction.readOnlyOneByQuery(tenantId, { where: { id } });
+  }
+
+  async readLatestTransactionByAuthorizationId(
+    tenantId: number,
+    authorizationId: number,
+    since: Date,
+  ): Promise<TransactionDto | undefined> {
+    const [latest] = await this.transaction.readAllByQuery(tenantId, {
+      where: { authorizationId, createdAt: { [Op.gte]: since } },
+      order: [['createdAt', 'DESC']],
+      limit: 1,
+    });
+    return latest;
+  }
+
   async readAllActiveTransactionsByAuthorizationId(
     tenantId: number,
     authorizationId: number,

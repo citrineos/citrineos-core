@@ -17,7 +17,8 @@
       "startTime": "Start Time",
       "endTime": "End Time",
       "createdAt": "Created At",
-      "updatedAt": "Updated At"
+      "updatedAt": "Updated At",
+      "previewStation": "Preview Station"
     },
     "detail": {
       "stationId": "Station ID",
@@ -27,7 +28,10 @@
       "startTime": "Start Time",
       "endTime": "End Time",
       "tariff": "Tariff",
-      "timeSpentCharging": "Time Spent Charging"
+      "timeSpentCharging": "Time Spent Charging",
+      "payment": "Payment",
+      "viewReceipt": "View receipt",
+      "viewDriverPage": "View driver's page"
     },
     "tabs": {
       "meterValueData": "Meter Value Data",

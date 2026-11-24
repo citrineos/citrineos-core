@@ -84,10 +84,12 @@ test.describe('charging-stations › OCPP ingestion @everest', () => {
     await detail.goto(everestStation.ocppConnectionName);
 
     // The "Last OCPP Message" KeyValue reads N/A when nothing has been
-    // ingested; against a live station it must hold a real timestamp.
+    // ingested; against a live station it must hold a real timestamp. The
+    // label sits in a row with its optional info tooltip; the value follows
+    // that row.
     const lastOcppValue = page
       .getByText('Last OCPP Message', { exact: true })
-      .locator('xpath=following-sibling::span[1]');
+      .locator('xpath=parent::div/following-sibling::span[1]');
     await expect(lastOcppValue).toBeVisible({ timeout: 30_000 });
     await expect(lastOcppValue).not.toHaveText('N/A');
   });

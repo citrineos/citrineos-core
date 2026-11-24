@@ -36,6 +36,11 @@
     },
     "validation": {
       "currencyCode": "请输入3位字母的币种代码，例如：CNY"
+    },
+    "info": {
+      "pricePerSession": "无论一次充电消耗多少电量或时长都需支付的费用，例如固定费用或必收费用。",
+      "authorizationAmount": "将在信用卡上预授权的金额。使用支付模块时必填。",
+      "tariffAltText": "描述该费率的可读文本。"
     }
   }
 }
