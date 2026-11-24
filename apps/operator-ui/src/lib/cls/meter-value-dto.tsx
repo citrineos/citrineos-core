@@ -35,12 +35,15 @@ export const getTimestampToMeasurandArray = (
   const result: [number, string][] = [];
 
   for (const meterValue of sortedMeterValues) {
+    // A MeterValue without any sampledValue has nothing to plot; reading [0].context off it threw.
+    const firstSampledValue = meterValue.sampledValue?.[0];
+    if (!firstSampledValue) {
+      continue;
+    }
     if (
-      !meterValue.sampledValue[0].context ||
-      (typeof meterValue.sampledValue[0].context === 'string' &&
-        validContextsArg.has(
-          meterValue.sampledValue[0].context as OCPP2_0_1.ReadingContextEnumType,
-        ))
+      !firstSampledValue.context ||
+      (typeof firstSampledValue.context === 'string' &&
+        validContextsArg.has(firstSampledValue.context as OCPP2_0_1.ReadingContextEnumType))
     ) {
       const overallValue = findOverallValue(
         meterValue.sampledValue as unknown as SampledValue[],
@@ -123,11 +126,24 @@ export const findOverallValue = (
   return overallSampledValue;
 };
 
+// When a sampled value carries no unit, OCPP gives each measurand its own default: Energy.* is
+// Wh and Power.* is W (both are shown in kilo-units here), while Voltage, Current.*, Frequency,
+// SoC and the rest have a different default and must not be divided by 1000. A sample with no
+// measurand at all defaults to Energy.Active.Import.Register.
+const defaultsToWattScale = (measurand: string | null | undefined): boolean =>
+  !measurand ||
+  measurand.startsWith('Energy.') ||
+  (measurand.startsWith('Power.') && measurand !== 'Power.Factor');
+
 export const normalizeValue = (overallValue: SampledValue): string | null => {
   let powerOfTen = overallValue.unitOfMeasure?.multiplier ?? 0;
   const unit = overallValue.unitOfMeasure?.unit?.toUpperCase();
 
-  if (unit === undefined || unit === 'WH' || unit === 'W') {
+  if (unit === undefined) {
+    if (defaultsToWattScale(overallValue.measurand)) {
+      powerOfTen -= 3;
+    }
+  } else if (unit === 'WH' || unit === 'W') {
     powerOfTen -= 3;
   } else if (unit === 'PERCENT') {
     powerOfTen -= 2;
