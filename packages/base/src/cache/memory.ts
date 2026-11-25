@@ -151,7 +151,7 @@ export class MemoryCache implements ICache {
     namespace = namespace || 'default';
     const namespaceKey = `${namespace}:${key}`;
     const result = this._cache.get(namespaceKey);
-    if (result) {
+    if (result !== undefined) {
       if (classConstructor) {
         return plainToInstance(classConstructor(), JSON.parse(result));
       }

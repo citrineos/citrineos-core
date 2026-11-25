@@ -117,4 +117,12 @@ describe('CostCalculator', () => {
       expect(total).toEqual({ excl_vat: 0 });
     });
   });
+
+  describe('buildPrice', () => {
+    it('computes exact incl_vat for tax rates whose float multiplier under-represents decimal fractions', () => {
+      // In IEEE-754 float: 1 + 36 / 100 === 1.3599999999999999, 1 + 57 / 100 === 1.5699999999999998
+      expect(buildPrice(100, CURRENCY, 36)).toEqual({ excl_vat: 100, incl_vat: 136 });
+      expect(buildPrice(100, CURRENCY, 57)).toEqual({ excl_vat: 100, incl_vat: 157 });
+    });
+  });
 });

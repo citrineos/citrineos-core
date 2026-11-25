@@ -73,7 +73,11 @@ export class Money {
   }
 
   equals(money: Money): boolean {
-    return this._currency === money._currency && this.amount.eq(money.amount);
+    return (
+      this._currency.code === money._currency.code &&
+      this._currency.scale === money._currency.scale &&
+      this.amount.eq(money.amount)
+    );
   }
 
   greaterThan(money: Money): boolean {

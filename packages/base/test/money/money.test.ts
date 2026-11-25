@@ -507,6 +507,13 @@ describe('money', () => {
       expect(dollars.equals(euros)).toEqual(false);
     });
 
+    it('should return true when comparing equal amounts with distinct Currency instances for the same currency', () => {
+      const a = Money.of('10.00', new Currency('USD', 2));
+      const b = Money.of('10.00', Currency.of('USD'));
+
+      expect(a.equals(b)).toEqual(true);
+    });
+
     it.each([
       [Money.USD('0.00'), Money.USD('1.00')],
       [Money.USD('0.00000000000000000001'), Money.USD('0.00000000000000000002')],
