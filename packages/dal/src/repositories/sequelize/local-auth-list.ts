@@ -71,6 +71,7 @@ export class SequelizeLocalAuthListRepository
         const tombstone = await this.localListAuthorization.create(
           tenantId,
           LocalListAuthorization.build({
+            tenantId,
             idToken: authData.idToken.idToken,
             idTokenType: AuthorizationMapper.fromIdTokenEnumType(authData.idToken.type),
             status: 'Invalid',
@@ -220,7 +221,7 @@ export class SequelizeLocalAuthListRepository
         groupAuthorizationId = parent.id;
       }
 
-      const { id: _id, ...baseFields } = auth;
+      const { id: _id, ...baseFields } = auth.get({ plain: true });
 
       const localListAuthorization = await this.localListAuthorization.create(
         tenantId,

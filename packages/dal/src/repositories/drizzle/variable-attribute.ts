@@ -102,11 +102,12 @@ export class DrizzleVariableAttributeRepository
     config,
     logger,
     drizzleInstance,
+    useTenantSchema,
     componentRepository,
   }: DrizzleRepositoryDependencies & {
     componentRepository: DrizzleComponentRepository;
   }) {
-    super({ config, logger, drizzleInstance });
+    super({ config, logger, drizzleInstance, useTenantSchema });
 
     this._componentRepository = componentRepository;
   }
@@ -119,17 +120,19 @@ export class DrizzleVariableAttributeRepository
     return toVariableAttributeDto(row);
   }
 
-  private async createVariableAttributeConditions(query: VariableAttributeQuerystring) {
-    const conditions = [];
+  private async createVariableAttributeConditions(
+    table: typeof variableAttributeTable,
+    query: VariableAttributeQuerystring,
+  ): Promise<SQL[]> {
+    const conditions: SQL[] = [];
 
-    if (query.ocppConnectionName) {
-      conditions.push(
-        await this.stationFilter(variableAttributeTable, query.tenantId, query.ocppConnectionName),
-      );
+    const tenantCondition = this.tenantFilter(table, query.tenantId);
+    if (tenantCondition) {
+      conditions.push(tenantCondition);
     }
 
-    if (query.tenantId) {
-      conditions.push(eq(variableAttributeTable.tenantId, query.tenantId));
+    if (query.ocppConnectionName) {
+      conditions.push(await this.stationFilter(table, query.tenantId, query.ocppConnectionName));
     }
 
     // TODO implement remaining conditions as needed
@@ -509,10 +512,20 @@ export class DrizzleVariableAttributeRepository
     query: VariableAttributeQuerystring,
     value: object,
   ): Promise<VariableAttributeDto[]> {
+    if (query.tenantId === undefined) {
+      return [];
+    }
+
+    const table = this.getTable(query.tenantId);
+    const conditions = await this.createVariableAttributeConditions(table, query);
+    if (conditions.length === 0 && !this.useTenantSchema) {
+      return [];
+    }
+
     const rows = (await this.db
-      .update(variableAttributeTable)
+      .update(table)
       .set(value)
-      .where(and(...(await this.createVariableAttributeConditions(query))))
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
       .returning()) as VariableAttributeEntity[];
 
     const dtos = rows.map((row) => this.toDto(row));

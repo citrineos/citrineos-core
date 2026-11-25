@@ -64,7 +64,7 @@ export function toConnectorDto(entity: ConnectorEntity): ConnectorDto {
   return dto;
 }
 
-function writableConnectorColumns(connector: Partial<ConnectorDto>) {
+export function writableConnectorColumns(connector: Partial<ConnectorDto>) {
   return prune({
     stationId: connector.stationId,
     evseId: connector.evseId,
@@ -83,6 +83,7 @@ function writableConnectorColumns(connector: Partial<ConnectorDto>) {
     vendorId: connector.vendorId,
     vendorErrorCode: connector.vendorErrorCode,
     termsAndConditionsUrl: connector.termsAndConditionsUrl,
+    tariffId: connector.tariffId,
     latestStatusNotificationId: connector.latestStatusNotificationId,
   });
 }
