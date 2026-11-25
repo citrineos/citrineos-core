@@ -17,6 +17,7 @@ import type { OcpiDependencies } from '../server/dependencies.js';
 import type { TokenDTO } from '../types/dto/token-dto.js';
 import { TokenType } from '../types/token-type.js';
 import { WhitelistType } from '../types/whitelist-type.js';
+import { toOcpiDateTime } from '../util/date-time.js';
 
 export class TokensMapper {
   private readonly logger: Logger<ILogObj>;
@@ -42,7 +43,7 @@ export class TokensMapper {
       language: authorization.language1,
       // default_profile_type: token.default_profile_type,
       // energy_contract: token.energy_contract,
-      last_updated: authorization.updatedAt!,
+      last_updated: toOcpiDateTime(authorization.updatedAt!),
     };
 
     return tokenDto;

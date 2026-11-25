@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { KoaMiddlewareInterface } from 'routing-controllers';
-import type { Context } from 'vm';
+import type { Context } from 'koa';
 import { OcpiHttpHeader } from '../../util/ocpi-http-header.js';
 import { BaseMiddleware } from './base-middleware.js';
 

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { Context } from 'vm';
+import type { Context } from 'koa';
 
 /**
  * Helper Base class for middlewares
@@ -13,7 +13,11 @@ export class BaseMiddleware {
     return headers[header.toLowerCase()];
   }
 
-  protected setHeaderIfPresent(context: Context, header: string, value: unknown) {
+  protected setHeaderIfPresent(
+    context: Context,
+    header: string,
+    value: string | string[] | undefined | null,
+  ) {
     if (value === undefined || value === null) {
       return;
     }

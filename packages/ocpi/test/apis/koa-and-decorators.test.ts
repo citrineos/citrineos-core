@@ -290,6 +290,13 @@ describe('param decorators', () => {
     expect(() => extractToken('Bearer abc')).toThrow('Invalid Authorization header format');
   });
 
+  it.each(['Token ', 'Token   ', 'Token not-base64!', 'Token abc', 'Token ab==', 'Token YQ='])(
+    'extractToken rejects empty or malformed base64 header %j',
+    (header) => {
+      expect(() => extractToken(header)).toThrow('Invalid base64 token');
+    },
+  );
+
   it('FunctionalEndpointParams builds OcpiHeaders from lowercased request headers', () => {
     class HeadersFixture {
       cmd() {}

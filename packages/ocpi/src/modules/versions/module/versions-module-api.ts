@@ -7,16 +7,19 @@ import {
   BaseController,
   ModuleId,
   ResponseSchema,
+  VersionDetailsResponseDTOSchema,
+  VersionDetailsResponseDTOSchemaName,
   versionIdParam,
   VersionListResponseDTOSchema,
   VersionListResponseDTOSchemaName,
   VersionNumber,
   VersionNumberParam,
   VersionService,
+  WrongClientAccessException,
 } from '../../../../index.js';
 import { HttpStatus } from '@citrineos/base';
 import type { IVersionsModuleApi } from './i-versions-module-api.js';
-import { Get, JsonController, Param } from 'routing-controllers';
+import { Ctx, Get, JsonController, Param } from 'routing-controllers';
 import type { OcpiDependencies } from '../../../server/dependencies.js';
 
 export interface VersionsModuleApiDependencies extends OcpiDependencies {
@@ -39,13 +42,17 @@ export class VersionsModuleApi extends BaseController implements IVersionsModule
     description: 'Successful response',
     // examples: {}, // todo real example
   })
-  async getVersions(@Param('tenant_id') tenantId: number): Promise<VersionListResponseDTO> {
+  async getVersions(
+    @Param('tenant_id') tenantId: number,
+    @Ctx() ctx?: { state?: { tenantPartner?: { tenantId?: number } } },
+  ): Promise<VersionListResponseDTO> {
+    this._assertTenantAccess(tenantId, ctx);
     return this.versionService.getVersions(tenantId);
   }
 
   @Get(`/:tenant_id/:${versionIdParam}`)
   @AsOcpiRegistrationEndpoint()
-  @ResponseSchema(VersionListResponseDTOSchema, VersionListResponseDTOSchemaName, {
+  @ResponseSchema(VersionDetailsResponseDTOSchema, VersionDetailsResponseDTOSchemaName, {
     statusCode: HttpStatus.OK,
     description: 'Successful response',
     // examples: {}, // todo real example
@@ -53,7 +60,18 @@ export class VersionsModuleApi extends BaseController implements IVersionsModule
   async getVersionDetails(
     @Param('tenant_id') tenantId: number,
     @VersionNumberParam() versionNumber: VersionNumber,
+    @Ctx() ctx?: { state?: { tenantPartner?: { tenantId?: number } } },
   ): Promise<VersionDetailsResponseDTO> {
+    this._assertTenantAccess(tenantId, ctx);
     return this.versionService.getVersionDetails(tenantId, versionNumber);
+  }
+
+  private _assertTenantAccess(
+    tenantId: number,
+    ctx?: { state?: { tenantPartner?: { tenantId?: number } } },
+  ): void {
+    if (ctx && Number(tenantId) !== ctx.state?.tenantPartner?.tenantId) {
+      throw new WrongClientAccessException(`Client is not authorized to access tenant ${tenantId}`);
+    }
   }
 }

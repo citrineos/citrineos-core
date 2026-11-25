@@ -109,4 +109,19 @@ describe('Session auth_method on a partial update', () => {
 
     expect(session.auth_method).toBe(AuthMethod.COMMAND);
   });
+
+  it('coerces pg NOTIFY timestamptz strings to Date in partial updates with or without context', async () => {
+    const ts = '2026-08-20T10:30:00.123456+00:00';
+    const expected = new Date('2026-08-20T10:30:00.123Z');
+
+    const withContext = await aPartialMapper().mapPartialTransactionToPartialSession(
+      anUpdateNotification({ updatedAt: ts as unknown as Date }),
+    );
+    expect(withContext.last_updated).toEqual(expected);
+
+    const withoutContext = await aPartialMapper('failed').mapPartialTransactionToPartialSession(
+      anUpdateNotification({ updatedAt: ts as unknown as Date }),
+    );
+    expect(withoutContext.last_updated).toEqual(expected);
+  });
 });

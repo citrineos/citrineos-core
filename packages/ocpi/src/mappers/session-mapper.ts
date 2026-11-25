@@ -24,6 +24,7 @@ import type { LocationDTO } from '../types/dto/location-dto.js';
 import { UID_FORMAT } from '../types/dto/evse-dto.js';
 import { calculateTotalCdrCost } from './cdr-cost.js';
 import { MeterValueUtils } from '@citrineos/base';
+import { toOcpiDateTime, toOptionalOcpiDateTime } from '../util/date-time.js';
 
 interface ChargingPeriodSpan {
   meterValue: MeterValueDto;
@@ -174,7 +175,7 @@ export class SessionMapper extends BaseTransactionMapper {
     }
 
     if (transaction.updatedAt !== undefined) {
-      session.last_updated = transaction.updatedAt!;
+      session.last_updated = toOptionalOcpiDateTime(transaction.updatedAt);
     }
 
     // Map context-dependent fields if available
@@ -265,7 +266,7 @@ export class SessionMapper extends BaseTransactionMapper {
     }
 
     if (transaction.updatedAt !== undefined) {
-      session.last_updated = transaction.updatedAt!;
+      session.last_updated = toOptionalOcpiDateTime(transaction.updatedAt);
     }
 
     if (transaction.evseId && transaction.station?.ocppConnectionName) {
@@ -306,7 +307,7 @@ export class SessionMapper extends BaseTransactionMapper {
             this.logger.error(
               `Transaction ${transaction.transactionId} has no startTime. Using createdAt as placeholder.`,
             );
-            return transaction.createdAt!;
+            return toOcpiDateTime(transaction.createdAt!);
           })(),
       end_date_time: transaction.endTime ? new Date(transaction.endTime) : null,
       kwh: transaction.totalKwh || 0,
@@ -322,7 +323,7 @@ export class SessionMapper extends BaseTransactionMapper {
         transaction.startTime,
       ),
       status: this.getTransactionStatus(transaction),
-      last_updated: transaction.updatedAt!,
+      last_updated: toOcpiDateTime(transaction.updatedAt!),
       // TODO: Fill in optional values
       authorization_reference: null,
       total_cost: null,

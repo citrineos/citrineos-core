@@ -146,7 +146,7 @@ export class TokensModuleApi extends BaseController implements ITokensModuleApi 
     @Param('partyId') partyId: string,
     @Param('tokenId') tokenId: string,
     @FunctionalEndpointParams() ocpiHeader: OcpiHeaders,
-    @BodyWithExample(TokenDTOSchema, TokenTypeSchemaName) tokenDTO: TokenDTO,
+    @BodyWithExample(TokenDTOSchema, TokenDTOSchemaName) tokenDTO: TokenDTO,
     @EnumQueryParam('type', TokenTypeSchema, TokenTypeSchemaName)
     type?: TokenType,
     @Ctx() ctx?: any,

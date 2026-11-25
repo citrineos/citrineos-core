@@ -7,5 +7,6 @@ import { VersionDetailsDTOSchema } from './version-details-dto.js';
 import { OcpiResponseSchema } from '../ocpi-response.js';
 
 export const VersionDetailsResponseDTOSchema = OcpiResponseSchema(VersionDetailsDTOSchema);
+export const VersionDetailsResponseDTOSchemaName = 'VersionDetailsResponseDTOSchema';
 
 export type VersionDetailsResponseDTO = z.infer<typeof VersionDetailsResponseDTOSchema>;

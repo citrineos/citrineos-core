@@ -7,6 +7,7 @@ import { BadRequestError, NotFoundError, UnauthorizedError } from 'routing-contr
 import { UnauthorizedException } from '@citrineos/base';
 
 import { AdminAuthMiddleware } from '@ocpi/apis/middleware/admin-auth-middleware.js';
+import * as oidcAuthModule from '@ocpi/apis/middleware/oidc-auth-middleware.js';
 import {
   AuthMiddleware,
   RegistrationAuthMiddleware,
@@ -86,6 +87,24 @@ describe('AdminAuthMiddleware', () => {
     expect(ctx.status).toBe(401);
     expect(ctx.body).toEqual({ error: 'Missing or invalid Authorization header' });
     expect(next).not.toHaveBeenCalled();
+  });
+
+  it('constructs oidcAuthMiddleware once per instance so the JWKS cache is reused across requests', async () => {
+    const inner = vi.fn().mockResolvedValue('ok');
+    const spy = vi.spyOn(oidcAuthModule, 'oidcAuthMiddleware').mockReturnValue(inner);
+    try {
+      const middleware = new AdminAuthMiddleware({
+        config: { oidc: { jwksUri: 'https://idp.test/jwks.json', issuer: 'https://idp.test/' } },
+      } as never);
+
+      await middleware.use({} as never, vi.fn());
+      await middleware.use({} as never, vi.fn());
+
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(inner).toHaveBeenCalledTimes(2);
+    } finally {
+      spy.mockRestore();
+    }
   });
 });
 
@@ -197,6 +216,18 @@ describe('AuthMiddleware', () => {
     await authMiddlewareWith(client).use(ctx, next);
 
     expectOcpiUnauthorized(ctx);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('answers 401 without querying graphql when the base64 token is malformed', async () => {
+    const client = { request: vi.fn() };
+    const next = vi.fn();
+    const ctx = ocpiCtx({ authorization: 'Token !!!', ...MATCHING_ROUTING_HEADERS });
+
+    await authMiddlewareWith(client).use(ctx, next);
+
+    expectOcpiUnauthorized(ctx);
+    expect(client.request).not.toHaveBeenCalled();
     expect(next).not.toHaveBeenCalled();
   });
 });

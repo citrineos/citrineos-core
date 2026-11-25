@@ -37,8 +37,8 @@ describe('PaginatedMiddleware', () => {
 
     await new PaginatedMiddleware().use(ctx, next);
 
-    expect(set['X-Total-Count']).toBe(30);
-    expect(set['X-Limit']).toBe(10);
+    expect(set['X-Total-Count']).toBe('30');
+    expect(set['X-Limit']).toBe('10');
     expect(String(set['Link'])).toContain('offset=10');
     expect(body).not.toHaveProperty('total');
     expect(body).not.toHaveProperty('limit');
@@ -59,8 +59,8 @@ describe('PaginatedMiddleware', () => {
     await new PaginatedMiddleware().use(ctx, next);
 
     expect(set).not.toHaveProperty('Link');
-    expect(set['X-Total-Count']).toBe(30);
-    expect(set['X-Limit']).toBe(10);
+    expect(set['X-Total-Count']).toBe('30');
+    expect(set['X-Limit']).toBe('10');
   });
 
   it('leaves a response that carries no paging alone', async () => {
@@ -80,5 +80,20 @@ describe('PaginatedMiddleware', () => {
 
     expect(errorBody).toEqual({ status_code: 2001, status_message: 'Invalid parameters' });
     expect(set).not.toHaveProperty('X-Total-Count');
+  });
+
+  it('strips internal pagination fields including link from the response body', async () => {
+    const body = {
+      data: [1, 2],
+      total: 30,
+      limit: 10,
+      offset: 0,
+      link: 'https://internal.example/next',
+    };
+    const { ctx } = aContext(body);
+
+    await new PaginatedMiddleware().use(ctx, next);
+
+    expect(body).toEqual({ data: [1, 2] });
   });
 });

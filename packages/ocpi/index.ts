@@ -135,6 +135,10 @@ export {
 export type { OcpiStringResponse } from './src/types/ocpi-string-response.js';
 export { VersionNumber } from './src/types/version-number.js';
 export type { VersionDetailsResponseDTO } from './src/types/dto/version-details-response-dto.js';
+export {
+  VersionDetailsResponseDTOSchema,
+  VersionDetailsResponseDTOSchemaName,
+} from './src/types/dto/version-details-response-dto.js';
 export type { VersionListResponseDTO } from './src/types/dto/version-list-response-dto.js';
 export {
   VersionListResponseDTOSchema,

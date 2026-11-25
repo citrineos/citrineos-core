@@ -197,4 +197,13 @@ describe('TokensMapper GraphQL helpers', () => {
     expect(set.idToken).toBe('MYTOKEN001');
     expect(set.status).toBe(AuthorizationStatusEnum.Invalid);
   });
+
+  it('coerces string updatedAt timestamptz into a Date object in toDto', () => {
+    const dto = mapper.toDto(
+      anAuthorization({
+        updatedAt: '2026-08-20T11:00:00.123456+00:00' as unknown as Date,
+      }),
+    );
+    expect(dto.last_updated).toEqual(new Date('2026-08-20T11:00:00.123Z'));
+  });
 });

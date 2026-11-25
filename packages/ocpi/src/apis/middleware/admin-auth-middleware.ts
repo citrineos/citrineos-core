@@ -10,14 +10,16 @@ import { oidcAuthMiddleware } from './oidc-auth-middleware.js';
 
 export class AdminAuthMiddleware implements KoaMiddlewareInterface {
   private readonly config: OcpiConfig;
+  private readonly oidcMiddleware?: (context: Context, next: Next) => Promise<unknown>;
 
   constructor({ config }: OcpiConfiguredDependencies) {
     this.config = config;
+    this.oidcMiddleware = config?.oidc ? oidcAuthMiddleware(config.oidc) : undefined;
   }
 
   async use(context: Context, next: Next): Promise<unknown> {
-    if (this.config.oidc) {
-      return oidcAuthMiddleware(this.config.oidc)(context, next);
+    if (this.oidcMiddleware) {
+      return this.oidcMiddleware(context, next);
     }
     return next();
   }

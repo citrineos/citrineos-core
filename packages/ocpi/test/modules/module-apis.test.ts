@@ -6,7 +6,15 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 // Barrel first: the ModuleApi files resolve BaseController through src/index.js,
 // so the barrel must finish evaluating before the deep imports below run.
-import { CommandType, OcpiHeaders, PaginatedParams, VersionNumber } from '../../index.js';
+import {
+  CommandType,
+  OcpiHeaders,
+  PaginatedParams,
+  VersionDetailsResponseDTOSchemaName,
+  VersionNumber,
+  WrongClientAccessException,
+} from '../../index.js';
+import { applyOpenAPIDecorator } from '@ocpi/apis/openapi-spec-helper/decorators.js';
 import { CommandsModuleApi } from '@ocpi/modules/commands/module/commands-module-api.js';
 import { LocationsModuleApi } from '@ocpi/modules/locations/module/locations-module-api.js';
 import { SessionsModuleApi } from '@ocpi/modules/sessions/module/sessions-module-api.js';
@@ -433,5 +441,44 @@ describe('VersionsModuleApi', () => {
 
     await expect(api.getVersions(404)).rejects.toThrow('tenant missing');
     expect(versionService.getVersions).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects getVersions and getVersionDetails when tenant_id does not match the authenticated tenant partner', async () => {
+    const { api, versionService } = build();
+    const otherTenantCtx = { state: { tenantPartner: { tenantId: 1 } } };
+
+    await expect(api.getVersions(42, otherTenantCtx)).rejects.toThrow(WrongClientAccessException);
+    await expect(api.getVersionDetails(42, VERSION, otherTenantCtx)).rejects.toThrow(
+      WrongClientAccessException,
+    );
+    await expect(api.getVersions(42, { state: {} })).rejects.toThrow(WrongClientAccessException);
+    expect(versionService.getVersions).not.toHaveBeenCalled();
+    expect(versionService.getVersionDetails).not.toHaveBeenCalled();
+
+    const matchingCtx = { state: { tenantPartner: { tenantId: 42 } } };
+    await expect(api.getVersions(42, matchingCtx)).resolves.toBe(LIST);
+    await expect(api.getVersionDetails(42, VERSION, matchingCtx)).resolves.toBe(DETAILS);
+  });
+
+  it('registers VersionDetailsResponseDTOSchema on getVersionDetails for OpenAPI generation', () => {
+    const operation = applyOpenAPIDecorator(
+      { responses: {} } as never,
+      {
+        action: {
+          target: VersionsModuleApi,
+          method: 'getVersionDetails',
+          route: '/:tenant_id/:versionId',
+          type: 'get',
+        },
+        controller: { target: VersionsModuleApi, route: '/versions', type: 'json' },
+        options: {},
+        params: [],
+        responseHandlers: [],
+      } as never,
+    );
+
+    expect(operation.responses?.['200']?.content?.['application/json']?.schema).toEqual({
+      $ref: `#/components/schemas/${VersionDetailsResponseDTOSchemaName}`,
+    });
   });
 });

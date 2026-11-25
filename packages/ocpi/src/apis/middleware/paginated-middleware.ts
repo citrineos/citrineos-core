@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { KoaMiddlewareInterface } from 'routing-controllers';
-import type { Context } from 'vm';
+import type { Context } from 'koa';
 import { BaseMiddleware } from './base-middleware.js';
 import type { PaginatedResponse } from '../../types/paginated-response.js';
 import { DEFAULT_LIMIT, DEFAULT_OFFSET } from '../../types/paginated-response.js';
@@ -25,11 +25,15 @@ export class PaginatedMiddleware extends BaseMiddleware implements KoaMiddleware
     if (link) {
       context.response.set(OcpiHttpHeader.Link, `<${link}>; rel="next"`);
     }
-    context.response.set(OcpiHttpHeader.XTotalCount, paginatedResponse.total);
-    context.response.set(OcpiHttpHeader.XLimit, paginatedResponse.limit);
+    context.response.set(OcpiHttpHeader.XTotalCount, paginatedResponse.total.toString());
+    context.response.set(
+      OcpiHttpHeader.XLimit,
+      (paginatedResponse.limit ?? DEFAULT_LIMIT).toString(),
+    );
     delete (paginatedResponse as any).limit;
     delete (paginatedResponse as any).offset;
     delete (paginatedResponse as any).total;
+    delete (paginatedResponse as any).link;
   }
 
   private createLink(context: Context, paginatedResponse: PaginatedResponse<any>) {

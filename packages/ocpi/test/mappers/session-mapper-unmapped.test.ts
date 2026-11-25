@@ -78,4 +78,31 @@ describe('SessionMapper.mapTransactionsToSessionsHelper', () => {
 
     expect(warn).not.toHaveBeenCalled();
   });
+
+  it('coerces string createdAt fallback and updatedAt timestamptz values into Date objects', async () => {
+    const logger = new Logger({ type: 'hidden' });
+    const mapper = new SessionMapper({
+      logger,
+      locationsService: {},
+      ocpiGraphqlClient: {},
+    } as never);
+
+    const tx = {
+      ...aTransaction('tx-ts'),
+      startTime: undefined,
+      createdAt: '2026-08-20T09:30:00.123456+00:00',
+      updatedAt: '2026-08-20T11:00:00.654321+00:00',
+    } as unknown as TransactionDto;
+
+    const sessions = await mapper.mapTransactionsToSessionsHelper(
+      [tx],
+      new Map([['tx-ts', aLocation]]),
+      new Map([['tx-ts', aToken]]),
+      new Map([['tx-ts', aTariff]]),
+    );
+
+    expect(sessions).toHaveLength(1);
+    expect(sessions[0].start_date_time).toEqual(new Date('2026-08-20T09:30:00.123Z'));
+    expect(sessions[0].last_updated).toEqual(new Date('2026-08-20T11:00:00.654Z'));
+  });
 });
