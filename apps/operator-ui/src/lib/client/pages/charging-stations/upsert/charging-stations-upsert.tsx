@@ -44,7 +44,6 @@ import {
   useTranslate,
 } from '@refinedev/core';
 import { useForm } from '@refinedev/react-hook-form';
-import { debounce } from 'lodash';
 import { ChevronLeft, UploadIcon } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import z from 'zod';
@@ -172,27 +171,26 @@ export const ChargingStationUpsert = ({
     pagination: {
       mode: 'off',
     },
-    onSearch: (value: string) => {
-      const debouncedSearch = debounce((value: string): CrudFilter[] => {
-        if (!value) {
-          return [];
-        }
-        const valueList = [
-          { field: LocationProps.name, operator: 'contains', value },
-          { field: LocationProps.address, operator: 'contains', value },
-          { field: LocationProps.city, operator: 'contains', value },
-          { field: LocationProps.state, operator: 'contains', value },
-          { field: LocationProps.postalCode, operator: 'contains', value },
-        ];
-        return [
-          {
-            operator: 'or',
-            value: valueList,
-          } as CrudFilter,
-        ];
-      }, 300);
-
-      return debouncedSearch(value) || [];
+    // useSelect debounces onSearch itself. A debounce created inside onSearch is a new function on
+    // every call, so it never fires before returning and the filters always came back empty.
+    debounce: 300,
+    onSearch: (value: string): CrudFilter[] => {
+      if (!value) {
+        return [];
+      }
+      const valueList = [
+        { field: LocationProps.name, operator: 'contains', value },
+        { field: LocationProps.address, operator: 'contains', value },
+        { field: LocationProps.city, operator: 'contains', value },
+        { field: LocationProps.state, operator: 'contains', value },
+        { field: LocationProps.postalCode, operator: 'contains', value },
+      ];
+      return [
+        {
+          operator: 'or',
+          value: valueList,
+        } as CrudFilter,
+      ];
     },
   });
 
