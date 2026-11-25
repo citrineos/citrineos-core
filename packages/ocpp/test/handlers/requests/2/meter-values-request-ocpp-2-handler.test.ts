@@ -76,6 +76,7 @@ function makeHandler(
   overrides: {
     sendCostUpdatedOnMeterValue?: boolean;
     activeTransaction?: unknown;
+    meterValuesValid?: boolean;
   } = {},
 ) {
   const { logger } = createTestContainer();
@@ -95,7 +96,9 @@ function makeHandler(
   };
 
   const costNotifier = { calculateCostAndNotify: vi.fn().mockResolvedValue(undefined) };
-  const signedMeterValuesUtil = { validateMeterValues: vi.fn().mockResolvedValue(true) };
+  const signedMeterValuesUtil = {
+    validateMeterValues: vi.fn().mockResolvedValue(overrides.meterValuesValid ?? true),
+  };
 
   const handler = new MeterValuesRequestOcpp2Handler({
     logger,
@@ -107,7 +110,14 @@ function makeHandler(
     transactionService: transactionService as any,
   });
 
-  return { handler, ocppSender, transactionRepository, transactionService, costNotifier };
+  return {
+    handler,
+    ocppSender,
+    transactionRepository,
+    transactionService,
+    costNotifier,
+    signedMeterValuesUtil,
+  };
 }
 
 describe('MeterValuesRequestOcpp2Handler', () => {
@@ -195,6 +205,26 @@ describe('MeterValuesRequestOcpp2Handler', () => {
       await handler.handle(makeMessage(makeRequest(1)));
 
       expect(costNotifier.calculateCostAndNotify).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('signature validation', () => {
+    it('rejects with SecurityError before persisting meter values or notifying cost when signature validation fails', async () => {
+      const { handler, transactionRepository, transactionService, costNotifier, ocppSender } =
+        makeHandler({
+          sendCostUpdatedOnMeterValue: true,
+          meterValuesValid: false,
+        });
+
+      await expect(handler.handle(makeMessage(makeRequest(1)))).rejects.toThrow(
+        'One or more MeterValues have an invalid signature.',
+      );
+
+      expect(transactionRepository.getActiveTransactionByStationIdAndEvseId).not.toHaveBeenCalled();
+      expect(transactionService.createMeterValues).not.toHaveBeenCalled();
+      expect(transactionService.recalculateTotalKwh).not.toHaveBeenCalled();
+      expect(costNotifier.calculateCostAndNotify).not.toHaveBeenCalled();
+      expect(ocppSender.sendCallResultWithMessage).not.toHaveBeenCalled();
     });
   });
 });

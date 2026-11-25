@@ -2,17 +2,24 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import type { FastifyRequest } from 'fastify';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { ILogObj } from 'tslog';
 import { Logger } from 'tslog';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ICache } from '@citrineos/base';
+import type { ICache, IMessageRouter, IModule } from '@citrineos/base';
 import type { Sequelize } from '@citrineos/dal';
-import type { RabbitMQConnectionManager, WebsocketNetworkConnection } from '@/transport/index.js';
+import type {
+  RabbitMQChannelManager,
+  RabbitMQConnectionManager,
+  WebsocketNetworkConnection,
+} from '@/transport/index.js';
 import type { SchemaFinding, SchemaValidationReport } from '@/util/index.js';
+import type { MessagesModule } from '@/modules/messages/index.js';
+import { CitrineOSServer } from '@/server/citrineos-server.js';
 import { HealthCheckService } from '@/server/health-check-service.js';
 import { LocalBypassAuthProvider } from '@/apis/authorization/provider/local-by-pass-auth-provider.js';
 import { OidcTokenProvider } from '@/apis/authorization/oidc-token-provider.js';
+import { aSystemConfig } from '@test/providers/system-config.js';
 
 const hiddenLogger = new Logger<ILogObj>({ type: 'hidden' });
 
@@ -390,5 +397,85 @@ describe('OidcTokenProvider', () => {
 
     await expect(provider.getToken()).rejects.toThrow('Failed to fetch OIDC token: Unauthorized');
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('CitrineOSServer.shutdown', () => {
+  it('shuts down modules, messagesModule, and router before closing RabbitMQ connections', async () => {
+    const events: string[] = [];
+
+    class TestCitrineOSServer extends CitrineOSServer {
+      configureForTest() {
+        this._logger = hiddenLogger;
+        this._server = {
+          close: vi.fn((cb: () => void) => {
+            events.push('http.close');
+            cb();
+          }),
+        } as unknown as FastifyInstance;
+        this._networkConnection = {
+          shutdown: vi.fn(async () => {
+            events.push('ws.shutdown');
+          }),
+        } as unknown as WebsocketNetworkConnection;
+        this.modules.push({
+          shutdown: vi.fn(async () => {
+            events.push('module.shutdown');
+          }),
+        } as unknown as IModule);
+        this._messagesModule = {
+          shutdown: vi.fn(async () => {
+            events.push('messages.shutdown');
+          }),
+        } as unknown as MessagesModule;
+        this._router = {
+          shutdown: vi.fn(async () => {
+            events.push('router.shutdown');
+          }),
+        } as unknown as IMessageRouter;
+        this._channelManager = {
+          closeAll: vi.fn(async () => {
+            events.push('amqp.channels.closeAll');
+          }),
+        } as unknown as RabbitMQChannelManager;
+        this._connectionManager = {
+          close: vi.fn(async () => {
+            events.push('amqp.connection.close');
+          }),
+        } as unknown as RabbitMQConnectionManager;
+        this._sequelizeInstance = {
+          connectionManager: {
+            close: vi.fn(async () => {
+              events.push('db.close');
+            }),
+          },
+        } as unknown as Sequelize;
+      }
+    }
+
+    const previousExitCode = process.exitCode;
+    const config = aSystemConfig({
+      messageBroker: { amqp: { url: 'amqp://localhost', exchange: 'citrineos' } },
+    });
+    const server = new TestCitrineOSServer('test', config);
+    server.configureForTest();
+
+    try {
+      await server.shutdown();
+      await server.shutdown();
+    } finally {
+      process.exitCode = previousExitCode;
+    }
+
+    expect(events).toEqual([
+      'http.close',
+      'ws.shutdown',
+      'module.shutdown',
+      'messages.shutdown',
+      'router.shutdown',
+      'amqp.channels.closeAll',
+      'amqp.connection.close',
+      'db.close',
+    ]);
   });
 });

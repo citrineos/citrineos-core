@@ -132,6 +132,24 @@ describe('CostNotifier', () => {
       await vi.advanceTimersByTimeAsync(intervalSeconds * 1000);
       expect(costUpdatedNotifier).toHaveBeenCalledTimes(1);
     });
+
+    it('should clear all scheduled notifications on shutdown', async () => {
+      const intervalSeconds = 1;
+      const transaction = givenTransaction(aTransaction());
+
+      costNotifier.notifyWhileActive(
+        anyConnectionName,
+        transaction.transactionId,
+        anyTenantId,
+        intervalSeconds,
+        anyProtocol,
+      );
+
+      costNotifier.shutdown();
+
+      await vi.advanceTimersByTimeAsync(intervalSeconds * 1000);
+      expect(costUpdatedNotifier).not.toHaveBeenCalled();
+    });
   });
 
   function assertLastCostUpdatedCall(

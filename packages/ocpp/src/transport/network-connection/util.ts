@@ -61,3 +61,24 @@ export function errorCodeOf(error: unknown): string | undefined {
     ? error.code
     : undefined;
 }
+
+/**
+ * Truncates a WebSocket close reason to fit within the RFC 6455 control frame limit
+ * (123 UTF-8 bytes alongside the 2-byte status code) without splitting multi-byte characters.
+ */
+export function truncateCloseReason(reason: string, maxBytes = 123): string {
+  if (Buffer.byteLength(reason, 'utf8') <= maxBytes) {
+    return reason;
+  }
+  let byteCount = 0;
+  let endIndex = 0;
+  for (const ch of reason) {
+    const chBytes = Buffer.byteLength(ch, 'utf8');
+    if (byteCount + chBytes > maxBytes) {
+      break;
+    }
+    byteCount += chBytes;
+    endIndex += ch.length;
+  }
+  return reason.slice(0, endIndex);
+}

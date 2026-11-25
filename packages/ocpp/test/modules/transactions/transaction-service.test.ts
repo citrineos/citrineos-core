@@ -728,4 +728,118 @@ describe('TransactionService', () => {
       expect(ocppConnectionName).toBe(STATION);
     });
   });
+
+  describe('authorizeOcpp21IdToken', () => {
+    it('omits groupIdToken when idTokenType is missing and leaves personalMessage.language undefined when absent', async () => {
+      const authorization = anAuthorization((auth) => {
+        auth.status = AuthorizationStatusEnum.Accepted;
+        auth.groupAuthorization = anAuthorization((group) => {
+          group.idTokenType = undefined;
+        });
+        auth.personalMessage = {
+          content: 'Welcome',
+        };
+      });
+      authorizationRepository.readAllByQuerystring.mockResolvedValue([authorization]);
+      authorizer.authorize.mockResolvedValue(AuthorizationStatusEnum.Accepted);
+      realTimeAuthorizer.authorize.mockResolvedValue(AuthorizationStatusEnum.Accepted);
+
+      const response = await transactionService.authorizeOcpp21IdToken(
+        DEFAULT_TENANT_ID,
+        aTransactionEventRequest((item) => {
+          item.idToken = anIdToken();
+        }),
+        aMessageContext(),
+      );
+
+      expect(response.idTokenInfo?.status).toBe(OCPP2_1.AuthorizationStatusEnumType.Accepted);
+      expect(response.idTokenInfo?.groupIdToken).toBeNull();
+      expect(response.idTokenInfo?.personalMessage).toEqual({
+        content: 'Welcome',
+        language: undefined,
+        format: OCPP2_1.MessageFormatEnumType.ASCII,
+      });
+    });
+
+    it('attaches transactionLimit only when accepted, and maps zero balance to NoCredit for prepaid tokens', async () => {
+      const expiry = new Date(Date.now() + 60_000).toISOString();
+      const rejectedPrepaid = anAuthorization((auth) => {
+        auth.status = AuthorizationStatusEnum.Accepted;
+        auth.cacheExpiryDateTime = expiry;
+        auth.isPrepaid = true;
+        auth.prepaidBalance = 25;
+      });
+      authorizationRepository.readAllByQuerystring.mockResolvedValue([rejectedPrepaid]);
+      authorizer.authorize.mockResolvedValue(AuthorizationStatusEnum.Blocked);
+      realTimeAuthorizer.authorize.mockResolvedValue(AuthorizationStatusEnum.Accepted);
+
+      const rejectedResponse = await transactionService.authorizeOcpp21IdToken(
+        DEFAULT_TENANT_ID,
+        aTransactionEventRequest((item) => {
+          item.idToken = anIdToken();
+        }),
+        aMessageContext(),
+      );
+
+      expect(rejectedResponse.idTokenInfo?.status).toBe(
+        OCPP2_1.AuthorizationStatusEnumType.Blocked,
+      );
+      expect(rejectedResponse.transactionLimit).toBeUndefined();
+      expect(rejectedResponse.idTokenInfo?.cacheExpiryDateTime).toBe(expiry);
+
+      const acceptedPrepaid = anAuthorization((auth) => {
+        auth.status = AuthorizationStatusEnum.Accepted;
+        auth.isPrepaid = true;
+        auth.prepaidBalance = 25;
+      });
+      authorizationRepository.readAllByQuerystring.mockResolvedValue([acceptedPrepaid]);
+      authorizer.authorize.mockResolvedValue(AuthorizationStatusEnum.Accepted);
+      realTimeAuthorizer.authorize.mockResolvedValue(AuthorizationStatusEnum.Accepted);
+
+      const acceptedResponse = await transactionService.authorizeOcpp21IdToken(
+        DEFAULT_TENANT_ID,
+        aTransactionEventRequest((item) => {
+          item.idToken = anIdToken();
+        }),
+        aMessageContext(),
+      );
+
+      expect(acceptedResponse.idTokenInfo?.status).toBe(
+        OCPP2_1.AuthorizationStatusEnumType.Accepted,
+      );
+      expect(acceptedResponse.transactionLimit).toEqual({ maxCost: 25 });
+
+      acceptedPrepaid.prepaidBalance = 0;
+      const zeroBalanceResponse = await transactionService.authorizeOcpp21IdToken(
+        DEFAULT_TENANT_ID,
+        aTransactionEventRequest((item) => {
+          item.idToken = anIdToken();
+        }),
+        aMessageContext(),
+      );
+
+      expect(zeroBalanceResponse.idTokenInfo?.status).toBe(
+        OCPP2_1.AuthorizationStatusEnumType.NoCredit,
+      );
+      expect(zeroBalanceResponse.transactionLimit).toBeUndefined();
+    });
+
+    it('uses OCPP 2.1 mapper on early rejection from stored authorization status', async () => {
+      const blocked = anAuthorization((auth) => {
+        auth.status = AuthorizationStatusEnum.Blocked;
+      });
+      authorizationRepository.readAllByQuerystring.mockResolvedValue([blocked]);
+
+      const response = await transactionService.authorizeOcpp21IdToken(
+        DEFAULT_TENANT_ID,
+        aTransactionEventRequest((item) => {
+          item.idToken = anIdToken();
+        }),
+        aMessageContext(),
+      );
+
+      expect(response.idTokenInfo?.status).toBe(OCPP2_1.AuthorizationStatusEnumType.Blocked);
+      expect(authorizer.authorize).not.toHaveBeenCalled();
+    });
+  });
 });

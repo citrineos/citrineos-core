@@ -190,8 +190,13 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
                 type: AttributeEnum.Actual,
               });
             for (const connectorType of connectorTypes) {
-              if (allowedConnectorTypes.includes(connectorType.value as string)) {
-                evseIds.add(connectorType.component?.evse?.id as number);
+              const evseId = connectorType.component?.evse?.id;
+              if (
+                evseId != null &&
+                connectorType.value != null &&
+                allowedConnectorTypes.includes(connectorType.value)
+              ) {
+                evseIds.add(evseId);
               }
             }
           }
@@ -219,14 +224,20 @@ export class AuthorizeRequestOcpp21Handler extends AbstractHandler {
                   type: AttributeEnum.Actual,
                 });
               for (const evseIdAttribute of evseIdAttributes) {
-                const evseIdDisallowed: boolean = authorization.disallowedEvseIdPrefixes.some(
-                  (disallowedEvseId: string) =>
-                    (evseIdAttribute.value as string).startsWith(disallowedEvseId),
-                );
+                const evseId = evseIdAttribute.component?.evse?.id;
+                if (evseId == null) {
+                  continue;
+                }
+                const evseIdValue = evseIdAttribute.value;
+                const evseIdDisallowed: boolean =
+                  evseIdValue != null &&
+                  authorization.disallowedEvseIdPrefixes.some((disallowedEvseId: string) =>
+                    evseIdValue.startsWith(disallowedEvseId),
+                  );
                 if (evseIdDisallowed) {
-                  evseIds.delete(evseIdAttribute.component?.evse?.id as number);
+                  evseIds.delete(evseId);
                 } else if (!hasConnectorTypeRestriction) {
-                  evseIds.add(evseIdAttribute.component?.evse?.id as number);
+                  evseIds.add(evseId);
                 }
               }
             }

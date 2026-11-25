@@ -76,7 +76,7 @@ export class NotifyEVChargingNeedsRequestOcpp2Handler extends AbstractHandler {
 
     // OCPP 2.0.1 Part 2 K17.FR.06
     const hasAcOrDcChargingParameters =
-      givenNeeds.dcChargingParameters !== null || givenNeeds.acChargingParameters !== null;
+      givenNeeds.dcChargingParameters != null || givenNeeds.acChargingParameters != null;
     this._logger.info(`Has AC or DC charging parameters: ${hasAcOrDcChargingParameters}`);
 
     const matchedChargingType =

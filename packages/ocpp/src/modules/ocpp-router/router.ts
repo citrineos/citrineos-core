@@ -890,7 +890,7 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
           error,
         );
       });
-    this._cache
+    await this._cache
       .setIfNotExist(
         messageId,
         `${action}@${timestamp.toISOString()}`,
@@ -930,14 +930,16 @@ export class MessageRouterImpl extends AbstractMessageRouter implements IMessage
 
       recordOcppCallHandled(String(action), CallHandledOutcome.Error, String(callError.errorCode));
 
-      this.sendCallError(messageId, ocppConnectionName, tenantId, protocol, action, callError)
+      await this.sendCallError(messageId, ocppConnectionName, tenantId, protocol, action, callError)
         .catch((err) => {
           this._logger.error('sendCallError failed', err);
         })
-        .finally(() => {
-          this._cache.remove(messageId, CacheNamespace.Transactions + identifier).catch((err) => {
-            this._logger.error('cache remove failed', err);
-          });
+        .finally(async () => {
+          await this._cache
+            .remove(messageId, CacheNamespace.Transactions + identifier)
+            .catch((err) => {
+              this._logger.error('cache remove failed', err);
+            });
         });
     }
   }

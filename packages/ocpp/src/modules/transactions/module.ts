@@ -4,10 +4,12 @@
 import { AbstractHandler, AbstractModule, type OcppModuleDependencies } from '@citrineos/base';
 import { EventGroup } from '@citrineos/types';
 import type { ITariffRepository } from '@citrineos/dal';
+import type { CostNotifier } from './cost-notifier.js';
 
 export interface TransactionsModuleDependencies extends OcppModuleDependencies {
   tariffRepository: ITariffRepository;
   transactionsHandlers: AbstractHandler[];
+  costNotifier?: CostNotifier;
 }
 
 /**
@@ -15,6 +17,7 @@ export interface TransactionsModuleDependencies extends OcppModuleDependencies {
  */
 export class TransactionsModule extends AbstractModule {
   protected _tariffRepository: ITariffRepository;
+  protected _costNotifier?: CostNotifier;
 
   constructor({
     config,
@@ -26,6 +29,7 @@ export class TransactionsModule extends AbstractModule {
     ocppSender,
     tariffRepository,
     transactionsHandlers,
+    costNotifier,
   }: TransactionsModuleDependencies) {
     super(
       config,
@@ -39,10 +43,16 @@ export class TransactionsModule extends AbstractModule {
       transactionsHandlers,
     );
     this._tariffRepository = tariffRepository;
+    this._costNotifier = costNotifier;
   }
 
   get tariffRepository(): ITariffRepository {
     return this._tariffRepository;
+  }
+
+  async shutdown(): Promise<void> {
+    this._costNotifier?.shutdown();
+    await super.shutdown();
   }
 }
 

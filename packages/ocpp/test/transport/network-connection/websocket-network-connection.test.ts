@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Contributors to the CitrineOS Project
 //
 // SPDX-License-Identifier: Apache-2.0
+import { EventEmitter } from 'events';
 import * as path from 'path';
 import * as tls from 'tls';
 import type { AddressInfo } from 'net';
@@ -234,6 +235,111 @@ describe('WebsocketNetworkConnection', () => {
       await expect(connection.sendMessage(IDENTIFIER, 'payload')).rejects.toBeInstanceOf(
         ConnectionNotFoundError,
       );
+    });
+
+    it('truncates overly long ws.onerror close reasons to <= 123 UTF-8 bytes', async () => {
+      const cache = aCache();
+      const router = {
+        registerConnection: vi.fn().mockResolvedValue(true),
+        deregisterConnection: vi.fn().mockResolvedValue(true),
+      };
+      const connection = aConnectedStation(router, cache);
+      const station = await connect(connection);
+      await vi.waitFor(() => expect(holdsSocket(connection)).toBe(true));
+
+      const serverSocket = (
+        connection as unknown as { _identifierConnections: Map<string, WebSocket> }
+      )._identifierConnections.get(IDENTIFIER)!;
+
+      const closePromise = new Promise<{ code: number; reason: string }>((resolve) => {
+        station.once('close', (code, reason) => resolve({ code, reason: reason.toString('utf8') }));
+      });
+
+      const longMessage = 'error: ' + 'x'.repeat(200);
+      serverSocket.emit('error', new Error(longMessage));
+
+      const closed = await closePromise;
+      expect(closed.code).toBe(1011);
+      expect(Buffer.byteLength(closed.reason, 'utf8')).toBeLessThanOrEqual(123);
+    });
+
+    it('skips ws.ping when the ping timer fires on a closing or closed socket', async () => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+      try {
+        const cache = aCache();
+        const router = {
+          registerConnection: vi.fn().mockResolvedValue(true),
+          deregisterConnection: vi.fn().mockResolvedValue(true),
+        };
+        const connection = aConnectedStation(router, cache);
+        await connect(connection);
+        await vi.waitFor(() => expect(holdsSocket(connection)).toBe(true));
+
+        const serverSocket = (
+          connection as unknown as { _identifierConnections: Map<string, WebSocket> }
+        )._identifierConnections.get(IDENTIFIER)!;
+        const pingSpy = vi.spyOn(serverSocket, 'ping');
+
+        Object.defineProperty(serverSocket, 'readyState', {
+          configurable: true,
+          value: WebSocket.CLOSING,
+        });
+
+        vi.advanceTimersByTime(125_000);
+        expect(pingSpy).not.toHaveBeenCalled();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('handles socket errors emitted during async setup before _registerWebsocketEvents attaches ws.onerror', async () => {
+      let releaseCheck!: (exists: boolean) => void;
+      const stationCheckDeferred = new Promise<boolean>((resolve) => {
+        releaseCheck = resolve;
+      });
+      const connection = new WebsocketNetworkConnection(
+        mockDeps<typeof WebsocketNetworkConnection>({
+          logger,
+          router: {
+            registerConnection: vi.fn().mockResolvedValue(false),
+            deregisterConnection: vi.fn().mockResolvedValue(true),
+          },
+          cache: aCache(),
+          doesChargingStationExistByOcppConnectionName: vi
+            .fn()
+            .mockReturnValue(stationCheckDeferred),
+          messagesExchangeSink: { record: vi.fn().mockResolvedValue({ delivered: true }) },
+        }),
+      );
+      networkConnection = connection;
+
+      const fakeWs = Object.assign(new EventEmitter(), {
+        protocol: OCPPVersion.OCPP2_0_1,
+        readyState: WebSocket.OPEN,
+        pause: vi.fn(),
+        resume: vi.fn(),
+        close: vi.fn(),
+      });
+
+      const setupPromise = (
+        connection as unknown as {
+          _onConnection: (
+            ws: EventEmitter,
+            config: WebsocketServerConfig,
+            pingInterval: number,
+            req: { url: string; headers: Record<string, string>; socket: Record<string, unknown> },
+          ) => Promise<void>;
+        }
+      )._onConnection(fakeWs, aWebsocketServerConfig(), 60, {
+        url: `/${STATION_ID}`,
+        headers: {},
+        socket: {},
+      });
+
+      expect(() => fakeWs.emit('error', new Error('early socket reset'))).not.toThrow();
+
+      releaseCheck(false);
+      await setupPromise;
     });
   });
 });

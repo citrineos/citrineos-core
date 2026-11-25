@@ -12,6 +12,10 @@ class PassthroughScheduler extends Scheduler {
   unschedule(key: string) {
     super.unschedule(key);
   }
+
+  unscheduleAll() {
+    super.unscheduleAll();
+  }
 }
 
 describe('Scheduler', () => {
@@ -120,6 +124,27 @@ describe('Scheduler', () => {
       await vi.advanceTimersByTimeAsync(taskInterval * 1000);
       expect(task).toHaveBeenCalledTimes(2);
       expect(anotherTask).toHaveBeenCalledTimes(0);
+    });
+
+    it('unscheduleAll clears every registered interval and unrefs scheduled timers', async () => {
+      const unrefSpy = vi.fn();
+      const setIntervalSpy = vi.spyOn(globalThis, 'setInterval');
+      setIntervalSpy.mockReturnValueOnce({ unref: unrefSpy } as unknown as NodeJS.Timeout);
+
+      const unrefScheduler = new PassthroughScheduler();
+      unrefScheduler.schedule('unref-key', vi.fn(), 1);
+      expect(unrefSpy).toHaveBeenCalledOnce();
+      setIntervalSpy.mockRestore();
+
+      const t1 = vi.fn();
+      const t2 = vi.fn();
+      scheduler.schedule('k1', t1, 1);
+      scheduler.schedule('k2', t2, 1);
+
+      scheduler.unscheduleAll();
+      await vi.advanceTimersByTimeAsync(2000);
+      expect(t1).not.toHaveBeenCalled();
+      expect(t2).not.toHaveBeenCalled();
     });
   });
 });

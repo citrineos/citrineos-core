@@ -100,6 +100,13 @@ export class CostNotifier extends Scheduler {
     );
   }
 
+  /**
+   * Clears all scheduled cost notification intervals.
+   */
+  shutdown(): void {
+    this.unscheduleAll();
+  }
+
   private async _tryNotify(
     ocppConnectionName: string,
     transactionId: string,

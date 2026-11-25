@@ -77,6 +77,20 @@ export class MeterValuesRequestOcpp2Handler extends AbstractHandler {
     const ocppConnectionName = message.context.ocppConnectionName;
     const evseId = message.payload.evseId;
 
+    const meterValuesValid = await this._signedMeterValuesUtil.validateMeterValues(
+      tenantId,
+      ocppConnectionName,
+      meterValues,
+    );
+
+    if (!meterValuesValid) {
+      throw new OcppError(
+        message.context.correlationId,
+        ErrorCode.SecurityError,
+        'One or more MeterValues have an invalid signature.',
+      );
+    }
+
     // When evseId is 0, the MeterValuesRequest message SHALL be associated with the entire Charging Station.
     if (evseId !== 0) {
       const activeTransaction: TransactionDto | undefined =
@@ -119,20 +133,6 @@ export class MeterValuesRequestOcpp2Handler extends AbstractHandler {
       }
     } else {
       await this._transactionService.createMeterValues(tenantId, meterValues);
-    }
-
-    const meterValuesValid = await this._signedMeterValuesUtil.validateMeterValues(
-      tenantId,
-      ocppConnectionName,
-      meterValues,
-    );
-
-    if (!meterValuesValid) {
-      throw new OcppError(
-        message.context.correlationId,
-        ErrorCode.SecurityError,
-        'One or more MeterValues have an invalid signature.',
-      );
     }
 
     const response: OCPP2_response_types.MeterValuesResponse = {

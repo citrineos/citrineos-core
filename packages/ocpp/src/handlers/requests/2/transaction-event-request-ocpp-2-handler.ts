@@ -378,7 +378,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
       if (
         transaction &&
         transaction.isActive &&
-        transaction.totalKwh &&
+        transaction.totalKwh != null &&
         this._sendCostUpdatedOnMeterValue
       ) {
         response.totalCost = await this._costCalculator.calculateTotalCost(tenantId, transaction);
@@ -520,7 +520,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
       }
     }
 
-    if (message.payload.eventType === TransactionEventEnum.Ended && transaction.totalKwh) {
+    if (message.payload.eventType === TransactionEventEnum.Ended && transaction.totalKwh != null) {
       response.totalCost = await this._costCalculator.calculateTotalCost(tenantId, transaction);
     }
 
@@ -552,7 +552,7 @@ export class TransactionEventRequestOcpp2Handler extends AbstractHandler {
     }
 
     // Store total cost in db
-    if (response.totalCost && transaction) {
+    if (response.totalCost != null && transaction) {
       await this._transactionRepository.updateTransactionTotalCostById(
         tenantId,
         response.totalCost,

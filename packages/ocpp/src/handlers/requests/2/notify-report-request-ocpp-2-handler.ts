@@ -70,9 +70,10 @@ export class NotifyReportRequestOcpp2Handler extends AbstractHandler {
         // To keep consistency with VariableAttributeType defined in OCPP 2.0.1:
         // mutability: Default is ReadWrite when omitted.
         // if it is not present, we set it to ReadWrite
-        for (let variableAttr of reportDataType.variableAttribute) {
+        for (let i = 0; i < reportDataType.variableAttribute.length; i++) {
+          const variableAttr = reportDataType.variableAttribute[i];
           if (!variableAttr.mutability) {
-            variableAttr = {
+            reportDataType.variableAttribute[i] = {
               ...variableAttr,
               mutability: MutabilityEnum.ReadWrite,
             } as OCPP2_common_types.VariableAttributeType;

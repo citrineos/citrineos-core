@@ -19,15 +19,20 @@ export abstract class Scheduler {
       return;
     }
     this._logger.debug(`Registering scheduled task for ${key}`);
-    this._register(
-      key,
-      setInterval(() => task(), intervalSeconds * 1000),
-    );
+    const timeout = setInterval(() => task(), intervalSeconds * 1000);
+    timeout.unref?.();
+    this._register(key, timeout);
   }
 
   protected unschedule(key: string) {
     this._logger.debug(`Unregistering scheduled task for ${key}`);
     this._unregister(key);
+  }
+
+  protected unscheduleAll(): void {
+    for (const key of Array.from(this._registry.keys())) {
+      this._unregister(key);
+    }
   }
 
   private _register(key: string, timeout: NodeJS.Timeout) {
